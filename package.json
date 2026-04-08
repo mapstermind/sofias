@@ -1,0 +1,15 @@
+{
+  "name": "sofia-s",
+  "version": "0.1.0",
+  "description": "SOFIA-S is a Django web application designed to streamline the full lifecycle of survey data: from form delivery and response collection to data processing and dynamic report generation.",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2"
+  }
+}
