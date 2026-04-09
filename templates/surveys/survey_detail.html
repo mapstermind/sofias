@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ survey.title }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-100 py-12 px-4">
+
+  <div class="max-w-2xl mx-auto">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">{{ survey.title }}</h1>
+      {% if survey.description %}
+        <p class="mt-2 text-gray-600">{{ survey.description }}</p>
+      {% endif %}
+    </div>
+
+    {% if errors %}
+      <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        Please correct the highlighted questions below before submitting.
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {% for section in sections %}
+        <div class="mb-8">
+          <div class="mb-4 border-b border-gray-200 pb-2">
+            <h2 class="text-lg font-semibold text-gray-700">{{ section.title }}</h2>
+            {% if section.description %}
+              <p class="text-sm text-gray-500 mt-1">{{ section.description }}</p>
+            {% endif %}
+          </div>
+
+          {% for question in section.questions.all %}
+            {% include "surveys/_question.html" %}
+          {% endfor %}
+        </div>
+      {% endfor %}
+
+      {% if unsectioned %}
+        {% for question in unsectioned %}
+          {% include "surveys/_question.html" %}
+        {% endfor %}
+      {% endif %}
+
+      <div class="mt-8">
+        <button type="submit"
+          class="w-full rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
+          Submit
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</body>
+</html>
