@@ -1,8 +1,10 @@
 import random
 import string
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 def _generate_reference_code() -> str:
@@ -14,7 +16,7 @@ def _generate_reference_code() -> str:
 
 
 class User(AbstractUser):
-    pass
+    email = models.EmailField(unique=True)
 
 
 class Company(models.Model):
@@ -66,3 +68,30 @@ class Role(models.Model):
             ("can_view_insights", "Can view insights"),
             ("can_take_assigned_surveys", "Can take assigned surveys"),
         ]
+
+
+class EmailOTP(models.Model):
+    """
+    A one-time passcode sent to an email address for passwordless login.
+
+    The email field is not a FK to User — the user may not exist yet when
+    the OTP is created (first-time sign-up flow).
+    """
+
+    email = models.EmailField(db_index=True)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.expires_at:
+            expiry = getattr(settings, "OTP_EXPIRY_MINUTES", 10)
+            self.expires_at = timezone.now() + timezone.timedelta(minutes=expiry)
+        super().save(*args, **kwargs)
+
+    def is_valid(self) -> bool:
+        return not self.is_used and timezone.now() < self.expires_at
+
+    def __str__(self):
+        return f"OTP for {self.email} ({'used' if self.is_used else 'active'})"

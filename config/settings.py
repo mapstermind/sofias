@@ -51,6 +51,14 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = "accounts.User"
 
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",  # keeps admin working
+    "apps.accounts.backends.EmailOTPBackend",
+]
+
+LOGIN_URL = "accounts:request_otp"
+LOGIN_REDIRECT_URL = "accounts:home"
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -132,3 +140,20 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+
+# Email
+# https://docs.djangoproject.com/en/6.0/topics/email/
+
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST          = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT          = int(os.environ.get("EMAIL_PORT", "25"))
+EMAIL_USE_TLS       = os.environ.get("EMAIL_USE_TLS", "False").lower() in ("true", "1")
+EMAIL_HOST_USER     = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL  = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@sofias.local")
+
+OTP_EXPIRY_MINUTES = int(os.environ.get("OTP_EXPIRY_MINUTES", "10"))

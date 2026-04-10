@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete your profile — Sofias</title>
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+</head>
+<body class="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+
+  <div class="w-full max-w-sm">
+
+    <div class="mb-8 text-center">
+      <h1 class="text-2xl font-bold text-gray-900">One last step</h1>
+      <p class="mt-2 text-sm text-gray-500">
+        Tell us a bit about yourself to complete your account setup.
+      </p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 px-8 py-10">
+
+      {% if form.non_field_errors %}
+        <div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+        </div>
+      {% endif %}
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-5">
+          <label for="{{ form.position.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            Job title
+          </label>
+          {{ form.position }}
+          {% if form.position.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.position.errors.0 }}</p>
+          {% endif %}
+        </div>
+
+        <div class="mb-6">
+          <label for="{{ form.reference_code.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            Company reference code
+          </label>
+          {{ form.reference_code }}
+          {% if form.reference_code.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.reference_code.errors.0 }}</p>
+          {% endif %}
+          <p class="mt-1 text-xs text-gray-400">
+            The 5-character code provided by your administrator.
+          </p>
+        </div>
+
+        <button type="submit"
+          class="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
+          Complete setup
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+</body>
+</html>
