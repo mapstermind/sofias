@@ -4,6 +4,6 @@ from . import views
 
 app_name = "surveys"
 urlpatterns = [
-    path("<int:survey_id>/", views.survey_detail, name="survey_detail"),
-    path("<int:survey_id>/submitted/", views.survey_submitted, name="survey_submitted"),
+    path("assignments/<int:assignment_id>/", views.survey_detail, name="survey_detail"),
+    path("assignments/<int:assignment_id>/submitted/", views.survey_submitted, name="survey_submitted"),
 ]

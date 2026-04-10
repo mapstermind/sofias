@@ -1,4 +1,4 @@
-.PHONY: install lock serve makemigrations migrate
+.PHONY: install lock serve makemigrations migrate clean-pycache
 
 install:
 	poetry install
@@ -14,3 +14,7 @@ makemigrations:
 
 migrate:
 	poetry run python manage.py migrate
+
+clean-pycache:
+	find . -type d -name __pycache__ -exec rm -rf {} +
+	find . -name "*.pyc" -delete

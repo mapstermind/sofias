@@ -1,13 +1,16 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from apps.responses.models import Answer, Submission
-from apps.surveys.models import Question, Survey
+from apps.responses.models import Answer, SurveySubmission
+from apps.surveys.models import Question, SurveyAssignment
 
 
-def survey_detail(request, survey_id):
-    survey = get_object_or_404(Survey, id=survey_id, status=Survey.Status.PUBLISHED)
-    version = survey.versions.order_by("-version_number").first()
+def survey_detail(request, assignment_id):
+    assignment = get_object_or_404(
+        SurveyAssignment, id=assignment_id, status=SurveyAssignment.Status.ACTIVE
+    )
+    version = assignment.version
+    template = version.template
 
     sections = list(
         version.sections.prefetch_related("questions__choices").order_by("order")
@@ -18,7 +21,6 @@ def survey_detail(request, survey_id):
         .order_by("order")
     )
 
-    # errors keyed by question.id (int) so templates can do `question.id in errors`
     errors = {}
 
     if request.method == "POST":
@@ -72,9 +74,11 @@ def survey_detail(request, survey_id):
                 answer_values[q.id] = value
 
         if not errors:
-            submission = Submission.objects.create(
-                version=version,
-                status=Submission.Status.COMPLETED,
+            user = request.user if request.user.is_authenticated else None
+            submission = SurveySubmission.objects.create(
+                assignment=assignment,
+                user=user,
+                status=SurveySubmission.Status.COMPLETED,
                 completed_at=timezone.now(),
             )
             for question_id, val in answer_values.items():
@@ -83,10 +87,11 @@ def survey_detail(request, survey_id):
                     question_id=question_id,
                     value=val,
                 )
-            return redirect("surveys:survey_submitted", survey_id=survey_id)
+            return redirect("surveys:survey_submitted", assignment_id=assignment_id)
 
     return render(request, "surveys/survey_detail.html", {
-        "survey": survey,
+        "assignment": assignment,
+        "template": template,
         "version": version,
         "sections": sections,
         "unsectioned": unsectioned,
@@ -94,6 +99,11 @@ def survey_detail(request, survey_id):
     })
 
 
-def survey_submitted(request, survey_id):
-    survey = get_object_or_404(Survey, id=survey_id, status=Survey.Status.PUBLISHED)
-    return render(request, "surveys/survey_submitted.html", {"survey": survey})
+def survey_submitted(request, assignment_id):
+    assignment = get_object_or_404(
+        SurveyAssignment, id=assignment_id, status=SurveyAssignment.Status.ACTIVE
+    )
+    return render(request, "surveys/survey_submitted.html", {
+        "assignment": assignment,
+        "template": assignment.version.template,
+    })

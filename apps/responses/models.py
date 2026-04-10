@@ -1,17 +1,24 @@
+from django.conf import settings
 from django.db import models
 
 
-class Submission(models.Model):
+class SurveySubmission(models.Model):
     class Status(models.TextChoices):
         IN_PROGRESS = "in_progress", "In Progress"
         COMPLETED = "completed", "Completed"
 
-    version = models.ForeignKey(
-        "surveys.SurveyVersion",
+    assignment = models.ForeignKey(
+        "surveys.SurveyAssignment",
         on_delete=models.CASCADE,
         related_name="submissions",
     )
-    respondent_identifier = models.CharField(max_length=255, blank=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="submissions",
+    )
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.IN_PROGRESS
     )
@@ -22,12 +29,12 @@ class Submission(models.Model):
         ordering = ["-started_at"]
 
     def __str__(self):
-        return f"Submission {self.pk} – {self.version}"
+        return f"Submission {self.pk} — {self.assignment}"
 
 
 class Answer(models.Model):
     submission = models.ForeignKey(
-        Submission, on_delete=models.CASCADE, related_name="answers"
+        SurveySubmission, on_delete=models.CASCADE, related_name="answers"
     )
     question = models.ForeignKey(
         "surveys.Question", on_delete=models.CASCADE, related_name="answers"

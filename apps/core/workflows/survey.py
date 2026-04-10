@@ -1,4 +1,4 @@
-from apps.surveys.models import Survey
+from apps.surveys.models import SurveyTemplate
 
 from .introspect import prompt_for_model
 from .prompts import confirm
@@ -6,9 +6,9 @@ from .version_helpers import get_or_create_latest_version
 
 
 def run_create_survey() -> None:
-    print("\n=== Create Survey ===")
-    data = prompt_for_model(Survey, exclude=["status"])
-    survey = Survey.objects.create(**data, status=Survey.Status.DRAFT)
+    print("\n=== Create Survey Template ===")
+    data = prompt_for_model(SurveyTemplate, exclude=["status"])
+    survey = SurveyTemplate.objects.create(**data, status=SurveyTemplate.Status.DRAFT)
     version = get_or_create_latest_version(survey)
     print(f"\nCreated: {survey} (version {version.version_number})")
 
