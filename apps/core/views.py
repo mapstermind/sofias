@@ -13,13 +13,60 @@ class HomeView(LoginRequiredMixin, View):
     def get(self, request):
         user = request.user
         if user.groups.filter(name="Employees").exists():
-            # TODO: redirect to employee assigned-surveys view once built
-            return redirect("accounts:request_otp")
+            return redirect("core:employee_survey_list")
         if user.groups.filter(name="Admins").exists():
             return redirect("core:company_list")
         if user.has_perm("accounts.can_view_dashboard"):
             return redirect("core:company_dashboard")
         return redirect("accounts:request_otp")
+
+
+class EmployeeSurveyListView(LoginRequiredMixin, View):
+    """List surveys assigned to the employee's company."""
+
+    def get(self, request):
+        if not request.user.groups.filter(name="Employees").exists():
+            raise PermissionDenied
+
+        try:
+            profile = request.user.profile
+        except UserProfile.DoesNotExist:
+            return redirect("accounts:setup_profile")
+
+        if not profile.company_id:
+            return redirect("accounts:setup_profile")
+
+        company = profile.company
+
+        assignments = (
+            SurveyAssignment.objects.filter(company=company)
+            .select_related("version__template")
+            .order_by("-created_at")
+        )
+
+        user_completed_ids = set(
+            request.user.submissions.filter(
+                assignment__in=assignments,
+                status="completed",
+            ).values_list("assignment_id", flat=True)
+        )
+
+        assignment_data = [
+            {
+                "assignment": a,
+                "completed": a.id in user_completed_ids,
+            }
+            for a in assignments
+        ]
+
+        return render(
+            request,
+            "core/employee_survey_list.html",
+            {
+                "company": company,
+                "assignment_data": assignment_data,
+            },
+        )
 
 
 class CompanyListView(LoginRequiredMixin, View):

@@ -99,3 +99,137 @@ class TestHomeViewRouting:
         response = client.get(self.URL)
         assert response.status_code == 302
         assert response["Location"].endswith("/empresas/")
+
+    def test_employee_group_redirects_to_survey_list(self, client, make_user, bootstrap_groups):
+        user = make_user()
+        user.groups.add(bootstrap_groups["Employees"])
+        client.force_login(user)
+        response = client.get(self.URL)
+        assert response.status_code == 302
+        assert response["Location"].endswith("/encuestas/")
+
+
+# ── EmployeeSurveyListView ────────────────────────────────────────────────────
+
+
+class TestEmployeeSurveyListView:
+    URL = "/encuestas/"
+
+    def _make_employee(self, make_user, bootstrap_groups, company=None):
+        from apps.accounts.models import UserProfile
+
+        user = make_user()
+        user.groups.add(bootstrap_groups["Employees"])
+        if company is not None:
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            profile.company = company
+            profile.save()
+        return user
+
+    def test_unauthenticated_redirects_to_login(self, client):
+        response = client.get(self.URL)
+        assert response.status_code == 302
+        assert "ingresar" in response["Location"]
+
+    def test_non_employee_returns_403(self, client, make_user):
+        client.force_login(make_user())
+        response = client.get(self.URL)
+        assert response.status_code == 403
+
+    def test_employee_without_profile_redirects_to_setup(self, client, make_user, bootstrap_groups):
+        user = make_user()
+        user.groups.add(bootstrap_groups["Employees"])
+        client.force_login(user)
+        response = client.get(self.URL)
+        assert response.status_code == 302
+        assert "perfil" in response["Location"]
+
+    def test_employee_without_company_redirects_to_setup(self, client, make_user, bootstrap_groups):
+        from apps.accounts.models import UserProfile
+
+        user = make_user()
+        user.groups.add(bootstrap_groups["Employees"])
+        UserProfile.objects.create(user=user, company=None)
+        client.force_login(user)
+        response = client.get(self.URL)
+        assert response.status_code == 302
+        assert "perfil" in response["Location"]
+
+    def test_employee_with_company_returns_200(self, client, make_user, make_company, bootstrap_groups):
+        company = make_company()
+        user = self._make_employee(make_user, bootstrap_groups, company=company)
+        client.force_login(user)
+        response = client.get(self.URL)
+        assert response.status_code == 200
+
+    def test_only_company_assignments_appear(
+        self, client, make_user, make_company, bootstrap_groups, survey_version
+    ):
+        from apps.surveys.models import SurveyAssignment
+
+        company = make_company()
+        other_company = make_company(name="Other Corp", legal_name="Other Corp SA de CV")
+        user = self._make_employee(make_user, bootstrap_groups, company=company)
+
+        own = SurveyAssignment.objects.create(company=company, version=survey_version)
+        SurveyAssignment.objects.create(company=other_company, version=survey_version)
+
+        client.force_login(user)
+        response = client.get(self.URL)
+
+        ids = [item["assignment"].pk for item in response.context["assignment_data"]]
+        assert own.pk in ids
+        assert len(ids) == 1
+
+    def test_completed_flag_true_when_user_has_completed_submission(
+        self, client, make_user, make_company, bootstrap_groups, survey_version
+    ):
+        from apps.responses.models import SurveySubmission
+        from apps.surveys.models import SurveyAssignment
+
+        company = make_company()
+        user = self._make_employee(make_user, bootstrap_groups, company=company)
+        assignment = SurveyAssignment.objects.create(company=company, version=survey_version)
+        SurveySubmission.objects.create(
+            assignment=assignment, user=user, status=SurveySubmission.Status.COMPLETED
+        )
+
+        client.force_login(user)
+        response = client.get(self.URL)
+
+        item = next(i for i in response.context["assignment_data"] if i["assignment"].pk == assignment.pk)
+        assert item["completed"] is True
+
+    def test_completed_flag_false_when_no_submission(
+        self, client, make_user, make_company, bootstrap_groups, survey_version
+    ):
+        from apps.surveys.models import SurveyAssignment
+
+        company = make_company()
+        user = self._make_employee(make_user, bootstrap_groups, company=company)
+        assignment = SurveyAssignment.objects.create(company=company, version=survey_version)
+
+        client.force_login(user)
+        response = client.get(self.URL)
+
+        item = next(i for i in response.context["assignment_data"] if i["assignment"].pk == assignment.pk)
+        assert item["completed"] is False
+
+    def test_completed_flag_false_for_in_progress_submission(
+        self, client, make_user, make_company, bootstrap_groups, survey_version
+    ):
+        from apps.responses.models import SurveySubmission
+        from apps.surveys.models import SurveyAssignment
+
+        company = make_company()
+        user = self._make_employee(make_user, bootstrap_groups, company=company)
+        assignment = SurveyAssignment.objects.create(company=company, version=survey_version)
+        SurveySubmission.objects.create(
+            assignment=assignment, user=user, status=SurveySubmission.Status.IN_PROGRESS
+        )
+
+        client.force_login(user)
+        response = client.get(self.URL)
+
+        item = next(i for i in response.context["assignment_data"] if i["assignment"].pk == assignment.pk)
+        assert item["completed"] is False
