@@ -13,8 +13,9 @@
     </div>
     <form method="post" action="{% url 'accounts:logout' %}">
       {% csrf_token %}
-      <button type="submit" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">
-        Cerrar sesión
+      <button type="submit" class="text-sm text-gray-500 hover:text-gray-700 transition-colors group w-28 text-right">
+        <span class="group-hover:hidden">{{ request.user.username }}</span>
+        <span class="hidden group-hover:inline">Cerrar sesión</span>
       </button>
     </form>
   </div>

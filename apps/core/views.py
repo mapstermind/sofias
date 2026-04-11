@@ -23,6 +23,8 @@ class HomeView(LoginRequiredMixin, View):
 
 
 class CompanyListView(LoginRequiredMixin, View):
+    """List all companies for admin users."""
+
     def get(self, request):
         if not request.user.has_perm("accounts.can_manage_surveys"):
             raise PermissionDenied
@@ -50,6 +52,8 @@ class CompanyListView(LoginRequiredMixin, View):
 
 
 class CompanyDashboardView(LoginRequiredMixin, View):
+    """Display company dashboard for admin users."""
+
     def get(self, request, reference_code=None):
         if not request.user.has_perm("accounts.can_view_dashboard"):
             raise PermissionDenied

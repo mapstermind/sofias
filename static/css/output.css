@@ -284,6 +284,9 @@
   .grid {
     display: grid;
   }
+  .hidden {
+    display: none;
+  }
   .inline {
     display: inline;
   }
@@ -316,6 +319,9 @@
   }
   .w-16 {
     width: calc(var(--spacing) * 16);
+  }
+  .w-28 {
+    width: calc(var(--spacing) * 28);
   }
   .w-40 {
     width: calc(var(--spacing) * 40);
@@ -647,6 +653,20 @@
   .select-none {
     -webkit-user-select: none;
     user-select: none;
+  }
+  .group-hover\:hidden {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        display: none;
+      }
+    }
+  }
+  .group-hover\:inline {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        display: inline;
+      }
+    }
   }
   .hover\:border-indigo-300 {
     &:hover {

@@ -22,7 +22,7 @@ class TestCompanyListView:
     def test_unauthenticated_redirects_to_login(self, client):
         response = client.get(self.URL)
         assert response.status_code == 302
-        assert "login" in response["Location"]
+        assert "ingresar" in response["Location"]
 
     def test_no_permission_returns_403(self, client, make_user):
         client.force_login(make_user())
@@ -59,7 +59,7 @@ class TestCompanyDashboardView:
     def test_unauthenticated_redirects_to_login(self, client):
         response = client.get(self.URL)
         assert response.status_code == 302
-        assert "login" in response["Location"]
+        assert "ingresar" in response["Location"]
 
     def test_no_permission_returns_403(self, client, make_user):
         client.force_login(make_user())

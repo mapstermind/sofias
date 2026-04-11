@@ -5,9 +5,9 @@ from django.utils import timezone
 
 pytestmark = pytest.mark.django_db
 
-REQUEST_OTP_URL = "/cuentas/login/"
-VERIFY_OTP_URL = "/cuentas/verify/"
-LOGOUT_URL = "/cuentas/logout/"
+REQUEST_OTP_URL = "/cuentas/ingresar/"
+VERIFY_OTP_URL = "/cuentas/verificar/"
+LOGOUT_URL = "/cuentas/cerrar-sesion/"
 
 
 # ── request_otp ───────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ class TestVerifyOTPView:
     def test_get_without_session_redirects_to_request_otp(self, client):
         response = client.get(VERIFY_OTP_URL)
         assert response.status_code == 302
-        assert "login" in response["Location"]
+        assert "ingresar" in response["Location"]
 
     def test_get_with_session_renders_form(self, client):
         self._set_session_email(client, "user@example.com")
@@ -180,7 +180,7 @@ class TestVerifyOTPView:
 
         response = client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
         assert response.status_code == 302
-        assert "setup" in response["Location"]
+        assert "completar-perfil" in response["Location"]
 
 
 # ── logout_view ───────────────────────────────────────────────────────────────
