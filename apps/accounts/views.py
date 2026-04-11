@@ -136,6 +136,11 @@ def setup_profile(request):
         form.add_error("reference_code", "No company found with that code. Please check with your administrator.")
         return render(request, "accounts/profile_setup.html", {"form": form})
 
+    user = request.user
+    user.first_name = form.cleaned_data["first_name"]
+    user.last_name = form.cleaned_data["last_name"]
+    user.save(update_fields=["first_name", "last_name"])
+
     profile.position = form.cleaned_data["position"]
     profile.company = company
     profile.save()
@@ -149,9 +154,3 @@ def logout_view(request):
         return HttpResponseNotAllowed(["POST"])
     logout(request)
     return redirect("accounts:request_otp")
-
-
-@login_required
-def home(request):
-    """Placeholder post-login landing page."""
-    return render(request, "accounts/home.html")

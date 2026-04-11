@@ -1,0 +1,43 @@
+{% extends "base_app.html" %}
+
+{% block title %}Empresas | SOFIA-S{% endblock %}
+
+{% block content %}
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Empresas</h1>
+    <p class="mt-1 text-sm text-gray-500">Selecciona una empresa para ver su tablero con análisis.</p>
+  </div>
+
+  {% if companies %}
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {% for company in companies %}
+        <a href="{% url 'core:company_dashboard_for' company.reference_code %}"
+           class="block bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 hover:border-indigo-300 hover:shadow-md transition-all">
+
+          <h2 class="font-semibold text-gray-900 truncate">{{ company.name }}</h2>
+          <p class="mt-0.5 text-xs text-gray-400 truncate">{{ company.legal_name }}</p>
+
+          <dl class="mt-4 grid grid-cols-3 gap-2 text-center">
+            <div>
+              <dt class="text-xs text-gray-400">Empleados</dt>
+              <dd class="mt-0.5 text-lg font-semibold text-gray-800">{{ company.member_count }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-400">Encuestas activas</dt>
+              <dd class="mt-0.5 text-lg font-semibold text-gray-800">{{ company.active_assignment_count }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-400">Respuestas</dt>
+              <dd class="mt-0.5 text-lg font-semibold text-gray-800">{{ company.completed_submission_count }}</dd>
+            </div>
+          </dl>
+
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="rounded-2xl border border-dashed border-gray-300 bg-white px-8 py-16 text-center">
+      <p class="text-sm text-gray-500">No hay empresas creadas aún.</p>
+    </div>
+  {% endif %}
+{% endblock %}

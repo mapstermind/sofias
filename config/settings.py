@@ -57,7 +57,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 LOGIN_URL = "accounts:request_otp"
-LOGIN_REDIRECT_URL = "accounts:home"
+LOGIN_REDIRECT_URL = "core:home"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block body_class %}min-h-screen bg-gray-100 flex items-center justify-center px-4{% endblock %}
+
+{% block body %}
+<div class="w-full max-w-sm">
+
+  <div class="mb-8 flex flex-col items-center text-center">
+    <img src="{% static 'img/logo.svg' %}" alt="Sofias" class="mb-6 h-8 w-auto">
+    {% block card_header %}{% endblock %}
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 px-8 py-10">
+    {% block card_body %}{% endblock %}
+  </div>
+
+  {% block card_footer %}{% endblock %}
+
+</div>
+{% endblock %}

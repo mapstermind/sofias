@@ -36,11 +36,29 @@ class OTPVerifyForm(forms.Form):
 
 
 class ProfileSetupForm(forms.Form):
-    position = forms.CharField(
-        label="Your job title",
-        max_length=255,
+    first_name = forms.CharField(
+        label="First name",
+        max_length=150,
         widget=forms.TextInput(attrs={
             "autofocus": True,
+            "placeholder": "Jane",
+            "autocomplete": "given-name",
+            "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-indigo-500",
+        }),
+    )
+    last_name = forms.CharField(
+        label="Last name",
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            "placeholder": "Smith",
+            "autocomplete": "family-name",
+            "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-indigo-500",
+        }),
+    )
+    position = forms.CharField(
+        label="Job title",
+        max_length=255,
+        widget=forms.TextInput(attrs={
             "placeholder": "e.g. Product Manager",
             "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-indigo-500",
         }),

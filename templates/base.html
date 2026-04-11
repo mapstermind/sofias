@@ -1,0 +1,14 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SOFIA-S{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}">
+  <link rel="stylesheet" href="{% static 'css/output.css' %}">
+</head>
+<body class="{% block body_class %}min-h-screen bg-gray-100{% endblock %}">
+  {% block body %}{% endblock %}
+</body>
+</html>

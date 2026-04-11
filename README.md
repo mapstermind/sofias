@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-SOFIA-S is a Django web application designed to streamline the full lifecycle of survey data: from form delivery and response collection to data processing and dynamic report generation.
+SOFIA-S (short for Sistema de Obtención, Filtrado e Inteligencia Analítica de Sondeos) is a Django web application designed to streamline the full lifecycle of survey data: from form delivery and response collection to data processing and dynamic report generation.
 
 The platform replaces manual workflows by providing a centralized system where surveys are managed, responses are automatically processed, and dashboards update in real time.
 

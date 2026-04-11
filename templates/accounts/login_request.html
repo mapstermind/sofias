@@ -1,52 +1,39 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign in — Sofias</title>
-  <link rel="stylesheet" href="{% static 'css/output.css' %}">
-</head>
-<body class="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+{% extends "base_centered.html" %}
 
-  <div class="w-full max-w-sm">
+{% block title %}Inicio Sesión | SOFIA-S{% endblock %}
 
-    <div class="mb-8 text-center">
-      <h1 class="text-2xl font-bold text-gray-900">Sign in</h1>
-      <p class="mt-2 text-sm text-gray-500">
-        Enter your email and we'll send you a one-time login code.
-      </p>
+{% block card_header %}
+  <h1 class="text-2xl font-bold text-gray-900">Sistema de Obtención, Filtrado e Inteligencia Analítica de Sondeos</h1>
+  <div class="border-t border-gray-200 my-3"></div>
+  <h1 class="text-2xl font-bold text-gray-900">Inicio Sesión</h1>
+  <p class="mt-2 text-sm text-gray-500">
+    Ingresa tu correo electrónico y te enviaremos un código de inicio de sesión.
+  </p>
+{% endblock %}
+
+{% block card_body %}
+  {% if form.non_field_errors %}
+    <div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      {% for error in form.non_field_errors %}{{ error }}{% endfor %}
     </div>
+  {% endif %}
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 px-8 py-10">
+  <form method="post" novalidate>
+    {% csrf_token %}
 
-      {% if form.non_field_errors %}
-        <div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {% for error in form.non_field_errors %}{{ error }}{% endfor %}
-        </div>
+    <div class="mb-5">
+      <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+        Correo electrónico
+      </label>
+      {{ form.email }}
+      {% if form.email.errors %}
+        <p class="mt-1 text-xs text-red-600">{{ form.email.errors.0 }}</p>
       {% endif %}
-
-      <form method="post" novalidate>
-        {% csrf_token %}
-
-        <div class="mb-5">
-          <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-            Email address
-          </label>
-          {{ form.email }}
-          {% if form.email.errors %}
-            <p class="mt-1 text-xs text-red-600">{{ form.email.errors.0 }}</p>
-          {% endif %}
-        </div>
-
-        <button type="submit"
-          class="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
-          Send login code
-        </button>
-      </form>
-
     </div>
-  </div>
 
-</body>
-</html>
+    <button type="submit"
+      class="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
+      Enviar código de inicio de sesión
+    </button>
+  </form>
+{% endblock %}
