@@ -1,4 +1,6 @@
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.db.models import Max
+from django.shortcuts import render
 
 from apps.surveys.models import (
     Choice,
@@ -27,6 +29,35 @@ class QuestionTemplateAdmin(admin.ModelAdmin):
     list_filter = ["question_type"]
     search_fields = ["text"]
     inlines = [ChoiceTemplateInline]
+    actions = ["stamp_into_version"]
+
+    @admin.action(description="Stamp into survey version")
+    def stamp_into_version(self, request, queryset):
+        if request.POST.get("confirm"):
+            version = SurveyVersion.objects.get(pk=request.POST["version_id"])
+            section_id = request.POST.get("section_id") or None
+            section = Section.objects.get(pk=section_id) if section_id else None
+
+            current_max = version.questions.aggregate(Max("order"))["order__max"] or -1
+            next_order = current_max + 1
+
+            for template in queryset:
+                template.stamp_into(version=version, section=section, order=next_order)
+                next_order += 1
+
+            self.message_user(
+                request,
+                f"{queryset.count()} question(s) stamped into {version}.",
+                messages.SUCCESS,
+            )
+            return
+
+        return render(request, "admin/surveys/stamp_into_version.html", {
+            "queryset": queryset,
+            "versions": SurveyVersion.objects.select_related("template").order_by("template__title", "version_number"),
+            "sections": Section.objects.select_related("version__template").order_by("version__template__title", "title"),
+            "opts": self.model._meta,
+        })
 
 
 # ---------------------------------------------------------------------------
