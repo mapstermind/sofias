@@ -1,33 +1,42 @@
-{% extends "base.html" %}
+{% extends "base_app.html" %}
 
-{% block title %}Thank you — {{ template.title }}{% endblock %}
+{% block title %}¡Gracias! — {{ template.title }}{% endblock %}
 
-{% block body_class %}min-h-screen bg-gray-100 flex items-center justify-center px-4{% endblock %}
+{% block header_nav %}
+  <span class="text-gray-300 select-none">|</span>
+  <a href="{% url 'core:home' %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+    &larr; Inicio
+  </a>
+  <span class="text-gray-300 select-none">|</span>
+  <span class="font-semibold text-gray-800">{{ template.title }}</span>
+{% endblock %}
 
-{% block body %}
-<div class="max-w-md w-full text-center bg-white rounded-2xl shadow-sm border border-gray-200 px-10 py-14">
+{% block content %}
+<div class="flex justify-center">
+  <div class="max-w-md w-full text-center bg-white rounded-2xl shadow-sm border border-gray-200 px-10 py-14">
 
-  <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-    <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-    </svg>
+    <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+      <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+      </svg>
+    </div>
+
+    <h1 class="text-2xl font-bold text-gray-900">¡Gracias!</h1>
+    <p class="mt-3 text-gray-500 text-sm leading-relaxed">
+      Tu respuesta a <span class="font-medium text-gray-700">{{ template.title }}</span> ha sido registrada.
+    </p>
+
+    <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a href="{% url 'surveys:survey_detail' assignment_id=assignment.id %}"
+        class="inline-block rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+        Editar mi respuesta
+      </a>
+      <a href="{% url 'core:home' %}"
+        class="inline-block rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors">
+        Ir al inicio
+      </a>
+    </div>
+
   </div>
-
-  <h1 class="text-2xl font-bold text-gray-900">Thank you!</h1>
-  <p class="mt-3 text-gray-500 text-sm leading-relaxed">
-    Your response to <span class="font-medium text-gray-700">{{ template.title }}</span> has been recorded.
-  </p>
-
-  <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-    <a href="{% url 'surveys:survey_detail' assignment_id=assignment.id %}"
-      class="inline-block rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-      Editar mi respuesta
-    </a>
-    <a href="{% url 'core:home' %}"
-      class="inline-block rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors">
-      Ir al inicio
-    </a>
-  </div>
-
 </div>
 {% endblock %}

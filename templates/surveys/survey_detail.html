@@ -1,10 +1,17 @@
-{% extends "base.html" %}
+{% extends "base_app.html" %}
 
 {% block title %}{{ template.title }}{% endblock %}
 
-{% block body_class %}min-h-screen bg-gray-100 py-12 px-4{% endblock %}
+{% block header_nav %}
+  <span class="text-gray-300 select-none">|</span>
+  <a href="{% url 'core:home' %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+    &larr; Inicio
+  </a>
+  <span class="text-gray-300 select-none">|</span>
+  <span class="font-semibold text-gray-800">{{ template.title }}</span>
+{% endblock %}
 
-{% block body %}
+{% block content %}
 <div class="max-w-2xl mx-auto">
 
   <div class="mb-8">
@@ -16,7 +23,7 @@
 
   {% if errors %}
     <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-      Please correct the highlighted questions below before submitting.
+      Favor de corregir las preguntas resaltadas abajo antes de enviar.
     </div>
   {% endif %}
 
