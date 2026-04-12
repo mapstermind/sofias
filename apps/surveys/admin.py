@@ -11,10 +11,10 @@ from apps.surveys.models import (
     SurveyVersion,
 )
 
-
 # ---------------------------------------------------------------------------
 # Question library
 # ---------------------------------------------------------------------------
+
 
 class ChoiceTemplateInline(admin.TabularInline):
     model = ChoiceTemplate
@@ -32,6 +32,7 @@ class QuestionTemplateAdmin(admin.ModelAdmin):
 # ---------------------------------------------------------------------------
 # Survey templates & versions
 # ---------------------------------------------------------------------------
+
 
 class SurveyVersionInline(admin.TabularInline):
     model = SurveyVersion
@@ -95,6 +96,7 @@ class ChoiceAdmin(admin.ModelAdmin):
 # ---------------------------------------------------------------------------
 # Assignments
 # ---------------------------------------------------------------------------
+
 
 class SurveyAssignmentInline(admin.TabularInline):
     model = SurveyAssignment

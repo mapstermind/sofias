@@ -1,7 +1,6 @@
 import pytest
 from django.contrib.auth.models import Group, Permission
 
-
 # ── Groups ────────────────────────────────────────────────────────────────────
 
 
@@ -34,7 +33,11 @@ def bootstrap_groups(db):
             "can_view_reports",
             "can_view_insights",
         ],
-        "Principal Exec": ["can_view_dashboard", "can_view_reports", "can_view_insights"],
+        "Principal Exec": [
+            "can_view_dashboard",
+            "can_view_reports",
+            "can_view_insights",
+        ],
         "Secondary Exec": ["can_view_dashboard", "can_view_reports"],
         "Employees": ["can_take_assigned_surveys"],
     }

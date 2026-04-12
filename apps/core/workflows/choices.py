@@ -5,7 +5,10 @@ from apps.surveys.models import Choice, Question, SurveyTemplate
 from .prompts import ask, ask_int, choose, confirm
 from .version_helpers import get_or_create_latest_version
 
-CHOICE_TYPES = {Question.QuestionType.SINGLE_CHOICE, Question.QuestionType.MULTIPLE_CHOICE}
+CHOICE_TYPES = {
+    Question.QuestionType.SINGLE_CHOICE,
+    Question.QuestionType.MULTIPLE_CHOICE,
+}
 
 
 def _slugify(text: str) -> str:

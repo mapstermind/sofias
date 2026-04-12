@@ -4,7 +4,10 @@ from apps.surveys.models import ChoiceTemplate, QuestionTemplate
 
 from .prompts import ask, ask_int, choose, confirm
 
-CHOICE_TYPES = {QuestionTemplate.QuestionType.SINGLE_CHOICE, QuestionTemplate.QuestionType.MULTIPLE_CHOICE}
+CHOICE_TYPES = {
+    QuestionTemplate.QuestionType.SINGLE_CHOICE,
+    QuestionTemplate.QuestionType.MULTIPLE_CHOICE,
+}
 
 
 def _slugify(text: str) -> str:
@@ -14,6 +17,7 @@ def _slugify(text: str) -> str:
 # ---------------------------------------------------------------------------
 # ChoiceTemplate helpers
 # ---------------------------------------------------------------------------
+
 
 def _print_choice_templates(qt: QuestionTemplate) -> None:
     choices = list(qt.choices.all())
@@ -31,7 +35,9 @@ def _add_choice_template(qt: QuestionTemplate) -> None:
     order = ask_int("Order", default=default_order, required=False)
     if order is None:
         order = default_order
-    ct = ChoiceTemplate.objects.create(question=qt, label=label, value=value, order=order)
+    ct = ChoiceTemplate.objects.create(
+        question=qt, label=label, value=value, order=order
+    )
     print(f"  Added: {ct}")
 
 
@@ -90,9 +96,12 @@ def _manage_choice_templates(qt: QuestionTemplate) -> None:
 # QuestionTemplate helpers
 # ---------------------------------------------------------------------------
 
+
 def _create_question_template() -> None:
     print("\n--- Create Question Template ---")
-    qt_options = [(label, value) for value, label in QuestionTemplate.QuestionType.choices]
+    qt_options = [
+        (label, value) for value, label in QuestionTemplate.QuestionType.choices
+    ]
     question_type = choose("Question type", qt_options)
     text = ask("Question text")
 
@@ -138,6 +147,7 @@ def _print_templates(templates: list[QuestionTemplate]) -> None:
 # Entry point
 # ---------------------------------------------------------------------------
 
+
 def run_manage_question_templates() -> None:
     print("\n=== Question Template Library ===")
 
@@ -150,7 +160,9 @@ def run_manage_question_templates() -> None:
 
     while True:
         templates = list(QuestionTemplate.objects.all())
-        print(f"\nLibrary ({len(templates)} template{'s' if len(templates) != 1 else ''}):")
+        print(
+            f"\nLibrary ({len(templates)} template{'s' if len(templates) != 1 else ''}):"
+        )
         _print_templates(templates)
 
         action = choose("Action", menu)

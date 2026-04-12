@@ -124,25 +124,33 @@ def survey_detail(request, assignment_id):
         1 for qid in all_q_ids if existing_answers.get(qid) not in (None, "", [])
     )
 
-    return render(request, "surveys/survey_detail.html", {
-        "assignment": assignment,
-        "template": template,
-        "version": version,
-        "sections": sections,
-        "unsectioned": unsectioned,
-        "errors": errors,
-        "existing_answers": existing_answers,
-        "is_edit": existing_submission is not None,
-        "total_questions": total_questions,
-        "answered_count": answered_count,
-    })
+    return render(
+        request,
+        "surveys/survey_detail.html",
+        {
+            "assignment": assignment,
+            "template": template,
+            "version": version,
+            "sections": sections,
+            "unsectioned": unsectioned,
+            "errors": errors,
+            "existing_answers": existing_answers,
+            "is_edit": existing_submission is not None,
+            "total_questions": total_questions,
+            "answered_count": answered_count,
+        },
+    )
 
 
 def survey_submitted(request, assignment_id):
     assignment = get_object_or_404(
         SurveyAssignment, id=assignment_id, status=SurveyAssignment.Status.ACTIVE
     )
-    return render(request, "surveys/survey_submitted.html", {
-        "assignment": assignment,
-        "template": assignment.version.template,
-    })
+    return render(
+        request,
+        "surveys/survey_submitted.html",
+        {
+            "assignment": assignment,
+            "template": assignment.version.template,
+        },
+    )

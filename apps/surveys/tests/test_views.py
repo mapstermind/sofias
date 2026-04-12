@@ -1,5 +1,8 @@
 import pytest
 
+from apps.responses.models import SurveySubmission
+from apps.surveys.models import SurveyAssignment
+
 pytestmark = pytest.mark.django_db
 
 
@@ -17,8 +20,6 @@ class TestSurveyDetailView:
         assert response.status_code == 200
 
     def test_closed_assignment_returns_404(self, client, active_assignment):
-        from apps.surveys.models import SurveyAssignment
-
         active_assignment.status = SurveyAssignment.Status.CLOSED
         active_assignment.save()
         response = client.get(_survey_url(active_assignment.pk))
@@ -53,9 +54,9 @@ class TestSurveyDetailView:
         response = client.post(_survey_url(active_assignment.pk), post_data)
         assert response.status_code == 302
 
-        from apps.responses.models import SurveySubmission
-
-        submission = SurveySubmission.objects.filter(assignment=active_assignment).first()
+        submission = SurveySubmission.objects.filter(
+            assignment=active_assignment
+        ).first()
         assert submission is not None
         assert submission.answers.count() == len(questions)
 
@@ -63,7 +64,11 @@ class TestSurveyDetailView:
         self, client, active_assignment, survey_with_questions
     ):
         questions = survey_with_questions["questions"]
-        post_data = {f"question_{q.id}": "answer" for q in questions if q.question_type == "short_text"}
+        post_data = {
+            f"question_{q.id}": "answer"
+            for q in questions
+            if q.question_type == "short_text"
+        }
         # Fill all types minimally
         for q in questions:
             key = f"question_{q.id}"
@@ -118,8 +123,6 @@ class TestSurveySubmittedView:
         assert response.status_code == 200
 
     def test_closed_assignment_returns_404(self, client, active_assignment):
-        from apps.surveys.models import SurveyAssignment
-
         active_assignment.status = SurveyAssignment.Status.CLOSED
         active_assignment.save()
         response = client.get(_submitted_url(active_assignment.pk))

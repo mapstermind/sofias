@@ -1,7 +1,11 @@
-import pytest
+from smtplib import SMTPException
 from unittest.mock import patch
+
+import pytest
 from django.urls import reverse
 from django.utils import timezone
+
+from apps.accounts.models import EmailOTP, User
 
 pytestmark = pytest.mark.django_db
 
@@ -26,8 +30,6 @@ class TestRequestOTPView:
     def test_post_valid_email_creates_otp(self, client):
         with patch("apps.accounts.views.send_otp_email"):
             client.post(REQUEST_OTP_URL, {"email": "new@example.com"})
-
-        from apps.accounts.models import EmailOTP
 
         assert EmailOTP.objects.filter(email="new@example.com").exists()
 
@@ -62,9 +64,6 @@ class TestRequestOTPView:
         mock_send.assert_not_called()
 
     def test_smtp_failure_deletes_otp_and_shows_error(self, client):
-        from smtplib import SMTPException
-        from apps.accounts.models import EmailOTP
-
         with patch("apps.accounts.views.send_otp_email", side_effect=SMTPException):
             response = client.post(REQUEST_OTP_URL, {"email": "fail@example.com"})
 
@@ -86,8 +85,6 @@ class TestVerifyOTPView:
         session.save()
 
     def _create_otp(self, email, code="123456", minutes=10):
-        from apps.accounts.models import EmailOTP
-
         return EmailOTP.objects.create(
             email=email,
             code=code,
@@ -111,18 +108,16 @@ class TestVerifyOTPView:
 
         client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
 
-        from apps.accounts.models import User
-
         assert User.objects.filter(email=email).exists()
 
-    def test_valid_otp_first_login_adds_to_employees_group(self, client, bootstrap_groups):
+    def test_valid_otp_first_login_adds_to_employees_group(
+        self, client, bootstrap_groups
+    ):
         email = "employee@example.com"
         self._create_otp(email)
         self._set_session_email(client, email)
 
         client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
-
-        from apps.accounts.models import User
 
         user = User.objects.get(email=email)
         assert user.groups.filter(name="Employees").exists()
@@ -137,7 +132,9 @@ class TestVerifyOTPView:
         otp.refresh_from_db()
         assert otp.is_used is True
 
-    def test_valid_otp_returning_user_no_duplicate(self, client, make_user_with_profile, bootstrap_groups):
+    def test_valid_otp_returning_user_no_duplicate(
+        self, client, make_user_with_profile, bootstrap_groups
+    ):
         email = "existing@example.com"
         make_user_with_profile(email=email, position="Dev")
         self._create_otp(email)
@@ -145,14 +142,10 @@ class TestVerifyOTPView:
 
         client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
 
-        from apps.accounts.models import User
-
         assert User.objects.filter(email=email).count() == 1
 
     def test_expired_otp_rerenders_with_error(self, client, bootstrap_groups):
         email = "expired@example.com"
-        from apps.accounts.models import EmailOTP
-
         EmailOTP.objects.create(
             email=email,
             code="999999",

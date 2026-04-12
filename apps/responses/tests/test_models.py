@@ -1,13 +1,15 @@
 import pytest
+from django.db import IntegrityError
+
+from apps.responses.models import Answer, SurveySubmission
 
 pytestmark = pytest.mark.django_db
 
 
 class TestAnswerUniqueConstraint:
-    def test_duplicate_answer_raises_integrity_error(self, active_assignment, survey_with_questions):
-        from django.db import IntegrityError
-        from apps.responses.models import Answer, SurveySubmission
-
+    def test_duplicate_answer_raises_integrity_error(
+        self, active_assignment, survey_with_questions
+    ):
         questions = survey_with_questions["questions"]
         question = questions[0]
 
@@ -18,11 +20,13 @@ class TestAnswerUniqueConstraint:
         Answer.objects.create(submission=submission, question=question, value="first")
 
         with pytest.raises(IntegrityError):
-            Answer.objects.create(submission=submission, question=question, value="second")
+            Answer.objects.create(
+                submission=submission, question=question, value="second"
+            )
 
-    def test_same_question_different_submissions_allowed(self, active_assignment, survey_with_questions):
-        from apps.responses.models import Answer, SurveySubmission
-
+    def test_same_question_different_submissions_allowed(
+        self, active_assignment, survey_with_questions
+    ):
         questions = survey_with_questions["questions"]
         question = questions[0]
 

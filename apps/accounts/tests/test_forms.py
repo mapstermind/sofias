@@ -1,12 +1,10 @@
-import pytest
+from apps.accounts.forms import EmailRequestForm, OTPVerifyForm, ProfileSetupForm
 
 # Forms are pure Python — no database access needed for these tests.
 
 
 class TestOTPVerifyFormCleanCode:
     def _form(self, code):
-        from apps.accounts.forms import OTPVerifyForm
-
         return OTPVerifyForm(data={"email": "user@example.com", "code": code})
 
     def test_valid_six_digit_code(self):
@@ -34,8 +32,6 @@ class TestOTPVerifyFormCleanCode:
 
 class TestProfileSetupFormCleanReferenceCode:
     def _form(self, code):
-        from apps.accounts.forms import ProfileSetupForm
-
         return ProfileSetupForm(
             data={
                 "first_name": "Jane",
@@ -71,13 +67,9 @@ class TestProfileSetupFormCleanReferenceCode:
 
 class TestEmailRequestForm:
     def test_valid_email(self):
-        from apps.accounts.forms import EmailRequestForm
-
         form = EmailRequestForm(data={"email": "user@example.com"})
         assert form.is_valid()
 
     def test_invalid_email_rejected(self):
-        from apps.accounts.forms import EmailRequestForm
-
         form = EmailRequestForm(data={"email": "not-an-email"})
         assert not form.is_valid()

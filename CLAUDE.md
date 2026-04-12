@@ -12,7 +12,7 @@ SOFIA-S is a Django 6.0 web application for survey processing and reporting. It 
 - **Django 6.0** with settings at `config/settings.py`
 - **Database**: PostgreSQL 17 (via `psycopg` 3.x driver)
 - **Frontend**: TailwindCSS (TypeScript toolchain present via `package.json`)
-- **Dev tools**: black (formatter), ruff (linter), pytest + pytest-django (testing)
+- **Dev tools**: ruff (linter/formatter), pytest + pytest-django (testing)
 
 ## PostgreSQL Setup
 
@@ -59,7 +59,7 @@ pytest apps/surveys/tests.py
 pytest apps/surveys/tests.py::TestClassName::test_method_name
 
 # Formatting
-black .
+ruff format .
 
 # Linting
 ruff check .

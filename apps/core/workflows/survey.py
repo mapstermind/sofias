@@ -14,4 +14,5 @@ def run_create_survey() -> None:
 
     if confirm("Add questions now?"):
         from .question import run_create_question
+
         run_create_question(survey=survey)

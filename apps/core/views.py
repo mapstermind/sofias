@@ -76,24 +76,21 @@ class CompanyListView(LoginRequiredMixin, View):
         if not request.user.has_perm("accounts.can_manage_surveys"):
             raise PermissionDenied
 
-        companies = (
-            Company.objects.annotate(
-                member_count=Count("members", distinct=True),
-                active_assignment_count=Count(
-                    "survey_assignments",
-                    filter=Q(survey_assignments__status=SurveyAssignment.Status.ACTIVE),
-                    distinct=True,
+        companies = Company.objects.annotate(
+            member_count=Count("members", distinct=True),
+            active_assignment_count=Count(
+                "survey_assignments",
+                filter=Q(survey_assignments__status=SurveyAssignment.Status.ACTIVE),
+                distinct=True,
+            ),
+            completed_submission_count=Count(
+                "survey_assignments__submissions",
+                filter=Q(
+                    survey_assignments__submissions__status=SurveySubmission.Status.COMPLETED
                 ),
-                completed_submission_count=Count(
-                    "survey_assignments__submissions",
-                    filter=Q(
-                        survey_assignments__submissions__status=SurveySubmission.Status.COMPLETED
-                    ),
-                    distinct=True,
-                ),
-            )
-            .order_by("name")
-        )
+                distinct=True,
+            ),
+        ).order_by("name")
 
         return render(request, "core/company_list.html", {"companies": companies})
 
@@ -121,9 +118,7 @@ class CompanyDashboardView(LoginRequiredMixin, View):
         member_count = company.members.count()
 
         expected = company.expected_employee_count
-        registration_rate = (
-            round(member_count / expected * 100) if expected else None
-        )
+        registration_rate = round(member_count / expected * 100) if expected else None
 
         assignments = (
             SurveyAssignment.objects.filter(company=company)

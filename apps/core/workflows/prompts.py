@@ -18,7 +18,9 @@ def ask(prompt: str, default: str | None = None, required: bool = True) -> str:
         print("  This field is required.")
 
 
-def ask_int(prompt: str, default: int | None = None, required: bool = True) -> int | None:
+def ask_int(
+    prompt: str, default: int | None = None, required: bool = True
+) -> int | None:
     hint = f" [{default}]" if default is not None else ""
     while True:
         raw = input(f"{prompt}{hint}: ").strip()
@@ -52,7 +54,9 @@ def confirm(prompt: str, default: bool = False) -> bool:
     return ask_bool(prompt, default=default)
 
 
-def choose(prompt: str, options: list[tuple[str, Any]], allow_back: bool = False) -> Any:
+def choose(
+    prompt: str, options: list[tuple[str, Any]], allow_back: bool = False
+) -> Any:
     print(f"\n{prompt}")
     if allow_back:
         print("  0. Back")
@@ -68,7 +72,9 @@ def choose(prompt: str, options: list[tuple[str, Any]], allow_back: bool = False
                 return options[idx - 1][1]
         except ValueError:
             pass
-        print(f"  Please enter a number between {'0' if allow_back else '1'} and {len(options)}.")
+        print(
+            f"  Please enter a number between {'0' if allow_back else '1'} and {len(options)}."
+        )
 
 
 def choose_or_create(

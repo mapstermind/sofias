@@ -4,7 +4,10 @@ from .introspect import prompt_for_model
 from .prompts import ask_int, choose, choose_or_create, confirm
 from .version_helpers import get_or_create_latest_version
 
-CHOICE_TYPES = {Question.QuestionType.SINGLE_CHOICE, Question.QuestionType.MULTIPLE_CHOICE}
+CHOICE_TYPES = {
+    Question.QuestionType.SINGLE_CHOICE,
+    Question.QuestionType.MULTIPLE_CHOICE,
+}
 
 _SOURCE_MENU = [
     ("Stamp from library template", "template"),
@@ -35,6 +38,7 @@ def _resolve_section(version):
     )
     if result == "__create__":
         from .sections import _create_section
+
         return _create_section(version)
     return result
 
@@ -42,7 +46,9 @@ def _resolve_section(version):
 def _stamp_from_template(version, section, order) -> Question | None:
     templates = list(QuestionTemplate.objects.all())
     if not templates:
-        print("  No question templates found. Build the library first with `make question-templates`.")
+        print(
+            "  No question templates found. Build the library first with `make question-templates`."
+        )
         return None
     options = [(str(qt), qt) for qt in templates]
     template = choose("Select template", options, allow_back=True)
@@ -61,7 +67,10 @@ def _create_manually(version, section, order) -> Question:
     qt_options = [(label, value) for value, label in Question.QuestionType.choices]
     question_type = choose("Question type", qt_options)
 
-    data = prompt_for_model(Question, exclude=["version", "section", "question_type", "config", "order", "source"])
+    data = prompt_for_model(
+        Question,
+        exclude=["version", "section", "question_type", "config", "order", "source"],
+    )
     question = Question.objects.create(
         version=version,
         section=section,
@@ -74,6 +83,7 @@ def _create_manually(version, section, order) -> Question:
     if question_type in CHOICE_TYPES:
         if confirm("Manage choices now?"):
             from .choices import run_manage_choices
+
             run_manage_choices(question=question)
 
     return question

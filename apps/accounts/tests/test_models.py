@@ -1,13 +1,14 @@
 import pytest
 from django.utils import timezone
 
+from apps.accounts.models import EmailOTP
+from apps.accounts.utils import generate_unique_username
+
 pytestmark = pytest.mark.django_db
 
 
 class TestEmailOTPIsValid:
     def _make_otp(self, email="a@example.com", code="123456", **kwargs):
-        from apps.accounts.models import EmailOTP
-
         return EmailOTP.objects.create(
             email=email,
             code=code,
@@ -24,8 +25,6 @@ class TestEmailOTPIsValid:
         assert otp.is_valid() is False
 
     def test_expired_otp_is_not_valid(self):
-        from apps.accounts.models import EmailOTP
-
         otp = EmailOTP.objects.create(
             email="b@example.com",
             code="654321",
@@ -34,8 +33,6 @@ class TestEmailOTPIsValid:
         assert otp.is_valid() is False
 
     def test_used_and_expired_otp_is_not_valid(self):
-        from apps.accounts.models import EmailOTP
-
         otp = EmailOTP.objects.create(
             email="c@example.com",
             code="000000",
@@ -68,22 +65,16 @@ class TestCompanyReferenceCode:
 
 class TestGenerateUniqueUsername:
     def test_returns_local_part_when_no_collision(self):
-        from apps.accounts.utils import generate_unique_username
-
         result = generate_unique_username("jane@example.com")
         assert result == "jane"
 
     def test_appends_counter_on_collision(self, make_user):
-        from apps.accounts.utils import generate_unique_username
-
         # Create a user that occupies the "john" username
         make_user(email="john@example.com", username="john")
         result = generate_unique_username("john@other.com")
         assert result == "john1"
 
     def test_handles_multiple_collisions(self, make_user):
-        from apps.accounts.utils import generate_unique_username
-
         make_user(email="a@example.com", username="bob")
         make_user(email="b@example.com", username="bob1")
         result = generate_unique_username("bob@other.com")

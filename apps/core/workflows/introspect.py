@@ -7,7 +7,14 @@ from django.db import models
 
 from .prompts import ask, ask_bool, ask_int, choose
 
-SKIP_FIELDS = {"id", "created_at", "updated_at", "published_at", "started_at", "completed_at"}
+SKIP_FIELDS = {
+    "id",
+    "created_at",
+    "updated_at",
+    "published_at",
+    "started_at",
+    "completed_at",
+}
 
 
 @dataclass
@@ -35,7 +42,9 @@ def _field_type(f: models.Field) -> str:
 
 
 def _is_required(f: models.Field) -> bool:
-    return not (getattr(f, "blank", False) or getattr(f, "null", False) or f.has_default())
+    return not (
+        getattr(f, "blank", False) or getattr(f, "null", False) or f.has_default()
+    )
 
 
 def get_promptable_fields(model_class: type) -> list[FieldSpec]:
@@ -56,18 +65,22 @@ def get_promptable_fields(model_class: type) -> list[FieldSpec]:
         if default is models.fields.NOT_PROVIDED:
             default = None
         choices = list(f.choices) if getattr(f, "choices", None) else []
-        specs.append(FieldSpec(
-            name=f.name,
-            verbose_name=str(f.verbose_name).capitalize(),
-            field_type=ft,
-            required=_is_required(f),
-            default=default,
-            choices=choices,
-        ))
+        specs.append(
+            FieldSpec(
+                name=f.name,
+                verbose_name=str(f.verbose_name).capitalize(),
+                field_type=ft,
+                required=_is_required(f),
+                default=default,
+                choices=choices,
+            )
+        )
     return specs
 
 
-def prompt_for_model(model_class: type, exclude: list[str] | None = None) -> dict[str, Any]:
+def prompt_for_model(
+    model_class: type, exclude: list[str] | None = None
+) -> dict[str, Any]:
     exclude_set = set(exclude or [])
     data: dict[str, Any] = {}
     for spec in get_promptable_fields(model_class):
@@ -81,7 +94,9 @@ def prompt_for_model(model_class: type, exclude: list[str] | None = None) -> dic
             data[spec.name] = ask_bool(spec.verbose_name, default=default_bool)
         elif spec.field_type == "int":
             default_int = spec.default if isinstance(spec.default, int) else None
-            data[spec.name] = ask_int(spec.verbose_name, default=default_int, required=spec.required)
+            data[spec.name] = ask_int(
+                spec.verbose_name, default=default_int, required=spec.required
+            )
         else:
             default_str = str(spec.default) if spec.default not in (None, "") else None
             value = ask(spec.verbose_name, default=default_str, required=spec.required)

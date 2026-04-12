@@ -43,7 +43,11 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     position = models.CharField(max_length=255, blank=True)
     company = models.ForeignKey(
-        Company, on_delete=models.SET_NULL, null=True, blank=True, related_name="members"
+        Company,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
     )
 
     def __str__(self):

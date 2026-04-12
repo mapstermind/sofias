@@ -10,7 +10,6 @@ Usage:
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 
-
 # Maps each group name to the permission codenames it should hold.
 GROUP_PERMISSIONS: dict[str, list[str]] = {
     "Admins": [

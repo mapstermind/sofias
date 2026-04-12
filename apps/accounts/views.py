@@ -24,7 +24,9 @@ def request_otp(request):
         return redirect(settings.LOGIN_REDIRECT_URL)
 
     if request.method == "GET":
-        return render(request, "accounts/login_request.html", {"form": EmailRequestForm()})
+        return render(
+            request, "accounts/login_request.html", {"form": EmailRequestForm()}
+        )
 
     form = EmailRequestForm(request.POST)
     if not form.is_valid():
@@ -35,7 +37,10 @@ def request_otp(request):
     # Rate limit: one OTP per email per 60 seconds.
     cutoff = timezone.now() - timezone.timedelta(seconds=_RATE_LIMIT_SECONDS)
     if EmailOTP.objects.filter(email=email, created_at__gte=cutoff).exists():
-        form.add_error(None, f"A code was recently sent. Please wait {_RATE_LIMIT_SECONDS} seconds before requesting a new one.")
+        form.add_error(
+            None,
+            f"A code was recently sent. Please wait {_RATE_LIMIT_SECONDS} seconds before requesting a new one.",
+        )
         return render(request, "accounts/login_request.html", {"form": form})
 
     # Invalidate any previous unused OTPs for this email.
@@ -66,26 +71,31 @@ def verify_otp(request):
 
     if request.method == "GET":
         form = OTPVerifyForm(initial={"email": email})
-        return render(request, "accounts/login_verify.html", {"form": form, "email": email})
+        return render(
+            request, "accounts/login_verify.html", {"form": form, "email": email}
+        )
 
     form = OTPVerifyForm(request.POST)
     if not form.is_valid():
-        return render(request, "accounts/login_verify.html", {"form": form, "email": email})
+        return render(
+            request, "accounts/login_verify.html", {"form": form, "email": email}
+        )
 
     submitted_email = form.cleaned_data["email"].lower()
     code = form.cleaned_data["code"]
 
     with transaction.atomic():
         otp = (
-            EmailOTP.objects
-            .select_for_update()
+            EmailOTP.objects.select_for_update()
             .filter(email=submitted_email, code=code, is_used=False)
             .first()
         )
 
         if otp is None or not otp.is_valid():
             form.add_error(None, "The code is invalid or has expired.")
-            return render(request, "accounts/login_verify.html", {"form": form, "email": email})
+            return render(
+                request, "accounts/login_verify.html", {"form": form, "email": email}
+            )
 
         otp.is_used = True
         otp.save(update_fields=["is_used"])
@@ -124,7 +134,9 @@ def setup_profile(request):
         return redirect(settings.LOGIN_REDIRECT_URL)
 
     if request.method == "GET":
-        return render(request, "accounts/profile_setup.html", {"form": ProfileSetupForm()})
+        return render(
+            request, "accounts/profile_setup.html", {"form": ProfileSetupForm()}
+        )
 
     form = ProfileSetupForm(request.POST)
     if not form.is_valid():
@@ -133,7 +145,10 @@ def setup_profile(request):
     reference_code = form.cleaned_data["reference_code"]
     company = Company.objects.filter(reference_code=reference_code).first()
     if company is None:
-        form.add_error("reference_code", "No company found with that code. Please check with your administrator.")
+        form.add_error(
+            "reference_code",
+            "No company found with that code. Please check with your administrator.",
+        )
         return render(request, "accounts/profile_setup.html", {"form": form})
 
     user = request.user

@@ -1,5 +1,11 @@
 .PHONY: install lock serve makemigrations migrate bootstrap-groups clean-pycache test test-fast test-accounts test-core test-surveys test-responses \
-        survey question-templates question choices sections
+        survey question-templates question choices sections lint fmt
+
+lint:
+	poetry run ruff check --fix .
+
+fmt:
+	poetry run ruff format .
 
 install:
 	poetry install
