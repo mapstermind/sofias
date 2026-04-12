@@ -1,19 +1,19 @@
-from apps.surveys.models import Question, Section, Survey
+from apps.surveys.models import Section, SurveyTemplate
 
 from .introspect import prompt_for_model
-from .prompts import ask_int, choose, confirm
+from .prompts import ask_int, choose
 from .version_helpers import get_or_create_latest_version
 
 
 def _resolve_survey(survey=None):
     if survey is not None:
         return survey
-    surveys = list(Survey.objects.all())
+    surveys = list(SurveyTemplate.objects.all())
     if not surveys:
-        print("No surveys found. Create one first.")
+        print("No survey templates found. Create one first.")
         return None
     options = [(str(s), s) for s in surveys]
-    return choose("Select survey", options)
+    return choose("Select survey template", options)
 
 
 def _create_section(version) -> Section:

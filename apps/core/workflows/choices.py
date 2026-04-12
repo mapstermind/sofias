@@ -1,6 +1,6 @@
 import re
 
-from apps.surveys.models import Choice, Question, Survey
+from apps.surveys.models import Choice, Question, SurveyTemplate
 
 from .prompts import ask, ask_int, choose, confirm
 from .version_helpers import get_or_create_latest_version
@@ -16,13 +16,13 @@ def _resolve_question(question=None):
     if question is not None:
         return question
 
-    surveys = list(Survey.objects.all())
+    surveys = list(SurveyTemplate.objects.all())
     if not surveys:
-        print("No surveys found.")
+        print("No survey templates found. Create one first.")
         return None
 
     survey_options = [(str(s), s) for s in surveys]
-    survey = choose("Select survey", survey_options)
+    survey = choose("Select survey template", survey_options)
     version = get_or_create_latest_version(survey)
 
     qs = list(version.questions.filter(question_type__in=list(CHOICE_TYPES)))
