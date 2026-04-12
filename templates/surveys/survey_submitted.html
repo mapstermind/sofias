@@ -18,10 +18,16 @@
     Your response to <span class="font-medium text-gray-700">{{ template.title }}</span> has been recorded.
   </p>
 
-  <a href="{% url 'surveys:survey_detail' assignment_id=assignment.id %}"
-    class="mt-8 inline-block rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-    Submit another response
-  </a>
+  <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+    <a href="{% url 'surveys:survey_detail' assignment_id=assignment.id %}"
+      class="inline-block rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+      Editar mi respuesta
+    </a>
+    <a href="{% url 'core:home' %}"
+      class="inline-block rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors">
+      Ir al inicio
+    </a>
+  </div>
 
 </div>
 {% endblock %}

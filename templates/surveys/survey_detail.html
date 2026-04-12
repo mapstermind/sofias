@@ -47,7 +47,7 @@
     <div class="mt-8">
       <button type="submit"
         class="w-full rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
-        Submit
+        {% if is_edit %}Actualizar respuesta{% else %}Enviar{% endif %}
       </button>
     </div>
 

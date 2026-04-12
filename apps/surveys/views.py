@@ -5,6 +5,12 @@ from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import Question, SurveyAssignment
 
 
+def _get_existing_answers(submission):
+    if submission is None:
+        return {}
+    return {a.question_id: a.value for a in submission.answers.all()}
+
+
 def survey_detail(request, assignment_id):
     assignment = get_object_or_404(
         SurveyAssignment, id=assignment_id, status=SurveyAssignment.Status.ACTIVE
@@ -20,6 +26,16 @@ def survey_detail(request, assignment_id):
         .prefetch_related("choices")
         .order_by("order")
     )
+
+    existing_submission = None
+    existing_answers = {}
+    if request.user.is_authenticated:
+        existing_submission = (
+            SurveySubmission.objects.filter(assignment=assignment, user=request.user)
+            .prefetch_related("answers")
+            .first()
+        )
+        existing_answers = _get_existing_answers(existing_submission)
 
     errors = {}
 
@@ -75,17 +91,33 @@ def survey_detail(request, assignment_id):
 
         if not errors:
             user = request.user if request.user.is_authenticated else None
-            submission = SurveySubmission.objects.create(
-                assignment=assignment,
-                user=user,
-                status=SurveySubmission.Status.COMPLETED,
-                completed_at=timezone.now(),
-            )
+            now = timezone.now()
+
+            if user is not None:
+                submission, _ = SurveySubmission.objects.get_or_create(
+                    assignment=assignment,
+                    user=user,
+                    defaults={
+                        "status": SurveySubmission.Status.COMPLETED,
+                        "completed_at": now,
+                    },
+                )
+                submission.status = SurveySubmission.Status.COMPLETED
+                submission.completed_at = now
+                submission.save(update_fields=["status", "completed_at"])
+            else:
+                submission = SurveySubmission.objects.create(
+                    assignment=assignment,
+                    user=None,
+                    status=SurveySubmission.Status.COMPLETED,
+                    completed_at=now,
+                )
+
             for question_id, val in answer_values.items():
-                Answer.objects.create(
+                Answer.objects.update_or_create(
                     submission=submission,
                     question_id=question_id,
-                    value=val,
+                    defaults={"value": val},
                 )
             return redirect("surveys:survey_submitted", assignment_id=assignment_id)
 
@@ -96,6 +128,8 @@ def survey_detail(request, assignment_id):
         "sections": sections,
         "unsectioned": unsectioned,
         "errors": errors,
+        "existing_answers": existing_answers,
+        "is_edit": existing_submission is not None,
     })
 
 

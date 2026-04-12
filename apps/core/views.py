@@ -120,6 +120,11 @@ class CompanyDashboardView(LoginRequiredMixin, View):
 
         member_count = company.members.count()
 
+        expected = company.expected_employee_count
+        registration_rate = (
+            round(member_count / expected * 100) if expected else None
+        )
+
         assignments = (
             SurveyAssignment.objects.filter(company=company)
             .select_related("version__template")
@@ -154,6 +159,8 @@ class CompanyDashboardView(LoginRequiredMixin, View):
             {
                 "company": company,
                 "member_count": member_count,
+                "expected_employee_count": expected,
+                "registration_rate": registration_rate,
                 "assignment_data": assignment_data,
                 "is_admin_view": reference_code is not None,
             },

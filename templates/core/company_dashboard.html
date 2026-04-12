@@ -15,16 +15,35 @@
 
 {% block content %}
   {# Summary strip #}
-  <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+  <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5">
-      <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Empleados</dt>
-      <dd class="mt-1 text-3xl font-bold text-gray-900">{{ member_count }}</dd>
+      <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Empleados registrados</dt>
+      <dd class="mt-1 text-3xl font-bold text-gray-900">
+        {{ member_count }}
+        {% if expected_employee_count %}
+          <span class="text-base font-normal text-gray-400">&thinsp;/&thinsp;{{ expected_employee_count }}</span>
+        {% endif %}
+      </dd>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5">
+      <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Tasa de registro</dt>
+      {% if registration_rate is not None %}
+        <dd class="mt-1 text-3xl font-bold {% if registration_rate >= 80 %}text-green-600{% elif registration_rate >= 50 %}text-yellow-500{% else %}text-red-500{% endif %}">
+          {{ registration_rate }}%
+        </dd>
+        <div class="mt-2 h-1.5 w-full rounded-full bg-gray-100">
+          <div class="h-1.5 rounded-full {% if registration_rate >= 80 %}bg-green-500{% elif registration_rate >= 50 %}bg-yellow-400{% else %}bg-red-400{% endif %} transition-all"
+               style="width: {{ registration_rate }}%"></div>
+        </div>
+      {% else %}
+        <dd class="mt-1 text-sm text-gray-400 italic">Sin datos</dd>
+      {% endif %}
     </div>
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5">
       <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Encuestas</dt>
       <dd class="mt-1 text-3xl font-bold text-gray-900">{{ assignment_data|length }}</dd>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 col-span-2 sm:col-span-1">
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5">
       <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Código de referencia</dt>
       <dd class="mt-1 text-3xl font-bold font-mono tracking-widest text-gray-900">{{ company.reference_code }}</dd>
     </div>

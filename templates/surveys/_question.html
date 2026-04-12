@@ -1,3 +1,5 @@
+{% load survey_extras %}
+{% with ans=existing_answers|dict_get:question.id %}
 <div class="mb-6 rounded-lg bg-white p-5 shadow-sm border {% if question.id in errors %}border-red-300{% else %}border-gray-200{% endif %}">
 
   <label class="block text-sm font-medium text-gray-800 mb-3">
@@ -9,11 +11,13 @@
     <div class="flex gap-6">
       <label class="flex items-center gap-2 cursor-pointer">
         <input type="radio" name="question_{{ question.id }}" value="true"
+          {% if ans == True %}checked{% endif %}
           class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
         <span class="text-sm text-gray-700">Yes</span>
       </label>
       <label class="flex items-center gap-2 cursor-pointer">
         <input type="radio" name="question_{{ question.id }}" value="false"
+          {% if ans == False and ans is not None %}checked{% endif %}
           class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
         <span class="text-sm text-gray-700">No</span>
       </label>
@@ -24,6 +28,7 @@
       {% for choice in question.choices.all %}
         <label class="flex items-center gap-3 cursor-pointer rounded-md px-3 py-2 hover:bg-gray-50 transition-colors">
           <input type="radio" name="question_{{ question.id }}" value="{{ choice.value }}"
+            {% if ans == choice.value %}checked{% endif %}
             class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
           <span class="text-sm text-gray-700">{{ choice.label }}</span>
         </label>
@@ -35,6 +40,7 @@
       {% for choice in question.choices.all %}
         <label class="flex items-center gap-3 cursor-pointer rounded-md px-3 py-2 hover:bg-gray-50 transition-colors">
           <input type="checkbox" name="question_{{ question.id }}" value="{{ choice.value }}"
+            {% if ans and choice.value in ans %}checked{% endif %}
             class="h-4 w-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500">
           <span class="text-sm text-gray-700">{{ choice.label }}</span>
         </label>
@@ -44,20 +50,23 @@
   {% elif question.question_type == "long_text" %}
     <textarea name="question_{{ question.id }}" rows="4"
       class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-      placeholder="Your answer…"></textarea>
+      placeholder="Your answer…">{{ ans }}</textarea>
 
   {% elif question.question_type == "integer" %}
     <input type="number" step="1" name="question_{{ question.id }}"
+      value="{{ ans|default_if_none:'' }}"
       class="w-40 rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
       placeholder="0">
 
   {% elif question.question_type == "decimal" %}
     <input type="number" step="any" name="question_{{ question.id }}"
+      value="{{ ans|default_if_none:'' }}"
       class="w-40 rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
       placeholder="0.00">
 
   {% elif question.question_type == "date" %}
     <input type="date" name="question_{{ question.id }}"
+      value="{{ ans|default_if_none:'' }}"
       class="w-48 rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none">
 
   {% elif question.question_type == "rating" %}
@@ -65,6 +74,7 @@
       {% for i in "12345" %}
         <label class="flex flex-col items-center gap-1 cursor-pointer">
           <input type="radio" name="question_{{ question.id }}" value="{{ i }}"
+            {% if ans == i %}checked{% endif %}
             class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
           <span class="text-sm text-gray-600">{{ i }}</span>
         </label>
@@ -73,6 +83,7 @@
 
   {% else %}
     <input type="text" name="question_{{ question.id }}"
+      value="{{ ans|default_if_none:'' }}"
       class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
       placeholder="Your answer…">
   {% endif %}
@@ -82,3 +93,4 @@
   {% endfor %}
 
 </div>
+{% endwith %}

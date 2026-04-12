@@ -27,6 +27,13 @@ class SurveySubmission(models.Model):
 
     class Meta:
         ordering = ["-started_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "assignment"],
+                condition=models.Q(user__isnull=False),
+                name="unique_submission_per_user_assignment",
+            ),
+        ]
 
     def __str__(self):
         return f"Submission {self.pk} — {self.assignment}"
