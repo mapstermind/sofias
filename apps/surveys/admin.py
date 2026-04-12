@@ -23,8 +23,8 @@ class ChoiceTemplateInline(admin.TabularInline):
 
 @admin.register(QuestionTemplate)
 class QuestionTemplateAdmin(admin.ModelAdmin):
-    list_display = ["text", "question_type", "required", "updated_at"]
-    list_filter = ["question_type", "required"]
+    list_display = ["text", "question_type", "updated_at"]
+    list_filter = ["question_type"]
     search_fields = ["text"]
     inlines = [ChoiceTemplateInline]
 
@@ -79,8 +79,8 @@ class SectionAdmin(admin.ModelAdmin):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ["text", "question_type", "version", "section", "source", "required", "order"]
-    list_filter = ["question_type", "required", "version__template"]
+    list_display = ["text", "question_type", "version", "section", "source", "order"]
+    list_filter = ["question_type", "version__template"]
     search_fields = ["text"]
     autocomplete_fields = ["source"]
     inlines = [ChoiceInline]

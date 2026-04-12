@@ -148,7 +148,6 @@ def survey_with_questions(db, survey_version):
             version=survey_version,
             question_type=qtype,
             text=text,
-            required=True,
             order=order,
         )
         if qtype in ("single_choice", "multiple_choice"):

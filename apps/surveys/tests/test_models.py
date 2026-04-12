@@ -10,14 +10,12 @@ class TestQuestionTemplateStampInto:
         template = QuestionTemplate.objects.create(
             question_type="short_text",
             text="What is your role?",
-            required=True,
         )
         question = template.stamp_into(survey_version)
 
         assert isinstance(question, Question)
         assert question.version == survey_version
         assert question.text == "What is your role?"
-        assert question.required is True
 
     def test_stamps_choices_from_template(self, survey_version):
         from apps.surveys.models import ChoiceTemplate, QuestionTemplate

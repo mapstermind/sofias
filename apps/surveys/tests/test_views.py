@@ -85,22 +85,6 @@ class TestSurveyDetailView:
         response = client.post(_survey_url(active_assignment.pk), post_data)
         assert response["Location"].endswith(_submitted_url(active_assignment.pk))
 
-    def test_post_empty_required_field_rerenders_with_errors(
-        self, client, active_assignment, survey_with_questions
-    ):
-        response = client.post(_survey_url(active_assignment.pk), {})
-        assert response.status_code == 200
-        assert response.context["errors"]
-
-    def test_post_missing_required_does_not_create_submission(
-        self, client, active_assignment, survey_with_questions
-    ):
-        client.post(_survey_url(active_assignment.pk), {})
-
-        from apps.responses.models import SurveySubmission
-
-        assert not SurveySubmission.objects.filter(assignment=active_assignment).exists()
-
     def test_post_invalid_integer_shows_error_for_that_question(
         self, client, active_assignment, survey_with_questions
     ):

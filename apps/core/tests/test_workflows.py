@@ -93,7 +93,7 @@ class TestRunCreateQuestion:
 
         with patch("apps.core.workflows.question.choose_or_create", return_value=None), \
              patch("apps.core.workflows.question.choose", return_value="short_text"), \
-             patch("apps.core.workflows.question.prompt_for_model", return_value={"text": "How are you?", "required": True}), \
+             patch("apps.core.workflows.question.prompt_for_model", return_value={"text": "How are you?"}), \
              patch("apps.core.workflows.question.ask_int", return_value=0), \
              patch("apps.core.workflows.question.confirm", return_value=False):
             run_create_question(survey=survey)
@@ -111,7 +111,7 @@ class TestRunCreateQuestion:
         # confirm is called twice: "Manage choices now?" then "Create another?"
         with patch("apps.core.workflows.question.choose_or_create", return_value=None), \
              patch("apps.core.workflows.question.choose", return_value="single_choice"), \
-             patch("apps.core.workflows.question.prompt_for_model", return_value={"text": "Pick one", "required": True}), \
+             patch("apps.core.workflows.question.prompt_for_model", return_value={"text": "Pick one"}), \
              patch("apps.core.workflows.question.ask_int", return_value=0), \
              patch("apps.core.workflows.question.confirm", side_effect=[False, False]), \
              patch("apps.core.workflows.choices.run_manage_choices") as mock_choices:
@@ -130,7 +130,7 @@ class TestRunCreateQuestion:
 
         with patch("apps.core.workflows.question.choose_or_create", return_value=section), \
              patch("apps.core.workflows.question.choose", return_value="short_text"), \
-             patch("apps.core.workflows.question.prompt_for_model", return_value={"text": "Sectioned Q", "required": True}), \
+             patch("apps.core.workflows.question.prompt_for_model", return_value={"text": "Sectioned Q"}), \
              patch("apps.core.workflows.question.ask_int", return_value=0), \
              patch("apps.core.workflows.question.confirm", return_value=False):
             run_create_question(survey=survey)
@@ -150,7 +150,6 @@ class TestRunManageChoices:
             version=survey_version,
             question_type="single_choice",
             text="Favourite colour?",
-            required=True,
             order=0,
         )
 
@@ -231,7 +230,7 @@ class TestRunManageSections:
         survey = survey_version.template
         section = Section.objects.create(version=survey_version, title="Part A", order=0)
         question = Question.objects.create(
-            version=survey_version, question_type="short_text", text="Name?", required=True, order=0
+            version=survey_version, question_type="short_text", text="Name?", order=0
         )
 
         # choose: "add_q" → pick section → pick question → "done"
@@ -250,7 +249,7 @@ class TestRunManageSections:
         sec_b = Section.objects.create(version=survey_version, title="B", order=1)
         question = Question.objects.create(
             version=survey_version, section=sec_a,
-            question_type="short_text", text="Move me", required=True, order=0,
+            question_type="short_text", text="Move me", order=0,
         )
 
         # choose: "move" → source section (A) → question → destination (B) → "done"

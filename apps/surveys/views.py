@@ -84,10 +84,7 @@ def survey_detail(request, assignment_id):
                 raw = request.POST.get(form_key, "").strip()
                 value = raw or None
 
-            if q.required and value in (None, "", []):
-                errors[q.id] = "This question is required."
-            else:
-                answer_values[q.id] = value
+            answer_values[q.id] = value
 
         if not errors:
             user = request.user if request.user.is_authenticated else None
@@ -121,6 +118,12 @@ def survey_detail(request, assignment_id):
                 )
             return redirect("surveys:survey_submitted", assignment_id=assignment_id)
 
+    all_q_ids = list(version.questions.values_list("id", flat=True))
+    total_questions = len(all_q_ids)
+    answered_count = sum(
+        1 for qid in all_q_ids if existing_answers.get(qid) not in (None, "", [])
+    )
+
     return render(request, "surveys/survey_detail.html", {
         "assignment": assignment,
         "template": template,
@@ -130,6 +133,8 @@ def survey_detail(request, assignment_id):
         "errors": errors,
         "existing_answers": existing_answers,
         "is_edit": existing_submission is not None,
+        "total_questions": total_questions,
+        "answered_count": answered_count,
     })
 
 

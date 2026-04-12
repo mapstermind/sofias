@@ -22,7 +22,6 @@ class QuestionTemplate(models.Model):
 
     question_type = models.CharField(max_length=20, choices=QuestionType.choices)
     text = models.TextField()
-    required = models.BooleanField(default=True)
     config = models.JSONField(
         default=dict,
         blank=True,
@@ -46,7 +45,6 @@ class QuestionTemplate(models.Model):
             source=self,
             question_type=self.question_type,
             text=self.text,
-            required=self.required,
             config=self.config,
             order=order,
         )
@@ -161,7 +159,6 @@ class Question(models.Model):
         max_length=20, choices=QuestionTemplate.QuestionType.choices
     )
     text = models.TextField()
-    required = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
     config = models.JSONField(
         default=dict,

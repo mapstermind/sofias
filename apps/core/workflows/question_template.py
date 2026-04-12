@@ -2,7 +2,7 @@ import re
 
 from apps.surveys.models import ChoiceTemplate, QuestionTemplate
 
-from .prompts import ask, ask_bool, ask_int, choose, confirm
+from .prompts import ask, ask_int, choose, confirm
 
 CHOICE_TYPES = {QuestionTemplate.QuestionType.SINGLE_CHOICE, QuestionTemplate.QuestionType.MULTIPLE_CHOICE}
 
@@ -95,12 +95,10 @@ def _create_question_template() -> None:
     qt_options = [(label, value) for value, label in QuestionTemplate.QuestionType.choices]
     question_type = choose("Question type", qt_options)
     text = ask("Question text")
-    required = ask_bool("Required", default=True)
 
     qt = QuestionTemplate.objects.create(
         question_type=question_type,
         text=text,
-        required=required,
     )
     print(f"\n  Created: {qt}")
 
@@ -112,7 +110,6 @@ def _create_question_template() -> None:
 def _edit_question_template(qt: QuestionTemplate) -> None:
     print(f"\n--- Edit: {qt} ---")
     qt.text = ask("Question text", default=qt.text)
-    qt.required = ask_bool("Required", default=qt.required)
     qt.save()
     print(f"  Updated: {qt}")
 
