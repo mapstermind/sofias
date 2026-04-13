@@ -1,0 +1,50 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>Stamp question templates into a survey version</h1>
+
+<p>The following templates will be stamped (copied with all their choices) into the selected version:</p>
+
+<ul>
+  {% for obj in queryset %}
+    <li><strong>{{ obj.text }}</strong> ({{ obj.get_question_type_display }})</li>
+  {% endfor %}
+</ul>
+
+<form method="post">
+  {% csrf_token %}
+
+  {% for obj in queryset %}
+    <input type="hidden" name="_selected_action" value="{{ obj.pk }}">
+  {% endfor %}
+  <input type="hidden" name="action" value="stamp_into_version">
+  <input type="hidden" name="confirm" value="1">
+
+  <fieldset class="module aligned">
+    <div class="form-row">
+      <label for="version_id">Survey version <span class="required">*</span></label>
+      <select name="version_id" id="version_id" required>
+        <option value="">— select a version —</option>
+        {% for version in versions %}
+          <option value="{{ version.pk }}">{{ version.template.title }} v{{ version.version_number }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-row">
+      <label for="section_id">Section (optional)</label>
+      <select name="section_id" id="section_id">
+        <option value="">— no section —</option>
+        {% for section in sections %}
+          <option value="{{ section.pk }}">{{ section.version.template.title }} v{{ section.version.version_number }} / {{ section.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </fieldset>
+
+  <div class="submit-row">
+    <input type="submit" value="Stamp">
+    <a href="../" class="button cancel-link">Cancel</a>
+  </div>
+</form>
+{% endblock %}

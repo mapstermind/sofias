@@ -47,10 +47,17 @@
       {% endfor %}
     </div>
 
-  {% elif question.question_type == "long_text" %}
-    <textarea name="question_{{ question.id }}" rows="4"
-      class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-      placeholder="Your answer…">{{ ans }}</textarea>
+  {% elif question.question_type == "text" %}
+    {% if question.config.multiline == False %}
+      <input type="text" name="question_{{ question.id }}"
+        value="{{ ans|default_if_none:'' }}"
+        class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+        placeholder="Your answer…">
+    {% else %}
+      <textarea name="question_{{ question.id }}" rows="4"
+        class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+        placeholder="Your answer…">{{ ans|default_if_none:'' }}</textarea>
+    {% endif %}
 
   {% elif question.question_type == "integer" %}
     <input type="number" step="1" name="question_{{ question.id }}"
@@ -80,6 +87,20 @@
         </label>
       {% endfor %}
     </div>
+
+  {% elif question.question_type == "likert" %}
+    {% with pairs=question|likert_pairs %}
+    <div class="flex gap-2 flex-wrap">
+      {% for value, label in pairs %}
+        <label class="flex flex-col items-center gap-1 cursor-pointer min-w-[72px] text-center">
+          <input type="radio" name="question_{{ question.id }}" value="{{ value }}"
+            {% if ans == value %}checked{% endif %}
+            class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+          <span class="text-xs text-gray-600">{{ label }}</span>
+        </label>
+      {% endfor %}
+    </div>
+    {% endwith %}
 
   {% else %}
     <input type="text" name="question_{{ question.id }}"
