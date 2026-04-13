@@ -14,7 +14,7 @@ pytestmark = pytest.mark.django_db
 class TestQuestionTemplateStampInto:
     def test_creates_question_in_version(self, survey_version):
         template = QuestionTemplate.objects.create(
-            question_type="short_text",
+            question_type="text",
             text="What is your role?",
         )
         question = template.stamp_into(survey_version)
@@ -43,7 +43,7 @@ class TestQuestionTemplateStampInto:
 
     def test_stamped_question_independent_of_template_changes(self, survey_version):
         template = QuestionTemplate.objects.create(
-            question_type="long_text",
+            question_type="text",
             text="Original text.",
         )
         question = template.stamp_into(survey_version)

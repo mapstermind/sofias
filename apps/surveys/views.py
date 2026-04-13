@@ -80,6 +80,16 @@ def survey_detail(request, assignment_id):
                         continue
                 else:
                     value = None
+            elif qt == Question.QuestionType.LIKERT:
+                raw = request.POST.get(form_key, "").strip()
+                if raw:
+                    try:
+                        value = int(raw)
+                    except ValueError:
+                        errors[q.id] = "Please select a valid option."
+                        continue
+                else:
+                    value = None
             else:
                 raw = request.POST.get(form_key, "").strip()
                 value = raw or None

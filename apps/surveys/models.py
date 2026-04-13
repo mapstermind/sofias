@@ -10,8 +10,7 @@ class QuestionTemplate(models.Model):
     """
 
     class QuestionType(models.TextChoices):
-        SHORT_TEXT = "short_text", "Short Text"
-        LONG_TEXT = "long_text", "Long Text"
+        TEXT = "text", "Text"
         INTEGER = "integer", "Integer"
         DECIMAL = "decimal", "Decimal"
         DATE = "date", "Date"
@@ -19,6 +18,7 @@ class QuestionTemplate(models.Model):
         MULTIPLE_CHOICE = "multiple_choice", "Multiple Choice"
         BOOLEAN = "boolean", "Boolean"
         RATING = "rating", "Rating"
+        LIKERT = "likert", "Likert Scale"
 
     question_type = models.CharField(max_length=20, choices=QuestionType.choices)
     text = models.TextField()

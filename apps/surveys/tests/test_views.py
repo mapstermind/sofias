@@ -48,6 +48,8 @@ class TestSurveyDetailView:
                 post_data[key] = "2025-01-01"
             elif q.question_type == "rating":
                 post_data[key] = "4"
+            elif q.question_type == "likert":
+                post_data[key] = "3"
             else:
                 post_data[key] = "Some text answer"
 
@@ -64,11 +66,7 @@ class TestSurveyDetailView:
         self, client, active_assignment, survey_with_questions
     ):
         questions = survey_with_questions["questions"]
-        post_data = {
-            f"question_{q.id}": "answer"
-            for q in questions
-            if q.question_type == "short_text"
-        }
+        post_data = {}
         # Fill all types minimally
         for q in questions:
             key = f"question_{q.id}"
@@ -84,6 +82,8 @@ class TestSurveyDetailView:
                 post_data[key] = "2025-06-01"
             elif q.question_type == "rating":
                 post_data[key] = "3"
+            elif q.question_type == "likert":
+                post_data[key] = "2"
             else:
                 post_data[key] = "text"
 

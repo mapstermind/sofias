@@ -135,8 +135,7 @@ def survey_with_questions(db, survey_version):
     from apps.surveys.models import Choice, Question
 
     question_specs = [
-        ("short_text", "What is your name?"),
-        ("long_text", "Describe your role."),
+        ("text", "What is your name?"),
         ("integer", "How many years of experience?"),
         ("decimal", "Rate from 0 to 10."),
         ("date", "When did you start?"),
@@ -144,6 +143,7 @@ def survey_with_questions(db, survey_version):
         ("multiple_choice", "Pick all that apply."),
         ("boolean", "Do you agree?"),
         ("rating", "Overall satisfaction?"),
+        ("likert", "How often do you feel engaged?"),
     ]
     questions = []
     for order, (qtype, text) in enumerate(question_specs):

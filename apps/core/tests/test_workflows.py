@@ -106,7 +106,7 @@ class TestRunCreateQuestion:
 
         with (
             patch("apps.core.workflows.question.choose_or_create", return_value=None),
-            patch("apps.core.workflows.question.choose", return_value="short_text"),
+            patch("apps.core.workflows.question.choose", return_value="text"),
             patch(
                 "apps.core.workflows.question.prompt_for_model",
                 return_value={"text": "How are you?"},
@@ -117,7 +117,7 @@ class TestRunCreateQuestion:
             run_create_question(survey=survey)
 
         q = Question.objects.get(text="How are you?", version=survey_version)
-        assert q.question_type == "short_text"
+        assert q.question_type == "text"
         assert q.section is None
 
     def test_creates_choice_question_and_offers_manage_choices(self, survey_version):
@@ -151,7 +151,7 @@ class TestRunCreateQuestion:
             patch(
                 "apps.core.workflows.question.choose_or_create", return_value=section
             ),
-            patch("apps.core.workflows.question.choose", return_value="short_text"),
+            patch("apps.core.workflows.question.choose", return_value="text"),
             patch(
                 "apps.core.workflows.question.prompt_for_model",
                 return_value={"text": "Sectioned Q"},
@@ -273,7 +273,7 @@ class TestRunManageSections:
             version=survey_version, title="Part A", order=0
         )
         question = Question.objects.create(
-            version=survey_version, question_type="short_text", text="Name?", order=0
+            version=survey_version, question_type="text", text="Name?", order=0
         )
 
         # choose: "add_q" → pick section → pick question → "done"
@@ -293,7 +293,7 @@ class TestRunManageSections:
         question = Question.objects.create(
             version=survey_version,
             section=sec_a,
-            question_type="short_text",
+            question_type="text",
             text="Move me",
             order=0,
         )
