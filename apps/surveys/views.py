@@ -99,34 +99,47 @@ def survey_detail(request, assignment_id):
         if not errors:
             user = request.user if request.user.is_authenticated else None
             now = timezone.now()
+            all_answered = all(val is not None for val in answer_values.values())
+            new_status = (
+                SurveySubmission.Status.COMPLETED
+                if all_answered
+                else SurveySubmission.Status.IN_PROGRESS
+            )
 
             if user is not None:
                 submission, _ = SurveySubmission.objects.get_or_create(
                     assignment=assignment,
                     user=user,
-                    defaults={
-                        "status": SurveySubmission.Status.COMPLETED,
-                        "completed_at": now,
-                    },
+                    defaults={"status": new_status},
                 )
-                submission.status = SurveySubmission.Status.COMPLETED
-                submission.completed_at = now
+                submission.status = new_status
+                submission.completed_at = now if all_answered else None
                 submission.save(update_fields=["status", "completed_at"])
             else:
                 submission = SurveySubmission.objects.create(
                     assignment=assignment,
                     user=None,
-                    status=SurveySubmission.Status.COMPLETED,
-                    completed_at=now,
+                    status=new_status,
+                    completed_at=now if all_answered else None,
                 )
 
             for question_id, val in answer_values.items():
-                Answer.objects.update_or_create(
-                    submission=submission,
-                    question_id=question_id,
-                    defaults={"value": val},
-                )
-            return redirect("surveys:survey_submitted", assignment_id=assignment_id)
+                if val is None:
+                    Answer.objects.filter(
+                        submission=submission, question_id=question_id
+                    ).delete()
+                else:
+                    Answer.objects.update_or_create(
+                        submission=submission,
+                        question_id=question_id,
+                        defaults={"value": val},
+                    )
+
+            if all_answered:
+                return redirect("surveys:survey_submitted", assignment_id=assignment_id)
+            return redirect(
+                f"{request.path}?saved=1"
+            )
 
     all_q_ids = list(version.questions.values_list("id", flat=True))
     total_questions = len(all_q_ids)

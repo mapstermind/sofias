@@ -1,0 +1,37 @@
+<!-- Instrucciones modal -->
+<div id="instrucciones-modal"
+     class="fixed inset-0 z-50 items-center justify-center p-4"
+     style="display:none"
+     onclick="if(event.target===this)this.style.display='none'">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/40"></div>
+  <!-- Dialog -->
+  <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 z-10">
+    <div class="flex items-start justify-between mb-4">
+      <h2 class="text-lg font-semibold text-gray-900">Instrucciones</h2>
+      <button onclick="document.getElementById('instrucciones-modal').style.display='none'"
+              class="text-gray-400 hover:text-gray-600 transition-colors ml-4 shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+        </svg>
+      </button>
+    </div>
+    <div class="text-sm text-gray-600 space-y-3">
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+      <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>
+        Para más información consulta el siguiente recurso:
+        <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer"
+           class="text-indigo-600 hover:text-indigo-800 underline">
+          Ver video de referencia
+        </a>
+      </p>
+    </div>
+    <div class="mt-6 flex justify-end">
+      <button onclick="document.getElementById('instrucciones-modal').style.display='none'"
+              class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors">
+        Entendido
+      </button>
+    </div>
+  </div>
+</div>
