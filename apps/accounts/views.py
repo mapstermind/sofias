@@ -39,7 +39,7 @@ def request_otp(request):
     if EmailOTP.objects.filter(email=email, created_at__gte=cutoff).exists():
         form.add_error(
             None,
-            f"A code was recently sent. Please wait {_RATE_LIMIT_SECONDS} seconds before requesting a new one.",
+            f"Un código fue enviado recientemente. Por favor, espera {_RATE_LIMIT_SECONDS} segundos antes de solicitar uno nuevo.",
         )
         return render(request, "accounts/login_request.html", {"form": form})
 
@@ -53,7 +53,7 @@ def request_otp(request):
         send_otp_email(email, code)
     except SMTPException:
         otp.delete()
-        form.add_error(None, "We couldn't send the email. Please try again.")
+        form.add_error(None, "No pudimos enviar el correo. Por favor, intenta de nuevo.")
         return render(request, "accounts/login_request.html", {"form": form})
 
     request.session["otp_email"] = email
@@ -92,7 +92,7 @@ def verify_otp(request):
         )
 
         if otp is None or not otp.is_valid():
-            form.add_error(None, "The code is invalid or has expired.")
+            form.add_error(None, "El código es inválido o ha expirado.")
             return render(
                 request, "accounts/login_verify.html", {"form": form, "email": email}
             )
@@ -147,7 +147,7 @@ def setup_profile(request):
     if company is None:
         form.add_error(
             "reference_code",
-            "No company found with that code. Please check with your administrator.",
+            "No se encontró una empresa con ese código. Por favor, verifica con tu administrador.",
         )
         return render(request, "accounts/profile_setup.html", {"form": form})
 
