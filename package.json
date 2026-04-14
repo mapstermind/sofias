@@ -9,7 +9,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:css": "npx @tailwindcss/cli -i ./static/css/main.css -o ./static/css/output.css",
-    "watch:css": "npx @tailwindcss/cli -i ./static/css/main.css -o ./static/css/output.css --watch"
+    "watch:css": "npx @tailwindcss/cli -i ./static/css/main.css -o ./static/css/output.css --watch",
+    "build:js": "npx tsc --project tsconfig.browser.json",
+    "watch:js": "npx tsc --project tsconfig.browser.json --watch"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.2.2",

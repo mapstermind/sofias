@@ -1,4 +1,5 @@
 {% extends "base_app.html" %}
+{% load static %}
 
 {% block title %}{{ template.title }}{% endblock %}
 
@@ -24,17 +25,21 @@
       Revisar Instrucciones
     </button>
     {% if total_questions %}
-    <div class="w-full">
+    <div class="w-full" id="progress-total" data-total="{{ total_questions }}">
       <div class="flex justify-between text-xs text-gray-500 mb-1">
         <span>Progreso</span>
-        <span>{{ answered_count }}/{{ total_questions }}</span>
+        <span id="progress-count">{{ answered_count }}/{{ total_questions }}</span>
       </div>
       <div class="w-full bg-gray-200 rounded-full h-2">
-        <div class="bg-indigo-500 h-2 rounded-full transition-all"
+        <div id="progress-bar" class="bg-indigo-500 h-2 rounded-full transition-all"
              style="width: {% widthratio answered_count total_questions 100 %}%"></div>
       </div>
     </div>
     {% endif %}
+    <button type="submit" form="survey-form"
+      class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
+      {% if is_edit %}Guardar cambios{% else %}Guardar progreso{% endif %}
+    </button>
   </div>
 </div>
 
@@ -53,7 +58,7 @@
     </div>
   {% endif %}
 
-  <form method="post" novalidate>
+  <form id="survey-form" method="post" novalidate>
     {% csrf_token %}
 
     {% for section in sections %}
@@ -77,13 +82,6 @@
       {% endfor %}
     {% endif %}
 
-    <div class="mt-8">
-      <button type="submit"
-        class="w-full rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
-        {% if is_edit %}Guardar cambios{% else %}Guardar progreso{% endif %}
-      </button>
-    </div>
-
   </form>
 </div><!-- end max-w-2xl -->
 </div><!-- end flex wrapper -->
@@ -96,5 +94,7 @@
   document.getElementById('progress-saved-modal').style.display = 'flex';
 </script>
 {% endif %}
+
+<script src="{% static 'js/survey_progress.js' %}"></script>
 
 {% endblock %}
