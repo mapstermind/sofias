@@ -12,9 +12,8 @@ def _get_existing_answers(submission):
 
 
 def survey_detail(request, assignment_id):
-    assignment = get_object_or_404(
-        SurveyAssignment, id=assignment_id, status=SurveyAssignment.Status.ACTIVE
-    )
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    is_closed = assignment.status == SurveyAssignment.Status.CLOSED
     version = assignment.version
     template = version.template
 
@@ -38,6 +37,9 @@ def survey_detail(request, assignment_id):
         existing_answers = _get_existing_answers(existing_submission)
 
     errors = {}
+
+    if request.method == "POST" and is_closed:
+        return redirect("surveys:survey_detail", assignment_id=assignment_id)
 
     if request.method == "POST":
         all_questions = []
@@ -159,6 +161,7 @@ def survey_detail(request, assignment_id):
             "errors": errors,
             "existing_answers": existing_answers,
             "is_edit": existing_submission is not None,
+            "is_closed": is_closed,
             "total_questions": total_questions,
             "answered_count": answered_count,
         },
@@ -166,9 +169,7 @@ def survey_detail(request, assignment_id):
 
 
 def survey_submitted(request, assignment_id):
-    assignment = get_object_or_404(
-        SurveyAssignment, id=assignment_id, status=SurveyAssignment.Status.ACTIVE
-    )
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
     return render(
         request,
         "surveys/survey_submitted.html",
