@@ -12,36 +12,29 @@ def bootstrap_groups(db):
     Declare this fixture explicitly on any test that exercises that flow.
     """
     codenames = [
-        "can_manage_site_configuration",
-        "can_manage_users",
         "can_manage_surveys",
-        "can_assign_surveys",
         "can_view_dashboard",
-        "can_view_reports",
         "can_view_insights",
         "can_take_assigned_surveys",
         "can_manage_employees",
+        "can_view_submissions",
     ]
     perms = {p.codename: p for p in Permission.objects.filter(codename__in=codenames)}
 
     group_perms = {
         "Admins": [
-            "can_manage_site_configuration",
-            "can_manage_users",
             "can_manage_surveys",
-            "can_assign_surveys",
             "can_view_dashboard",
-            "can_view_reports",
             "can_view_insights",
             "can_manage_employees",
+            "can_view_submissions",
         ],
         "Principal Exec": [
             "can_view_dashboard",
-            "can_view_reports",
             "can_view_insights",
             "can_manage_employees",
         ],
-        "Secondary Exec": ["can_view_dashboard", "can_view_reports", "can_manage_employees"],
+        "Secondary Exec": ["can_view_dashboard", "can_manage_employees"],
         "Employees": ["can_take_assigned_surveys"],
     }
     groups = {}

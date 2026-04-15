@@ -64,15 +64,12 @@ class Role(models.Model):
     class Meta:
         managed = False
         permissions = [
-            ("can_manage_site_configuration", "Can manage site configuration"),
-            ("can_manage_users", "Can manage users"),
             ("can_manage_surveys", "Can manage surveys"),
-            ("can_assign_surveys", "Can assign surveys"),
             ("can_view_dashboard", "Can view dashboard"),
-            ("can_view_reports", "Can view reports"),
             ("can_view_insights", "Can view insights"),
             ("can_take_assigned_surveys", "Can take assigned surveys"),
             ("can_manage_employees", "Can manage employees"),
+            ("can_view_submissions", "Can view submissions"),
         ]
 
 

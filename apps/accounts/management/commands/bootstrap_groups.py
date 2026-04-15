@@ -13,24 +13,19 @@ from django.core.management.base import BaseCommand
 # Maps each group name to the permission codenames it should hold.
 GROUP_PERMISSIONS: dict[str, list[str]] = {
     "Admins": [
-        "can_manage_site_configuration",
-        "can_manage_users",
         "can_manage_surveys",
-        "can_assign_surveys",
         "can_view_dashboard",
-        "can_view_reports",
         "can_view_insights",
         "can_manage_employees",
+        "can_view_submissions",
     ],
     "Principal Exec": [
         "can_view_dashboard",
-        "can_view_reports",
         "can_view_insights",
         "can_manage_employees",
     ],
     "Secondary Exec": [
         "can_view_dashboard",
-        "can_view_reports",
         "can_manage_employees",
     ],
     "Employees": [
