@@ -28,7 +28,8 @@
     <div class="space-y-3">
       {% for item in members %}
         {% with profile=item.profile user=item.profile.user %}
-          <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5">
+          <a href="{% if is_admin_view %}{% url 'core:company_employee_detail_for' company.reference_code user.id %}{% else %}{% url 'core:company_employee_detail' user.id %}{% endif %}"
+             class="block bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 hover:border-indigo-300 hover:shadow-md transition-all group">
 
             {# User identity row #}
             <div class="flex items-start justify-between gap-4">
@@ -41,7 +42,7 @@
                 </p>
                 <p class="mt-0.5 text-sm text-gray-500">{{ user.email }}</p>
               </div>
-              <div class="shrink-0 text-right">
+              <div class="shrink-0 text-right flex flex-col items-end gap-2">
                 {% if profile.position %}
                   <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/20">
                     {{ profile.position }}
@@ -49,6 +50,7 @@
                 {% else %}
                   <span class="text-xs text-gray-400 italic">Sin cargo</span>
                 {% endif %}
+                <span class="text-xs text-indigo-500 group-hover:text-indigo-700 transition-colors">Ver detalles &rarr;</span>
               </div>
             </div>
 
@@ -97,7 +99,7 @@
               {% endif %}
             </div>
 
-          </div>
+          </a>
         {% endwith %}
       {% endfor %}
     </div>

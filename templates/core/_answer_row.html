@@ -1,0 +1,56 @@
+{% load survey_extras %}
+<div class="flex gap-4">
+  <div class="min-w-0 flex-1">
+    <p class="text-sm text-gray-700">{{ qa.question.text }}</p>
+  </div>
+  <div class="shrink-0 text-right max-w-xs">
+
+    {% if not qa.answer %}
+      <span class="text-sm text-gray-400 italic">Sin respuesta</span>
+
+    {% elif qa.question.question_type == "boolean" %}
+      {% if qa.answer.value %}
+        <span class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Sí</span>
+      {% else %}
+        <span class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-600 ring-1 ring-inset ring-red-500/20">No</span>
+      {% endif %}
+
+    {% elif qa.question.question_type == "single_choice" %}
+      {% for choice in qa.question.choices.all %}
+        {% if choice.value == qa.answer.value %}
+          <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">{{ choice.label }}</span>
+        {% endif %}
+      {% endfor %}
+
+    {% elif qa.question.question_type == "multiple_choice" %}
+      <div class="flex flex-wrap justify-end gap-1.5">
+        {% for choice in qa.question.choices.all %}
+          {% if choice.value in qa.answer.value %}
+            <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">{{ choice.label }}</span>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+    {% elif qa.question.question_type == "rating" %}
+      <span class="text-sm font-semibold text-gray-900">{{ qa.answer.value }}<span class="text-xs font-normal text-gray-400"> / 5</span></span>
+
+    {% elif qa.question.question_type == "likert" %}
+      {% with pairs=qa.question|likert_pairs %}
+        {% for value, label in pairs %}
+          {% if qa.answer.value == value %}
+            <span class="text-sm text-gray-800">{{ label }}</span>
+            <span class="ml-1 text-xs text-gray-400">({{ value }})</span>
+          {% endif %}
+        {% endfor %}
+      {% endwith %}
+
+    {% elif qa.question.question_type == "date" %}
+      <span class="text-sm text-gray-800">{{ qa.answer.value }}</span>
+
+    {% else %}
+      <span class="text-sm text-gray-800">{{ qa.answer.value }}</span>
+
+    {% endif %}
+
+  </div>
+</div>

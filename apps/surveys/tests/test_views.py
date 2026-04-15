@@ -19,11 +19,12 @@ class TestSurveyDetailView:
         response = client.get(_survey_url(active_assignment.pk))
         assert response.status_code == 200
 
-    def test_closed_assignment_returns_404(self, client, active_assignment):
+    def test_closed_assignment_returns_200_with_closed_flag(self, client, active_assignment):
         active_assignment.status = SurveyAssignment.Status.CLOSED
         active_assignment.save()
         response = client.get(_survey_url(active_assignment.pk))
-        assert response.status_code == 404
+        assert response.status_code == 200
+        assert response.context["is_closed"] is True
 
     def test_nonexistent_assignment_returns_404(self, client):
         response = client.get(_survey_url(99999))
@@ -122,8 +123,8 @@ class TestSurveySubmittedView:
         response = client.get(_submitted_url(active_assignment.pk))
         assert response.status_code == 200
 
-    def test_closed_assignment_returns_404(self, client, active_assignment):
+    def test_closed_assignment_returns_200(self, client, active_assignment):
         active_assignment.status = SurveyAssignment.Status.CLOSED
         active_assignment.save()
         response = client.get(_submitted_url(active_assignment.pk))
-        assert response.status_code == 404
+        assert response.status_code == 200

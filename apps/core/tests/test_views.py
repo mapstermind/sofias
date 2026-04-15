@@ -2,7 +2,7 @@ import pytest
 from django.contrib.auth.models import Permission
 
 from apps.accounts.models import User, UserProfile
-from apps.responses.models import SurveySubmission
+from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import SurveyAssignment
 
 pytestmark = pytest.mark.django_db
@@ -253,3 +253,176 @@ class TestEmployeeSurveyListView:
             if i["assignment"].pk == assignment.pk
         )
         assert item["completed"] is False
+
+
+# ── EmployeeDetailView ────────────────────────────────────────────────────────
+
+
+class TestEmployeeDetailView:
+    def _url(self, employee_id):
+        return f"/tablero-empresa/empleados/{employee_id}/"
+
+    def _url_admin(self, reference_code, employee_id):
+        return f"/empresas/{reference_code}/empleados/{employee_id}/"
+
+    def _make_viewer(self, make_user, company, *extra_perms):
+        """User with can_manage_employees linked to company."""
+        user = make_user(email="viewer@example.com")
+        user = _give_perm(user, "can_manage_employees")
+        for perm in extra_perms:
+            user = _give_perm(user, perm)
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.company = company
+        profile.save()
+        return User.objects.get(pk=user.pk)
+
+    def _make_employee(self, make_user_with_profile, company):
+        return make_user_with_profile(email="emp@example.com", company=company)
+
+    # ── access control ────────────────────────────────────────────────────────
+
+    def test_unauthenticated_redirects_to_login(self, client, make_user, make_company, make_user_with_profile):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        response = client.get(self._url(emp.id))
+        assert response.status_code == 302
+        assert "ingresar" in response["Location"]
+
+    def test_no_permission_returns_403(self, client, make_user, make_company, make_user_with_profile):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        client.force_login(make_user(email="noperm@example.com"))
+        response = client.get(self._url(emp.id))
+        assert response.status_code == 403
+
+    def test_viewer_without_profile_redirects_to_setup(self, client, make_user, make_company, make_user_with_profile):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        viewer = _give_perm(make_user(email="v@example.com"), "can_manage_employees")
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+        assert response.status_code == 302
+        assert "perfil" in response["Location"]
+
+    def test_viewer_without_company_redirects_to_setup(self, client, make_user, make_company, make_user_with_profile):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        viewer = _give_perm(make_user(email="v@example.com"), "can_manage_employees")
+        UserProfile.objects.create(user=viewer, company=None)
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+        assert response.status_code == 302
+        assert "perfil" in response["Location"]
+
+    def test_viewer_with_company_returns_200(self, client, make_user, make_company, make_user_with_profile):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+        assert response.status_code == 200
+
+    def test_admin_reference_code_path_returns_200(self, client, make_user, make_company, make_user_with_profile):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        admin = _give_perm(
+            _give_perm(make_user(email="admin@example.com"), "can_manage_employees"),
+            "can_manage_surveys",
+        )
+        client.force_login(admin)
+        response = client.get(self._url_admin(company.reference_code, emp.id))
+        assert response.status_code == 200
+
+    def test_reference_code_path_without_can_manage_surveys_returns_403(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        viewer = self._make_viewer(make_user, company)  # only can_manage_employees
+        client.force_login(viewer)
+        response = client.get(self._url_admin(company.reference_code, emp.id))
+        assert response.status_code == 403
+
+    # ── 404 cases ─────────────────────────────────────────────────────────────
+
+    def test_nonexistent_employee_returns_404(self, client, make_user, make_company):
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+        response = client.get(self._url(99999))
+        assert response.status_code == 404
+
+    def test_employee_from_different_company_returns_404(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        other_company = make_company(name="Other Corp", legal_name="Other Corp SA de CV")
+        emp = self._make_employee(make_user_with_profile, other_company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+        assert response.status_code == 404
+
+    # ── submissions_data visibility ───────────────────────────────────────────
+
+    def test_submissions_data_is_none_without_can_view_submissions(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+        assert response.context["submissions_data"] is None
+
+    def test_submissions_data_present_with_can_view_submissions(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        viewer = self._make_viewer(make_user, company, "can_view_submissions")
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+        assert response.context["submissions_data"] is not None
+
+    # ── progress data accuracy ────────────────────────────────────────────────
+
+    def test_progress_not_started_when_no_submission(
+        self, client, make_user, make_company, make_user_with_profile, survey_version
+    ):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        SurveyAssignment.objects.create(company=company, version=survey_version)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+        prog = response.context["survey_progress"][0]
+        assert prog["percent"] == 0
+        assert prog["answered"] == 0
+        assert prog["status"] == "not_started"
+
+    def test_progress_reflects_employee_answers(
+        self, client, make_user, make_company, make_user_with_profile, survey_with_questions
+    ):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        version = survey_with_questions["version"]
+        questions = survey_with_questions["questions"]
+        assignment = SurveyAssignment.objects.create(company=company, version=version)
+
+        submission = SurveySubmission.objects.create(
+            assignment=assignment, user=emp, status=SurveySubmission.Status.IN_PROGRESS
+        )
+        # Answer 3 out of 9 questions
+        for q in questions[:3]:
+            Answer.objects.create(submission=submission, question=q, value="test")
+
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+
+        prog = response.context["survey_progress"][0]
+        assert prog["answered"] == 3
+        assert prog["total"] == 9
+        assert prog["percent"] == 33
+        assert prog["status"] == "in_progress"
