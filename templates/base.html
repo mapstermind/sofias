@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="{% static 'img/logo.svg' %}">
   <link rel="stylesheet" href="{% static 'css/output.css' %}">
 </head>
-<body class="{% block body_class %}min-h-screen bg-gray-100{% endblock %}">
+<body class="{% block body_class %}min-h-screen bg-gray-100{% endblock %} flex flex-col">
   {% block body %}{% endblock %}
 </body>
 </html>

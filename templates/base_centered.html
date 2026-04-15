@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block body_class %}min-h-screen bg-gray-100 flex items-center justify-center px-4{% endblock %}
+{% block body_class %}min-h-screen bg-gray-100{% endblock %}
 
 {% block body %}
+<div class="flex-1 flex items-center justify-center px-4 py-12">
 <div class="w-full max-w-sm">
 
   <div class="mb-8 flex flex-col items-center text-center">
@@ -18,4 +19,6 @@
   {% block card_footer %}{% endblock %}
 
 </div>
+</div>
+{% include "_footer.html" %}
 {% endblock %}

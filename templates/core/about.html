@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}¿Qué es SOFIA? — SOFIA-S{% endblock %}
+
+{% block body_class %}min-h-screen bg-gray-100 flex flex-col items-center justify-center px-4 py-12{% endblock %}
+
+{% block body %}
+<div class="w-full max-w-xl">
+
+  <div class="mb-8 flex flex-col items-center text-center">
+    <img src="{% static 'img/logo.svg' %}" alt="Logo SOFIA-S" class="mb-4 h-8 w-auto">
+    <h1 class="text-2xl font-semibold text-gray-900">¿Qué es SOFIA?</h1>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 px-8 py-10 space-y-5 text-gray-700 text-sm leading-relaxed">
+    <p>
+      <strong>SOFIA-S</strong> (<strong>S</strong>istema de <strong>O</strong>btención, <strong>F</strong>iltrado e <strong>I</strong>nteligencia <strong>A</strong>nalítica de <strong>S</strong>ondeos) es una plataforma diseñada para que las organizaciones recopilen, procesen y analicen la retroalimentación de sus colaboradores de forma estructurada.
+    </p>
+    <p>
+      A través de encuestas configurables, SOFIA-S permite capturar opiniones, percepciones y datos cuantitativos de los empleados.
+    </p>
+    <p>
+      Los resultados se procesan automáticamente y se presentan en tableros y reportes dinámicos, facilitando la toma de decisiones basada en datos reales del clima organizacional.
+    </p>
+    <div class="pt-2 border-t border-gray-100 text-xs text-gray-400 text-center">
+      Desarrollado por <a href="https://pinit.mx" target="_blank" rel="noopener noreferrer" class="hover:text-gray-600 transition-colors">PINIT</a>
+    </div>
+  </div>
+
+  <div class="mt-6 text-center">
+    <a href="{% url 'core:home' %}" onclick="if(history.length > 1){ history.back(); return false; }" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">&larr; Regresar</a>
+  </div>
+
+</div>
+{% endblock %}
