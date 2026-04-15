@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from apps.accounts.models import Company, UserProfile
-from apps.responses.models import SurveySubmission
+from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import SurveyAssignment
 
 
@@ -158,5 +158,105 @@ class CompanyDashboardView(LoginRequiredMixin, View):
                 "registration_rate": registration_rate,
                 "assignment_data": assignment_data,
                 "is_admin_view": reference_code is not None,
+            },
+        )
+
+
+class CompanyEmployeeListView(LoginRequiredMixin, View):
+    """List all employees for a company with per-survey progress."""
+
+    def get(self, request, reference_code=None):
+        if not request.user.has_perm("accounts.can_manage_employees"):
+            raise PermissionDenied
+
+        if reference_code is not None:
+            if not request.user.has_perm("accounts.can_manage_surveys"):
+                raise PermissionDenied
+            company = get_object_or_404(Company, reference_code=reference_code)
+        else:
+            try:
+                profile = request.user.profile
+            except UserProfile.DoesNotExist:
+                return redirect("accounts:setup_profile")
+            if not profile.company_id:
+                return redirect("accounts:setup_profile")
+            company = profile.company
+
+        assignments = list(
+            SurveyAssignment.objects.filter(company=company)
+            .select_related("version__template")
+            .order_by("-created_at")
+        )
+
+        # Pre-fetch total question counts per assignment to avoid N+1
+        total_questions_map = {
+            a.id: a.version.questions.count() for a in assignments
+        }
+
+        # Pre-fetch all answers for this company's assignments in one query
+        answered_map: dict[tuple[int, int], int] = {}
+        answer_qs = (
+            Answer.objects.filter(submission__assignment__in=assignments)
+            .values("submission__user_id", "submission__assignment_id")
+            .annotate(count=Count("id"))
+        )
+        for row in answer_qs:
+            answered_map[(row["submission__user_id"], row["submission__assignment_id"])] = row["count"]
+
+        # Pre-fetch submission statuses per (user, assignment)
+        submission_status_map: dict[tuple[int, int], str] = {}
+        for sub in SurveySubmission.objects.filter(assignment__in=assignments).values(
+            "user_id", "assignment_id", "status"
+        ):
+            submission_status_map[(sub["user_id"], sub["assignment_id"])] = sub["status"]
+
+        profiles = company.members.select_related("user").order_by(
+            "user__first_name", "user__last_name"
+        )
+
+        members_data = []
+        for profile in profiles:
+            user = profile.user
+            is_employee = user.groups.filter(name="Employees").exists()
+
+            if is_employee:
+                survey_progress = []
+                for assignment in assignments:
+                    total = total_questions_map[assignment.id]
+                    answered = answered_map.get((user.id, assignment.id), 0)
+                    percent = round(answered / total * 100) if total > 0 else 0
+                    status = submission_status_map.get((user.id, assignment.id), "not_started")
+                    survey_progress.append(
+                        {
+                            "assignment": assignment,
+                            "answered": answered,
+                            "total": total,
+                            "percent": percent,
+                            "status": status,
+                        }
+                    )
+                members_data.append(
+                    {
+                        "profile": profile,
+                        "has_surveys": True,
+                        "survey_progress": survey_progress,
+                    }
+                )
+            else:
+                members_data.append(
+                    {
+                        "profile": profile,
+                        "has_surveys": False,
+                        "survey_progress": [],
+                    }
+                )
+
+        return render(
+            request,
+            "core/employee_list.html",
+            {
+                "company": company,
+                "is_admin_view": reference_code is not None,
+                "members": members_data,
             },
         )

@@ -16,15 +16,28 @@
 {% block content %}
   {# Summary strip #}
   <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5">
-      <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Empleados registrados</dt>
-      <dd class="mt-1 text-3xl font-bold text-gray-900">
-        {{ member_count }}
-        {% if expected_employee_count %}
-          <span class="text-base font-normal text-gray-400">&thinsp;/&thinsp;{{ expected_employee_count }}</span>
-        {% endif %}
-      </dd>
-    </div>
+    {% if perms.accounts.can_manage_employees %}
+      <a href="{% if is_admin_view %}{% url 'core:company_employee_list_for' company.reference_code %}{% else %}{% url 'core:company_employee_list' %}{% endif %}"
+         class="block bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer">
+        <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Empleados registrados</dt>
+        <dd class="mt-1 text-3xl font-bold text-gray-900">
+          {{ member_count }}
+          {% if expected_employee_count %}
+            <span class="text-base font-normal text-gray-400">&thinsp;/&thinsp;{{ expected_employee_count }}</span>
+          {% endif %}
+        </dd>
+      </a>
+    {% else %}
+      <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5">
+        <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Empleados registrados</dt>
+        <dd class="mt-1 text-3xl font-bold text-gray-900">
+          {{ member_count }}
+          {% if expected_employee_count %}
+            <span class="text-base font-normal text-gray-400">&thinsp;/&thinsp;{{ expected_employee_count }}</span>
+          {% endif %}
+        </dd>
+      </div>
+    {% endif %}
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5">
       <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Tasa de registro</dt>
       {% if registration_rate is not None %}

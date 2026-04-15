@@ -20,15 +20,18 @@ GROUP_PERMISSIONS: dict[str, list[str]] = {
         "can_view_dashboard",
         "can_view_reports",
         "can_view_insights",
+        "can_manage_employees",
     ],
     "Principal Exec": [
         "can_view_dashboard",
         "can_view_reports",
         "can_view_insights",
+        "can_manage_employees",
     ],
     "Secondary Exec": [
         "can_view_dashboard",
         "can_view_reports",
+        "can_manage_employees",
     ],
     "Employees": [
         "can_take_assigned_surveys",

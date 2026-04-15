@@ -72,6 +72,7 @@ class Role(models.Model):
             ("can_view_reports", "Can view reports"),
             ("can_view_insights", "Can view insights"),
             ("can_take_assigned_surveys", "Can take assigned surveys"),
+            ("can_manage_employees", "Can manage employees"),
         ]
 
 

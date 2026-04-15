@@ -20,6 +20,7 @@ def bootstrap_groups(db):
         "can_view_reports",
         "can_view_insights",
         "can_take_assigned_surveys",
+        "can_manage_employees",
     ]
     perms = {p.codename: p for p in Permission.objects.filter(codename__in=codenames)}
 
@@ -32,13 +33,15 @@ def bootstrap_groups(db):
             "can_view_dashboard",
             "can_view_reports",
             "can_view_insights",
+            "can_manage_employees",
         ],
         "Principal Exec": [
             "can_view_dashboard",
             "can_view_reports",
             "can_view_insights",
+            "can_manage_employees",
         ],
-        "Secondary Exec": ["can_view_dashboard", "can_view_reports"],
+        "Secondary Exec": ["can_view_dashboard", "can_view_reports", "can_manage_employees"],
         "Employees": ["can_take_assigned_surveys"],
     }
     groups = {}
