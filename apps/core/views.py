@@ -12,10 +12,10 @@ from apps.surveys.models import SurveyAssignment, Question
 class HomeView(LoginRequiredMixin, View):
     def get(self, request):
         user = request.user
-        if user.has_perm("accounts.can_take_assigned_surveys"):
-            return redirect("core:employee_survey_list")
         if user.groups.filter(name="Admins").exists():
             return redirect("core:company_list")
+        if user.has_perm("accounts.can_take_assigned_surveys"):
+            return redirect("core:employee_survey_list")
         if user.has_perm("accounts.can_view_dashboard"):
             return redirect("core:company_dashboard")
         return redirect("accounts:request_otp")

@@ -119,6 +119,9 @@ def verify_otp(request):
     except KeyError:
         pass
 
+    if user.groups.filter(name="Admins").exists():
+        return redirect(settings.LOGIN_REDIRECT_URL)
+
     profile_complete = bool(profile.position and profile.company_id)
     if not profile_complete:
         return redirect("accounts:setup_profile")
@@ -128,6 +131,9 @@ def verify_otp(request):
 @login_required
 def setup_profile(request):
     """Step 3 (first login only) — user sets their position and company reference code."""
+    if request.user.groups.filter(name="Admins").exists():
+        return redirect(settings.LOGIN_REDIRECT_URL)
+
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
     if profile.position and profile.company_id:

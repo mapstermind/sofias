@@ -175,6 +175,68 @@ class TestVerifyOTPView:
         assert response.status_code == 302
         assert "completar-perfil" in response["Location"]
 
+    def test_admin_user_skips_setup_profile_redirect(
+        self, client, make_user, bootstrap_groups
+    ):
+        email = "admin@example.com"
+        user = make_user(email=email)
+        user.groups.add(bootstrap_groups["Admins"])
+        self._create_otp(email)
+        self._set_session_email(client, email)
+
+        response = client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
+
+        assert response.status_code == 302
+        assert "completar-perfil" not in response["Location"]
+
+    def test_non_admin_incomplete_profile_still_redirects_to_setup(
+        self, client, make_user, bootstrap_groups
+    ):
+        email = "employee@incomplete.com"
+        make_user(email=email)
+        self._create_otp(email)
+        self._set_session_email(client, email)
+
+        response = client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
+
+        assert response.status_code == 302
+        assert "completar-perfil" in response["Location"]
+
+
+# ── setup_profile ─────────────────────────────────────────────────────────────
+
+SETUP_PROFILE_URL = "/cuentas/completar-perfil/"
+
+
+class TestSetupProfileView:
+    def test_admin_get_redirects_to_home(self, client, make_user, bootstrap_groups):
+        user = make_user(email="admin2@example.com")
+        user.groups.add(bootstrap_groups["Admins"])
+        client.force_login(user)
+
+        response = client.get(SETUP_PROFILE_URL)
+
+        assert response.status_code == 302
+        assert "completar-perfil" not in response["Location"]
+
+    def test_admin_post_redirects_to_home(self, client, make_user, bootstrap_groups):
+        user = make_user(email="admin3@example.com")
+        user.groups.add(bootstrap_groups["Admins"])
+        client.force_login(user)
+
+        response = client.post(
+            SETUP_PROFILE_URL,
+            {"first_name": "A", "last_name": "B", "position": "Boss", "reference_code": "XXXXX"},
+        )
+
+        assert response.status_code == 302
+        assert "completar-perfil" not in response["Location"]
+
+    def test_non_admin_unauthenticated_redirects_to_login(self, client):
+        response = client.get(SETUP_PROFILE_URL)
+        assert response.status_code == 302
+        assert "ingresar" in response["Location"]
+
 
 # ── logout_view ───────────────────────────────────────────────────────────────
 
