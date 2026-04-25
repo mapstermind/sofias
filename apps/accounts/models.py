@@ -23,7 +23,6 @@ class Company(models.Model):
     name = models.CharField(max_length=255)
     legal_name = models.CharField(max_length=255)
     reference_code = models.CharField(max_length=5, unique=True, blank=True)
-    expected_employee_count = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -42,6 +41,7 @@ class Company(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     position = models.CharField(max_length=255, blank=True)
+    is_activated = models.BooleanField(default=False)
     company = models.ForeignKey(
         Company,
         on_delete=models.SET_NULL,

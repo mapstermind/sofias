@@ -21,20 +21,16 @@
          class="block bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer">
         <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Empleados registrados</dt>
         <dd class="mt-1 text-3xl font-bold text-gray-900">
-          {{ member_count }}
-          {% if expected_employee_count %}
-            <span class="text-base font-normal text-gray-400">&thinsp;/&thinsp;{{ expected_employee_count }}</span>
-          {% endif %}
+          {{ activated_count }}
+          <span class="text-base font-normal text-gray-400">&thinsp;/&thinsp;{{ member_count }}</span>
         </dd>
       </a>
     {% else %}
       <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5">
         <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Empleados registrados</dt>
         <dd class="mt-1 text-3xl font-bold text-gray-900">
-          {{ member_count }}
-          {% if expected_employee_count %}
-            <span class="text-base font-normal text-gray-400">&thinsp;/&thinsp;{{ expected_employee_count }}</span>
-          {% endif %}
+          {{ activated_count }}
+          <span class="text-base font-normal text-gray-400">&thinsp;/&thinsp;{{ member_count }}</span>
         </dd>
       </div>
     {% endif %}

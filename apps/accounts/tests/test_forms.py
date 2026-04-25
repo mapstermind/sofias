@@ -1,4 +1,4 @@
-from apps.accounts.forms import EmailRequestForm, OTPVerifyForm, ProfileSetupForm
+from apps.accounts.forms import EmailRequestForm, OTPVerifyForm, ProfileActivationForm
 
 # Forms are pure Python — no database access needed for these tests.
 
@@ -30,16 +30,9 @@ class TestOTPVerifyFormCleanCode:
         assert not form.is_valid()
 
 
-class TestProfileSetupFormCleanReferenceCode:
+class TestProfileActivationFormCleanReferenceCode:
     def _form(self, code):
-        return ProfileSetupForm(
-            data={
-                "first_name": "Jane",
-                "last_name": "Smith",
-                "position": "Engineer",
-                "reference_code": code,
-            }
-        )
+        return ProfileActivationForm(data={"reference_code": code})
 
     def test_lowercased_input_is_uppercased(self):
         form = self._form("abc12")

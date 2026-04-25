@@ -1,71 +1,46 @@
 {% extends "base_centered.html" %}
 
-{% block title %}Completa tu perfil — SOFIA-S{% endblock %}
+{% block title %}Activar cuenta — SOFIA-S{% endblock %}
 
 {% block card_header %}
-  <h1 class="text-2xl font-bold text-gray-900">Un último paso</h1>
+  <h1 class="text-2xl font-bold text-gray-900">Activa tu cuenta</h1>
   <p class="mt-2 text-sm text-gray-500">
-    Cuéntanos un poco sobre ti para completar la configuración de tu cuenta.
+    Ingresa el código de referencia de tu empresa para confirmar tu acceso.
   </p>
 {% endblock %}
 
 {% block card_body %}
-  {% if form.non_field_errors %}
+  {% if no_company or no_profile %}
     <div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-      {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      Tu cuenta no está vinculada a ninguna empresa. Contacta a tu administrador.
     </div>
+  {% else %}
+    {% if form.non_field_errors %}
+      <div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="mb-6">
+        <label for="{{ form.reference_code.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+          Código de referencia de la empresa
+        </label>
+        {{ form.reference_code }}
+        {% if form.reference_code.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.reference_code.errors.0 }}</p>
+        {% endif %}
+        <p class="mt-1 text-xs text-gray-400">
+          El código de 5 caracteres proporcionado por tu administrador.
+        </p>
+      </div>
+
+      <button type="submit"
+        class="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
+        Activar cuenta
+      </button>
+    </form>
   {% endif %}
-
-  <form method="post" novalidate>
-    {% csrf_token %}
-
-    <div class="mb-5 grid grid-cols-2 gap-3">
-      <div>
-        <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-          Nombre
-        </label>
-        {{ form.first_name }}
-        {% if form.first_name.errors %}
-          <p class="mt-1 text-xs text-red-600">{{ form.first_name.errors.0 }}</p>
-        {% endif %}
-      </div>
-      <div>
-        <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-          Apellido
-        </label>
-        {{ form.last_name }}
-        {% if form.last_name.errors %}
-          <p class="mt-1 text-xs text-red-600">{{ form.last_name.errors.0 }}</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="mb-5">
-      <label for="{{ form.position.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-        Cargo
-      </label>
-      {{ form.position }}
-      {% if form.position.errors %}
-        <p class="mt-1 text-xs text-red-600">{{ form.position.errors.0 }}</p>
-      {% endif %}
-    </div>
-
-    <div class="mb-6">
-      <label for="{{ form.reference_code.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-        Código de referencia de la empresa
-      </label>
-      {{ form.reference_code }}
-      {% if form.reference_code.errors %}
-        <p class="mt-1 text-xs text-red-600">{{ form.reference_code.errors.0 }}</p>
-      {% endif %}
-      <p class="mt-1 text-xs text-gray-400">
-        El código de 5 caracteres proporcionado por tu administrador.
-      </p>
-    </div>
-
-    <button type="submit"
-      class="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
-      Completar configuración
-    </button>
-  </form>
 {% endblock %}

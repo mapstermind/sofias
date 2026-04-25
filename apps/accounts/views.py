@@ -4,16 +4,14 @@ from smtplib import SMTPException
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import Group
 from django.db import transaction
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from apps.accounts.emails import send_otp_email
-from apps.accounts.forms import EmailRequestForm, OTPVerifyForm, ProfileSetupForm
-from apps.accounts.models import Company, EmailOTP, User, UserProfile
-from apps.accounts.utils import generate_unique_username
+from apps.accounts.forms import EmailRequestForm, OTPVerifyForm, ProfileActivationForm
+from apps.accounts.models import EmailOTP, User, UserProfile
 
 _RATE_LIMIT_SECONDS = 30
 
@@ -34,12 +32,19 @@ def request_otp(request):
 
     email = form.cleaned_data["email"].lower()
 
-    # Rate limit: one OTP per email per 60 seconds.
+    # Rate limit: one OTP per email per _RATE_LIMIT_SECONDS seconds.
     cutoff = timezone.now() - timezone.timedelta(seconds=_RATE_LIMIT_SECONDS)
     if EmailOTP.objects.filter(email=email, created_at__gte=cutoff).exists():
         form.add_error(
             None,
             f"Un código fue enviado recientemente. Por favor, espera {_RATE_LIMIT_SECONDS} segundos antes de solicitar uno nuevo.",
+        )
+        return render(request, "accounts/login_request.html", {"form": form})
+
+    if not User.objects.filter(email=email).exists():
+        form.add_error(
+            None,
+            "No se encontró una cuenta con este correo electrónico. Si esto es un error, por favor contacta a tu administrador.",
         )
         return render(request, "accounts/login_request.html", {"form": form})
 
@@ -102,20 +107,11 @@ def verify_otp(request):
                     request, "accounts/login_verify.html", {"form": form, "email": email}
                 )
 
+        user = User.objects.get(email=submitted_email)
+
+        if not dev_bypass:
             otp.is_used = True
             otp.save(update_fields=["is_used"])
-
-        user = User.objects.filter(email=submitted_email).first()
-        if user is None:
-            user = User(
-                username=generate_unique_username(submitted_email),
-                email=submitted_email,
-            )
-            user.set_unusable_password()
-            user.save()
-            user.groups.add(Group.objects.get(name="Employees"))
-
-        profile, _ = UserProfile.objects.get_or_create(user=user)
 
     login(request, user, backend="apps.accounts.backends.EmailOTPBackend")
 
@@ -127,49 +123,58 @@ def verify_otp(request):
     if user.groups.filter(name="Admins").exists():
         return redirect(settings.LOGIN_REDIRECT_URL)
 
-    profile_complete = bool(profile.position and profile.company_id)
-    if not profile_complete:
+    try:
+        profile = user.profile
+    except UserProfile.DoesNotExist:
+        return redirect("accounts:setup_profile")
+
+    if not profile.is_activated:
         return redirect("accounts:setup_profile")
     return redirect(settings.LOGIN_REDIRECT_URL)
 
 
 @login_required
 def setup_profile(request):
-    """Step 3 (first login only) — user sets their position and company reference code."""
+    """First-login activation — user confirms their company reference code."""
     if request.user.groups.filter(name="Admins").exists():
         return redirect(settings.LOGIN_REDIRECT_URL)
 
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
-
-    if profile.position and profile.company_id:
-        return redirect(settings.LOGIN_REDIRECT_URL)
-
-    if request.method == "GET":
+    try:
+        profile = request.user.profile
+    except UserProfile.DoesNotExist:
         return render(
-            request, "accounts/profile_setup.html", {"form": ProfileSetupForm()}
+            request,
+            "accounts/profile_setup.html",
+            {"form": ProfileActivationForm(), "no_profile": True},
         )
 
-    form = ProfileSetupForm(request.POST)
+    if profile.is_activated:
+        return redirect(settings.LOGIN_REDIRECT_URL)
+
+    if profile.company is None:
+        return render(
+            request,
+            "accounts/profile_setup.html",
+            {"form": ProfileActivationForm(), "no_company": True},
+        )
+
+    if request.method == "GET":
+        return render(request, "accounts/profile_setup.html", {"form": ProfileActivationForm()})
+
+    form = ProfileActivationForm(request.POST)
     if not form.is_valid():
         return render(request, "accounts/profile_setup.html", {"form": form})
 
     reference_code = form.cleaned_data["reference_code"]
-    company = Company.objects.filter(reference_code=reference_code).first()
-    if company is None:
+    if reference_code != profile.company.reference_code:
         form.add_error(
             "reference_code",
-            "No se encontró una empresa con ese código. Por favor, verifica con tu administrador.",
+            "El código no coincide con tu empresa asignada. Por favor, verifica con tu administrador.",
         )
         return render(request, "accounts/profile_setup.html", {"form": form})
 
-    user = request.user
-    user.first_name = form.cleaned_data["first_name"]
-    user.last_name = form.cleaned_data["last_name"]
-    user.save(update_fields=["first_name", "last_name"])
-
-    profile.position = form.cleaned_data["position"]
-    profile.company = company
-    profile.save()
+    profile.is_activated = True
+    profile.save(update_fields=["is_activated"])
 
     return redirect(settings.LOGIN_REDIRECT_URL)
 

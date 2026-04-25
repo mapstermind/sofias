@@ -5,7 +5,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.accounts.models import EmailOTP, User
+from apps.accounts.models import EmailOTP, User, UserProfile
 
 pytestmark = pytest.mark.django_db
 
@@ -101,29 +101,29 @@ class TestVerifyOTPView:
         response = client.get(VERIFY_OTP_URL)
         assert response.status_code == 200
 
-    def test_valid_otp_first_login_creates_user(self, client, bootstrap_groups):
-        email = "brandnew@example.com"
+    def test_unknown_email_rerenders_with_error(self, client):
+        email = "nobody@example.com"
         self._create_otp(email)
+        self._set_session_email(client, email)
+
+        response = client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
+
+        assert response.status_code == 200
+        assert not User.objects.filter(email=email).exists()
+
+    def test_unknown_email_does_not_mark_otp_as_used(self, client):
+        email = "nobody2@example.com"
+        otp = self._create_otp(email)
         self._set_session_email(client, email)
 
         client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
 
-        assert User.objects.filter(email=email).exists()
+        otp.refresh_from_db()
+        assert otp.is_used is False
 
-    def test_valid_otp_first_login_adds_to_employees_group(
-        self, client, bootstrap_groups
-    ):
-        email = "employee@example.com"
-        self._create_otp(email)
-        self._set_session_email(client, email)
-
-        client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
-
-        user = User.objects.get(email=email)
-        assert user.groups.filter(name="Employees").exists()
-
-    def test_valid_otp_marks_otp_as_used(self, client, bootstrap_groups):
+    def test_valid_otp_marks_otp_as_used(self, client, make_user):
         email = "markused@example.com"
+        make_user(email=email)
         otp = self._create_otp(email)
         self._set_session_email(client, email)
 
@@ -132,11 +132,9 @@ class TestVerifyOTPView:
         otp.refresh_from_db()
         assert otp.is_used is True
 
-    def test_valid_otp_returning_user_no_duplicate(
-        self, client, make_user_with_profile, bootstrap_groups
-    ):
+    def test_valid_otp_returning_user_no_duplicate(self, client, make_user_with_profile):
         email = "existing@example.com"
-        make_user_with_profile(email=email, position="Dev")
+        make_user_with_profile(email=email)
         self._create_otp(email)
         self._set_session_email(client, email)
 
@@ -164,16 +162,31 @@ class TestVerifyOTPView:
         response = client.post(VERIFY_OTP_URL, {"email": email, "code": "111111"})
         assert response.status_code == 200
 
-    def test_successful_login_with_incomplete_profile_redirects_to_setup(
-        self, client, bootstrap_groups
-    ):
-        email = "noprofile@example.com"
+    def test_non_activated_user_redirects_to_setup(self, client, make_user_with_profile, make_company):
+        company = make_company()
+        email = "notyet@example.com"
+        make_user_with_profile(email=email, company=company)
         self._create_otp(email)
         self._set_session_email(client, email)
 
         response = client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
+
         assert response.status_code == 302
         assert "completar-perfil" in response["Location"]
+
+    def test_activated_user_skips_setup(self, client, make_user_with_profile, make_company):
+        company = make_company()
+        email = "active@example.com"
+        user = make_user_with_profile(email=email, company=company)
+        user.profile.is_activated = True
+        user.profile.save()
+        self._create_otp(email)
+        self._set_session_email(client, email)
+
+        response = client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
+
+        assert response.status_code == 302
+        assert "completar-perfil" not in response["Location"]
 
     def test_admin_user_skips_setup_profile_redirect(
         self, client, make_user, bootstrap_groups
@@ -189,10 +202,8 @@ class TestVerifyOTPView:
         assert response.status_code == 302
         assert "completar-perfil" not in response["Location"]
 
-    def test_non_admin_incomplete_profile_still_redirects_to_setup(
-        self, client, make_user, bootstrap_groups
-    ):
-        email = "employee@incomplete.com"
+    def test_user_without_profile_redirects_to_setup(self, client, make_user):
+        email = "noprofile@example.com"
         make_user(email=email)
         self._create_otp(email)
         self._set_session_email(client, email)
@@ -224,15 +235,7 @@ class TestSetupProfileView:
         user.groups.add(bootstrap_groups["Admins"])
         client.force_login(user)
 
-        response = client.post(
-            SETUP_PROFILE_URL,
-            {
-                "first_name": "A",
-                "last_name": "B",
-                "position": "Boss",
-                "reference_code": "XXXXX",
-            },
-        )
+        response = client.post(SETUP_PROFILE_URL, {"reference_code": "XXXXX"})
 
         assert response.status_code == 302
         assert "completar-perfil" not in response["Location"]
@@ -241,6 +244,59 @@ class TestSetupProfileView:
         response = client.get(SETUP_PROFILE_URL)
         assert response.status_code == 302
         assert "ingresar" in response["Location"]
+
+    def test_correct_code_activates_and_redirects(
+        self, client, make_user_with_profile, make_company
+    ):
+        company = make_company()
+        user = make_user_with_profile(email="activate@example.com", company=company)
+        client.force_login(user)
+
+        response = client.post(
+            SETUP_PROFILE_URL, {"reference_code": company.reference_code}
+        )
+
+        user.profile.refresh_from_db()
+        assert user.profile.is_activated is True
+        assert response.status_code == 302
+        assert "completar-perfil" not in response["Location"]
+
+    def test_wrong_code_shows_error(
+        self, client, make_user_with_profile, make_company
+    ):
+        company = make_company()
+        user = make_user_with_profile(email="wrongcode@example.com", company=company)
+        client.force_login(user)
+
+        response = client.post(SETUP_PROFILE_URL, {"reference_code": "ZZZZZ"})
+
+        user.profile.refresh_from_db()
+        assert user.profile.is_activated is False
+        assert response.status_code == 200
+
+    def test_already_activated_redirects_to_home(
+        self, client, make_user_with_profile, make_company
+    ):
+        company = make_company()
+        user = make_user_with_profile(email="alreadyon@example.com", company=company)
+        user.profile.is_activated = True
+        user.profile.save()
+        client.force_login(user)
+
+        response = client.get(SETUP_PROFILE_URL)
+
+        assert response.status_code == 302
+        assert "completar-perfil" not in response["Location"]
+
+    def test_no_company_linked_shows_error_page(self, client, make_user):
+        user = make_user(email="nocompany@example.com")
+        UserProfile.objects.create(user=user, company=None)
+        client.force_login(user)
+
+        response = client.get(SETUP_PROFILE_URL)
+
+        assert response.status_code == 200
+        assert response.context["no_company"] is True
 
 
 # ── logout_view ───────────────────────────────────────────────────────────────
