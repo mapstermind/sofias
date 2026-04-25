@@ -53,7 +53,9 @@ def request_otp(request):
         send_otp_email(email, code)
     except SMTPException:
         otp.delete()
-        form.add_error(None, "No pudimos enviar el correo. Por favor, intenta de nuevo.")
+        form.add_error(
+            None, "No pudimos enviar el correo. Por favor, intenta de nuevo."
+        )
         return render(request, "accounts/login_request.html", {"form": form})
 
     request.session["otp_email"] = email

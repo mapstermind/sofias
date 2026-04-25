@@ -88,5 +88,7 @@ class ProfileSetupForm(forms.Form):
     def clean_reference_code(self):
         code = self.cleaned_data["reference_code"].strip().upper()
         if not code.isalnum():
-            raise forms.ValidationError("El código de referencia debe ser alfanumérico.")
+            raise forms.ValidationError(
+                "El código de referencia debe ser alfanumérico."
+            )
         return code

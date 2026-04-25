@@ -76,7 +76,7 @@
     </div>
   {% endif %}
 
-  <form id="survey-form" method="post" novalidate>
+  <form id="survey-form" method="post" novalidate{% if not is_closed %} data-autosave-url="{% url 'surveys:autosave_survey' assignment.id %}"{% endif %}>
     {% csrf_token %}
     {% if is_closed %}<fieldset disabled class="contents">{% endif %}
 
@@ -108,6 +108,7 @@
 
 {% include "surveys/_instrucciones_modal.html" %}
 {% include "surveys/_progress_saved_modal.html" %}
+{% include "surveys/_session_expired_modal.html" %}
 
 {% if request.GET.saved %}
 <script>

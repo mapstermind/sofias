@@ -226,7 +226,12 @@ class TestSetupProfileView:
 
         response = client.post(
             SETUP_PROFILE_URL,
-            {"first_name": "A", "last_name": "B", "position": "Boss", "reference_code": "XXXXX"},
+            {
+                "first_name": "A",
+                "last_name": "B",
+                "position": "Boss",
+                "reference_code": "XXXXX",
+            },
         )
 
         assert response.status_code == 302

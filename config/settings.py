@@ -157,3 +157,6 @@ EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@sofias.local")
 
 OTP_EXPIRY_MINUTES = int(os.environ.get("OTP_EXPIRY_MINUTES", "10"))
+
+SESSION_COOKIE_AGE = 1800  # 30-minute idle timeout
+SESSION_SAVE_EVERY_REQUEST = True  # sliding window — reset timer on every request

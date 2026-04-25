@@ -281,21 +281,27 @@ class TestEmployeeDetailView:
 
     # ── access control ────────────────────────────────────────────────────────
 
-    def test_unauthenticated_redirects_to_login(self, client, make_user, make_company, make_user_with_profile):
+    def test_unauthenticated_redirects_to_login(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
         company = make_company()
         emp = self._make_employee(make_user_with_profile, company)
         response = client.get(self._url(emp.id))
         assert response.status_code == 302
         assert "ingresar" in response["Location"]
 
-    def test_no_permission_returns_403(self, client, make_user, make_company, make_user_with_profile):
+    def test_no_permission_returns_403(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
         company = make_company()
         emp = self._make_employee(make_user_with_profile, company)
         client.force_login(make_user(email="noperm@example.com"))
         response = client.get(self._url(emp.id))
         assert response.status_code == 403
 
-    def test_viewer_without_profile_redirects_to_setup(self, client, make_user, make_company, make_user_with_profile):
+    def test_viewer_without_profile_redirects_to_setup(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
         company = make_company()
         emp = self._make_employee(make_user_with_profile, company)
         viewer = _give_perm(make_user(email="v@example.com"), "can_manage_employees")
@@ -304,7 +310,9 @@ class TestEmployeeDetailView:
         assert response.status_code == 302
         assert "perfil" in response["Location"]
 
-    def test_viewer_without_company_redirects_to_setup(self, client, make_user, make_company, make_user_with_profile):
+    def test_viewer_without_company_redirects_to_setup(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
         company = make_company()
         emp = self._make_employee(make_user_with_profile, company)
         viewer = _give_perm(make_user(email="v@example.com"), "can_manage_employees")
@@ -314,7 +322,9 @@ class TestEmployeeDetailView:
         assert response.status_code == 302
         assert "perfil" in response["Location"]
 
-    def test_viewer_with_company_returns_200(self, client, make_user, make_company, make_user_with_profile):
+    def test_viewer_with_company_returns_200(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
         company = make_company()
         emp = self._make_employee(make_user_with_profile, company)
         viewer = self._make_viewer(make_user, company)
@@ -322,7 +332,9 @@ class TestEmployeeDetailView:
         response = client.get(self._url(emp.id))
         assert response.status_code == 200
 
-    def test_admin_reference_code_path_returns_200(self, client, make_user, make_company, make_user_with_profile):
+    def test_admin_reference_code_path_returns_200(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
         company = make_company()
         emp = self._make_employee(make_user_with_profile, company)
         admin = _give_perm(
@@ -356,7 +368,9 @@ class TestEmployeeDetailView:
         self, client, make_user, make_company, make_user_with_profile
     ):
         company = make_company()
-        other_company = make_company(name="Other Corp", legal_name="Other Corp SA de CV")
+        other_company = make_company(
+            name="Other Corp", legal_name="Other Corp SA de CV"
+        )
         emp = self._make_employee(make_user_with_profile, other_company)
         viewer = self._make_viewer(make_user, company)
         client.force_login(viewer)
@@ -402,7 +416,12 @@ class TestEmployeeDetailView:
         assert prog["status"] == "not_started"
 
     def test_progress_reflects_employee_answers(
-        self, client, make_user, make_company, make_user_with_profile, survey_with_questions
+        self,
+        client,
+        make_user,
+        make_company,
+        make_user_with_profile,
+        survey_with_questions,
     ):
         company = make_company()
         emp = self._make_employee(make_user_with_profile, company)

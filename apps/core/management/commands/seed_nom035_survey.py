@@ -194,7 +194,9 @@ class Command(BaseCommand):
                 )
 
                 if created:
-                    self.stdout.write(f"    Created question (order={global_order}): {q_text[:60]}")
+                    self.stdout.write(
+                        f"    Created question (order={global_order}): {q_text[:60]}"
+                    )
                     if source:
                         for ct in source.choices.order_by("order"):
                             Choice.objects.create(

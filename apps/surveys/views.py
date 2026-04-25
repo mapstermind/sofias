@@ -1,5 +1,7 @@
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import Question, SurveyAssignment
@@ -139,9 +141,7 @@ def survey_detail(request, assignment_id):
 
             if all_answered:
                 return redirect("surveys:survey_submitted", assignment_id=assignment_id)
-            return redirect(
-                f"{request.path}?saved=1"
-            )
+            return redirect(f"{request.path}?saved=1")
 
     all_q_ids = list(version.questions.values_list("id", flat=True))
     total_questions = len(all_q_ids)
@@ -166,6 +166,93 @@ def survey_detail(request, assignment_id):
             "answered_count": answered_count,
         },
     )
+
+
+@require_POST
+def autosave_survey(request, assignment_id):
+    """AJAX endpoint — saves a single changed field without altering submission status."""
+    if not request.user.is_authenticated:
+        return JsonResponse({"ok": False, "error": "unauthenticated"}, status=401)
+
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    if assignment.status == SurveyAssignment.Status.CLOSED:
+        return JsonResponse({"ok": False, "error": "closed"}, status=403)
+
+    question_ids = []
+    for key in request.POST:
+        if key.startswith("question_"):
+            try:
+                question_ids.append(int(key[len("question_") :]))
+            except ValueError:
+                pass
+
+    if not question_ids:
+        return JsonResponse({"ok": True})
+
+    questions = {q.id: q for q in Question.objects.filter(id__in=question_ids)}
+
+    answer_values = {}
+    for qid in question_ids:
+        q = questions.get(qid)
+        if q is None:
+            continue
+        form_key = f"question_{qid}"
+        qt = q.question_type
+
+        if qt == Question.QuestionType.MULTIPLE_CHOICE:
+            vals = request.POST.getlist(form_key)
+            value = vals if vals else None
+        elif qt == Question.QuestionType.BOOLEAN:
+            raw = request.POST.get(form_key, "")
+            if raw == "true":
+                value = True
+            elif raw == "false":
+                value = False
+            else:
+                value = None
+        elif qt == Question.QuestionType.INTEGER:
+            raw = request.POST.get(form_key, "").strip()
+            try:
+                value = int(raw) if raw else None
+            except ValueError:
+                continue
+        elif qt == Question.QuestionType.DECIMAL:
+            raw = request.POST.get(form_key, "").strip()
+            try:
+                value = float(raw) if raw else None
+            except ValueError:
+                continue
+        elif qt == Question.QuestionType.LIKERT:
+            raw = request.POST.get(form_key, "").strip()
+            try:
+                value = int(raw) if raw else None
+            except ValueError:
+                continue
+        else:
+            raw = request.POST.get(form_key, "").strip()
+            value = raw or None
+
+        answer_values[qid] = value
+
+    submission, _ = SurveySubmission.objects.get_or_create(
+        assignment=assignment,
+        user=request.user,
+        defaults={"status": SurveySubmission.Status.IN_PROGRESS},
+    )
+
+    for question_id, val in answer_values.items():
+        if val is None:
+            Answer.objects.filter(
+                submission=submission, question_id=question_id
+            ).delete()
+        else:
+            Answer.objects.update_or_create(
+                submission=submission,
+                question_id=question_id,
+                defaults={"value": val},
+            )
+
+    return JsonResponse({"ok": True})
 
 
 def survey_submitted(request, assignment_id):

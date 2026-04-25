@@ -52,12 +52,20 @@ class QuestionTemplateAdmin(admin.ModelAdmin):
             )
             return
 
-        return render(request, "admin/surveys/stamp_into_version.html", {
-            "queryset": queryset,
-            "versions": SurveyVersion.objects.select_related("template").order_by("template__title", "version_number"),
-            "sections": Section.objects.select_related("version__template").order_by("version__template__title", "title"),
-            "opts": self.model._meta,
-        })
+        return render(
+            request,
+            "admin/surveys/stamp_into_version.html",
+            {
+                "queryset": queryset,
+                "versions": SurveyVersion.objects.select_related("template").order_by(
+                    "template__title", "version_number"
+                ),
+                "sections": Section.objects.select_related(
+                    "version__template"
+                ).order_by("version__template__title", "title"),
+                "opts": self.model._meta,
+            },
+        )
 
 
 # ---------------------------------------------------------------------------

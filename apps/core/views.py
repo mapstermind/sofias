@@ -6,7 +6,7 @@ from django.views import View
 
 from apps.accounts.models import Company, UserProfile
 from apps.responses.models import Answer, SurveySubmission
-from apps.surveys.models import SurveyAssignment, Question
+from apps.surveys.models import SurveyAssignment
 
 
 class HomeView(LoginRequiredMixin, View):
@@ -189,9 +189,7 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
         )
 
         # Pre-fetch total question counts per assignment to avoid N+1
-        total_questions_map = {
-            a.id: a.version.questions.count() for a in assignments
-        }
+        total_questions_map = {a.id: a.version.questions.count() for a in assignments}
 
         # Pre-fetch all answers for this company's assignments in one query
         answered_map: dict[tuple[int, int], int] = {}
@@ -201,14 +199,18 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
             .annotate(count=Count("id"))
         )
         for row in answer_qs:
-            answered_map[(row["submission__user_id"], row["submission__assignment_id"])] = row["count"]
+            answered_map[
+                (row["submission__user_id"], row["submission__assignment_id"])
+            ] = row["count"]
 
         # Pre-fetch submission statuses per (user, assignment)
         submission_status_map: dict[tuple[int, int], str] = {}
         for sub in SurveySubmission.objects.filter(assignment__in=assignments).values(
             "user_id", "assignment_id", "status"
         ):
-            submission_status_map[(sub["user_id"], sub["assignment_id"])] = sub["status"]
+            submission_status_map[(sub["user_id"], sub["assignment_id"])] = sub[
+                "status"
+            ]
 
         profiles = company.members.select_related("user").order_by(
             "user__first_name", "user__last_name"
@@ -225,7 +227,9 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                     total = total_questions_map[assignment.id]
                     answered = answered_map.get((user.id, assignment.id), 0)
                     percent = round(answered / total * 100) if total > 0 else 0
-                    status = submission_status_map.get((user.id, assignment.id), "not_started")
+                    status = submission_status_map.get(
+                        (user.id, assignment.id), "not_started"
+                    )
                     survey_progress.append(
                         {
                             "assignment": assignment,
