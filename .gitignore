@@ -34,3 +34,7 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Client meetings log
+client_meetings.md
+gerry_notas.md
