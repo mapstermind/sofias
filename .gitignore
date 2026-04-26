@@ -36,5 +36,5 @@ node_modules/
 Thumbs.db
 
 # Client meetings log
-client_meetings.md
+client_meetings/
 gerry_notas.md

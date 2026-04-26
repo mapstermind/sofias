@@ -1,3 +1,5 @@
+import math
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
@@ -9,15 +11,21 @@ from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import SurveyAssignment
 
 
+def _representative_minimum(n: int) -> int | None:
+    if n == 0:
+        return None
+    return math.ceil(0.9604 * n / (0.0025 * (n - 1) + 0.9604))
+
+
 class HomeView(LoginRequiredMixin, View):
     def get(self, request):
         user = request.user
         if user.groups.filter(name="Admins").exists():
             return redirect("core:company_list")
-        if user.has_perm("accounts.can_take_assigned_surveys"):
-            return redirect("core:employee_survey_list")
         if user.has_perm("accounts.can_view_dashboard"):
             return redirect("core:company_dashboard")
+        if user.has_perm("accounts.can_take_assigned_surveys"):
+            return redirect("core:employee_survey_list")
         return redirect("accounts:request_otp")
 
 
@@ -120,6 +128,12 @@ class CompanyDashboardView(LoginRequiredMixin, View):
         registration_rate = (
             round(activated_count / member_count * 100) if member_count > 0 else None
         )
+        representative_minimum = _representative_minimum(member_count)
+        representative_threshold_pct = (
+            min(round(representative_minimum / member_count * 100), 100)
+            if representative_minimum is not None
+            else None
+        )
 
         assignments = (
             SurveyAssignment.objects.filter(company=company)
@@ -132,6 +146,15 @@ class CompanyDashboardView(LoginRequiredMixin, View):
             )
             .order_by("-created_at")
         )
+
+        user_completed_ids = set()
+        if request.user.has_perm("accounts.can_take_assigned_surveys"):
+            user_completed_ids = set(
+                request.user.submissions.filter(
+                    assignment__in=assignments,
+                    status=SurveySubmission.Status.COMPLETED,
+                ).values_list("assignment_id", flat=True)
+            )
 
         assignment_data = []
         for assignment in assignments:
@@ -146,6 +169,7 @@ class CompanyDashboardView(LoginRequiredMixin, View):
                     "completed_count": assignment.completed_count,
                     "member_count": member_count,
                     "completion_rate": rate,
+                    "user_completed": assignment.id in user_completed_ids,
                 }
             )
 
@@ -157,6 +181,8 @@ class CompanyDashboardView(LoginRequiredMixin, View):
                 "member_count": member_count,
                 "activated_count": activated_count,
                 "registration_rate": registration_rate,
+                "representative_minimum": representative_minimum,
+                "representative_threshold_pct": representative_threshold_pct,
                 "assignment_data": assignment_data,
                 "is_admin_view": reference_code is not None,
             },

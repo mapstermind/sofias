@@ -1,7 +1,10 @@
+import math
+
 import pytest
 from django.contrib.auth.models import Permission
 
 from apps.accounts.models import User, UserProfile
+from apps.core.views import _representative_minimum
 from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import SurveyAssignment
 
@@ -13,6 +16,19 @@ def _give_perm(user, codename):
     perm = Permission.objects.get(codename=codename)
     user.user_permissions.add(perm)
     return User.objects.get(pk=user.pk)
+
+
+# ── _representative_minimum ───────────────────────────────────────────────────
+
+
+def test_representative_minimum_zero_returns_none():
+    assert _representative_minimum(0) is None
+
+
+def test_representative_minimum_formula():
+    n = 100
+    expected = math.ceil(0.9604 * n / (0.0025 * (n - 1) + 0.9604))
+    assert _representative_minimum(n) == expected
 
 
 # ── CompanyListView ───────────────────────────────────────────────────────────
@@ -84,6 +100,29 @@ class TestCompanyDashboardView:
         client.force_login(user)
         response = client.get(self.URL)
         assert response.status_code == 200
+
+    def _login_with_company(self, client, make_user, company):
+        user = _give_perm(make_user(), "can_view_dashboard")
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.company = company
+        profile.position = "Analyst"
+        profile.save()
+        client.force_login(user)
+        return client.get(self.URL)
+
+    def test_representative_minimum_in_context(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        for i in range(9):
+            make_user_with_profile(email=f"emp{i}@example.com", company=company)
+
+        response = self._login_with_company(client, make_user, company)
+
+        # 9 employees + 1 logged-in user profile = 10 total members
+        n = 10
+        expected = math.ceil(0.9604 * n / (0.0025 * (n - 1) + 0.9604))
+        assert response.context["representative_minimum"] == expected
 
 
 # ── HomeView ──────────────────────────────────────────────────────────────────
