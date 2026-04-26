@@ -27,33 +27,43 @@ class TestRequestOTPView:
         response = client.get(REQUEST_OTP_URL)
         assert response.status_code == 302
 
-    def test_post_valid_email_creates_otp(self, client):
+    def test_post_valid_email_creates_otp(self, client, make_user):
+        make_user(email="known@example.com")
         with patch("apps.accounts.views.send_otp_email"):
-            client.post(REQUEST_OTP_URL, {"email": "new@example.com"})
+            client.post(REQUEST_OTP_URL, {"email": "known@example.com"})
 
-        assert EmailOTP.objects.filter(email="new@example.com").exists()
+        assert EmailOTP.objects.filter(email="known@example.com").exists()
 
-    def test_post_valid_email_redirects_to_verify(self, client):
+    def test_post_valid_email_redirects_to_verify(self, client, make_user):
+        make_user(email="known@example.com")
         with patch("apps.accounts.views.send_otp_email"):
-            response = client.post(REQUEST_OTP_URL, {"email": "new@example.com"})
+            response = client.post(REQUEST_OTP_URL, {"email": "known@example.com"})
 
         assert response.status_code == 302
         assert response["Location"].endswith(reverse("accounts:verify_otp"))
 
-    def test_post_stores_email_in_session(self, client):
+    def test_post_unknown_email_shows_error(self, client):
+        response = client.post(REQUEST_OTP_URL, {"email": "unknown@example.com"})
+        assert response.status_code == 200
+        assert not EmailOTP.objects.filter(email="unknown@example.com").exists()
+
+    def test_post_stores_email_in_session(self, client, make_user):
+        make_user(email="session@example.com")
         with patch("apps.accounts.views.send_otp_email"):
             client.post(REQUEST_OTP_URL, {"email": "session@example.com"})
 
         assert client.session["otp_email"] == "session@example.com"
 
-    def test_post_calls_send_otp_email(self, client):
+    def test_post_calls_send_otp_email(self, client, make_user):
+        make_user(email="send@example.com")
         with patch("apps.accounts.views.send_otp_email") as mock_send:
             client.post(REQUEST_OTP_URL, {"email": "send@example.com"})
 
         mock_send.assert_called_once()
         assert mock_send.call_args[0][0] == "send@example.com"
 
-    def test_rate_limit_blocks_second_request(self, client):
+    def test_rate_limit_blocks_second_request(self, client, make_user):
+        make_user(email="rate@example.com")
         with patch("apps.accounts.views.send_otp_email"):
             client.post(REQUEST_OTP_URL, {"email": "rate@example.com"})
 
@@ -63,7 +73,8 @@ class TestRequestOTPView:
         assert response.status_code == 200  # re-renders with error
         mock_send.assert_not_called()
 
-    def test_smtp_failure_deletes_otp_and_shows_error(self, client):
+    def test_smtp_failure_deletes_otp_and_shows_error(self, client, make_user):
+        make_user(email="fail@example.com")
         with patch("apps.accounts.views.send_otp_email", side_effect=SMTPException):
             response = client.post(REQUEST_OTP_URL, {"email": "fail@example.com"})
 
@@ -100,26 +111,6 @@ class TestVerifyOTPView:
         self._set_session_email(client, "user@example.com")
         response = client.get(VERIFY_OTP_URL)
         assert response.status_code == 200
-
-    def test_unknown_email_rerenders_with_error(self, client):
-        email = "nobody@example.com"
-        self._create_otp(email)
-        self._set_session_email(client, email)
-
-        response = client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
-
-        assert response.status_code == 200
-        assert not User.objects.filter(email=email).exists()
-
-    def test_unknown_email_does_not_mark_otp_as_used(self, client):
-        email = "nobody2@example.com"
-        otp = self._create_otp(email)
-        self._set_session_email(client, email)
-
-        client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
-
-        otp.refresh_from_db()
-        assert otp.is_used is False
 
     def test_valid_otp_marks_otp_as_used(self, client, make_user):
         email = "markused@example.com"
