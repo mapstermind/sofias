@@ -246,41 +246,32 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
         members_data = []
         for profile in profiles:
             user = profile.user
-            is_employee = user.groups.filter(name="Employees").exists()
+            survey_progress = []
+            for assignment in assignments:
+                total = total_questions_map[assignment.id]
+                answered = answered_map.get((user.id, assignment.id), 0)
+                percent = round(answered / total * 100) if total > 0 else 0
+                status = submission_status_map.get(
+                    (user.id, assignment.id), "not_started"
+                )
+                survey_progress.append(
+                    {
+                        "assignment": assignment,
+                        "answered": answered,
+                        "total": total,
+                        "percent": percent,
+                        "status": status,
+                    }
+                )
+            members_data.append(
+                {
+                    "profile": profile,
+                    "is_self": profile.user_id == request.user.id,
+                    "survey_progress": survey_progress,
+                }
+            )
 
-            if is_employee:
-                survey_progress = []
-                for assignment in assignments:
-                    total = total_questions_map[assignment.id]
-                    answered = answered_map.get((user.id, assignment.id), 0)
-                    percent = round(answered / total * 100) if total > 0 else 0
-                    status = submission_status_map.get(
-                        (user.id, assignment.id), "not_started"
-                    )
-                    survey_progress.append(
-                        {
-                            "assignment": assignment,
-                            "answered": answered,
-                            "total": total,
-                            "percent": percent,
-                            "status": status,
-                        }
-                    )
-                members_data.append(
-                    {
-                        "profile": profile,
-                        "has_surveys": True,
-                        "survey_progress": survey_progress,
-                    }
-                )
-            else:
-                members_data.append(
-                    {
-                        "profile": profile,
-                        "has_surveys": False,
-                        "survey_progress": [],
-                    }
-                )
+        members_data.sort(key=lambda m: (not m["is_self"],))
 
         return render(
             request,
