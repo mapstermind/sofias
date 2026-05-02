@@ -4,6 +4,20 @@ from django.contrib.auth.password_validation import validate_password
 from apps.accounts.models import User
 
 
+class UserCSVImportForm(forms.Form):
+    csv_file = forms.FileField(
+        label="Archivo CSV",
+        help_text="Sube un archivo .csv con usuarios para crear.",
+        widget=forms.ClearableFileInput(attrs={"accept": ".csv,text/csv"}),
+    )
+
+    def clean_csv_file(self):
+        csv_file = self.cleaned_data["csv_file"]
+        if not csv_file.name.lower().endswith(".csv"):
+            raise forms.ValidationError("El archivo debe tener extensión .csv.")
+        return csv_file
+
+
 class EmailRequestForm(forms.Form):
     email = forms.EmailField(
         label="Tu correo electrónico",
