@@ -2,7 +2,7 @@ import secrets
 from smtplib import SMTPException
 
 from django.conf import settings
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import HttpResponseNotAllowed
@@ -10,10 +10,33 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from apps.accounts.emails import send_otp_email
-from apps.accounts.forms import EmailRequestForm, OTPVerifyForm, ProfileActivationForm
+from apps.accounts.forms import (
+    EmailPasswordLoginForm,
+    EmailRequestForm,
+    OTPVerifyForm,
+    ProfileActivationForm,
+    RequiredPasswordChangeForm,
+)
 from apps.accounts.models import EmailOTP, User, UserProfile
 
 _RATE_LIMIT_SECONDS = 30
+
+
+def _redirect_after_login(user):
+    if user.must_change_password:
+        return redirect("accounts:change_password")
+
+    if user.groups.filter(name="Admins").exists():
+        return redirect(settings.LOGIN_REDIRECT_URL)
+
+    try:
+        profile = user.profile
+    except UserProfile.DoesNotExist:
+        return redirect("accounts:setup_profile")
+
+    if not profile.is_activated:
+        return redirect("accounts:setup_profile")
+    return redirect(settings.LOGIN_REDIRECT_URL)
 
 
 def request_otp(request):
@@ -67,6 +90,27 @@ def request_otp(request):
     return redirect("accounts:verify_otp")
 
 
+def password_login(request):
+    """Fallback login for pre-created users with password auth enabled."""
+    if request.user.is_authenticated:
+        return redirect(settings.LOGIN_REDIRECT_URL)
+
+    if request.method == "GET":
+        return render(
+            request,
+            "accounts/login_password.html",
+            {"form": EmailPasswordLoginForm()},
+        )
+
+    form = EmailPasswordLoginForm(request.POST)
+    if not form.is_valid():
+        return render(request, "accounts/login_password.html", {"form": form})
+
+    user = form.cleaned_data["user"]
+    login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    return _redirect_after_login(user)
+
+
 def verify_otp(request):
     """Step 2 — user enters the 6-digit code; account is created if needed."""
     if request.user.is_authenticated:
@@ -104,7 +148,9 @@ def verify_otp(request):
             if otp is None or not otp.is_valid():
                 form.add_error(None, "El código es inválido o ha expirado.")
                 return render(
-                    request, "accounts/login_verify.html", {"form": form, "email": email}
+                    request,
+                    "accounts/login_verify.html",
+                    {"form": form, "email": email},
                 )
 
         user = User.objects.get(email=submitted_email)
@@ -120,17 +166,29 @@ def verify_otp(request):
     except KeyError:
         pass
 
-    if user.groups.filter(name="Admins").exists():
-        return redirect(settings.LOGIN_REDIRECT_URL)
+    return _redirect_after_login(user)
 
-    try:
-        profile = user.profile
-    except UserProfile.DoesNotExist:
-        return redirect("accounts:setup_profile")
 
-    if not profile.is_activated:
-        return redirect("accounts:setup_profile")
-    return redirect(settings.LOGIN_REDIRECT_URL)
+@login_required
+def change_password(request):
+    """Required password change for users who received a temporary password."""
+    if not request.user.must_change_password:
+        return _redirect_after_login(request.user)
+
+    if request.method == "GET":
+        return render(
+            request,
+            "accounts/change_password.html",
+            {"form": RequiredPasswordChangeForm(request.user)},
+        )
+
+    form = RequiredPasswordChangeForm(request.user, request.POST)
+    if not form.is_valid():
+        return render(request, "accounts/change_password.html", {"form": form})
+
+    form.save()
+    update_session_auth_hash(request, request.user)
+    return _redirect_after_login(request.user)
 
 
 @login_required
@@ -159,7 +217,9 @@ def setup_profile(request):
         )
 
     if request.method == "GET":
-        return render(request, "accounts/profile_setup.html", {"form": ProfileActivationForm()})
+        return render(
+            request, "accounts/profile_setup.html", {"form": ProfileActivationForm()}
+        )
 
     form = ProfileActivationForm(request.POST)
     if not form.is_valid():

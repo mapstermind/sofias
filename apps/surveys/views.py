@@ -39,7 +39,10 @@ def survey_detail(request, assignment_id):
             .prefetch_related("answers")
             .first()
         )
-        if existing_submission and existing_submission.status == SurveySubmission.Status.COMPLETED:
+        if (
+            existing_submission
+            and existing_submission.status == SurveySubmission.Status.COMPLETED
+        ):
             return redirect("core:home")
         existing_answers = _get_existing_answers(existing_submission)
 

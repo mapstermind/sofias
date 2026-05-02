@@ -10,7 +10,9 @@ from apps.accounts.models import EmailOTP, User, UserProfile
 pytestmark = pytest.mark.django_db
 
 REQUEST_OTP_URL = "/cuentas/ingresar/"
+PASSWORD_LOGIN_URL = "/cuentas/ingresar-con-contrasena/"
 VERIFY_OTP_URL = "/cuentas/verificar/"
+CHANGE_PASSWORD_URL = "/cuentas/cambiar-contrasena/"
 LOGOUT_URL = "/cuentas/cerrar-sesion/"
 
 
@@ -123,7 +125,9 @@ class TestVerifyOTPView:
         otp.refresh_from_db()
         assert otp.is_used is True
 
-    def test_valid_otp_returning_user_no_duplicate(self, client, make_user_with_profile):
+    def test_valid_otp_returning_user_no_duplicate(
+        self, client, make_user_with_profile
+    ):
         email = "existing@example.com"
         make_user_with_profile(email=email)
         self._create_otp(email)
@@ -153,7 +157,9 @@ class TestVerifyOTPView:
         response = client.post(VERIFY_OTP_URL, {"email": email, "code": "111111"})
         assert response.status_code == 200
 
-    def test_non_activated_user_redirects_to_setup(self, client, make_user_with_profile, make_company):
+    def test_non_activated_user_redirects_to_setup(
+        self, client, make_user_with_profile, make_company
+    ):
         company = make_company()
         email = "notyet@example.com"
         make_user_with_profile(email=email, company=company)
@@ -165,7 +171,9 @@ class TestVerifyOTPView:
         assert response.status_code == 302
         assert "completar-perfil" in response["Location"]
 
-    def test_activated_user_skips_setup(self, client, make_user_with_profile, make_company):
+    def test_activated_user_skips_setup(
+        self, client, make_user_with_profile, make_company
+    ):
         company = make_company()
         email = "active@example.com"
         user = make_user_with_profile(email=email, company=company)
@@ -203,6 +211,104 @@ class TestVerifyOTPView:
 
         assert response.status_code == 302
         assert "completar-perfil" in response["Location"]
+
+
+# ── password_login ───────────────────────────────────────────────────────────
+
+
+class TestPasswordLoginView:
+    def test_get_renders_form(self, client):
+        response = client.get(PASSWORD_LOGIN_URL)
+        assert response.status_code == 200
+
+    def test_unusable_password_cannot_login(self, client, make_user):
+        make_user(email="disabled@example.com")
+
+        response = client.post(
+            PASSWORD_LOGIN_URL,
+            {"email": "disabled@example.com", "password": "TempPass123!"},
+        )
+
+        assert response.status_code == 200
+        assert "_auth_user_id" not in client.session
+
+    def test_valid_password_logs_user_in(
+        self, client, make_user_with_profile, make_company
+    ):
+        company = make_company()
+        user = make_user_with_profile(
+            email="password@example.com",
+            password="TempPass123!",
+            company=company,
+        )
+        user.profile.is_activated = True
+        user.profile.save()
+
+        response = client.post(
+            PASSWORD_LOGIN_URL,
+            {"email": "password@example.com", "password": "TempPass123!"},
+        )
+
+        assert response.status_code == 302
+        assert client.session["_auth_user_id"] == str(user.pk)
+
+    def test_temporary_password_redirects_to_change_password(
+        self, client, make_user_with_profile, make_company
+    ):
+        company = make_company()
+        make_user_with_profile(
+            email="temporary@example.com",
+            password="TempPass123!",
+            company=company,
+            must_change_password=True,
+        )
+
+        response = client.post(
+            PASSWORD_LOGIN_URL,
+            {"email": "temporary@example.com", "password": "TempPass123!"},
+        )
+
+        assert response.status_code == 302
+        assert "cambiar-contrasena" in response["Location"]
+
+
+# ── change_password ──────────────────────────────────────────────────────────
+
+
+class TestChangePasswordView:
+    def test_requires_password_change_before_other_pages(self, client, make_user):
+        user = make_user(
+            email="mustchange@example.com",
+            password="TempPass123!",
+            must_change_password=True,
+        )
+        client.force_login(user)
+
+        response = client.get(SETUP_PROFILE_URL)
+
+        assert response.status_code == 302
+        assert "cambiar-contrasena" in response["Location"]
+
+    def test_post_changes_password_and_clears_required_flag(self, client, make_user):
+        user = make_user(
+            email="change@example.com",
+            password="TempPass123!",
+            must_change_password=True,
+        )
+        client.force_login(user)
+
+        response = client.post(
+            CHANGE_PASSWORD_URL,
+            {
+                "new_password1": "NewStrongPass123!",
+                "new_password2": "NewStrongPass123!",
+            },
+        )
+
+        user.refresh_from_db()
+        assert response.status_code == 302
+        assert user.must_change_password is False
+        assert user.check_password("NewStrongPass123!")
 
 
 # ── setup_profile ─────────────────────────────────────────────────────────────
@@ -252,9 +358,7 @@ class TestSetupProfileView:
         assert response.status_code == 302
         assert "completar-perfil" not in response["Location"]
 
-    def test_wrong_code_shows_error(
-        self, client, make_user_with_profile, make_company
-    ):
+    def test_wrong_code_shows_error(self, client, make_user_with_profile, make_company):
         company = make_company()
         user = make_user_with_profile(email="wrongcode@example.com", company=company)
         client.force_login(user)

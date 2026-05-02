@@ -35,7 +35,11 @@ def bootstrap_groups(db):
             "can_manage_employees",
             "can_take_assigned_surveys",
         ],
-        "Secondary Exec": ["can_view_dashboard", "can_manage_employees", "can_take_assigned_surveys"],
+        "Secondary Exec": [
+            "can_view_dashboard",
+            "can_manage_employees",
+            "can_take_assigned_surveys",
+        ],
         "Employees": ["can_take_assigned_surveys"],
     }
     groups = {}

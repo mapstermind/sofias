@@ -6,7 +6,13 @@ from .models import Company, User, UserProfile
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    pass
+    list_display = UserAdmin.list_display + ("must_change_password",)
+    fieldsets = UserAdmin.fieldsets + (
+        ("SOFIA-S access", {"fields": ("must_change_password",)}),
+    )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ("SOFIA-S access", {"fields": ("must_change_password",)}),
+    )
 
 
 @admin.register(Company)

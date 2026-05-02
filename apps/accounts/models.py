@@ -17,6 +17,7 @@ def _generate_reference_code() -> str:
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
+    must_change_password = models.BooleanField(default=False)
 
 
 class Company(models.Model):
