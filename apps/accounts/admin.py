@@ -11,8 +11,8 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Company)
 class CompanyAdmin(admin.ModelAdmin):
-    list_display = ("name", "legal_name", "reference_code", "created_at")
-    search_fields = ("name", "legal_name", "reference_code")
+    list_display = ("name", "legal_name", "rfc", "reference_code", "created_at")
+    search_fields = ("name", "legal_name", "rfc", "reference_code")
 
 
 @admin.register(UserProfile)

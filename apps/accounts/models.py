@@ -22,6 +22,8 @@ class User(AbstractUser):
 class Company(models.Model):
     name = models.CharField(max_length=255)
     legal_name = models.CharField(max_length=255)
+    rfc = models.CharField("RFC", max_length=13, blank=True)
+    address = models.CharField(max_length=500, blank=True)
     reference_code = models.CharField(max_length=5, unique=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
