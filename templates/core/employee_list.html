@@ -29,7 +29,7 @@
       {% for item in members %}
         {% with profile=item.profile user=item.profile.user %}
           <a href="{% if is_admin_view %}{% url 'core:company_employee_detail_for' company.reference_code user.id %}{% else %}{% url 'core:company_employee_detail' user.id %}{% endif %}"
-             class="block bg-white rounded-2xl border {% if item.is_self %}border-indigo-300{% else %}border-gray-200{% endif %} shadow-sm px-6 py-5 hover:border-indigo-300 hover:shadow-md transition-all group">
+             class="block rounded-2xl border {% if item.is_self %}bg-white border-indigo-300{% elif profile.is_activated %}bg-green-50 border-gray-200 ring-1 ring-inset ring-green-600/20{% else %}bg-white border-gray-200{% endif %} shadow-sm px-6 py-5 hover:border-indigo-300 hover:shadow-md transition-all group">
 
             {# User identity row #}
             <div class="flex items-start justify-between gap-4">
@@ -46,6 +46,15 @@
                 <p class="mt-0.5 text-sm text-gray-500">{{ user.email }}</p>
               </div>
               <div class="shrink-0 text-right flex flex-col items-end gap-2">
+                {% if profile.is_activated %}
+                  <span class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                    Activado
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 ring-1 ring-inset ring-gray-500/20">
+                    No activado
+                  </span>
+                {% endif %}
                 {% if profile.position %}
                   <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/20">
                     {{ profile.position }}

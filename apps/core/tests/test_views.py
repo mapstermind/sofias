@@ -294,6 +294,43 @@ class TestEmployeeSurveyListView:
         assert item["completed"] is False
 
 
+# ── CompanyEmployeeListView ──────────────────────────────────────────────────
+
+
+class TestCompanyEmployeeListView:
+    URL = "/tablero-empresa/empleados/"
+
+    def _make_viewer(self, make_user, company):
+        user = _give_perm(make_user(email="viewer@example.com"), "can_manage_employees")
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.company = company
+        profile.save()
+        return User.objects.get(pk=user.pk)
+
+    def test_activation_status_labels_render(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        active_user = make_user_with_profile(
+            email="active@example.com", company=company
+        )
+        inactive_user = make_user_with_profile(
+            email="inactive@example.com", company=company
+        )
+        active_user.profile.is_activated = True
+        active_user.profile.save(update_fields=["is_activated"])
+
+        client.force_login(viewer)
+        response = client.get(self.URL)
+
+        assert response.status_code == 200
+        assert active_user.email.encode() in response.content
+        assert inactive_user.email.encode() in response.content
+        assert "Activado".encode() in response.content
+        assert "No activado".encode() in response.content
+
+
 # ── EmployeeDetailView ────────────────────────────────────────────────────────
 
 
