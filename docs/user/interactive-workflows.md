@@ -1,5 +1,7 @@
 # SOFIA-S Interactive Workflow Guide
 
+> Migration note: this document was moved from the repository root during the documentation restructure. Review it against the current `SurveyTemplate`, `QuestionTemplate`, and question type model names before treating it as authoritative.
+
 The workflow layer provides four management commands for building surveys interactively from the terminal. This document covers everything you need to use them effectively: mental models, command-by-command walkthroughs, input conventions, recommended sequences, and guidance for extending the system.
 
 ---

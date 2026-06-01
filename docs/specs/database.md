@@ -1,5 +1,7 @@
 # Database Structure
 
+> Migration note: this document was moved from the repository root during the documentation restructure. Review it against the current Django models before treating it as authoritative; some fields or enum values may have changed since it was written.
+
 ## Overview
 
 The schema is organized around four distinct concerns:
