@@ -1,7 +1,5 @@
 # Database Structure
 
-> Migration note: this document was moved from the repository root during the documentation restructure. Review it against the current Django models before treating it as authoritative; some fields or enum values may have changed since it was written.
-
 ## Overview
 
 The schema is organized around four distinct concerns:
@@ -27,12 +25,19 @@ Represents an organization that participates in surveys.
 | `id` | BigAutoField | PK |
 | `name` | CharField(255) | Display name |
 | `legal_name` | CharField(255) | Official registered name |
+| `rfc` | CharField(13) | Optional RFC |
+| `address` | CharField(500) | Optional address |
 | `reference_code` | CharField(5) | Unique alphanumeric identifier; auto-generated on save if blank |
 | `created_at` | DateTimeField | Auto-set on creation |
 | `updated_at` | DateTimeField | Auto-updated on save |
 
 #### `User`
 Extends Django's `AbstractUser`. Inherits all standard auth fields (`username`, `email`, `password`, `is_staff`, etc.).
+
+| Field | Type | Notes |
+|---|---|---|
+| `email` | EmailField | Unique; used by OTP and password fallback login |
+| `must_change_password` | BooleanField | Forces temporary-password users through the password-change flow |
 
 #### `UserProfile`
 Extends `User` with business context. Created separately from the auth user.
@@ -42,7 +47,32 @@ Extends `User` with business context. Created separately from the auth user.
 | `id` | BigAutoField | PK |
 | `user` | OneToOneField → `User` | Cascades on user delete |
 | `position` | CharField(255) | Job title, optional |
+| `is_activated` | BooleanField | First-login activation flag, default `False` |
 | `company` | ForeignKey → `Company` | SET NULL on company delete; nullable |
+
+#### `Role`
+Sentinel model used only to define project permissions. It is `managed = False`, so Django does not create a database table for it.
+
+Permissions:
+
+- `can_manage_surveys`
+- `can_view_dashboard`
+- `can_view_insights`
+- `can_take_assigned_surveys`
+- `can_manage_employees`
+- `can_view_submissions`
+
+#### `EmailOTP`
+One-time passcode record for passwordless login. The email is stored as a plain `EmailField`, not a foreign key, because OTP request and verification are email-driven.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | BigAutoField | PK |
+| `email` | EmailField | Indexed |
+| `code` | CharField(6) | Six-digit code |
+| `created_at` | DateTimeField | Auto-set on creation |
+| `expires_at` | DateTimeField | Auto-set from `settings.OTP_EXPIRY_MINUTES` when omitted |
+| `is_used` | BooleanField | Marks consumed OTPs |
 
 ---
 
@@ -54,9 +84,8 @@ A reusable question in the library. Completely company- and survey-agnostic. Thi
 | Field | Type | Notes |
 |---|---|---|
 | `id` | BigAutoField | PK |
-| `question_type` | CharField | `short_text`, `long_text`, `integer`, `decimal`, `date`, `single_choice`, `multiple_choice`, `boolean`, `rating` |
+| `question_type` | CharField | `text`, `integer`, `decimal`, `date`, `single_choice`, `multiple_choice`, `boolean`, `rating`, `likert` |
 | `text` | TextField | The question prompt |
-| `required` | BooleanField | Default `True` |
 | `config` | JSONField | Flexible metadata (min/max, placeholders, validation rules, etc.) |
 | `created_at` | DateTimeField | Auto-set |
 | `updated_at` | DateTimeField | Auto-updated |
@@ -125,7 +154,6 @@ A single question owned by a `SurveyVersion`. May be created manually or stamped
 | `source` | ForeignKey → `QuestionTemplate` | SET NULL; nullable — provenance only, no live coupling |
 | `question_type` | CharField | Same choices as `QuestionTemplate.question_type` |
 | `text` | TextField | The question prompt |
-| `required` | BooleanField | Default `True` |
 | `order` | PositiveIntegerField | Default 0 |
 | `config` | JSONField | Flexible metadata |
 
@@ -168,6 +196,8 @@ A single attempt by a user to answer a survey, scoped to a specific assignment (
 | `status` | CharField | `in_progress` / `completed` |
 | `started_at` | DateTimeField | Auto-set on creation |
 | `completed_at` | DateTimeField | Nullable; set on completion |
+
+Constraint: `UNIQUE (user, assignment)` when `user` is not null — one authenticated submission per user per assignment.
 
 #### `Answer`
 The recorded value for one question within a submission.
@@ -223,15 +253,15 @@ responses_surveysubmission                       surveys_surveytemplate
 ```
 Company.create(name, legal_name)              ← reference_code auto-generated
   └─ User.create(username, email, password, ...)
-       └─ UserProfile.create(user, position, company)
+       └─ UserProfile.create(user, position, company, is_activated=False)
 ```
 
-A `Company` is created first. Users are then created via Django's auth system and a `UserProfile` is attached to link them to their company.
+A `Company` is created first. Users are then created via Django's auth system, manual admin entry, or CSV import. A `UserProfile` is attached to link non-admin users to their company. OTP-only users have an unusable password; password-fallback users have a usable temporary password and `must_change_password=True`.
 
 ### 2. Build the question library
 
 ```
-QuestionTemplate.create(question_type, text, required, config)
+QuestionTemplate.create(question_type, text, config)
   └─ ChoiceTemplate.create(question, label, value, order)   ← for choice questions only
 ```
 
@@ -269,7 +299,7 @@ SurveySubmission.create(assignment, user, status=IN_PROGRESS)
      submission.completed_at = now()
 ```
 
-When a user opens the survey URL (identified by `assignment_id`), a `SurveySubmission` is created for that assignment. As they submit, an `Answer` is stored per question. Company isolation is automatic: querying `Answer` objects through `submission → assignment → company` always stays within a single company's data.
+When a user submits or autosaves the survey URL identified by `assignment_id`, a `SurveySubmission` is created or reused for that assignment. As they answer, an `Answer` is stored per question. Company isolation is automatic: querying `Answer` objects through `submission → assignment → company` always stays within a single company's data.
 
 ---
 
