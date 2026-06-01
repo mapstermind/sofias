@@ -2,6 +2,7 @@ from smtplib import SMTPException
 from unittest.mock import patch
 
 import pytest
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -114,6 +115,15 @@ class TestVerifyOTPView:
         response = client.get(VERIFY_OTP_URL)
         assert response.status_code == 200
 
+    @override_settings(OTP_EXPIRY_MINUTES=7)
+    def test_get_uses_configured_otp_expiry_minutes(self, client):
+        self._set_session_email(client, "user@example.com")
+
+        response = client.get(VERIFY_OTP_URL)
+
+        assert response.status_code == 200
+        assert "Expira en 7 minutos.".encode() in response.content
+
     def test_valid_otp_marks_otp_as_used(self, client, make_user):
         email = "markused@example.com"
         make_user(email=email)
@@ -136,6 +146,22 @@ class TestVerifyOTPView:
         client.post(VERIFY_OTP_URL, {"email": email, "code": "123456"})
 
         assert User.objects.filter(email=email).count() == 1
+
+    def test_mismatched_hidden_email_rerenders_with_error(self, client, make_user):
+        session_email = "session@example.com"
+        submitted_email = "submitted@example.com"
+        make_user(email=session_email)
+        make_user(email=submitted_email)
+        self._create_otp(submitted_email)
+        self._set_session_email(client, session_email)
+
+        response = client.post(
+            VERIFY_OTP_URL,
+            {"email": submitted_email, "code": "123456"},
+        )
+
+        assert response.status_code == 200
+        assert "_auth_user_id" not in client.session
 
     def test_expired_otp_rerenders_with_error(self, client, bootstrap_groups):
         email = "expired@example.com"

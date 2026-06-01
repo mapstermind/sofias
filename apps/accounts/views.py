@@ -111,8 +111,20 @@ def password_login(request):
     return _redirect_after_login(user)
 
 
+def _render_verify_otp(request, form, email):
+    return render(
+        request,
+        "accounts/login_verify.html",
+        {
+            "form": form,
+            "email": email,
+            "otp_expiry_minutes": getattr(settings, "OTP_EXPIRY_MINUTES", 10),
+        },
+    )
+
+
 def verify_otp(request):
-    """Step 2 — user enters the 6-digit code; account is created if needed."""
+    """Step 2 — user enters the 6-digit code for an existing account."""
     if request.user.is_authenticated:
         return redirect(settings.LOGIN_REDIRECT_URL)
 
@@ -122,18 +134,18 @@ def verify_otp(request):
 
     if request.method == "GET":
         form = OTPVerifyForm(initial={"email": email})
-        return render(
-            request, "accounts/login_verify.html", {"form": form, "email": email}
-        )
+        return _render_verify_otp(request, form, email)
 
     form = OTPVerifyForm(request.POST)
     if not form.is_valid():
-        return render(
-            request, "accounts/login_verify.html", {"form": form, "email": email}
-        )
+        return _render_verify_otp(request, form, email)
 
     submitted_email = form.cleaned_data["email"].lower()
     code = form.cleaned_data["code"]
+
+    if submitted_email != email:
+        form.add_error(None, "El código es inválido o ha expirado.")
+        return _render_verify_otp(request, form, email)
 
     dev_bypass = settings.DEBUG and code == "000000"
 
@@ -147,11 +159,7 @@ def verify_otp(request):
 
             if otp is None or not otp.is_valid():
                 form.add_error(None, "El código es inválido o ha expirado.")
-                return render(
-                    request,
-                    "accounts/login_verify.html",
-                    {"form": form, "email": email},
-                )
+                return _render_verify_otp(request, form, email)
 
         user = User.objects.get(email=submitted_email)
 

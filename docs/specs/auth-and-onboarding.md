@@ -43,9 +43,12 @@ Related specs:
 8. The email is stored in the session as `otp_email`.
 9. The user is redirected to `/cuentas/verificar/`.
 10. The user enters the OTP.
-11. If the OTP is valid, unused, and unexpired, SOFIA-S marks it used, logs the user in, removes `otp_email` from the session, and applies post-login routing.
+11. The submitted hidden email must match the session `otp_email`.
+12. If the OTP is valid, unused, and unexpired, SOFIA-S marks it used, logs the user in, removes `otp_email` from the session, and applies post-login routing.
 
-Current confirmed behavior: OTP login does not create users. The `verify_otp` view assumes the submitted email belongs to an existing user; the normal `request_otp` flow enforces that.
+OTP login does not create users.
+
+In `settings.DEBUG`, the code `000000` may bypass OTP lookup for development use only. The submitted hidden email must still match the session `otp_email`.
 
 ### Password fallback login
 
@@ -55,6 +58,8 @@ Current confirmed behavior: OTP login does not create users. The `verify_otp` vi
 4. Login succeeds only when an active user exists, has a usable password, and the password is correct.
 5. Invalid credentials, inactive users, and users with unusable passwords receive the same generic form error.
 6. On success, SOFIA-S logs the user in through Django's `ModelBackend` and applies post-login routing.
+
+The password fallback path does not currently have an application-level rate limit. This is acceptable for the current small deployment model and should be revisited if password fallback becomes a primary login path or is exposed to higher-volume traffic.
 
 ### Required password change
 
@@ -74,8 +79,8 @@ Non-admin users who do not have an activated profile are routed to `/cuentas/com
 Activation behavior:
 
 - Admin-group users skip profile activation and are redirected to the app home route.
-- A user without a `UserProfile` sees the profile activation page with an account-not-linked error.
-- A user whose profile has no company sees the profile activation page with an account-not-linked error.
+- A user without a `UserProfile` sees the profile activation page with a generic account-not-linked error.
+- A user whose profile has no company sees the profile activation page with the same generic account-not-linked error.
 - A user whose profile is already activated is redirected to the app home route.
 - A user with an inactive profile and linked company sees the company reference code form.
 - The submitted reference code is stripped, uppercased, must be exactly 5 characters, and must be alphanumeric.
@@ -122,8 +127,8 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 |---|---|---|---|---|
 | `/cuentas/ingresar/` | GET | none | OTP email form | Authenticated users redirect to `settings.LOGIN_REDIRECT_URL`. |
 | `/cuentas/ingresar/` | POST | `email` | Redirect to verify or form errors | Creates OTP only for existing users. |
-| `/cuentas/verificar/` | GET | session `otp_email` | OTP form | Redirects to request-OTP page when session email is missing. |
-| `/cuentas/verificar/` | POST | hidden `email`, `code` | Login and post-login redirect or form errors | Marks valid OTP used unless debug bypass applies. |
+| `/cuentas/verificar/` | GET | session `otp_email` | OTP form | Redirects to request-OTP page when session email is missing. Displays configured OTP expiry minutes. |
+| `/cuentas/verificar/` | POST | hidden `email`, `code` | Login and post-login redirect or form errors | Hidden email must match session email. Marks valid OTP used unless debug bypass applies. |
 | `/cuentas/ingresar-con-contrasena/` | GET | none | Password login form | Authenticated users redirect to `settings.LOGIN_REDIRECT_URL`. |
 | `/cuentas/ingresar-con-contrasena/` | POST | `email`, `password` | Login and post-login redirect or form errors | Uses Django `ModelBackend`. |
 | `/cuentas/cambiar-contrasena/` | GET | authenticated user | Password-change form or redirect | Requires login. Users without `must_change_password` are rerouted through post-login routing. |
@@ -185,7 +190,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
   - Password change.
   - Profile activation.
 - Admin-group behavior:
-  - Users in the `Admins` group skip profile activation.
+  - Users in the `Admins` group skip profile activation. This is intentionally group-name based in the current system because the bootstrap command owns that canonical group contract.
 - Middleware behavior:
   - Authenticated users with `must_change_password=True` are redirected to password change except on password-change, logout, static, and admin paths.
 - Custom permissions:
@@ -201,6 +206,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | OTP requested again inside the rate-limit window | Re-render OTP request form with wait message; send no email. |
 | SMTP failure while sending OTP | Delete created OTP and re-render request form with send-failure error. |
 | Verify page opened without `otp_email` in session | Redirect to `/cuentas/ingresar/`. |
+| Verify form submitted with hidden email different from session `otp_email` | Re-render verify form with invalid/expired error; do not log in. |
 | OTP code contains non-digits or is not six characters | Re-render verify form with field errors. |
 | OTP code is wrong, expired, or already used | Re-render verify form with invalid/expired error. |
 | Password fallback credentials invalid | Re-render password form with generic invalid-login error. |
@@ -219,6 +225,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Public login flows must not create new users.
 - OTPs are single-use and expire according to `EmailOTP.expires_at`.
 - A successful normal OTP verification marks the OTP used.
+- OTP verification must bind the hidden submitted email to the session `otp_email`.
 - Unknown emails must not receive OTPs.
 - Unused OTPs for an email are invalidated before a new OTP is created.
 - Temporary-password users must change their password before using normal non-admin, non-static app routes.
@@ -233,6 +240,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Given an unknown email, when the user requests an OTP, then no OTP is created and the request form shows an error.
 - Given a second OTP request for the same email inside the rate-limit window, when the user submits the form, then no new email is sent.
 - Given a valid unexpired OTP, when the user verifies it, then the OTP is marked used, the user is logged in, and post-login routing is applied.
+- Given a verification POST where the hidden email differs from the session `otp_email`, when the user submits any code, then the form is re-rendered and the user is not logged in.
 - Given an expired or wrong OTP, when the user submits it, then the verification form is re-rendered with an error.
 - Given an active user with a usable password, when they submit correct password fallback credentials, then they are logged in and post-login routing is applied.
 - Given a temporary-password user, when they log in or visit protected app pages, then they are forced to change their password before continuing.
@@ -258,7 +266,9 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | SMTP failure deletes OTP | `apps/accounts/tests/test_views.py` | `TestRequestOTPView::test_smtp_failure_deletes_otp_and_shows_error` |
 | Verify without session redirects | `apps/accounts/tests/test_views.py` | `TestVerifyOTPView::test_get_without_session_redirects_to_request_otp` |
 | Verify with session renders form | `apps/accounts/tests/test_views.py` | `TestVerifyOTPView::test_get_with_session_renders_form` |
+| Verify page displays configured expiry | `apps/accounts/tests/test_views.py` | `TestVerifyOTPView::test_get_uses_configured_otp_expiry_minutes` |
 | Valid OTP is marked used | `apps/accounts/tests/test_views.py` | `TestVerifyOTPView::test_valid_otp_marks_otp_as_used` |
+| Hidden email must match session email | `apps/accounts/tests/test_views.py` | `TestVerifyOTPView::test_mismatched_hidden_email_rerenders_with_error` |
 | OTP login does not duplicate existing user | `apps/accounts/tests/test_views.py` | `TestVerifyOTPView::test_valid_otp_returning_user_no_duplicate` |
 | Expired/wrong OTP rejected | `apps/accounts/tests/test_views.py` | `TestVerifyOTPView::test_expired_otp_rerenders_with_error`, `test_wrong_code_rerenders_with_error` |
 | Post-login setup routing | `apps/accounts/tests/test_views.py` | `TestVerifyOTPView::test_non_activated_user_redirects_to_setup`, `test_activated_user_skips_setup`, `test_admin_user_skips_setup_profile_redirect`, `test_user_without_profile_redirects_to_setup` |
@@ -280,12 +290,16 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | OTP validity rules | `apps/accounts/tests/test_models.py` | `TestEmailOTPIsValid::*` |
 | Company reference code generation | `apps/accounts/tests/test_models.py` | `TestCompanyReferenceCode::*` |
 
+## Decisions
+
+- OTP login requires pre-created users. Any stale comments or docstrings that imply user creation should be corrected.
+- The OTP verification screen must display `settings.OTP_EXPIRY_MINUTES` rather than hardcoded copy.
+- The debug OTP bypass code `000000` remains allowed only when `settings.DEBUG` is true.
+- OTP verification must reject a hidden email that differs from the session `otp_email`, including when debug bypass would otherwise apply.
+- Missing profile and missing company remain intentionally indistinguishable to the user; both show the generic account-not-linked message.
+- Password fallback has no application-level rate limit for now. Revisit if fallback password login becomes a common or higher-risk path.
+- Admin activation bypass remains coupled to the canonical `Admins` group name for now.
+
 ## Open questions
 
-- The `verify_otp` docstring still says an account is created if needed, but current behavior requires the user to already exist. Should the docstring be updated in a separate cleanup?
-- `templates/accounts/login_verify.html` hardcodes "Expira en 10 minutos" while `settings.OTP_EXPIRY_MINUTES` is configurable. Should the template render the configured value?
-- In `settings.DEBUG`, submitting code `000000` bypasses OTP lookup and usage marking. Is this intended to remain available in all debug environments?
-- `verify_otp` trusts the hidden form email after the session gate. If a submitted hidden email differs from `otp_email`, current behavior uses the submitted email for lookup. Should verification require equality with the session email?
-- Users without a profile and users with a profile but no company see the same account-not-linked message. Is that distinction intentionally hidden from the user?
-- Password fallback has no explicit rate limit beyond Django/session behavior. Is that acceptable for this stage?
-- Admin users skip profile activation based on group name `Admins`, not a permission. Is group-name coupling intentional?
+- None.
