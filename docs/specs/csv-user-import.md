@@ -7,15 +7,15 @@ The CSV user import feature lets platform admins bulk-create pre-approved users 
 - one `accounts.User`
 - one related `accounts.UserProfile`
 - one group assignment
-- optional password-fallback access for users who cannot receive OTP emails
+- optional setup-code fallback access for users who cannot receive OTP emails
 
 This spec documents the current behavior so future refactors can safely add fields, rename columns, or move the feature to another UI without changing core guarantees unintentionally.
 
 ## Actors
 
 - **Platform admin:** uploads the CSV from Django Admin.
-- **Imported user:** receives access through OTP or temporary password fallback.
-- **HR/company contact:** receives temporary passwords only when `auth_method=password`.
+- **Imported user:** receives access through OTP or setup-code fallback.
+- **HR/company contact:** receives setup access codes only when `auth_method=password`.
 
 Company employees and normal company managers are out of scope for this version.
 
@@ -110,14 +110,15 @@ For `auth_method=otp`:
 
 - Set an unusable password.
 - Set `must_change_password=False`.
-- Do not generate a temporary password.
+- Do not generate a setup access code.
 
 For `auth_method=password`:
 
-- Generate a strong temporary password.
-- Store it using Django password hashing.
+- Generate a 9-digit setup access code.
+- Create a linked `SetupAccessCode` with the generated code.
+- Keep the user's password unusable at import time.
 - Set `must_change_password=True`.
-- Include the plaintext temporary password only in the downloaded report.
+- Include the setup access code in the downloaded report.
 
 Existing users are never updated by this importer.
 
@@ -128,25 +129,25 @@ After a successful upload, the admin receives a downloadable CSV report.
 Report headers:
 
 ```text
-row_number,email,status,message,username,temporary_password
+row_number,email,status,message,username,setup_access_code
 ```
 
 Rules:
 
 - `status` is either `created` or `skipped`.
 - `row_number` uses spreadsheet-style numbering, where the first data row is `2`.
-- `temporary_password` is populated only when a `password` row is created.
+- `setup_access_code` is populated only when a `password` row is created.
 - Skipped rows include an explanatory `message`.
-- The report is the only place generated temporary passwords are shown in plaintext.
+- The report includes generated setup access codes for created fallback users.
 
 ## Security Invariants
 
-- Generated temporary passwords must not be persisted in plaintext.
-- Temporary passwords must be shown only in the report download.
-- Users imported with temporary passwords must have `must_change_password=True`.
+- Users imported with setup access codes must have unusable passwords until they create one.
+- Users imported with setup access codes must have `must_change_password=True`.
+- Used setup access code rows must clear the consumed code value.
 - OTP users must not receive usable passwords.
 - The company reference code is not an authentication secret and must not be treated as a password.
-- Import reports containing temporary passwords are sensitive operational artifacts.
+- Import reports containing setup access codes are sensitive operational artifacts.
 
 ## Non-Goals
 
@@ -165,7 +166,7 @@ The current feature does not:
 
 Given a valid `otp` row, when the CSV is imported, then a user is created with an unusable password, `must_change_password=False`, the selected group, and a linked inactive profile.
 
-Given a valid `password` row, when the CSV is imported, then a user is created with a usable generated password, `must_change_password=True`, the selected group, a linked inactive profile, and the generated password in the report.
+Given a valid `password` row, when the CSV is imported, then a user is created with an unusable password, `must_change_password=True`, the selected group, a linked inactive profile, one setup access code, and the setup access code in the report.
 
 Given a CSV with a duplicate email, when the CSV is imported, then that row is skipped and the existing user is not modified.
 
@@ -199,7 +200,7 @@ When moving to a platform UI:
 - Preserve the importer service behavior.
 - Add company scoping for non-platform admins.
 - Decide whether company managers may assign groups or only import default employee users.
-- Keep temporary password report handling explicit and secure.
+- Keep setup access code report handling explicit and secure.
 
 When changing duplicate behavior:
 

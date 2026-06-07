@@ -8,7 +8,7 @@ from django.core.validators import validate_email
 from django.db import transaction
 from django.utils.crypto import get_random_string
 
-from apps.accounts.models import Company, User, UserProfile
+from apps.accounts.models import Company, SetupAccessCode, User, UserProfile
 from apps.accounts.utils import generate_unique_username
 
 REQUIRED_HEADERS = {"email", "company_reference_code", "group", "auth_method"}
@@ -19,7 +19,7 @@ REPORT_HEADERS = [
     "status",
     "message",
     "username",
-    "temporary_password",
+    "setup_access_code",
 ]
 
 
@@ -96,7 +96,7 @@ def _import_row(row_number: int, row: dict[str, str]) -> dict[str, str]:
         "status": "skipped",
         "message": "",
         "username": "",
-        "temporary_password": "",
+        "setup_access_code": "",
     }
 
     validation_error = _validate_row(row)
@@ -106,8 +106,8 @@ def _import_row(row_number: int, row: dict[str, str]) -> dict[str, str]:
 
     auth_method = row["auth_method"].lower()
     username = generate_unique_username(email)
-    temporary_password = (
-        _generate_temporary_password() if auth_method == "password" else ""
+    setup_access_code = (
+        _generate_setup_access_code() if auth_method == "password" else ""
     )
 
     try:
@@ -133,10 +133,7 @@ def _import_row(row_number: int, row: dict[str, str]) -> dict[str, str]:
             must_change_password=auth_method == "password",
         )
 
-        if auth_method == "password":
-            user.set_password(temporary_password)
-        else:
-            user.set_unusable_password()
+        user.set_unusable_password()
 
         user.save()
         user.groups.add(group)
@@ -146,13 +143,15 @@ def _import_row(row_number: int, row: dict[str, str]) -> dict[str, str]:
             company=company,
             is_activated=False,
         )
+        if auth_method == "password":
+            SetupAccessCode.objects.create(user=user, code=setup_access_code)
 
     report_row.update(
         {
             "status": "created",
             "message": "Usuario creado.",
             "username": username,
-            "temporary_password": temporary_password,
+            "setup_access_code": setup_access_code,
         }
     )
     return report_row
@@ -175,6 +174,8 @@ def _validate_row(row: dict[str, str]) -> str:
     return ""
 
 
-def _generate_temporary_password() -> str:
-    chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%&*"
-    return get_random_string(16, allowed_chars=chars)
+def _generate_setup_access_code() -> str:
+    while True:
+        code = get_random_string(9, allowed_chars="0123456789")
+        if not SetupAccessCode.objects.filter(code=code).exists():
+            return code

@@ -1,7 +1,7 @@
 import pytest
 from django.utils import timezone
 
-from apps.accounts.models import EmailOTP
+from apps.accounts.models import EmailOTP, SetupAccessCode
 from apps.accounts.utils import generate_unique_username
 
 pytestmark = pytest.mark.django_db
@@ -40,6 +40,44 @@ class TestEmailOTPIsValid:
             is_used=True,
         )
         assert otp.is_valid() is False
+
+
+class TestSetupAccessCode:
+    def test_setup_access_code_is_valid_when_unused(self, make_user):
+        user = make_user(email="setup@example.com", must_change_password=True)
+        access_code = SetupAccessCode.objects.create(user=user, code="123456789")
+
+        assert access_code.is_valid("123456789") is True
+
+    def test_setup_access_code_is_invalid_when_used(self, make_user):
+        user = make_user(email="used@example.com", must_change_password=True)
+        access_code = SetupAccessCode.objects.create(
+            user=user,
+            code=None,
+            used_at=timezone.now(),
+        )
+
+        assert access_code.is_valid("123456789") is False
+
+    def test_setup_access_code_does_not_expire(self, make_user):
+        user = make_user(email="old@example.com", must_change_password=True)
+        access_code = SetupAccessCode.objects.create(user=user, code="987654321")
+        SetupAccessCode.objects.filter(pk=access_code.pk).update(
+            created_at=timezone.now() - timezone.timedelta(days=365)
+        )
+        access_code.refresh_from_db()
+
+        assert access_code.is_valid("987654321") is True
+
+    def test_mark_used_sets_used_at_and_clears_code(self, make_user):
+        user = make_user(email="consume@example.com", must_change_password=True)
+        access_code = SetupAccessCode.objects.create(user=user, code="111222333")
+
+        access_code.mark_used()
+        access_code.refresh_from_db()
+
+        assert access_code.used_at is not None
+        assert access_code.code is None
 
 
 class TestCompanyReferenceCode:

@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 
-from apps.accounts.models import User
+from apps.accounts.models import User, normalize_setup_access_code
 
 
 class UserCSVImportForm(forms.Form):
@@ -89,6 +89,42 @@ class EmailPasswordLoginForm(forms.Form):
 
         cleaned_data["user"] = user
         return cleaned_data
+
+
+class SetupAccessCodeLoginForm(forms.Form):
+    email = forms.EmailField(
+        label="Tu correo electrónico",
+        widget=forms.EmailInput(
+            attrs={
+                "autofocus": True,
+                "placeholder": "tucorreo@ejemplo.com",
+                "autocomplete": "email",
+                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-indigo-500",
+            }
+        ),
+    )
+    setup_access_code = forms.CharField(
+        label="Código temporal de acceso",
+        widget=forms.TextInput(
+            attrs={
+                "inputmode": "numeric",
+                "autocomplete": "one-time-code",
+                "placeholder": "123-456-789",
+                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest focus:border-indigo-500 focus:ring-indigo-500",
+            }
+        ),
+    )
+
+    def clean_email(self):
+        return self.cleaned_data["email"].lower()
+
+    def clean_setup_access_code(self):
+        code = normalize_setup_access_code(self.cleaned_data["setup_access_code"])
+        if len(code) != 9 or not code.isdigit():
+            raise forms.ValidationError(
+                "El código temporal de acceso debe tener 9 dígitos."
+            )
+        return code
 
 
 class RequiredPasswordChangeForm(forms.Form):

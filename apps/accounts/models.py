@@ -4,6 +4,7 @@ import string
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -55,6 +56,49 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username} profile"
+
+
+class SetupAccessCode(models.Model):
+    """
+    One-time first-login code for users who cannot receive external OTP email.
+    """
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="setup_access_codes"
+    )
+    code = models.CharField(max_length=9, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["code"],
+                condition=Q(code__isnull=False),
+                name="unique_active_setup_access_code",
+            ),
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=Q(used_at__isnull=True),
+                name="unique_unused_setup_access_code_per_user",
+            ),
+        ]
+
+    def is_valid(self, submitted_code: str) -> bool:
+        normalized_code = normalize_setup_access_code(submitted_code)
+        return self.used_at is None and self.code == normalized_code
+
+    def mark_used(self):
+        self.used_at = timezone.now()
+        self.code = None
+        self.save(update_fields=["used_at", "code"])
+
+    def __str__(self):
+        return f"Setup access code for {self.user.email}"
+
+
+def normalize_setup_access_code(code: str) -> str:
+    return code.strip().replace("-", "").replace(" ", "")
 
 
 class Role(models.Model):

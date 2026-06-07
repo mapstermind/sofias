@@ -1,6 +1,6 @@
 # CSV User Import Procedure
 
-This document explains how platform admins can bulk-create users from Django Admin using a CSV file. The importer creates both the `User` and the corresponding `UserProfile`, links the profile to a company, assigns one group, and supports either OTP-only login or temporary-password fallback.
+This document explains how platform admins can bulk-create users from Django Admin using a CSV file. The importer creates both the `User` and the corresponding `UserProfile`, links the profile to a company, assigns one group, and supports either OTP-only login or setup-code fallback.
 
 ## Who Can Use This
 
@@ -43,7 +43,7 @@ maria.santos@empresa.com,A1B2C,Employees,password,Maria,Santos,Coordinadora
 sin.nombre@empresa.com,A1B2C,Employees,otp,,,
 ```
 
-Use `otp` when the user can receive the login code by email. Use `password` only when the company blocks external email delivery and HR needs to distribute a temporary password internally.
+Use `otp` when the user can receive the login code by email. Use `password` only when the company blocks external email delivery and HR needs to distribute a código temporal de acceso internally.
 
 ## Upload Procedure
 
@@ -64,9 +64,9 @@ The downloaded report includes:
 - `status`: `created` or `skipped`
 - `message`
 - `username`
-- `temporary_password`
+- `setup_access_code`
 
-For `auth_method=password` rows that are created successfully, `temporary_password` contains the generated password. This is the only time the password is shown in plaintext.
+For `auth_method=password` rows that are created successfully, `setup_access_code` contains the generated 9-digit código temporal de acceso. The unused code is also visible in Django Admin for authorized support users.
 
 ## After Import
 
@@ -76,19 +76,20 @@ For OTP users:
 2. Share the company `reference_code` through the correct company contact.
 3. Users enter their email, receive an OTP, and activate their profile with the company reference code.
 
-For password fallback users:
+For setup-code fallback users:
 
-1. Send the report, or only the relevant temporary passwords, to the company’s trusted HR contact through an approved internal channel.
-2. HR distributes each temporary password to the correct employee.
-3. Users log in at `/cuentas/ingresar-con-contrasena/`.
-4. SOFIA-S forces them to change the temporary password before continuing.
-5. Users then activate their profile with the company reference code.
+1. Send the report, or only the relevant setup access codes, to the company’s trusted HR contact through an approved internal channel.
+2. HR distributes each código temporal de acceso to the correct employee.
+3. Users log in at `/cuentas/primer-ingreso/`.
+4. SOFIA-S forces them to create a contraseña before continuing.
+5. Future fallback logins use `/cuentas/ingresar-con-contrasena/`.
+6. Users then activate their profile with the company reference code.
 
 ## Security Rules
 
 - Prefer `auth_method=otp` whenever possible.
-- Do not include temporary passwords in the upload CSV; SOFIA-S generates them.
+- Do not include setup access codes in the upload CSV; SOFIA-S generates them.
 - Treat the downloaded report as sensitive.
 - Do not store the report in shared folders unless access is restricted.
 - Do not use the company reference code as a password.
-- If a generated temporary password is exposed, reset that user’s password in Django Admin and keep `must_change_password` enabled.
+- If a generated setup access code is exposed before use, delete it in Django Admin and create a new user import only if access is still required.

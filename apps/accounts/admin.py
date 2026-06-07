@@ -7,7 +7,7 @@ from django.urls import path
 
 from .forms import UserCSVImportForm
 from .importers import import_users_from_csv, render_import_report_csv
-from .models import Company, User, UserProfile
+from .models import Company, SetupAccessCode, User, UserProfile
 
 
 @admin.register(User)
@@ -91,3 +91,11 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_filter = ("is_activated",)
     search_fields = ("user__username", "user__email", "position")
     raw_id_fields = ("user",)
+
+
+@admin.register(SetupAccessCode)
+class SetupAccessCodeAdmin(admin.ModelAdmin):
+    list_display = ("user", "code", "created_at", "used_at")
+    search_fields = ("user__username", "user__email", "code")
+    raw_id_fields = ("user",)
+    readonly_fields = ("user", "code", "created_at", "used_at")

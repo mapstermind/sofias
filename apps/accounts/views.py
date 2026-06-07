@@ -16,8 +16,9 @@ from apps.accounts.forms import (
     OTPVerifyForm,
     ProfileActivationForm,
     RequiredPasswordChangeForm,
+    SetupAccessCodeLoginForm,
 )
-from apps.accounts.models import EmailOTP, User, UserProfile
+from apps.accounts.models import EmailOTP, SetupAccessCode, User, UserProfile
 
 _RATE_LIMIT_SECONDS = 30
 
@@ -111,6 +112,57 @@ def password_login(request):
     return _redirect_after_login(user)
 
 
+def setup_access_code_login(request):
+    """First login for users who received an internal setup access code."""
+    if request.user.is_authenticated:
+        return _redirect_after_login(request.user)
+
+    if request.method == "GET":
+        return render(
+            request,
+            "accounts/login_setup_access_code.html",
+            {"form": SetupAccessCodeLoginForm()},
+        )
+
+    form = SetupAccessCodeLoginForm(request.POST)
+    if not form.is_valid():
+        return render(
+            request,
+            "accounts/login_setup_access_code.html",
+            {"form": form},
+        )
+
+    email = form.cleaned_data["email"]
+    code = form.cleaned_data["setup_access_code"]
+
+    with transaction.atomic():
+        access_code = (
+            SetupAccessCode.objects.select_for_update()
+            .select_related("user")
+            .filter(user__email=email, used_at__isnull=True)
+            .first()
+        )
+        user = access_code.user if access_code is not None else None
+
+        if (
+            access_code is None
+            or user is None
+            or not user.is_active
+            or not access_code.is_valid(code)
+        ):
+            form.add_error(None, "El código temporal de acceso es inválido.")
+            return render(
+                request,
+                "accounts/login_setup_access_code.html",
+                {"form": form},
+            )
+
+        access_code.mark_used()
+
+    login(request, user, backend="apps.accounts.backends.EmailOTPBackend")
+    return redirect("accounts:change_password")
+
+
 def _render_verify_otp(request, form, email):
     return render(
         request,
@@ -179,7 +231,7 @@ def verify_otp(request):
 
 @login_required
 def change_password(request):
-    """Required password change for users who received a temporary password."""
+    """Required password change for users who must create a permanent password."""
     if not request.user.must_change_password:
         return _redirect_after_login(request.user)
 

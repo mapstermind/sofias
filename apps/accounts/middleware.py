@@ -4,7 +4,7 @@ from django.urls import reverse
 
 
 class RequirePasswordChangeMiddleware:
-    """Keep temporary-password users on the password-change flow."""
+    """Keep users who must create/change a password on the password-change flow."""
 
     def __init__(self, get_response):
         self.get_response = get_response

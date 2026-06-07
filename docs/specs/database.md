@@ -36,8 +36,8 @@ Extends Django's `AbstractUser`. Inherits all standard auth fields (`username`, 
 
 | Field | Type | Notes |
 |---|---|---|
-| `email` | EmailField | Unique; used by OTP and password fallback login |
-| `must_change_password` | BooleanField | Forces temporary-password users through the password-change flow |
+| `email` | EmailField | Unique; used by OTP, setup-code, and password fallback login |
+| `must_change_password` | BooleanField | Forces setup-code/password-fallback users through the password-change flow |
 
 #### `UserProfile`
 Extends `User` with business context. Created separately from the auth user.
@@ -73,6 +73,18 @@ One-time passcode record for passwordless login. The email is stored as a plain 
 | `created_at` | DateTimeField | Auto-set on creation |
 | `expires_at` | DateTimeField | Auto-set from `settings.OTP_EXPIRY_MINUTES` when omitted |
 | `is_used` | BooleanField | Marks consumed OTPs |
+
+#### `SetupAccessCode`
+One-time first-login code for users whose client blocks external OTP email.
+
+| Field | Type / Notes |
+|---|---|
+| `user` | ForeignKey to `accounts.User`; related name `setup_access_codes` |
+| `code` | Nullable 9-digit code; populated while unused and cleared after use |
+| `created_at` | DateTimeField |
+| `used_at` | DateTimeField, nullable |
+
+Unused setup access code values are globally unique. A user may have at most one unused setup access code.
 
 ---
 
@@ -256,7 +268,7 @@ Company.create(name, legal_name)              ← reference_code auto-generated
        └─ UserProfile.create(user, position, company, is_activated=False)
 ```
 
-A `Company` is created first. Users are then created via Django's auth system, manual admin entry, or CSV import. A `UserProfile` is attached to link non-admin users to their company. OTP-only users have an unusable password; password-fallback users have a usable temporary password and `must_change_password=True`.
+A `Company` is created first. Users are then created via Django's auth system, manual admin entry, or CSV import. A `UserProfile` is attached to link non-admin users to their company. OTP-only users have an unusable password; setup-code fallback users have an unusable password, a linked `SetupAccessCode`, and `must_change_password=True`.
 
 ### 2. Build the question library
 

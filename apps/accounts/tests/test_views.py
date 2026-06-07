@@ -6,15 +6,23 @@ from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.accounts.models import EmailOTP, User, UserProfile
+from apps.accounts.models import EmailOTP, SetupAccessCode, User, UserProfile
 
 pytestmark = pytest.mark.django_db
 
 REQUEST_OTP_URL = "/cuentas/ingresar/"
 PASSWORD_LOGIN_URL = "/cuentas/ingresar-con-contrasena/"
+SETUP_ACCESS_CODE_URL = "/cuentas/primer-ingreso/"
 VERIFY_OTP_URL = "/cuentas/verificar/"
 CHANGE_PASSWORD_URL = "/cuentas/cambiar-contrasena/"
 LOGOUT_URL = "/cuentas/cerrar-sesion/"
+
+
+def _create_setup_access_code(user, code="123456789", used=False):
+    access_code = SetupAccessCode.objects.create(user=user, code=code)
+    if used:
+        access_code.mark_used()
+    return access_code
 
 
 # ── request_otp ───────────────────────────────────────────────────────────────
@@ -292,6 +300,200 @@ class TestPasswordLoginView:
         response = client.post(
             PASSWORD_LOGIN_URL,
             {"email": "temporary@example.com", "password": "TempPass123!"},
+        )
+
+        assert response.status_code == 302
+        assert "cambiar-contrasena" in response["Location"]
+
+    def test_setup_access_code_cannot_login_as_password(self, client, make_user):
+        user = make_user(email="setup-password@example.com")
+        _create_setup_access_code(user, code="123456789")
+
+        response = client.post(
+            PASSWORD_LOGIN_URL,
+            {"email": "setup-password@example.com", "password": "123456789"},
+        )
+
+        assert response.status_code == 200
+        assert "_auth_user_id" not in client.session
+
+
+# ── setup_access_code_login ──────────────────────────────────────────────────
+
+
+class TestSetupAccessCodeLoginView:
+    def test_get_renders_form(self, client):
+        response = client.get(SETUP_ACCESS_CODE_URL)
+
+        assert response.status_code == 200
+        assert "código temporal de acceso".encode() in response.content
+
+    def test_authenticated_user_is_redirected(self, client, make_user):
+        client.force_login(make_user())
+
+        response = client.get(SETUP_ACCESS_CODE_URL)
+
+        assert response.status_code == 302
+
+    def test_valid_code_redirects_to_password_change(self, client, make_user):
+        user = make_user(
+            email="first-login@example.com",
+            must_change_password=True,
+        )
+        _create_setup_access_code(user, code="123456789")
+
+        response = client.post(
+            SETUP_ACCESS_CODE_URL,
+            {"email": "first-login@example.com", "setup_access_code": "123456789"},
+        )
+
+        assert response.status_code == 302
+        assert "cambiar-contrasena" in response["Location"]
+        assert client.session["_auth_user_id"] == str(user.pk)
+
+    def test_valid_code_marks_code_used_and_clears_code(self, client, make_user):
+        user = make_user(
+            email="consume-view@example.com",
+            must_change_password=True,
+        )
+        access_code = _create_setup_access_code(user, code="123456789")
+
+        client.post(
+            SETUP_ACCESS_CODE_URL,
+            {"email": "consume-view@example.com", "setup_access_code": "123456789"},
+        )
+
+        access_code.refresh_from_db()
+        assert access_code.used_at is not None
+        assert access_code.code is None
+
+    def test_setup_code_user_must_create_password_before_app_access(
+        self, client, make_user
+    ):
+        user = make_user(email="blocked@example.com", must_change_password=True)
+        _create_setup_access_code(user, code="123456789")
+        client.post(
+            SETUP_ACCESS_CODE_URL,
+            {"email": "blocked@example.com", "setup_access_code": "123456789"},
+        )
+
+        response = client.get(SETUP_PROFILE_URL)
+
+        assert response.status_code == 302
+        assert "cambiar-contrasena" in response["Location"]
+
+    def test_user_can_login_with_created_password_after_setup(self, client, make_user):
+        user = make_user(email="future-password@example.com", must_change_password=True)
+        _create_setup_access_code(user, code="123456789")
+        client.post(
+            SETUP_ACCESS_CODE_URL,
+            {
+                "email": "future-password@example.com",
+                "setup_access_code": "123456789",
+            },
+        )
+        client.post(
+            CHANGE_PASSWORD_URL,
+            {
+                "new_password1": "NewStrongPass123!",
+                "new_password2": "NewStrongPass123!",
+            },
+        )
+        client.post(LOGOUT_URL)
+
+        response = client.post(
+            PASSWORD_LOGIN_URL,
+            {
+                "email": "future-password@example.com",
+                "password": "NewStrongPass123!",
+            },
+        )
+
+        assert response.status_code == 302
+        assert client.session["_auth_user_id"] == str(user.pk)
+
+    def test_unknown_email_is_rejected_with_generic_error(self, client):
+        response = client.post(
+            SETUP_ACCESS_CODE_URL,
+            {"email": "unknown@example.com", "setup_access_code": "123456789"},
+        )
+
+        assert response.status_code == 200
+        assert "_auth_user_id" not in client.session
+
+    def test_inactive_user_is_rejected_with_generic_error(self, client, make_user):
+        user = make_user(
+            email="inactive-setup@example.com",
+            must_change_password=True,
+            is_active=False,
+        )
+        _create_setup_access_code(user, code="123456789")
+
+        response = client.post(
+            SETUP_ACCESS_CODE_URL,
+            {"email": "inactive-setup@example.com", "setup_access_code": "123456789"},
+        )
+
+        assert response.status_code == 200
+        assert "_auth_user_id" not in client.session
+
+    def test_user_without_code_is_rejected_with_generic_error(self, client, make_user):
+        make_user(email="no-code@example.com", must_change_password=True)
+
+        response = client.post(
+            SETUP_ACCESS_CODE_URL,
+            {"email": "no-code@example.com", "setup_access_code": "123456789"},
+        )
+
+        assert response.status_code == 200
+        assert "_auth_user_id" not in client.session
+
+    def test_code_for_other_user_is_rejected(self, client, make_user):
+        make_user(email="target@example.com", must_change_password=True)
+        other = make_user(email="other-code@example.com", must_change_password=True)
+        _create_setup_access_code(other, code="123456789")
+
+        response = client.post(
+            SETUP_ACCESS_CODE_URL,
+            {"email": "target@example.com", "setup_access_code": "123456789"},
+        )
+
+        assert response.status_code == 200
+        assert "_auth_user_id" not in client.session
+
+    def test_used_code_is_rejected(self, client, make_user):
+        user = make_user(email="used-view@example.com", must_change_password=True)
+        _create_setup_access_code(user, code="123456789", used=True)
+
+        response = client.post(
+            SETUP_ACCESS_CODE_URL,
+            {"email": "used-view@example.com", "setup_access_code": "123456789"},
+        )
+
+        assert response.status_code == 200
+        assert "_auth_user_id" not in client.session
+
+    def test_malformed_code_rerenders_form(self, client, make_user):
+        make_user(email="malformed@example.com", must_change_password=True)
+
+        response = client.post(
+            SETUP_ACCESS_CODE_URL,
+            {"email": "malformed@example.com", "setup_access_code": "not-a-code"},
+        )
+
+        assert response.status_code == 200
+        assert "_auth_user_id" not in client.session
+
+    def test_hyphenated_code_is_accepted(self, client, make_user):
+        user = make_user(email="hyphenated@example.com", must_change_password=True)
+        _create_setup_access_code(user, code="123456789")
+
+        response = client.post(
+            SETUP_ACCESS_CODE_URL,
+            {
+                "email": "hyphenated@example.com",
+                "setup_access_code": "123-456-789",
+            },
         )
 
         assert response.status_code == 302

@@ -8,7 +8,7 @@ Current
 
 SOFIA-S uses pre-created user accounts. Users do not self-register from the public login flow.
 
-The primary login path is email OTP. A fallback password path exists for users who cannot receive external email and have been given a temporary password by an administrator or trusted company contact.
+The primary login path is email OTP. A setup access code path exists for first login when users cannot receive external email. After setup-code verification, users create a permanent password and use password login for later access.
 
 After authentication, non-admin users must have an activated `UserProfile` linked to a `Company`. First-time activation is done by entering the company's 5-character `reference_code`.
 
@@ -17,7 +17,7 @@ After authentication, non-admin users must have an activated `UserProfile` linke
 The onboarding model keeps account creation under platform/admin control while giving employees and company executives a lightweight first-login experience:
 
 - Preferred path: users receive a one-time code at their institutional email.
-- Fallback path: users with blocked email delivery log in with a temporary password, then must immediately change it.
+- Fallback path: users with blocked email delivery use a one-time setup access code, then must immediately create a password.
 - Activation gate: users confirm their assigned company with the company reference code before entering normal app workflows.
 
 Related user docs:
@@ -61,9 +61,21 @@ In `settings.DEBUG`, the code `000000` may bypass OTP lookup for development use
 
 The password fallback path does not currently have an application-level rate limit. This is acceptable for the current small deployment model and should be revisited if password fallback becomes a primary login path or is exposed to higher-volume traffic.
 
+### Setup access code first login
+
+1. A user opens `/cuentas/primer-ingreso/`.
+2. The user enters their email address and `código temporal de acceso`.
+3. The setup code is normalized by stripping whitespace and removing spaces and hyphens.
+4. A normalized setup code must be exactly 9 digits.
+5. Login succeeds only when an active user exists and has an unused `SetupAccessCode` matching the normalized code.
+6. On success, SOFIA-S marks the setup code used, clears the stored code value, logs the user in, and redirects to `/cuentas/cambiar-contrasena/`.
+7. Setup access codes do not expire automatically.
+
+Setup access codes are bootstrap credentials, not passwords. They do not work through the normal password login form.
+
 ### Required password change
 
-Temporary-password users have `User.must_change_password=True`.
+Setup-code users and other users who must create or change their password have `User.must_change_password=True`.
 
 When such a user is authenticated:
 
@@ -96,15 +108,16 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 
 ## Actors
 
-- Platform admin: creates companies, users, profiles, groups, and temporary-password access through Django Admin or CSV import.
-- Imported/pre-created user: logs in with OTP or temporary password and activates their profile.
-- HR/company contact: receives and distributes temporary passwords when the fallback path is required.
+- Platform admin: creates companies, users, profiles, groups, and setup-code access through Django Admin or CSV import.
+- Imported/pre-created user: logs in with OTP, setup access code, or password and activates their profile.
+- HR/company contact: receives and distributes setup access codes when the fallback path is required.
 - Admin-group user: can skip first-login profile activation.
 
 ## Inputs
 
 - Login email.
 - OTP code.
+- Setup access code.
 - Password fallback email and password.
 - New password and confirmation.
 - Company reference code.
@@ -116,6 +129,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Rendered login, verification, password-change, and activation forms.
 - Redirects to verification, password change, activation, app home, or login routes.
 - Created and updated `EmailOTP` records.
+- Created and updated `SetupAccessCode` records.
 - Updated Django session authentication state.
 - Updated `User.password` and `User.must_change_password`.
 - Updated `UserProfile.is_activated`.
@@ -131,6 +145,8 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | `/cuentas/verificar/` | POST | hidden `email`, `code` | Login and post-login redirect or form errors | Hidden email must match session email. Marks valid OTP used unless debug bypass applies. |
 | `/cuentas/ingresar-con-contrasena/` | GET | none | Password login form | Authenticated users redirect to `settings.LOGIN_REDIRECT_URL`. |
 | `/cuentas/ingresar-con-contrasena/` | POST | `email`, `password` | Login and post-login redirect or form errors | Uses Django `ModelBackend`. |
+| `/cuentas/primer-ingreso/` | GET | none | Setup access code form | Authenticated users redirect through post-login routing. |
+| `/cuentas/primer-ingreso/` | POST | `email`, `setup_access_code` | Login and password-change redirect or form errors | Marks valid setup code used and clears its stored code. |
 | `/cuentas/cambiar-contrasena/` | GET | authenticated user | Password-change form or redirect | Requires login. Users without `must_change_password` are rerouted through post-login routing. |
 | `/cuentas/cambiar-contrasena/` | POST | `new_password1`, `new_password2` | Redirect or form errors | Uses Django password validators. |
 | `/cuentas/completar-perfil/` | GET | authenticated user | Activation form, account-linked error, or redirect | Requires login. Admins skip activation. |
@@ -146,17 +162,21 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
   - `accounts.UserProfile`
   - `accounts.Role`
   - `accounts.EmailOTP`
+  - `accounts.SetupAccessCode`
 - Fields:
   - `User.email`: unique email used by both login flows.
-  - `User.must_change_password`: forces temporary-password users through password change.
+  - `User.must_change_password`: forces setup-code/password-fallback users through password creation/change.
   - `Company.reference_code`: unique 5-character company activation code, generated on save when blank.
   - `UserProfile.company`: company assignment for non-admin users.
   - `UserProfile.is_activated`: first-login activation state.
   - `EmailOTP.email`, `code`, `expires_at`, `is_used`.
+  - `SetupAccessCode.user`, `code`, `created_at`, `used_at`.
 - Constraints:
   - `User.email` must be unique.
   - `Company.reference_code` must be unique.
   - `UserProfile.user` is one-to-one.
+  - Only one unused `SetupAccessCode` may exist per user.
+  - Unused setup access code values are globally unique.
 - Migrations:
   - No migration is part of this spec. This documents current behavior.
 
@@ -166,6 +186,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
   - Delete previous unused OTPs for an email before creating a new OTP.
   - Create `EmailOTP` rows for valid OTP requests.
   - Mark valid OTPs as used.
+  - Mark valid setup access codes as used and clear the stored code.
   - Delete a just-created OTP if SMTP delivery fails with `SMTPException`.
   - Save password hash and clear `User.must_change_password` after password change.
   - Set `UserProfile.is_activated=True` after successful reference-code activation.
@@ -185,6 +206,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Public unauthenticated routes:
   - OTP request.
   - OTP verification, when session state exists.
+  - Setup access code first login.
   - Password fallback login.
 - Login-required routes:
   - Password change.
@@ -209,10 +231,12 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | Verify form submitted with hidden email different from session `otp_email` | Re-render verify form with invalid/expired error; do not log in. |
 | OTP code contains non-digits or is not six characters | Re-render verify form with field errors. |
 | OTP code is wrong, expired, or already used | Re-render verify form with invalid/expired error. |
+| Setup access code is malformed | Re-render setup-code form with field errors. |
+| Setup access code email/code pair is unknown, inactive, missing, mismatched, or already used | Re-render setup-code form with generic invalid-code error; do not log in. |
 | Password fallback credentials invalid | Re-render password form with generic invalid-login error. |
 | Password fallback user has unusable password | Re-render password form with generic invalid-login error. |
 | Password fallback user is inactive | Re-render password form with generic invalid-login error. |
-| Temporary-password user visits another app page | Redirect to `/cuentas/cambiar-contrasena/`. |
+| User with `must_change_password=True` visits another app page | Redirect to `/cuentas/cambiar-contrasena/`. |
 | Password-change values do not match or fail validators | Re-render password-change form with errors. |
 | Activation user has no profile | Render activation page with account-not-linked error. |
 | Activation user has profile but no company | Render activation page with account-not-linked error. |
@@ -224,11 +248,14 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 
 - Public login flows must not create new users.
 - OTPs are single-use and expire according to `EmailOTP.expires_at`.
+- Setup access codes are single-use and do not expire automatically.
+- Setup access codes must only work on `/cuentas/primer-ingreso/`.
+- Used setup access code rows must not retain the consumed code.
 - A successful normal OTP verification marks the OTP used.
 - OTP verification must bind the hidden submitted email to the session `otp_email`.
 - Unknown emails must not receive OTPs.
 - Unused OTPs for an email are invalidated before a new OTP is created.
-- Temporary-password users must change their password before using normal non-admin, non-static app routes.
+- Users with `must_change_password=True` must change their password before using normal non-admin, non-static app routes.
 - `must_change_password` must be cleared only after a valid password change.
 - Non-admin users must not complete first-login activation unless their entered reference code matches their linked company.
 - The company reference code is an activation check, not a password or authentication secret.
@@ -242,9 +269,11 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Given a valid unexpired OTP, when the user verifies it, then the OTP is marked used, the user is logged in, and post-login routing is applied.
 - Given a verification POST where the hidden email differs from the session `otp_email`, when the user submits any code, then the form is re-rendered and the user is not logged in.
 - Given an expired or wrong OTP, when the user submits it, then the verification form is re-rendered with an error.
+- Given a valid setup access code, when the assigned active user submits it with their email, then SOFIA-S logs them in, marks the code used, clears the stored code, and redirects to password change.
+- Given a used, malformed, unknown, or mismatched setup access code, when the setup-code form is submitted, then SOFIA-S does not log the user in.
 - Given an active user with a usable password, when they submit correct password fallback credentials, then they are logged in and post-login routing is applied.
-- Given a temporary-password user, when they log in or visit protected app pages, then they are forced to change their password before continuing.
-- Given a temporary-password user submits a valid new password twice, when the password-change form is posted, then the password changes, `must_change_password` is cleared, and the user is routed onward.
+- Given a setup-code user, when they log in or visit protected app pages before creating a password, then they are forced to create their password before continuing.
+- Given a setup-code user submits a valid new password twice, when the password-change form is posted, then the password changes, `must_change_password` is cleared, and the user is routed onward.
 - Given a non-admin user with an inactive profile and linked company, when they submit the matching company reference code, then their profile is activated and they are routed onward.
 - Given a non-admin user submits the wrong company reference code, when the activation form is posted, then the profile remains inactive.
 - Given an admin-group user, when post-login routing or activation is reached, then they skip profile activation.
@@ -275,7 +304,9 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | Password login form renders | `apps/accounts/tests/test_views.py` | `TestPasswordLoginView::test_get_renders_form` |
 | Unusable password cannot log in | `apps/accounts/tests/test_views.py` | `TestPasswordLoginView::test_unusable_password_cannot_login` |
 | Valid password login | `apps/accounts/tests/test_views.py` | `TestPasswordLoginView::test_valid_password_logs_user_in` |
-| Temporary password redirects to change password | `apps/accounts/tests/test_views.py` | `TestPasswordLoginView::test_temporary_password_redirects_to_change_password` |
+| Password login redirects users with required password change | `apps/accounts/tests/test_views.py` | `TestPasswordLoginView::test_temporary_password_redirects_to_change_password` |
+| Setup access code first login | `apps/accounts/tests/test_views.py` | `TestSetupAccessCodeLoginView::*` |
+| Setup access code cannot be used as password | `apps/accounts/tests/test_views.py` | `TestPasswordLoginView::test_setup_access_code_cannot_login_as_password` |
 | Middleware forces password change | `apps/accounts/tests/test_views.py` | `TestChangePasswordView::test_requires_password_change_before_other_pages` |
 | Password change updates password and clears flag | `apps/accounts/tests/test_views.py` | `TestChangePasswordView::test_post_changes_password_and_clears_required_flag` |
 | Admin skips activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_admin_get_redirects_to_home`, `test_admin_post_redirects_to_home` |
@@ -288,6 +319,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | OTP code validation | `apps/accounts/tests/test_forms.py` | `TestOTPVerifyFormCleanCode::*` |
 | Reference code normalization and validation | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormCleanReferenceCode::*` |
 | OTP validity rules | `apps/accounts/tests/test_models.py` | `TestEmailOTPIsValid::*` |
+| Setup access code rules | `apps/accounts/tests/test_models.py` | `TestSetupAccessCode::*` |
 | Company reference code generation | `apps/accounts/tests/test_models.py` | `TestCompanyReferenceCode::*` |
 
 ## Decisions
@@ -297,7 +329,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - The debug OTP bypass code `000000` remains allowed only when `settings.DEBUG` is true.
 - OTP verification must reject a hidden email that differs from the session `otp_email`, including when debug bypass would otherwise apply.
 - Missing profile and missing company remain intentionally indistinguishable to the user; both show the generic account-not-linked message.
-- Password fallback has no application-level rate limit for now. Revisit if fallback password login becomes a common or higher-risk path.
+- Password and setup-code fallback paths have no application-level rate limit for now. Revisit if either becomes a common or higher-risk path.
 - Admin activation bypass remains coupled to the canonical `Admins` group name for now.
 
 ## Open questions
