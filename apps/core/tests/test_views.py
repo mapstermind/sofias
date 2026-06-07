@@ -124,6 +124,42 @@ class TestCompanyDashboardView:
         expected = math.ceil(0.9604 * n / (0.0025 * (n - 1) + 0.9604))
         assert response.context["representative_minimum"] == expected
 
+    def test_summary_strip_shows_formula_action(self, client, make_user, make_company):
+        company = make_company()
+
+        response = self._login_with_company(client, make_user, company)
+
+        assert response.status_code == 200
+        assert "Ver fórmula".encode() in response.content
+        assert "Mínimo representativo".encode() in response.content
+
+    def test_summary_strip_shows_employee_action_with_permission(
+        self, client, make_user, make_company
+    ):
+        company = make_company()
+        user = _give_perm(make_user(), "can_view_dashboard")
+        user = _give_perm(user, "can_manage_employees")
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        profile.company = company
+        profile.position = "Analyst"
+        profile.save()
+        client.force_login(user)
+
+        response = client.get(self.URL)
+
+        assert response.status_code == 200
+        assert "Ver empleados".encode() in response.content
+
+    def test_summary_strip_hides_employee_action_without_permission(
+        self, client, make_user, make_company
+    ):
+        company = make_company()
+
+        response = self._login_with_company(client, make_user, company)
+
+        assert response.status_code == 200
+        assert "Ver empleados".encode() not in response.content
+
 
 # ── HomeView ──────────────────────────────────────────────────────────────────
 
