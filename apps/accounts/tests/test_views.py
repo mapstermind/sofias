@@ -32,6 +32,12 @@ class TestRequestOTPView:
     def test_get_renders_form(self, client):
         response = client.get(REQUEST_OTP_URL)
         assert response.status_code == 200
+        assert "Inicio de sesión por correo".encode() in response.content
+        assert "Otras formas de ingresar".encode() in response.content
+        assert "Tengo un código temporal de acceso".encode() in response.content
+        assert "Ya creé mi contraseña".encode() in response.content
+        assert reverse("accounts:setup_access_code_login").encode() in response.content
+        assert reverse("accounts:password_login").encode() in response.content
 
     def test_authenticated_user_is_redirected(self, client, make_user):
         client.force_login(make_user())
