@@ -1,74 +1,123 @@
-# SOFIA-S - Survey Processing & Reporting Platform
+# SOFIA-S
 
-## Project Overview
+SOFIA-S (Sistema de Obtención, Filtrado e Inteligencia Analítica de Sondeos) is a Django web application for creating surveys, collecting responses, and tracking completion across companies. It is built around the Mexican NOM-035 psychosocial-risk questionnaire, which ships as seed data.
 
-SOFIA-S (short for Sistema de Obtención, Filtrado e Inteligencia Analítica de Sondeos) is a Django web application designed to streamline the full lifecycle of survey data: from form delivery and response collection to data processing and dynamic report generation.
+The user-facing interface (copy and URLs) is in Spanish. Code, comments, and identifiers are in English.
 
-The platform replaces manual workflows by providing a centralized system where surveys are managed, responses are automatically processed, and dashboards update in real time.
+## What it does today
 
-## Core Purpose
+- **Survey authoring** — a reusable question/choice library whose templates are "stamped" into versioned surveys. Authoring happens through interactive terminal commands and the Django admin.
+- **Survey assignment** — a survey version is assigned to a company, making it available to that company's employees.
+- **Survey taking** — employees answer assigned surveys in the browser, with autosave and resume of in-progress submissions. Answers are stored as JSON values typed by question type.
+- **Dashboards** — per-company completion stats (registration rate, completion rate per survey, representative-sample minimum) and per-employee progress/answer views, gated by role permissions.
+- **User onboarding** — passwordless email-OTP login (with password and one-time setup-access-code fallbacks), company reference-code activation, and bulk user import from CSV via the admin.
 
-SOFIA-S simplifies the current manual process where survey responses are collected, compiled, analyzed, and turned into reports.
+Analytics aggregation and report generation (`apps/analytics`, `apps/reports`) are placeholders — empty apps, not yet registered in `INSTALLED_APPS`.
 
-With SOFIA-S:
+## Tech stack
 
-- Surveys are displayed directly in the application
-- Responses are stored and processed automatically
-- Dashboards and reports are generated and updated dynamically as new data arrives
+- Python 3.13, Django 6.0 (dependencies managed with Poetry)
+- PostgreSQL 17 (`psycopg` 3 driver)
+- Django templates + TailwindCSS 4; small TypeScript helpers compiled to plain JS
+- ruff (lint/format), pytest + pytest-django (tests)
 
-## Key Features
+## Project layout
 
-### Survey Management
+```
+config/          # Django settings, root urls, wsgi/asgi
+apps/
+  accounts/      # Custom user, OTP/password/setup-code auth, companies, roles, CSV import
+  surveys/       # Question library, survey templates/versions/questions, survey taking
+  responses/     # SurveySubmission + Answer storage
+  core/          # Home/dashboards + interactive survey-authoring commands
+  analytics/     # Placeholder (not registered)
+  reports/       # Placeholder (not registered)
+templates/       # Django templates (Spanish UI)
+static/          # CSS (Tailwind input/output), TS sources, compiled JS
+docs/            # Specs and human-facing docs
+```
 
-- Create and manage survey forms
-- Display forms to users for submission
-- Support for different question types and structures
+Each app has its own `CLAUDE.md` with model and flow details.
 
-### Response Handling
+## Setup
 
-- Store and manage submitted answers
-- Validate incoming data
-- Track submissions over time
+1. **PostgreSQL** — create the database and user:
 
-### Data Processing
+   ```bash
+   sudo -u postgres psql -c "CREATE USER sofias WITH PASSWORD 'sofias';"
+   sudo -u postgres psql -c "CREATE DATABASE sofias OWNER sofias;"
+   ```
 
-- Transform raw responses into structured data
-- Compute aggregates (counts, averages, distributions)
-- Prepare data for visualization and reporting
+2. **Environment** — configuration is read from `.env` at the project root. All variables have development defaults; the main ones are `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, and the email settings (`EMAIL_*`). With no `.env`, OTP emails print to the console.
 
-### Dashboards & Reports
+3. **Install and migrate:**
 
-- Automatically generated dashboards
-- Real-time updates when new responses are submitted
-- Overview reports summarizing key insights
-- Visualizations for trends and comparisons
+   ```bash
+   poetry install
+   python manage.py migrate
+   python manage.py bootstrap_groups   # creates the four permission groups
+   ```
 
-### Architecture Overview
+4. **Seed survey content (optional):**
 
-#### Backend
-- Framework: Django
-- Language: Python
-- Database: PostgreSQL
+   ```bash
+   python manage.py seed_likert_templates       # Likert question library
+   python manage.py seed_demographic_templates  # demographic question library
+   python manage.py seed_nom035_survey          # NOM-035 survey built from the library
+   ```
 
-#### Frontend
-- Templates: Django templates
-- Styling: TailwindCSS
-- Approach: Server-rendered with dynamic updates where needed
+   Run the two library seeds first — `seed_nom035_survey` links its questions to existing library templates.
 
-### How It Works
+5. **Run:**
 
-1. A survey is created and published through the platform
-2. Users submit responses via the web interface
-3. Responses are stored and validated
-4. Data is processed and aggregated automatically
-5. Dashboards and reports update dynamically
+   ```bash
+   python manage.py runserver
+   ```
 
-### Development Setup (High-Level)
+## Common commands
 
-- Python 3.13
-- Django 6.0
-- PostgreSQL
+Most tasks have a `make` target (see the `Makefile`):
 
-### Goal
+```bash
+make serve              # run the dev server
+make test               # run all tests
+make lint               # ruff check --fix
+make fmt                # ruff format
+make migrate            # apply migrations
+make bootstrap-groups   # create/re-sync permission groups
+```
 
-The primary goal of SOFIA-S is to reduce manual effort, improve accuracy, and provide immediate insights from survey data through automation and real-time reporting.
+Interactive survey authoring (terminal workflows over the surveys models):
+
+```bash
+make question-templates # manage the reusable question library
+make survey             # create a survey + first version
+make question           # add questions to a version
+make choices            # manage choices on a question
+make sections           # group questions into sections
+```
+
+Frontend assets:
+
+```bash
+npm run build:css       # compile Tailwind (static/css/main.css → output.css)
+npm run build:js        # compile TypeScript (static/ts → static/js)
+npm run watch:css       # ...or watch variants
+npm run watch:js
+```
+
+## Authentication and roles
+
+Login is by email. The primary flow is a 6-digit OTP sent by email; fallbacks exist for password login and one-time 9-digit setup access codes (for users whose email cannot receive external mail). In `DEBUG`, code `000000` logs in any existing user.
+
+Authorization uses custom permissions (declared on `accounts.Role`) bundled into four groups created by `bootstrap_groups`: **Admins**, **Principal Exec**, **Secondary Exec**, and **Employees**. Views check permission codenames such as `can_view_dashboard` and `can_take_assigned_surveys`.
+
+## Testing
+
+```bash
+pytest                                          # all tests
+pytest apps/surveys/tests/test_models.py        # one file
+pytest apps/surveys/tests/test_models.py::TestX # one test class/function
+```
+
+Tests live in each app's `tests/` package; shared fixtures are in the root `conftest.py`.

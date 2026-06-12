@@ -6,38 +6,32 @@ Current
 
 ## Overview
 
-Setup access codes are the planned backup first-login path for pre-created users
-who cannot receive SOFIA-S email OTP messages because a client's email policies
+Setup access codes are the backup first-login path for pre-created users who
+cannot receive SOFIA-S email OTP messages because a client's email policies
 block external senders.
 
-Confirmed current behavior:
+Current behavior:
 
 - Email OTP login is the primary login path.
 - CSV import accepts `auth_method=otp` and `auth_method=password`.
-- Current `auth_method=password` rows receive a generated temporary password
-  stored as the user's real password hash.
-- Current temporary-password users are forced to change their password through
-  `User.must_change_password=True`.
-
-Desired behavior after implementation:
-
 - `auth_method=password` rows receive a one-time setup access code instead of a
-  temporary password.
+  temporary password; the user's stored password is unusable at import time.
 - Setup access codes bootstrap first login only.
-- After setup-code verification, the user must create a permanent password.
-- Future fallback logins use the normal password login path.
+- After setup-code verification, the user must create a permanent password
+  (`User.must_change_password=True` enforces this).
+- Later fallback logins use the normal password login path.
 
 ## Product intent
 
-SOFIA-S should support first login for users whose client blocks external email
+SOFIA-S supports first login for users whose client blocks external email
 without treating the distributed first-login secret as a normal password.
 
-The product keeps the existing CSV import contract for admins while changing the
-fallback credential from "temporary password" to "setup access code."
+The CSV import contract for admins is unchanged; the fallback credential is a
+"setup access code" rather than a "temporary password."
 
 Related ADR:
 
-- `docs/adr/0001-setup-access-codes-for-blocked-email-login.md`
+- `docs/specs/adr-0001-setup-access-codes-for-blocked-email-login.md`
 
 ## Public behavior
 
@@ -158,9 +152,9 @@ row_number,email,status,message,username,setup_access_code
 ## Data model impact
 
 - Models:
-  - Add `accounts.SetupAccessCode`.
-  - Keep `accounts.User.must_change_password`.
-  - Keep `accounts.EmailOTP`.
+  - `accounts.SetupAccessCode`.
+  - `accounts.User.must_change_password`.
+  - `accounts.EmailOTP` (unchanged by this feature).
 - Fields:
   - `SetupAccessCode.user`: foreign key to `accounts.User`.
   - `SetupAccessCode.code`: nullable normalized 9-digit setup access code,
@@ -177,7 +171,7 @@ row_number,email,status,message,username,setup_access_code
   - Historical used setup access code rows may remain for audit/debug context,
     but they must not retain the consumed plaintext code.
 - Migrations:
-  - Add a migration for `SetupAccessCode`.
+  - `SetupAccessCode` was added in `apps/accounts/migrations/0007_setupaccesscode.py`.
   - No migration should rename or remove `User.must_change_password`.
 
 ## Side effects
@@ -282,8 +276,6 @@ address exists.
   the user submits it as the password, then SOFIA-S rejects the login.
 
 ## Test mapping
-
-Write these tests before implementation.
 
 | Behavior | Test file | Test name |
 |---|---|---|

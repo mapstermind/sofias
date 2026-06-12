@@ -6,8 +6,7 @@
     "outDir": "./static/js",
     "rootDir": "./static/ts",
     "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "sourceMap": false
+    "noUncheckedIndexedAccess": true
   },
   "include": ["static/ts/**/*.ts"]
 }

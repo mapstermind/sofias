@@ -3,11 +3,8 @@
   "version": "0.1.0",
   "description": "SOFIA-S is a Django web application designed to streamline the full lifecycle of survey data: from form delivery and response collection to data processing and dynamic report generation.",
   "license": "ISC",
-  "author": "",
   "type": "commonjs",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build:css": "npx @tailwindcss/cli -i ./static/css/main.css -o ./static/css/output.css",
     "watch:css": "npx @tailwindcss/cli -i ./static/css/main.css -o ./static/css/output.css --watch",
     "build:js": "npx tsc --project tsconfig.browser.json",

@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted (implemented)
 
 ## Context
 
@@ -127,8 +127,6 @@ Negative consequences:
 
 ## Links
 
-- Spec: `docs/specs/setup-access-codes.md`; after implementation, fold durable
-  behavior into `docs/specs/auth-and-onboarding.md` and
+- Specs: `docs/specs/setup-access-codes.md`, `docs/specs/auth-and-onboarding.md`,
   `docs/specs/csv-user-import.md`
-- User docs: To be updated in `docs/user/csv-user-import.md`
-- PR:
+- User docs: `docs/human/csv-user-import.md`, `docs/human/user-onboarding.md`

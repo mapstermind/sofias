@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-SOFIA-S is a Django 6.0 web application for survey processing and reporting. It handles survey creation, response collection, data processing, and dynamic dashboard/report generation. Frontend uses Django templates with TailwindCSS.
+SOFIA-S is a Django 6.0 web application for survey processing and reporting. It handles survey creation, response collection, data processing, and dynamic dashboard/report generation — built around the Mexican NOM-035 psychosocial-risk questionnaire. Frontend uses Django templates with TailwindCSS. **User-facing copy and URLs are in Spanish; code, comments, and identifiers are in English.**
 
 ## Tech Stack
 
@@ -53,10 +53,10 @@ python manage.py runserver
 pytest
 
 # Run a single test file
-pytest apps/surveys/tests.py
+pytest apps/surveys/tests/test_models.py
 
 # Run a single test
-pytest apps/surveys/tests.py::TestClassName::test_method_name
+pytest apps/surveys/tests/test_models.py::TestClassName::test_method_name
 
 # Formatting
 ruff format .
@@ -73,14 +73,26 @@ python manage.py migrate
 
 ```
 config/          # Django project config (settings, urls, wsgi, asgi)
-apps/            # Django apps, each with standard structure (models, views, admin, tests, migrations)
-  core/          # Shared/base functionality
-  surveys/       # Survey form creation and management
-  responses/     # Response collection and storage
-  analytics/     # Data processing and aggregation
-  reports/       # Dashboard and report generation
+templates/       # Project-level Django templates (Spanish UI, TailwindCSS)
+docs/            # specs/ (system behavior + ADRs) and human/ (operator guides) — read these for design intent
+apps/            # Django apps; each app has its own CLAUDE.md with details
+  accounts/      # Users, OTP/auth, companies, roles/permissions, CSV import  → apps/accounts/CLAUDE.md
+  surveys/       # Survey authoring model (templates→versions→questions) + taking  → apps/surveys/CLAUDE.md
+  responses/     # SurveySubmission + Answer storage  → apps/responses/CLAUDE.md
+  core/          # Home/dashboards + interactive survey-authoring CLI/commands  → apps/core/CLAUDE.md
+  analytics/     # Placeholder, not yet implemented  → apps/analytics/CLAUDE.md
+  reports/       # Placeholder, not yet implemented  → apps/reports/CLAUDE.md
 ```
 
-- **Settings module**: `config.settings` (referenced in `manage.py`)
-- **Root URL conf**: `config.urls` — currently only admin is wired up
-- Apps are in `apps/` directory but their `AppConfig.name` uses bare names (e.g., `name = "surveys"` not `apps.surveys`) — note that apps are not yet registered in `INSTALLED_APPS`
+**When working inside an app, read that app's `CLAUDE.md` first** — it holds the model/flow details not repeated here.
+
+- **Settings module**: `config.settings` (referenced in `manage.py`).
+- **Root URL conf**: `config.urls` — wires `admin/`, `core` at `/`, `accounts` at `/cuentas/`, `surveys` at `/encuestas/`.
+- **Registered apps** (in `INSTALLED_APPS`): `apps.accounts`, `apps.core`, `apps.surveys`, `apps.responses`. These use fully-qualified `AppConfig.name = "apps.<x>"` with an explicit short `label`. `analytics` and `reports` are **empty stubs, not registered**, and still use bare `AppConfig.name`s — register them before use (see their CLAUDE.md).
+
+## Cross-cutting concepts
+
+- **Custom user model**: `AUTH_USER_MODEL = "accounts.User"`; login is by **email**, primarily via passwordless OTP. See `apps/accounts`.
+- **Authorization**: custom permissions are declared on the unmanaged `accounts.Role` model and bundled into four groups (Admins / Principal Exec / Secondary Exec / Employees) by `python manage.py bootstrap_groups` (run this after migrating). Views authorize on permission codenames (e.g. `can_view_dashboard`). Tests get the groups via the `bootstrap_groups` fixture in `conftest.py`.
+- **Survey data flow**: library `QuestionTemplate`s are *stamped* into a `SurveyVersion` as independent `Question`s → a `SurveyAssignment` exposes a version to a `Company` → employees submit via `apps/surveys` views → answers persist as `responses.Answer` (JSON value typed by question type) → `apps/core` renders dashboards/progress.
+- **Testing**: pytest + pytest-django, settings `config.settings`. Tests live in each app's `tests/` package; shared fixtures (users, companies, survey chains, groups) are in the root `conftest.py`. `addopts` use `--reuse-db -x`.

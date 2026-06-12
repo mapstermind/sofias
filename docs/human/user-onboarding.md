@@ -11,13 +11,20 @@ Before creating users, confirm the company already exists in Django Admin and ha
 
 - `name`
 - `legal_name`
-- `RFC`
-- `address`
+- `RFC` (optional)
+- `address` (optional)
 - `reference_code`
 
 The `reference_code` is generated automatically and is required during first-time profile activation. Share this company reference code only with the correct company contact.
 
 ## Create the User
+
+Setup access codes are generated only by the CSV importer. To create a
+fallback-path user, use the CSV import with `auth_method=password` (see
+`docs/human/csv-user-import.md`) — it creates the user, the profile, the group
+assignment, and the setup access code in one step.
+
+The manual procedure below is for OTP-only users:
 
 1. Open Django Admin.
 2. Go to **Users**.
@@ -25,17 +32,14 @@ The `reference_code` is generated automatically and is required during first-tim
 4. Enter a unique `username`.
    - Recommended pattern: use the email local part, for example `jane.doe` for `jane.doe@company.com`.
    - If that username already exists, append a number, for example `jane.doe1`.
-5. Configure password-based authentication depending on the login path:
-   - For OTP-only users, choose **disabled** password-based authentication.
-   - For fallback users, keep password-based authentication disabled until the user creates their own password.
-6. If using the fallback path, set `must_change_password` to checked/enabled and create a `SetupAccessCode` for the user.
-7. Save the user.
-8. Open the saved user record and complete these fields:
+5. Choose **disabled** password-based authentication. OTP users never need a password.
+6. Save the user.
+7. Open the saved user record and complete these fields:
    - `email`: the employee’s institutional email. This must be exact because login starts from this email.
    - `first_name` and `last_name`, if available.
    - `is_active`: enabled.
    - Groups/permissions: assign the correct role group, for example `Employees`, `Principal Exec`, `Secondary Exec`, or `Admins`.
-9. Save again.
+8. Save again.
 
 ## Create or Update the User Profile
 
@@ -71,20 +75,18 @@ Use this path when the user can receive emails from SOFIA-S.
 
 Use this path only when the company blocks external email, so OTP messages never reach the user.
 
-1. The platform admin creates or imports the user with an unusable password.
-2. The platform admin sets `must_change_password` to enabled.
-3. SOFIA-S generates a 9-digit `SetupAccessCode`.
-4. The platform admin sends the código temporal de acceso to the company’s trusted HR or internal administrator through an approved internal channel.
-5. HR gives the código temporal de acceso to the employee using the company’s internal process.
-6. The user opens `/cuentas/primer-ingreso/`.
-7. The user enters their institutional email and código temporal de acceso.
-8. SOFIA-S logs the user in, marks the setup access code used, clears the stored code, and immediately redirects them to `/cuentas/cambiar-contrasena/`.
-9. The user creates a contraseña. Django password validation rules apply.
-10. SOFIA-S clears `must_change_password`.
-11. Future fallback logins use `/cuentas/ingresar-con-contrasena/`.
-12. If this is the user’s first login, they are redirected to `/cuentas/completar-perfil/`.
-13. The user enters the company `reference_code`.
-14. If the code matches their linked company, `is_activated` becomes enabled and the user proceeds into the app.
+1. The platform admin imports the user through the CSV importer with `auth_method=password`. SOFIA-S creates the user with an unusable password, sets `must_change_password`, and generates a 9-digit setup access code that appears in the import report.
+2. The platform admin sends the código temporal de acceso to the company’s trusted HR or internal administrator through an approved internal channel.
+3. HR gives the código temporal de acceso to the employee using the company’s internal process.
+4. The user opens `/cuentas/primer-ingreso/`.
+5. The user enters their institutional email and código temporal de acceso.
+6. SOFIA-S logs the user in, marks the setup access code used, clears the stored code, and immediately redirects them to `/cuentas/cambiar-contrasena/`.
+7. The user creates a contraseña. Django password validation rules apply.
+8. SOFIA-S clears `must_change_password`.
+9. Future fallback logins use `/cuentas/ingresar-con-contrasena/`.
+10. If this is the user’s first login, they are redirected to `/cuentas/completar-perfil/`.
+11. The user enters the company `reference_code`.
+12. If the code matches their linked company, `is_activated` becomes enabled and the user proceeds into the app.
 
 ## Security Rules
 
@@ -94,7 +96,7 @@ Use this path only when the company blocks external email, so OTP messages never
 - Do not use the company `reference_code` as a password.
 - Set `must_change_password` for every setup-code fallback user.
 - Confirm the user’s profile is linked to the correct company before sharing either the reference code or a código temporal de acceso.
-- If a setup access code may have been exposed before use, delete the code in Django Admin and create a replacement only if access is still required.
+- If a setup access code may have been exposed before use, delete the code in Django Admin. There is no regeneration mechanism: if access is still required, delete the user and re-import them via CSV.
 
 ## Admin Checklist
 

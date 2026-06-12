@@ -22,8 +22,8 @@ The onboarding model keeps account creation under platform/admin control while g
 
 Related user docs:
 
-- `docs/user/user-onboarding.md`
-- `docs/user/csv-user-import.md`
+- `docs/human/user-onboarding.md`
+- `docs/human/csv-user-import.md`
 
 Related specs:
 
