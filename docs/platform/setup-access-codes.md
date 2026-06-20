@@ -1,4 +1,4 @@
-# Spec: Setup Access Codes
+# Setup Access Codes
 
 ## Status
 
@@ -31,7 +31,7 @@ The CSV import contract for admins is unchanged; the fallback credential is a
 
 Related ADR:
 
-- `docs/specs/adr-0001-setup-access-codes-for-blocked-email-login.md`
+- `docs/adr/adr-0001-setup-access-codes-for-blocked-email-login.md`
 
 ## Public behavior
 

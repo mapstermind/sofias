@@ -6,7 +6,7 @@ Identity, authentication, authorization, and company/employee onboarding. Define
 
 - **Custom user model** (`AUTH_USER_MODEL = "accounts.User"`) — extends `AbstractUser`, adds unique `email` and `must_change_password`.
 - **Passwordless login via email OTP** — the primary login flow.
-- **Fallback logins** — username/password and one-time "setup access codes" for users whose email cannot receive external OTP mail (see `docs/specs/adr-0001-setup-access-codes-for-blocked-email-login.md`).
+- **Fallback logins** — username/password and one-time "setup access codes" for users whose email cannot receive external OTP mail (see `docs/adr/adr-0001-setup-access-codes-for-blocked-email-login.md`).
 - **Companies & profiles** — `Company` (with auto-generated 5-char `reference_code`) and `UserProfile` (links a user to a company, tracks activation).
 - **Roles/permissions** — custom permissions + the groups that hold them.
 - **Bulk user provisioning** — CSV import wired into Django admin.

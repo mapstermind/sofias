@@ -1,4 +1,4 @@
-# CSV User Import Specification
+# CSV User Import
 
 ## Purpose
 
@@ -9,7 +9,7 @@ The CSV user import feature lets platform admins bulk-create pre-approved users 
 - one group assignment
 - optional setup-code fallback access for users who cannot receive OTP emails
 
-This spec documents the current behavior so future refactors can safely add fields, rename columns, or move the feature to another UI without changing core guarantees unintentionally.
+This document captures the current behavior so future refactors can safely add fields, rename columns, or move the feature to another UI without changing core guarantees unintentionally.
 
 ## Actors
 

@@ -21,7 +21,7 @@ The `reference_code` is generated automatically and is required during first-tim
 
 Setup access codes are generated only by the CSV importer. To create a
 fallback-path user, use the CSV import with `auth_method=password` (see
-`docs/human/csv-user-import.md`) — it creates the user, the profile, the group
+`docs/internal/user-guides/csv-user-import.md`) — it creates the user, the profile, the group
 assignment, and the setup access code in one step.
 
 The manual procedure below is for OTP-only users:

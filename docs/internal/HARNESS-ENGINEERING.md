@@ -9,7 +9,7 @@ Constraints (never modify these files directly)
 Patterns specific to your codebase (how you structure API routes, naming conventions)
 Stopping conditions (if touching more than 3 unplanned files, stop and report)
 
-docs/specs/*.md answers: how does the system work?
+docs/platform/*.md documents: how does the system work?
 
 What a module does and why
 Its inputs, outputs, edge cases

@@ -74,7 +74,7 @@ python manage.py migrate
 ```
 config/          # Django project config (settings, urls, wsgi, asgi)
 templates/       # Project-level Django templates (Spanish UI, TailwindCSS)
-docs/            # specs/ (system behavior + ADRs) and human/ (operator guides) — read these for design intent
+docs/            # platform/ (feature & system docs), adr/ (architectural decisions), internal/ (operator guides) — read these for design intent
 apps/            # Django apps; each app has its own CLAUDE.md with details
   accounts/      # Users, OTP/auth, companies, roles/permissions, CSV import  → apps/accounts/CLAUDE.md
   surveys/       # Survey authoring model (templates→versions→questions) + taking  → apps/surveys/CLAUDE.md

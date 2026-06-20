@@ -1,4 +1,4 @@
-# Spec: Auth and Onboarding
+# Auth and Onboarding
 
 ## Status
 
@@ -22,12 +22,12 @@ The onboarding model keeps account creation under platform/admin control while g
 
 Related user docs:
 
-- `docs/human/user-onboarding.md`
-- `docs/human/csv-user-import.md`
+- `docs/internal/user-guides/user-onboarding.md`
+- `docs/internal/user-guides/csv-user-import.md`
 
-Related specs:
+Related docs:
 
-- `docs/specs/csv-user-import.md`
+- `docs/platform/csv-user-import.md`
 
 ## Public behavior
 
