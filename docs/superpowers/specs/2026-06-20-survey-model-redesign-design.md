@@ -4,6 +4,12 @@
 **Status:** Approved (pending spec review)
 **Affects:** `apps/surveys`, `apps/responses`, `apps/core` (workflows, commands, views, templates), `conftest.py`, docs
 
+## Linked ADRs
+
+- [ADR-0002: Flatten the survey authoring model](../../adr/adr-0002-flatten-survey-authoring-model.md)
+  — records the decision to drop the library/version/stamping layer in favor of
+  the `Survey → Module → Question → Choice` tree described here.
+
 ## 1. Problem & motivation
 
 The current survey authoring model is built around a reusable library plus
