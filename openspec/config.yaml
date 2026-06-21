@@ -1,0 +1,45 @@
+schema: spec-driven
+
+context: |
+  Project: SOFIA-S — Django 6.0 web app for NOM-035 psychosocial-risk survey processing and reporting
+  for Mexican companies.
+
+  Tech stack:
+  - Python 3.13, Django 6.0, PostgreSQL 17 (psycopg 3.x driver), TailwindCSS
+  - Package management: Poetry
+  - Linting / formatting: ruff
+  - Testing: pytest + pytest-django (addopts: --reuse-db -x)
+
+  Language convention: UI copy and URLs are in Spanish; all code, comments, and identifiers are in English.
+
+  App structure (under apps/):
+  - accounts  — Users (email+OTP login), companies, roles, group-based permissions
+  - surveys   — Survey templates, versions, questions (authoring model)
+  - responses — SurveySubmission + Answer storage (JSON-typed by question type)
+  - core      — Dashboards, home views, interactive CLI management commands
+  - analytics / reports — Empty stubs, not yet registered in INSTALLED_APPS
+
+  Auth: custom user model accounts.User. Permissions declared on accounts.Role and bundled into
+  four groups (Admins / Principal Exec / Secondary Exec / Employees) by `bootstrap_groups`.
+  Views guard with permission codenames, e.g. "accounts.can_view_dashboard".
+
+  Workflow: documentation-first. The feature doc in docs/platform/ is finalized before any
+  implementation begins. opsx:propose runs at Step 4 of the development workflow to convert
+  the finished feature doc into an actionable task list. The feature doc — not the OpenSpec
+  proposal — is the PRD and source of truth.
+
+rules:
+  proposal:
+    - Keep the proposal brief. The feature doc in docs/platform/ is the real spec; do not duplicate it.
+    - Include a 2-3 sentence summary of what is being built and why, the affected apps/modules, and explicit scope boundaries.
+    - Omit full design rationale, data model details, and UI copy — those belong in the feature doc.
+
+  spec-delta:
+    - Skip. This project has no main OpenSpec specs. Design changes are captured in docs/platform/ feature docs.
+
+  tasks:
+    - Structure each task as three steps in order: (1) write a failing test, (2) implement to pass, (3) confirm passing.
+    - State what needs to be done and identify the files or modules affected.
+    - Note dependencies between tasks explicitly so they can be ordered correctly.
+    - Flag any task that carries meaningful implementation risk or requires a decision not resolved in the feature doc.
+    - Keep task scope small enough to implement and verify in a single agent turn.
