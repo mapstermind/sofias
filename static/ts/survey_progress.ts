@@ -1,60 +1,154 @@
 /**
  * survey_progress.ts
  *
- * Live progress bar + on-change auto-save for survey_detail.html.
+ * Live progress bar, conditional visibility, and on-change auto-save for
+ * survey_detail.html.
  *
- * Expects three elements in the DOM:
- *   #progress-total   — wrapper div with data-total="<n>" (total question count)
- *   #progress-count   — span showing "answered/total" text
+ * Progress elements:
+ *   #progress-total   — wrapper div with data-total (initial server count)
+ *   #progress-count   — span showing "answered/total"
  *   #progress-bar     — div whose inline width% is animated
  *
- * Auto-save fires when:
- *   radio / checkbox  — immediately on change
- *   text / number /
- *   date / textarea   — 800 ms after the last input (debounced)
- *
- * Auto-save is enabled only when the form has a data-autosave-url attribute
- * (omitted for closed surveys). Failures are silent.
- *
- * A question is considered answered when:
- *   radio / checkbox  — at least one option in the group is checked
- *   text / number /
- *   date / textarea   — the field has a non-empty trimmed value
+ * Conditional visibility mirrors apps/surveys/visibility.py. Each question is
+ * wrapped in `.question-card[data-question-code][data-question-name]
+ * [data-visible-when]`; each module in `.module-card[data-module-key]
+ * [data-visible-when]`. A `visible_when` rule is one of:
+ *   {"question": "<code>", "equals": <value>}
+ *   {"any_in_module": "<module key>", "equals": <value>}
+ * An empty attribute means always visible. Progress counts only visible
+ * questions; the server is authoritative for completion.
  */
 
-function isQuestionAnswered(name: string, form: HTMLFormElement): boolean {
+type Rule =
+  | { question: string; equals: unknown }
+  | { any_in_module: string; equals: unknown }
+  | Record<string, unknown>;
+
+const TRUE_STRINGS = new Set(["si", "sí", "true", "yes", "1"]);
+const FALSE_STRINGS = new Set(["no", "false", "0"]);
+
+function normalize(value: unknown): unknown {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const lowered = value.trim().toLowerCase();
+    if (TRUE_STRINGS.has(lowered)) return true;
+    if (FALSE_STRINGS.has(lowered)) return false;
+    return lowered;
+  }
+  return value;
+}
+
+function matches(actual: unknown, expected: unknown): boolean {
+  return normalize(actual) === normalize(expected);
+}
+
+// --- DOM readers ------------------------------------------------------------
+
+function questionCards(form: HTMLElement): HTMLElement[] {
+  return Array.from(form.querySelectorAll<HTMLElement>(".question-card"));
+}
+
+function moduleCards(form: HTMLElement): HTMLElement[] {
+  return Array.from(form.querySelectorAll<HTMLElement>(".module-card"));
+}
+
+function readValue(name: string, form: HTMLFormElement): unknown {
   const inputs = Array.from(
     form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(`[name="${name}"]`)
   );
-
-  if (inputs.length === 0) return false;
-
+  if (inputs.length === 0) return null;
   const first = inputs[0];
-
-  if (first instanceof HTMLInputElement) {
-    if (first.type === "radio" || first.type === "checkbox") {
-      return inputs.some(
-        (el): el is HTMLInputElement => el instanceof HTMLInputElement && el.checked
-      );
-    }
-    return first.value.trim() !== "";
+  if (first instanceof HTMLInputElement && first.type === "checkbox") {
+    const checked = inputs
+      .filter((el): el is HTMLInputElement => el instanceof HTMLInputElement && el.checked)
+      .map((el) => el.value);
+    return checked.length ? checked : null;
   }
-
-  if (first instanceof HTMLTextAreaElement) {
-    return first.value.trim() !== "";
+  if (first instanceof HTMLInputElement && first.type === "radio") {
+    const checked = inputs.find(
+      (el): el is HTMLInputElement => el instanceof HTMLInputElement && el.checked
+    );
+    return checked ? checked.value : null;
   }
-
-  return false;
+  if (first) {
+    const v = (first as HTMLInputElement | HTMLTextAreaElement).value;
+    return v.trim() === "" ? null : v;
+  }
+  return null;
 }
 
-function getUniqueQuestionNames(form: HTMLFormElement): string[] {
-  const seen = new Set<string>();
-  form
-    .querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
-      'input[name^="question_"], textarea[name^="question_"]'
+function parseRule(raw: string | undefined): Rule | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as Rule;
+  } catch {
+    return null;
+  }
+}
+
+// --- Visibility -------------------------------------------------------------
+
+function buildAnswersByCode(form: HTMLFormElement): Record<string, unknown> {
+  const answers: Record<string, unknown> = {};
+  for (const card of questionCards(form)) {
+    const code = card.dataset["questionCode"];
+    const name = card.dataset["questionName"];
+    if (code && name) answers[code] = readValue(name, form);
+  }
+  return answers;
+}
+
+function buildModuleToCodes(form: HTMLElement): Record<string, string[]> {
+  const map: Record<string, string[]> = {};
+  for (const module of moduleCards(form)) {
+    const key = module.dataset["moduleKey"];
+    if (!key) continue;
+    map[key] = Array.from(
+      module.querySelectorAll<HTMLElement>(".question-card")
     )
-    .forEach((el) => seen.add(el.name));
-  return Array.from(seen);
+      .map((c) => c.dataset["questionCode"])
+      .filter((c): c is string => Boolean(c));
+  }
+  return map;
+}
+
+function ruleVisible(
+  rule: Rule | null,
+  answers: Record<string, unknown>,
+  moduleToCodes: Record<string, string[]>
+): boolean {
+  if (!rule) return true;
+  if ("question" in rule && typeof rule.question === "string") {
+    return matches(answers[rule.question], (rule as { equals: unknown }).equals);
+  }
+  if ("any_in_module" in rule && typeof rule.any_in_module === "string") {
+    const codes = moduleToCodes[rule.any_in_module] ?? [];
+    return codes.some((c) => matches(answers[c], (rule as { equals: unknown }).equals));
+  }
+  return true;
+}
+
+function applyVisibility(form: HTMLFormElement): void {
+  const answers = buildAnswersByCode(form);
+  const moduleToCodes = buildModuleToCodes(form);
+
+  for (const module of moduleCards(form)) {
+    const visible = ruleVisible(parseRule(module.dataset["visibleWhen"]), answers, moduleToCodes);
+    module.hidden = !visible;
+  }
+  for (const card of questionCards(form)) {
+    if (card.closest(".module-card[hidden]")) {
+      card.hidden = true;
+      continue;
+    }
+    card.hidden = !ruleVisible(parseRule(card.dataset["visibleWhen"]), answers, moduleToCodes);
+  }
+}
+
+// --- Progress ---------------------------------------------------------------
+
+function isAnswered(name: string, form: HTMLFormElement): boolean {
+  return readValue(name, form) !== null;
 }
 
 function updateProgress(): void {
@@ -62,23 +156,32 @@ function updateProgress(): void {
   const bar = document.getElementById("progress-bar");
   const countEl = document.getElementById("progress-count");
   const totalEl = document.getElementById("progress-total");
-
   if (!form || !bar || !countEl || !totalEl) return;
 
-  const total = parseInt(totalEl.dataset["total"] ?? "0", 10);
-  if (total === 0) return;
+  const visibleCards = questionCards(form).filter((c) => !c.hidden);
+  const total = visibleCards.length;
+  if (total === 0) {
+    countEl.textContent = "0/0";
+    bar.style.width = "0%";
+    return;
+  }
 
-  const names = getUniqueQuestionNames(form);
-  const answered = names.filter((name) => isQuestionAnswered(name, form)).length;
+  const answered = visibleCards.filter((c) => {
+    const name = c.dataset["questionName"];
+    return name ? isAnswered(name, form) : false;
+  }).length;
+
   const pct = Math.round((answered / total) * 100);
-
   bar.style.width = `${pct}%`;
   countEl.textContent = `${answered}/${total}`;
 }
 
-// ---------------------------------------------------------------------------
-// Auto-save
-// ---------------------------------------------------------------------------
+function refresh(form: HTMLFormElement): void {
+  applyVisibility(form);
+  updateProgress();
+}
+
+// --- Auto-save --------------------------------------------------------------
 
 function buildFieldData(name: string, form: HTMLFormElement): URLSearchParams {
   const data = new URLSearchParams();
@@ -92,7 +195,6 @@ function buildFieldData(name: string, form: HTMLFormElement): URLSearchParams {
   const first = inputs[0];
 
   if (first instanceof HTMLInputElement && first.type === "checkbox") {
-    // Send all currently-checked values for this group.
     inputs.forEach((el) => {
       if (el instanceof HTMLInputElement && el.checked) data.append(name, el.value);
     });
@@ -112,7 +214,6 @@ function showSessionExpired(): void {
   const modal = document.getElementById("session-expired-modal");
   if (modal) modal.style.display = "flex";
 
-  // Disable all inputs so the user can't keep filling the form in vain.
   document
     .querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>(
       "#survey-form input, #survey-form textarea, #survey-form button"
@@ -140,7 +241,6 @@ async function autoSave(
 function setupAutoSave(form: HTMLFormElement, url: string): void {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Radio / checkbox: save immediately on selection change.
   form.addEventListener("change", (e) => {
     const target = e.target as HTMLElement;
     if (!(target instanceof HTMLInputElement)) return;
@@ -150,7 +250,6 @@ function setupAutoSave(form: HTMLFormElement, url: string): void {
     }
   });
 
-  // Text / textarea / number / date: debounce 800 ms after last keystroke.
   form.addEventListener("input", (e) => {
     const target = e.target as HTMLElement;
     const isText =
@@ -166,21 +265,19 @@ function setupAutoSave(form: HTMLFormElement, url: string): void {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Bootstrap
-// ---------------------------------------------------------------------------
+// --- Bootstrap --------------------------------------------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
-  updateProgress();
-
   const form = document.querySelector<HTMLFormElement>("#survey-form");
-  if (form) {
-    form.addEventListener("change", updateProgress);
-    form.addEventListener("input", updateProgress);
+  if (!form) return;
 
-    const autosaveUrl = form.dataset["autosaveUrl"];
-    if (autosaveUrl) {
-      setupAutoSave(form, autosaveUrl);
-    }
+  refresh(form);
+
+  form.addEventListener("change", () => refresh(form));
+  form.addEventListener("input", () => refresh(form));
+
+  const autosaveUrl = form.dataset["autosaveUrl"];
+  if (autosaveUrl) {
+    setupAutoSave(form, autosaveUrl);
   }
 });

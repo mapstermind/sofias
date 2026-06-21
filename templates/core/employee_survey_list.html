@@ -16,7 +16,7 @@
             <a href="{% url 'surveys:survey_detail' assignment.id %}"
                class="block bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 hover:border-indigo-300 hover:shadow-md transition-all">
               <div class="flex items-start justify-between gap-2">
-                <h2 class="font-semibold text-gray-900 truncate">{{ assignment.version.template.title }}</h2>
+                <h2 class="font-semibold text-gray-900 truncate">{{ assignment.survey.title }}</h2>
                 <span class="shrink-0 inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">Activa</span>
               </div>
               {% if assignment.due_date %}
@@ -28,7 +28,7 @@
           {% else %}
             <div class="relative group block bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 cursor-default opacity-60 select-none">
               <div class="flex items-start justify-between gap-2">
-                <h2 class="font-semibold text-gray-900 truncate">{{ assignment.version.template.title }}</h2>
+                <h2 class="font-semibold text-gray-900 truncate">{{ assignment.survey.title }}</h2>
                 {% if item.completed %}
                   <span class="shrink-0 inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Completada</span>
                 {% else %}

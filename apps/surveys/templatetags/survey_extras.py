@@ -1,4 +1,8 @@
+import json
+
 from django import template
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -10,6 +14,17 @@ def dict_get(d, key):
     if isinstance(d, dict):
         return d.get(key)
     return None
+
+
+@register.filter
+def as_json(value):
+    """Compact, HTML-attribute-safe JSON for a value (e.g. a visible_when rule).
+
+    Returns an empty string for null so `data-visible-when=""` means "no rule".
+    """
+    if value is None:
+        return ""
+    return mark_safe(escape(json.dumps(value, separators=(",", ":"))))
 
 
 @register.filter

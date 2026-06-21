@@ -248,7 +248,7 @@ class TestEmployeeSurveyListView:
         assert response.status_code == 200
 
     def test_only_company_assignments_appear(
-        self, client, make_user, make_company, bootstrap_groups, survey_version
+        self, client, make_user, make_company, bootstrap_groups, survey
     ):
         company = make_company()
         other_company = make_company(
@@ -256,8 +256,12 @@ class TestEmployeeSurveyListView:
         )
         user = self._make_employee(make_user, bootstrap_groups, company=company)
 
-        own = SurveyAssignment.objects.create(company=company, version=survey_version)
-        SurveyAssignment.objects.create(company=other_company, version=survey_version)
+        own = SurveyAssignment.objects.create(
+            company=company, survey=survey, variant="small"
+        )
+        SurveyAssignment.objects.create(
+            company=other_company, survey=survey, variant="small"
+        )
 
         client.force_login(user)
         response = client.get(self.URL)
@@ -267,12 +271,12 @@ class TestEmployeeSurveyListView:
         assert len(ids) == 1
 
     def test_completed_flag_true_when_user_has_completed_submission(
-        self, client, make_user, make_company, bootstrap_groups, survey_version
+        self, client, make_user, make_company, bootstrap_groups, survey
     ):
         company = make_company()
         user = self._make_employee(make_user, bootstrap_groups, company=company)
         assignment = SurveyAssignment.objects.create(
-            company=company, version=survey_version
+            company=company, survey=survey, variant="small"
         )
         SurveySubmission.objects.create(
             assignment=assignment, user=user, status=SurveySubmission.Status.COMPLETED
@@ -289,12 +293,12 @@ class TestEmployeeSurveyListView:
         assert item["completed"] is True
 
     def test_completed_flag_false_when_no_submission(
-        self, client, make_user, make_company, bootstrap_groups, survey_version
+        self, client, make_user, make_company, bootstrap_groups, survey
     ):
         company = make_company()
         user = self._make_employee(make_user, bootstrap_groups, company=company)
         assignment = SurveyAssignment.objects.create(
-            company=company, version=survey_version
+            company=company, survey=survey, variant="small"
         )
 
         client.force_login(user)
@@ -308,12 +312,12 @@ class TestEmployeeSurveyListView:
         assert item["completed"] is False
 
     def test_completed_flag_false_for_in_progress_submission(
-        self, client, make_user, make_company, bootstrap_groups, survey_version
+        self, client, make_user, make_company, bootstrap_groups, survey
     ):
         company = make_company()
         user = self._make_employee(make_user, bootstrap_groups, company=company)
         assignment = SurveyAssignment.objects.create(
-            company=company, version=survey_version
+            company=company, survey=survey, variant="small"
         )
         SurveySubmission.objects.create(
             assignment=assignment, user=user, status=SurveySubmission.Status.IN_PROGRESS
@@ -514,11 +518,11 @@ class TestEmployeeDetailView:
     # ── progress data accuracy ────────────────────────────────────────────────
 
     def test_progress_not_started_when_no_submission(
-        self, client, make_user, make_company, make_user_with_profile, survey_version
+        self, client, make_user, make_company, make_user_with_profile, survey
     ):
         company = make_company()
         emp = self._make_employee(make_user_with_profile, company)
-        SurveyAssignment.objects.create(company=company, version=survey_version)
+        SurveyAssignment.objects.create(company=company, survey=survey, variant="small")
         viewer = self._make_viewer(make_user, company)
         client.force_login(viewer)
         response = client.get(self._url(emp.id))
@@ -537,9 +541,11 @@ class TestEmployeeDetailView:
     ):
         company = make_company()
         emp = self._make_employee(make_user_with_profile, company)
-        version = survey_with_questions["version"]
+        survey_obj = survey_with_questions["survey"]
         questions = survey_with_questions["questions"]
-        assignment = SurveyAssignment.objects.create(company=company, version=version)
+        assignment = SurveyAssignment.objects.create(
+            company=company, survey=survey_obj, variant="small"
+        )
 
         submission = SurveySubmission.objects.create(
             assignment=assignment, user=emp, status=SurveySubmission.Status.IN_PROGRESS

@@ -111,26 +111,34 @@ def make_company(db):
 
 
 @pytest.fixture
-def survey_template(db):
-    from apps.surveys.models import SurveyTemplate
+def survey(db):
+    from apps.surveys.models import Survey
 
-    return SurveyTemplate.objects.create(
+    return Survey.objects.create(
+        key="test-survey",
         title="Wellbeing Survey",
-        status=SurveyTemplate.Status.PUBLISHED,
+        status=Survey.Status.PUBLISHED,
     )
 
 
 @pytest.fixture
-def survey_version(db, survey_template):
-    from apps.surveys.models import SurveyVersion
+def survey_module(db, survey):
+    """A single `all`-variant module within the survey."""
+    from apps.surveys.models import Module
 
-    return SurveyVersion.objects.create(template=survey_template, version_number=1)
+    return Module.objects.create(
+        survey=survey,
+        key="m1",
+        title="General",
+        applies_to=Module.AppliesTo.ALL,
+        order=0,
+    )
 
 
 @pytest.fixture
-def survey_with_questions(db, survey_version):
+def survey_with_questions(db, survey, survey_module):
     """
-    Returns {"version": version, "questions": [...]}.
+    Returns {"survey": survey, "module": module, "questions": [...]}.
     One question of each of the 9 types; choice questions have 2 choices each.
     """
     from apps.surveys.models import Choice, Question
@@ -149,7 +157,8 @@ def survey_with_questions(db, survey_version):
     questions = []
     for order, (qtype, text) in enumerate(question_specs):
         q = Question.objects.create(
-            version=survey_version,
+            module=survey_module,
+            code=f"q{order + 1}",
             question_type=qtype,
             text=text,
             order=order,
@@ -158,17 +167,18 @@ def survey_with_questions(db, survey_version):
             Choice.objects.create(question=q, label="Option A", value="a", order=0)
             Choice.objects.create(question=q, label="Option B", value="b", order=1)
         questions.append(q)
-    return {"version": survey_version, "questions": questions}
+    return {"survey": survey, "module": survey_module, "questions": questions}
 
 
 @pytest.fixture
-def active_assignment(db, make_company, survey_version):
-    """An ACTIVE SurveyAssignment linking a fresh company to survey_version."""
+def active_assignment(db, make_company, survey):
+    """An ACTIVE SurveyAssignment linking a fresh company to the survey."""
     from apps.surveys.models import SurveyAssignment
 
     company = make_company()
     return SurveyAssignment.objects.create(
         company=company,
-        version=survey_version,
+        survey=survey,
+        variant=SurveyAssignment.Variant.SMALL,
         status=SurveyAssignment.Status.ACTIVE,
     )

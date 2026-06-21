@@ -1,3 +1,9 @@
+> **ARCHIVED 2026-06-20.** The interactive authoring CLI (`apps/core/workflows/`
+> and the `create_*`/`manage_*`/`seed_*template*` commands) was removed when the
+> survey model was flattened — see `docs/adr/adr-0002-flatten-survey-authoring-model.md`.
+> Surveys are now seeded declaratively via `python manage.py seed_nom035_survey`.
+> Kept for historical reference only; the commands below no longer exist.
+
 # SOFIA-S Interactive Workflow Guide
 
 The workflow layer provides five management commands for building surveys interactively from the terminal, plus three seed commands for the project's canonical content. This document covers the mental model, command-by-command walkthroughs, input conventions, recommended sequences, and guidance for extending the system.

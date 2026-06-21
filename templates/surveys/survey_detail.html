@@ -1,7 +1,7 @@
 {% extends "base_app.html" %}
-{% load static %}
+{% load static survey_extras %}
 
-{% block title %}{{ template.title }}{% endblock %}
+{% block title %}{{ survey.title }}{% endblock %}
 
 {% block header_nav %}
   <span class="text-gray-300 select-none">|</span>
@@ -9,7 +9,7 @@
     &larr; Inicio
   </a>
   <span class="text-gray-300 select-none">|</span>
-  <span class="font-semibold text-gray-800">{{ template.title }}</span>
+  <span class="font-semibold text-gray-800">{{ survey.title }}</span>
 {% endblock %}
 
 {% block content %}
@@ -47,9 +47,9 @@
 <div class="max-w-2xl w-full mx-auto min-w-0">
 
   <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900">{{ template.title }}</h1>
-    {% if template.description %}
-      <p class="mt-2 text-gray-600">{{ template.description }}</p>
+    <h1 class="text-3xl font-bold text-gray-900">{{ survey.title }}</h1>
+    {% if survey.description %}
+      <p class="mt-2 text-gray-600">{{ survey.description }}</p>
     {% endif %}
   </div>
 
@@ -62,26 +62,20 @@
   <form id="survey-form" method="post" novalidate data-autosave-url="{% url 'surveys:autosave_survey' assignment.id %}">
     {% csrf_token %}
 
-    {% for section in sections %}
-      <div class="mb-8">
+    {% for module in modules %}
+      <div class="module-card mb-8" data-module-key="{{ module.key }}" data-visible-when="{{ module.visible_when|as_json }}">
         <div class="mb-4 border-b border-gray-200 pb-2">
-          <h2 class="text-lg font-semibold text-gray-700">{{ section.title }}</h2>
-          {% if section.description %}
-            <p class="text-sm text-gray-500 mt-1">{{ section.description }}</p>
+          <h2 class="text-lg font-semibold text-gray-700">{{ module.title }}</h2>
+          {% if module.description %}
+            <p class="text-sm text-gray-500 mt-1">{{ module.description }}</p>
           {% endif %}
         </div>
 
-        {% for question in section.questions.all %}
+        {% for question in module.questions.all %}
           {% include "surveys/_question.html" %}
         {% endfor %}
       </div>
     {% endfor %}
-
-    {% if unsectioned %}
-      {% for question in unsectioned %}
-        {% include "surveys/_question.html" %}
-      {% endfor %}
-    {% endif %}
 
   </form>
 </div><!-- end max-w-2xl -->
