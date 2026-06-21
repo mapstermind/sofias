@@ -1,10 +1,12 @@
 {% load survey_extras %}
 {% with ans=existing_answers|dict_get:question.id %}
-<div class="mb-6 rounded-lg bg-white p-5 shadow-sm border {% if question.id in errors %}border-red-300{% else %}border-gray-200{% endif %}">
+<div class="question-card mb-6 rounded-lg bg-white p-5 shadow-sm border {% if question.id in errors %}border-red-300{% else %}border-gray-200{% endif %}"
+     data-question-code="{{ question.code }}"
+     data-question-name="question_{{ question.id }}"
+     data-visible-when="{{ question.visible_when|as_json }}">
 
   <label class="block text-sm font-medium text-gray-800 mb-3">
     {{ question.text }}
-    {% if question.required %}<span class="text-red-500 ml-1" title="Required">*</span>{% endif %}
   </label>
 
   {% if question.question_type == "boolean" %}
@@ -13,7 +15,7 @@
         <input type="radio" name="question_{{ question.id }}" value="true"
           {% if ans == True %}checked{% endif %}
           class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
-        <span class="text-sm text-gray-700">Yes</span>
+        <span class="text-sm text-gray-700">Sí</span>
       </label>
       <label class="flex items-center gap-2 cursor-pointer">
         <input type="radio" name="question_{{ question.id }}" value="false"

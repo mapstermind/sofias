@@ -8,13 +8,22 @@ from django.views import View
 
 from apps.accounts.models import Company, UserProfile
 from apps.responses.models import Answer, SurveySubmission
-from apps.surveys.models import SurveyAssignment
+from apps.surveys.models import Module, SurveyAssignment
 
 
 def _representative_minimum(n: int) -> int | None:
     if n == 0:
         return None
     return math.ceil(0.9604 * n / (0.0025 * (n - 1) + 0.9604))
+
+
+def _variant_question_count(assignment) -> int:
+    """Total questions presented for an assignment's variant (modules tagged
+    `all` plus the assignment's variant). Ignores per-respondent conditional
+    visibility, which varies by answer."""
+    return assignment.survey.questions.filter(
+        module__applies_to__in=[Module.AppliesTo.ALL, assignment.variant]
+    ).count()
 
 
 class HomeView(LoginRequiredMixin, View):
@@ -48,7 +57,7 @@ class EmployeeSurveyListView(LoginRequiredMixin, View):
 
         assignments = (
             SurveyAssignment.objects.filter(company=company)
-            .select_related("version__template")
+            .select_related("survey")
             .order_by("-created_at")
         )
 
@@ -137,7 +146,7 @@ class CompanyDashboardView(LoginRequiredMixin, View):
 
         assignments = (
             SurveyAssignment.objects.filter(company=company)
-            .select_related("version__template")
+            .select_related("survey")
             .annotate(
                 completed_count=Count(
                     "submissions",
@@ -211,12 +220,12 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
 
         assignments = list(
             SurveyAssignment.objects.filter(company=company)
-            .select_related("version__template")
+            .select_related("survey")
             .order_by("-created_at")
         )
 
         # Pre-fetch total question counts per assignment to avoid N+1
-        total_questions_map = {a.id: a.version.questions.count() for a in assignments}
+        total_questions_map = {a.id: _variant_question_count(a) for a in assignments}
 
         # Pre-fetch all answers for this company's assignments in one query
         answered_map: dict[tuple[int, int], int] = {}
@@ -313,7 +322,7 @@ class EmployeeDetailView(LoginRequiredMixin, View):
 
         assignments = list(
             SurveyAssignment.objects.filter(company=company)
-            .select_related("version__template")
+            .select_related("survey")
             .order_by("-created_at")
         )
 
@@ -324,7 +333,7 @@ class EmployeeDetailView(LoginRequiredMixin, View):
         submissions_by_aid = {s.assignment_id: s for s in submissions_qs}
 
         # Progress bars (always visible to can_manage_employees users).
-        total_questions_map = {a.id: a.version.questions.count() for a in assignments}
+        total_questions_map = {a.id: _variant_question_count(a) for a in assignments}
         survey_progress = []
         for assignment in assignments:
             submission = submissions_by_aid.get(assignment.id)
@@ -354,38 +363,28 @@ class EmployeeDetailView(LoginRequiredMixin, View):
                     else {}
                 )
 
-                sections = list(
-                    assignment.version.sections.prefetch_related(
+                modules = list(
+                    assignment.modules_for_variant().prefetch_related(
                         "questions__choices"
-                    ).order_by("order")
-                )
-                unsectioned = list(
-                    assignment.version.questions.filter(section__isnull=True)
-                    .prefetch_related("choices")
-                    .order_by("order")
+                    )
                 )
 
-                sections_with_answers = [
+                modules_with_answers = [
                     {
-                        "section": section,
+                        "module": module,
                         "items": [
                             {"question": q, "answer": answers_by_qid.get(q.id)}
-                            for q in section.questions.all()
+                            for q in module.questions.all()
                         ],
                     }
-                    for section in sections
-                ]
-                unsectioned_with_answers = [
-                    {"question": q, "answer": answers_by_qid.get(q.id)}
-                    for q in unsectioned
+                    for module in modules
                 ]
 
                 submissions_data.append(
                     {
                         "assignment": assignment,
                         "submission": submission,
-                        "sections": sections_with_answers,
-                        "unsectioned": unsectioned_with_answers,
+                        "modules": modules_with_answers,
                     }
                 )
 

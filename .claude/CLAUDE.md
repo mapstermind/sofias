@@ -77,14 +77,16 @@ templates/       # Project-level Django templates (Spanish UI, TailwindCSS)
 docs/            # platform/ (feature & system docs), adr/ (architectural decisions), internal/ (operator guides) — read these for design intent
 apps/            # Django apps; each app has its own CLAUDE.md with details
   accounts/      # Users, OTP/auth, companies, roles/permissions, CSV import  → apps/accounts/CLAUDE.md
-  surveys/       # Survey authoring model (templates→versions→questions) + taking  → apps/surveys/CLAUDE.md
+  surveys/       # Survey instrument model (Survey→Module→Question) + taking  → apps/surveys/CLAUDE.md
   responses/     # SurveySubmission + Answer storage  → apps/responses/CLAUDE.md
-  core/          # Home/dashboards + interactive survey-authoring CLI/commands  → apps/core/CLAUDE.md
+  core/          # Home/dashboards + NOM-035 seed command  → apps/core/CLAUDE.md
   analytics/     # Placeholder, not yet implemented  → apps/analytics/CLAUDE.md
   reports/       # Placeholder, not yet implemented  → apps/reports/CLAUDE.md
 ```
 
 **When working inside an app, read that app's `CLAUDE.md` first** — it holds the model/flow details not repeated here.
+
+**Feature docs live in `docs/platform/`.** This project is documentation-driven (see `docs/internal/prompting-workflow.md`): the per-feature doc `docs/platform/<feature>.md` is the source of truth, and its derived implementation plan is `docs/platform/<feature>-tasks.md`. When a skill (brainstorming, writing-plans, etc.) produces or rewrites either artifact, write it under `docs/platform/` — never under `docs/superpowers/`, a `specs/` folder, or a scratch path.
 
 - **Settings module**: `config.settings` (referenced in `manage.py`).
 - **Root URL conf**: `config.urls` — wires `admin/`, `core` at `/`, `accounts` at `/cuentas/`, `surveys` at `/encuestas/`.
@@ -94,5 +96,5 @@ apps/            # Django apps; each app has its own CLAUDE.md with details
 
 - **Custom user model**: `AUTH_USER_MODEL = "accounts.User"`; login is by **email**, primarily via passwordless OTP. See `apps/accounts`.
 - **Authorization**: custom permissions are declared on the unmanaged `accounts.Role` model and bundled into four groups (Admins / Principal Exec / Secondary Exec / Employees) by `python manage.py bootstrap_groups` (run this after migrating). Views authorize on permission codenames (e.g. `can_view_dashboard`). Tests get the groups via the `bootstrap_groups` fixture in `conftest.py`.
-- **Survey data flow**: library `QuestionTemplate`s are *stamped* into a `SurveyVersion` as independent `Question`s → a `SurveyAssignment` exposes a version to a `Company` → employees submit via `apps/surveys` views → answers persist as `responses.Answer` (JSON value typed by question type) → `apps/core` renders dashboards/progress.
+- **Survey data flow**: a fixed `Survey` owns `Module`s (`applies_to` all/small/large) of `Question`s → a `SurveyAssignment` exposes the survey to a `Company` with a frozen `variant` (by headcount) → employees submit the variant's modules via `apps/surveys` views (conditional `visible_when` branching) → answers persist as `responses.Answer` (JSON value typed by question type) → `apps/core` renders dashboards/progress. No question library or versions (see `docs/adr/adr-0002-flatten-survey-authoring-model.md`).
 - **Testing**: pytest + pytest-django, settings `config.settings`. Tests live in each app's `tests/` package; shared fixtures (users, companies, survey chains, groups) are in the root `conftest.py`. `addopts` use `--reuse-db -x`.

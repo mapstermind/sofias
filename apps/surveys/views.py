@@ -5,12 +5,68 @@ from django.views.decorators.http import require_POST
 
 from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import Question, SurveyAssignment
+from apps.surveys.visibility import visible_questions
 
 
-def _get_existing_answers(submission):
-    if submission is None:
-        return {}
-    return {a.question_id: a.value for a in submission.answers.all()}
+def _parse_value(question, post):
+    """Parse the posted value for a single question by its type.
+
+    Returns (value, error). `error` is a message string or None. A None value
+    with no error means "unanswered". Shared by survey_detail and autosave so the
+    two never diverge.
+    """
+    form_key = f"question_{question.id}"
+    qt = question.question_type
+
+    if qt == Question.QuestionType.MULTIPLE_CHOICE:
+        vals = post.getlist(form_key)
+        return (vals or None), None
+    if qt == Question.QuestionType.BOOLEAN:
+        raw = post.get(form_key, "")
+        if raw == "true":
+            return True, None
+        if raw == "false":
+            return False, None
+        return None, None
+    if qt == Question.QuestionType.INTEGER:
+        raw = post.get(form_key, "").strip()
+        if not raw:
+            return None, None
+        try:
+            return int(raw), None
+        except ValueError:
+            return None, "Please enter a whole number."
+    if qt == Question.QuestionType.DECIMAL:
+        raw = post.get(form_key, "").strip()
+        if not raw:
+            return None, None
+        try:
+            return float(raw), None
+        except ValueError:
+            return None, "Please enter a number."
+    if qt == Question.QuestionType.LIKERT:
+        raw = post.get(form_key, "").strip()
+        if not raw:
+            return None, None
+        try:
+            return int(raw), None
+        except ValueError:
+            return None, "Please select a valid option."
+
+    raw = post.get(form_key, "").strip()
+    return (raw or None), None
+
+
+def _modules_with_questions(assignment):
+    """Ordered modules (variant-filtered), each with prefetched questions+choices."""
+    return list(assignment.modules_for_variant().prefetch_related("questions__choices"))
+
+
+def _flat_questions(modules):
+    out = []
+    for module in modules:
+        out.extend(module.questions.all())
+    return out
 
 
 def survey_detail(request, assignment_id):
@@ -19,20 +75,12 @@ def survey_detail(request, assignment_id):
     if assignment.status == SurveyAssignment.Status.CLOSED:
         return redirect("core:home")
 
-    version = assignment.version
-    template = version.template
-
-    sections = list(
-        version.sections.prefetch_related("questions__choices").order_by("order")
-    )
-    unsectioned = list(
-        version.questions.filter(section__isnull=True)
-        .prefetch_related("choices")
-        .order_by("order")
-    )
+    survey = assignment.survey
+    modules = _modules_with_questions(assignment)
+    all_questions = _flat_questions(modules)
 
     existing_submission = None
-    existing_answers = {}
+    existing_answers = {}  # by question_id
     if request.user.is_authenticated:
         existing_submission = (
             SurveySubmission.objects.filter(assignment=assignment, user=request.user)
@@ -44,71 +92,34 @@ def survey_detail(request, assignment_id):
             and existing_submission.status == SurveySubmission.Status.COMPLETED
         ):
             return redirect("core:home")
-        existing_answers = _get_existing_answers(existing_submission)
+        if existing_submission:
+            existing_answers = {
+                a.question_id: a.value for a in existing_submission.answers.all()
+            }
 
     errors = {}
 
     if request.method == "POST":
-        all_questions = []
-        for section in sections:
-            all_questions.extend(section.questions.order_by("order"))
-        all_questions.extend(unsectioned)
-
-        answer_values = {}
+        answer_values = {}  # question_id -> value
         for q in all_questions:
-            form_key = f"question_{q.id}"
-            qt = q.question_type
-
-            if qt == Question.QuestionType.MULTIPLE_CHOICE:
-                value = request.POST.getlist(form_key) or []
-            elif qt == Question.QuestionType.BOOLEAN:
-                raw = request.POST.get(form_key, "")
-                if raw == "true":
-                    value = True
-                elif raw == "false":
-                    value = False
-                else:
-                    value = None
-            elif qt == Question.QuestionType.INTEGER:
-                raw = request.POST.get(form_key, "").strip()
-                if raw:
-                    try:
-                        value = int(raw)
-                    except ValueError:
-                        errors[q.id] = "Please enter a whole number."
-                        continue
-                else:
-                    value = None
-            elif qt == Question.QuestionType.DECIMAL:
-                raw = request.POST.get(form_key, "").strip()
-                if raw:
-                    try:
-                        value = float(raw)
-                    except ValueError:
-                        errors[q.id] = "Please enter a number."
-                        continue
-                else:
-                    value = None
-            elif qt == Question.QuestionType.LIKERT:
-                raw = request.POST.get(form_key, "").strip()
-                if raw:
-                    try:
-                        value = int(raw)
-                    except ValueError:
-                        errors[q.id] = "Please select a valid option."
-                        continue
-                else:
-                    value = None
-            else:
-                raw = request.POST.get(form_key, "").strip()
-                value = raw or None
-
+            value, error = _parse_value(q, request.POST)
+            if error:
+                errors[q.id] = error
+                continue
             answer_values[q.id] = value
 
         if not errors:
+            # Determine which questions are visible given the submitted answers.
+            answers_by_code = {q.code: answer_values.get(q.id) for q in all_questions}
+            visible = visible_questions(assignment, answers_by_code)
+            visible_ids = {q.id for q in visible}
+
+            all_answered = all(
+                answer_values.get(qid) is not None for qid in visible_ids
+            )
+
             user = request.user if request.user.is_authenticated else None
             now = timezone.now()
-            all_answered = all(val is not None for val in answer_values.values())
             new_status = (
                 SurveySubmission.Status.COMPLETED
                 if all_answered
@@ -148,10 +159,12 @@ def survey_detail(request, assignment_id):
                 return redirect("surveys:survey_submitted", assignment_id=assignment_id)
             return redirect(f"{request.path}?saved=1")
 
-    all_q_ids = list(version.questions.values_list("id", flat=True))
-    total_questions = len(all_q_ids)
+    # Progress: count visible questions answered (using stored answers).
+    answers_by_code = {q.code: existing_answers.get(q.id) for q in all_questions}
+    visible = visible_questions(assignment, answers_by_code)
+    total_questions = len(visible)
     answered_count = sum(
-        1 for qid in all_q_ids if existing_answers.get(qid) not in (None, "", [])
+        1 for q in visible if existing_answers.get(q.id) not in (None, "", [])
     )
 
     return render(
@@ -159,10 +172,8 @@ def survey_detail(request, assignment_id):
         "surveys/survey_detail.html",
         {
             "assignment": assignment,
-            "template": template,
-            "version": version,
-            "sections": sections,
-            "unsectioned": unsectioned,
+            "survey": survey,
+            "modules": modules,
             "errors": errors,
             "existing_answers": existing_answers,
             "is_edit": existing_submission is not None,
@@ -174,7 +185,7 @@ def survey_detail(request, assignment_id):
 
 @require_POST
 def autosave_survey(request, assignment_id):
-    """AJAX endpoint — saves a single changed field without altering submission status."""
+    """AJAX endpoint — saves changed fields without altering submission status."""
     if not request.user.is_authenticated:
         return JsonResponse({"ok": False, "error": "unauthenticated"}, status=401)
 
@@ -200,42 +211,9 @@ def autosave_survey(request, assignment_id):
         q = questions.get(qid)
         if q is None:
             continue
-        form_key = f"question_{qid}"
-        qt = q.question_type
-
-        if qt == Question.QuestionType.MULTIPLE_CHOICE:
-            vals = request.POST.getlist(form_key)
-            value = vals if vals else None
-        elif qt == Question.QuestionType.BOOLEAN:
-            raw = request.POST.get(form_key, "")
-            if raw == "true":
-                value = True
-            elif raw == "false":
-                value = False
-            else:
-                value = None
-        elif qt == Question.QuestionType.INTEGER:
-            raw = request.POST.get(form_key, "").strip()
-            try:
-                value = int(raw) if raw else None
-            except ValueError:
-                continue
-        elif qt == Question.QuestionType.DECIMAL:
-            raw = request.POST.get(form_key, "").strip()
-            try:
-                value = float(raw) if raw else None
-            except ValueError:
-                continue
-        elif qt == Question.QuestionType.LIKERT:
-            raw = request.POST.get(form_key, "").strip()
-            try:
-                value = int(raw) if raw else None
-            except ValueError:
-                continue
-        else:
-            raw = request.POST.get(form_key, "").strip()
-            value = raw or None
-
+        value, error = _parse_value(q, request.POST)
+        if error:
+            continue
         answer_values[qid] = value
 
     submission, _ = SurveySubmission.objects.get_or_create(
@@ -266,6 +244,6 @@ def survey_submitted(request, assignment_id):
         "surveys/survey_submitted.html",
         {
             "assignment": assignment,
-            "template": assignment.version.template,
+            "survey": assignment.survey,
         },
     )

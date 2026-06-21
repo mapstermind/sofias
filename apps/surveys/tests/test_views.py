@@ -118,6 +118,81 @@ class TestSurveyDetailView:
         assert dec_q.id in response.context["errors"]
 
 
+@pytest.fixture
+def variant_survey(db, survey, make_company):
+    """Survey with an `all` trigger+followup, a small-only and large-only question."""
+    from apps.surveys.models import Module, Question
+
+    trigger = Module.objects.create(
+        survey=survey, key="trigger", title="T", applies_to="all", order=0
+    )
+    Question.objects.create(
+        module=trigger, code="t1", question_type="boolean", text="Trigger?"
+    )
+    followup = Module.objects.create(
+        survey=survey,
+        key="followup",
+        title="F",
+        applies_to="all",
+        order=1,
+        visible_when={"any_in_module": "trigger", "equals": True},
+    )
+    Question.objects.create(
+        module=followup, code="f1", question_type="text", text="Why?"
+    )
+    small = Module.objects.create(
+        survey=survey, key="small", title="S", applies_to="small", order=2
+    )
+    Question.objects.create(
+        module=small, code="s1", question_type="text", text="Small only"
+    )
+    large = Module.objects.create(
+        survey=survey, key="large", title="L", applies_to="large", order=3
+    )
+    Question.objects.create(
+        module=large, code="l1", question_type="text", text="Large only"
+    )
+    return survey
+
+
+class TestVariantPresentation:
+    def _assignment(self, survey, make_company, variant):
+        return SurveyAssignment.objects.create(
+            company=make_company(), survey=survey, variant=variant
+        )
+
+    def test_small_shows_small_not_large(self, client, variant_survey, make_company):
+        a = self._assignment(variant_survey, make_company, "small")
+        body = client.get(_survey_url(a.pk)).content.decode()
+        assert "Small only" in body
+        assert "Large only" not in body
+
+    def test_large_shows_large_not_small(self, client, variant_survey, make_company):
+        a = self._assignment(variant_survey, make_company, "large")
+        body = client.get(_survey_url(a.pk)).content.decode()
+        assert "Large only" in body
+        assert "Small only" not in body
+
+    def test_skip_path_completes_without_hidden_followup(
+        self, client, variant_survey, make_company, make_user
+    ):
+        a = self._assignment(variant_survey, make_company, "small")
+        user = make_user(email="emp@x.com")
+        client.force_login(user)
+        # Trigger = No hides f1; answer the visible questions only.
+        from apps.surveys.models import Question
+
+        q = {x.code: x for x in Question.objects.filter(survey=variant_survey)}
+        post = {
+            f"question_{q['t1'].id}": "false",
+            f"question_{q['s1'].id}": "answer",
+        }
+        response = client.post(_survey_url(a.pk), post)
+        assert response["Location"].endswith(_submitted_url(a.pk))
+        sub = SurveySubmission.objects.get(assignment=a, user=user)
+        assert sub.status == SurveySubmission.Status.COMPLETED
+
+
 class TestSurveySubmittedView:
     def test_get_returns_200(self, client, active_assignment):
         response = client.get(_submitted_url(active_assignment.pk))

@@ -16,5 +16,5 @@ Storage for survey submissions and answers. Thin data layer — collection logic
 
 - Writing answers is done exclusively by `apps/surveys/views.py` (`survey_detail`, `autosave_survey`), which `update_or_create`s `Answer` rows and deletes rows whose value becomes empty/None. Reading/rendering answers is done in `apps/core` (`EmployeeDetailView`) and the admin.
 - When adding a `Question.QuestionType`, ensure the JSON `value` shape it produces is handled everywhere answers are parsed (surveys views) and rendered (core views, templates, admin).
-- `admin.py` registers `SurveySubmission` (with inline `Answer`s) and `Answer`, filterable by company/template.
+- `admin.py` registers `SurveySubmission` (with inline `Answer`s) and `Answer`, filterable by company/survey.
 - Tests: `tests/test_models.py`.

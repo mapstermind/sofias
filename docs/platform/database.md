@@ -2,14 +2,13 @@
 
 ## Overview
 
-The schema is organized around four distinct concerns:
+The schema is organized around three distinct concerns:
 
 1. **Who** — identity and company membership (`accounts` app)
-2. **Question library** — reusable, company-agnostic question definitions (`surveys` app: `QuestionTemplate`, `ChoiceTemplate`)
-3. **What** — the reusable survey definition (`surveys` app: `SurveyTemplate`, `SurveyVersion`, `Section`, `Question`, `Choice`)
-4. **Context & results** — who must answer, in which context, and what they said (`surveys` app: `SurveyAssignment`; `responses` app: `SurveySubmission`, `Answer`)
+2. **What** — the fixed survey instrument: `surveys` app `Survey → Module → Question → Choice`. There is no reusable question library and no numbered versions; operators seed fixed instruments (NOM-035) and a material change means a new `Survey`. See `docs/adr/adr-0002-flatten-survey-authoring-model.md`.
+3. **Context & results** — who must answer, in which variant, and what they said (`surveys` app: `SurveyAssignment`; `responses` app: `SurveySubmission`, `Answer`)
 
-This separation means a single survey template can be assigned to many companies without mixing their data, and a single question definition can be stamped into many surveys without coupling them.
+A `Survey` is modular: each `Module` is tagged `applies_to` (`all`/`small`/`large`) and the company's headcount selects a variant (frozen on the assignment). Conditional branching is a data-driven `visible_when` rule.
 
 ---
 
@@ -88,110 +87,79 @@ Unused setup access code values are globally unique. A user may have at most one
 
 ---
 
-### `surveys` — Question library
+### `surveys` — Survey instrument
 
-#### `QuestionTemplate`
-A reusable question in the library. Completely company- and survey-agnostic. This is the single source of truth for question wording, type, and default config.
-
-| Field | Type | Notes |
-|---|---|---|
-| `id` | BigAutoField | PK |
-| `question_type` | CharField | `text`, `integer`, `decimal`, `date`, `single_choice`, `multiple_choice`, `boolean`, `rating`, `likert` |
-| `text` | TextField | The question prompt |
-| `config` | JSONField | Flexible metadata (min/max, placeholders, validation rules, etc.) |
-| `created_at` | DateTimeField | Auto-set |
-| `updated_at` | DateTimeField | Auto-updated |
-
-**Key method — `stamp_into(version, section=None, order=0)`**: copies this template and all its `ChoiceTemplate` rows into an independent `Question` (and `Choice`) instance owned by the given `SurveyVersion`. After stamping the copy is fully independent — changes to the library do not affect it.
-
-#### `ChoiceTemplate`
-A selectable option belonging to a `QuestionTemplate`. Stamped alongside its parent into `Choice` instances.
+#### `Survey`
+A fixed survey instrument (e.g. NOM-035). Owns its modules directly. No library, no versions.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | BigAutoField | PK |
-| `question` | ForeignKey → `QuestionTemplate` | Cascades |
-| `label` | CharField(255) | Display text |
-| `value` | CharField(255) | Stored value |
-| `order` | PositiveIntegerField | Default 0 |
-
----
-
-### `surveys` — Survey definition
-
-#### `SurveyTemplate`
-The reusable, company-agnostic survey definition. A template can be assigned to multiple companies.
-
-| Field | Type | Notes |
-|---|---|---|
-| `id` | BigAutoField | PK |
+| `key` | SlugField | Unique stable identifier, e.g. `nom035` |
 | `title` | CharField(255) | |
 | `description` | TextField | Optional |
 | `status` | CharField | `draft` / `published` / `archived` |
-| `created_at` | DateTimeField | Auto-set |
-| `updated_at` | DateTimeField | Auto-updated |
+| `headcount_threshold` | PositiveIntegerField | Default 50; `headcount > threshold → large` variant |
+| `created_at` / `updated_at` | DateTimeField | Auto |
 
-#### `SurveyVersion`
-A snapshot of a template's content at a point in time. Assignments are pinned to a specific version so the form cannot change under active respondents.
-
-| Field | Type | Notes |
-|---|---|---|
-| `id` | BigAutoField | PK |
-| `template` | ForeignKey → `SurveyTemplate` | Cascades |
-| `version_number` | PositiveIntegerField | Unique per template |
-| `published_at` | DateTimeField | Nullable |
-| `created_at` | DateTimeField | Auto-set |
-
-Constraint: `UNIQUE (template, version_number)`
-
-#### `Section`
-An optional grouping of questions within a version.
+#### `Module`
+An ordered group of questions within a survey (replaces the old `Section`). Carries applicability and an optional branching rule.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | BigAutoField | PK |
-| `version` | ForeignKey → `SurveyVersion` | Cascades |
-| `title` | CharField(255) | |
-| `description` | TextField | Optional |
-| `order` | PositiveIntegerField | Display order, default 0 |
+| `survey` | ForeignKey → `Survey` | Cascades |
+| `key` | SlugField | Stable; unique per survey. Referenced by `any_in_module` rules |
+| `title` / `description` | Char/Text | |
+| `order` | PositiveIntegerField | Default 0 |
+| `applies_to` | CharField | `all` / `small` / `large` |
+| `visible_when` | JSONField | Nullable conditional-visibility rule (null = always visible) |
+
+Constraint: `UNIQUE (survey, key)`
 
 #### `Question`
-A single question owned by a `SurveyVersion`. May be created manually or stamped from a `QuestionTemplate`. Once created it is fully independent of the library.
+A question owned by a `Module`. Carries a stable `code` — the integration key for the future valuation engine. No scoring data lives here.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | BigAutoField | PK |
-| `version` | ForeignKey → `SurveyVersion` | Cascades |
-| `section` | ForeignKey → `Section` | Nullable; cascades |
-| `source` | ForeignKey → `QuestionTemplate` | SET NULL; nullable — provenance only, no live coupling |
-| `question_type` | CharField | Same choices as `QuestionTemplate.question_type` |
-| `text` | TextField | The question prompt |
+| `module` | ForeignKey → `Module` | Cascades |
+| `survey` | ForeignKey → `Survey` | Denormalized from `module.survey` (set in `save()`); enables per-survey `code` uniqueness |
+| `code` | SlugField | Stable; unique per survey, e.g. `g3-29` |
+| `question_type` | CharField | `text`, `integer`, `decimal`, `date`, `single_choice`, `multiple_choice`, `boolean`, `rating`, `likert` |
+| `text` | TextField | Prompt |
 | `order` | PositiveIntegerField | Default 0 |
-| `config` | JSONField | Flexible metadata |
+| `config` | JSONField | Flexible per-type metadata (e.g. likert `labels`) |
+| `visible_when` | JSONField | Nullable conditional-visibility rule |
+
+Constraint: `UNIQUE (survey, code)`
 
 #### `Choice`
-A selectable option for `single_choice` or `multiple_choice` questions. May be stamped from a `ChoiceTemplate` or created manually.
+A selectable option for `single_choice` / `multiple_choice` questions.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | BigAutoField | PK |
 | `question` | ForeignKey → `Question` | Cascades |
-| `source` | ForeignKey → `ChoiceTemplate` | SET NULL; nullable — provenance only |
 | `label` | CharField(255) | Display text |
 | `value` | CharField(255) | Stored value |
 | `order` | PositiveIntegerField | Default 0 |
 
 #### `SurveyAssignment`
-Scopes a specific `SurveyVersion` to a `Company`. This is the company-level campaign — all submissions for that company flow through this record.
+Scopes a `Survey` to a `Company` with a frozen variant. The company-level campaign.
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | BigAutoField | PK |
 | `company` | ForeignKey → `Company` | Cascades |
-| `version` | ForeignKey → `SurveyVersion` | Cascades |
+| `survey` | ForeignKey → `Survey` | Cascades |
+| `variant` | CharField | `small` / `large`; resolved from headcount, operator-overridable, frozen at creation |
 | `status` | CharField | `active` / `closed` |
 | `due_date` | DateField | Optional deadline |
 | `created_at` | DateTimeField | Auto-set |
+
+Helpers: `SurveyAssignment.resolve_default_variant(company, survey)` (pure) and
+`assignment.modules_for_variant()` (modules where `applies_to` is `all` or the variant).
 
 ---
 
@@ -228,32 +196,21 @@ Constraint: `UNIQUE (submission, question)` — one answer per question per subm
 ## Relation Diagram
 
 ```
-                    ┌─────────────────────────────────────────┐
-                    │         QUESTION LIBRARY                │
-                    │                                         │
-                    │  QuestionTemplate                       │
-                    │    └─ ChoiceTemplate                    │
-                    │            │ (stamp_into)               │
-                    └────────────┼────────────────────────────┘
-                                 │ source (SET NULL)
-                                 ▼
-accounts_company ──────────────────────────────────────────┐
-      │                         │                          │
-      │ (members)               │                          │ (survey_assignments)
-      ▼                         ▼                          ▼
-accounts_userprofile       surveys_question        surveys_surveyassignment
-      │                    surveys_choice           │         │
-      │ (user)                  │                  │         │ (version)
-      ▼                         │ (version)        │         ▼
- accounts_user ◄────────────────┼──────────────────┘  surveys_surveyversion
-      │                         │                           │
-      │ (submissions)           ▼                           │ (template)
-      ▼                   surveys_section                   ▼
-responses_surveysubmission                       surveys_surveytemplate
-      │
-      │ (answers)
-      ▼
- responses_answer ──────► surveys_question
+accounts_company ───────────────────────────────────┐
+      │                                              │ (survey_assignments)
+      │ (members)                                    ▼
+      ▼                                     surveys_surveyassignment
+accounts_userprofile                              │   │ (survey)
+      │ (user)                                     │   ▼
+      ▼                                            │  surveys_survey
+ accounts_user                                     │       │ (modules)
+      │ (submissions)                              │       ▼
+      ▼                                            │  surveys_module
+responses_surveysubmission ◄───────────────────────┘       │ (questions)
+      │ (answers)                                           ▼
+      ▼                                              surveys_question
+ responses_answer ───────────────────────────────►  surveys_choice
+                          (question)
 ```
 
 ---
@@ -268,63 +225,51 @@ Company.create(name, legal_name)              ← reference_code auto-generated
        └─ UserProfile.create(user, position, company, is_activated=False)
 ```
 
-A `Company` is created first. Users are then created via Django's auth system, manual admin entry, or CSV import. A `UserProfile` is attached to link non-admin users to their company. OTP-only users have an unusable password; setup-code fallback users have an unusable password, a linked `SetupAccessCode`, and `must_change_password=True`.
+A `Company` is created first. Users are then created via Django's auth system, manual admin entry, or CSV import. A `UserProfile` links non-admin users to their company; company headcount is `company.members.count()`.
 
-### 2. Build the question library
-
-```
-QuestionTemplate.create(question_type, text, config)
-  └─ ChoiceTemplate.create(question, label, value, order)   ← for choice questions only
-```
-
-The library is built once and maintained independently of any survey. These records are never directly shown to respondents — they are the source of truth used when stamping questions into surveys.
-
-### 3. Build a SurveyTemplate and populate it from the library
+### 2. Seed the survey instrument
 
 ```
-SurveyTemplate.create(title, description, status=DRAFT)
-  └─ SurveyVersion.create(template, version_number=1)
-       ├─ Section.create(version, title, order)             ← optional
-       └─ question_template.stamp_into(version, section, order)
-            # Creates Question + Choice copies, source FK set for provenance
+python manage.py seed_nom035_survey
 ```
 
-`stamp_into()` is the bridge between the library and a live survey. It copies all fields and choices from the template into new independent rows owned by the version. After stamping, the question is self-contained — editing the library does not affect it.
+The instrument is defined declaratively in `apps/core/management/commands/_nom035_data.py` and built by the seed command: one `Survey` (`key="nom035"`) with modules for Guía I (`all`), Guía II (`small`) and Guía III (`large`), each question carrying a stable `code`. The seed is idempotent (upsert by `key`, modules replaced). There is no interactive authoring CLI.
 
-Questions can also be created manually (without a library source) for one-off additions.
-
-### 4. Assign a SurveyVersion to a Company
+### 3. Assign the survey to a Company
 
 ```
-SurveyAssignment.create(company, version, status=ACTIVE, due_date)
+variant = SurveyAssignment.resolve_default_variant(company, survey)  # headcount-based
+SurveyAssignment.create(company, survey, variant, status=ACTIVE, due_date)
 ```
 
-This is the act of "sending" the survey to a company. The assignment is pinned to a specific `SurveyVersion`, so the template can be revised without affecting in-flight assignments. Multiple companies can hold assignments against the same version independently.
+The variant defaults from headcount vs `survey.headcount_threshold`, is operator-overridable, and is frozen on the assignment. At take-time the respondent sees `assignment.modules_for_variant()` (modules tagged `all` plus the variant's), with `visible_when` rules hiding gated questions.
 
-### 5. Collect responses
+### 4. Collect responses
 
 ```
 SurveySubmission.create(assignment, user, status=IN_PROGRESS)
-  └─ Answer.create(submission, question, value)   ← one per question
+  └─ Answer.create(submission, question, value)   ← one per visible question
        ...
-  └─ submission.status = COMPLETED
+  └─ submission.status = COMPLETED   ← when all *visible* required questions answered
      submission.completed_at = now()
 ```
 
-When a user submits or autosaves the survey URL identified by `assignment_id`, a `SurveySubmission` is created or reused for that assignment. As they answer, an `Answer` is stored per question. Company isolation is automatic: querying `Answer` objects through `submission → assignment → company` always stays within a single company's data.
+Completion counts only questions visible under the current answers (see `apps/surveys/visibility.py`). Company isolation is automatic: `Answer → submission → assignment → company` always stays within one company's data.
 
 ---
 
 ## Key Design Decisions
 
-**The library never touches live surveys.** `QuestionTemplate` and `ChoiceTemplate` are authored independently. The `stamp_into()` method is the only crossing point — after it runs, the `Question` row is fully owned by its `SurveyVersion`. Editing a library entry does not silently alter any survey.
+**Fixed instruments, no library or versions.** Operators seed a few fixed surveys; a material change is a new `Survey`, not a new version. This removed the `QuestionTemplate`/`ChoiceTemplate` library, `SurveyTemplate`/`SurveyVersion` split, copy-on-stamp, and numbered versioning. See `docs/adr/adr-0002-flatten-survey-authoring-model.md`.
 
-**`source` is provenance, not a dependency.** The FK from `Question → QuestionTemplate` (and `Choice → ChoiceTemplate`) is set to `SET_NULL`. If a library entry is deleted, existing survey questions are unaffected. The field exists to answer "where did this question come from?" and to enable future tooling (e.g. "re-sync from library" on draft versions).
+**Modular by `applies_to`.** A single `Survey` expresses the NOM-035 modular structure; the company's headcount selects which `small`/`large` modules join the shared `all` modules. Each item is defined once.
 
-**Templates are company-agnostic.** `SurveyTemplate` and its child models carry no reference to any company. A template can be reused across any number of companies without duplication.
+**Variant frozen on the assignment.** `SurveyAssignment.variant` is stored at creation, so later headcount changes do not alter a company's in-flight or historical assignment.
 
-**Assignments pin a version.** `SurveyAssignment.version` is a FK to `SurveyVersion`, not `SurveyTemplate`. This guarantees the exact questions a company was assigned are preserved even when the template evolves.
+**`visible_when` is data-driven and survey-agnostic.** Branching (Guía I skip, "atiendo clientes"/"soy jefe" gates) is a JSON rule evaluated by one component used server- and client-side. The future second survey reuses it.
 
-**Company isolation through the assignment.** All response data (`SurveySubmission`, `Answer`) traces back to a `SurveyAssignment`, which belongs to exactly one `Company`. There is no cross-company leakage by construction.
+**`Question.code` is the scoring boundary.** Codes are stable and unique per survey; the future valuation engine references them. No scoring (inverted flags, dimension/domain/category, thresholds) lives in `apps/surveys`.
 
-**Users are decoupled from companies at the auth level.** `User` is a standard Django auth model. Company membership lives in `UserProfile`, keeping the auth layer clean and the business layer flexible.
+**Company isolation through the assignment.** All response data traces back to a `SurveyAssignment` belonging to exactly one `Company`.
+
+**Users are decoupled from companies at the auth level.** `User` is a standard Django auth model; company membership lives in `UserProfile`.

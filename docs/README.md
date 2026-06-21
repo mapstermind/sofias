@@ -25,11 +25,12 @@ docs/
 │   ├── keep-in-mind.md
 │   ├── HARNESS-ENGINEERING.md
 │   ├── characterization-testing.md
-│   ├── interactive-workflows.md
 │   ├── meetings/
 │   ├── roadmap_context/
 │   └── user-guides/
 └── archive/                         # Retired docs — moved here with a note of when/why
+    └── internal/
+        └── interactive-workflows.md # Retired authoring CLI (removed in ADR-0002)
 ```
 
 ---
@@ -81,4 +82,5 @@ Docs moved here when the feature they describe is retired or superseded. Include
 | `platform/csv-user-import.md` | Bulk user creation via Django Admin |
 | `platform/setup-access-codes.md` | First-login fallback for blocked-email users |
 | `adr/adr-0001-setup-access-codes-for-blocked-email-login.md` | Why setup codes exist instead of temporary passwords |
+| `adr/adr-0002-flatten-survey-authoring-model.md` | Why the survey model is a flat Survey→Module→Question tree (no library/versions) |
 | `internal/roadmap_context/hoja-de-ruta-nom035.md` | NOM-035 product roadmap (three initiatives) |

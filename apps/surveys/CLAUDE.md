@@ -1,46 +1,47 @@
 # surveys
 
-Survey authoring data model and the employee survey-taking experience. URL prefix: `/encuestas/` (`app_name = "surveys"`). Submitted answers live in `apps/responses`; the authoring CLI/admin tooling lives in `apps/core`.
+Survey instrument data model and the employee survey-taking experience. URL prefix: `/encuestas/` (`app_name = "surveys"`). Submitted answers live in `apps/responses`; the NOM-035 seed lives in `apps/core`.
 
-## The template → version → stamped-instance model
+## The Survey → Module → Question model
 
-This is the central concept. Understand it before changing `models.py`.
+This is the central concept. Understand it before changing `models.py`. There is **no reusable question library, no numbered versions, and no copy-on-stamp** — surveys are fixed instruments, seeded once. Rationale: `docs/adr/adr-0002-flatten-survey-authoring-model.md`.
 
-**Library (reusable, company-agnostic):**
-- `QuestionTemplate` + `ChoiceTemplate` — a reusable question/choice library.
+- `Survey` — the instrument. `key` (stable unique slug, e.g. `nom035`), `title`, `description`, `status` (draft/published/archived), `headcount_threshold` (default 50). A material change = a **new** `Survey`, not a version.
+- `Module` — an ordered group of questions within a survey (replaces the old `Section`). `applies_to` ∈ `all`/`small`/`large`; `key` (unique per survey); optional `visible_when`.
+- `Question` — owned by a `Module`. `code` (stable, **unique per survey** — the integration key for the future valuation engine), `question_type`, `text`, `config` (JSON), optional `visible_when`. Carries a denormalized `survey` FK (set in `save()` from `module.survey`) to back the `unique(survey, code)` constraint.
+- `Choice` — selectable option for `single_choice`/`multiple_choice`. (Boolean Sí/No renders from hardcoded radios, not `Choice` rows.)
+- `SurveyAssignment` — links a `Survey` to a `Company` with a frozen `variant` (`small`/`large`). `resolve_default_variant(company, survey)` computes the default from `company.members.count()` vs `survey.headcount_threshold` (operator-overridable); `modules_for_variant()` returns the modules to present (`all` plus the variant's).
 
-**Concrete survey (owned by a version):**
-- `SurveyTemplate` — a survey (title, `status`: draft/published/archived).
-- `SurveyVersion` — a numbered, immutable-ish snapshot of a survey (`unique(template, version_number)`). Questions belong to a version, never directly to the template.
-- `Section` — optional grouping of questions within a version (ordered).
-- `Question` + `Choice` — the actual questions answered by respondents, **owned by a `SurveyVersion`**.
+`apps/surveys` stores **no scoring** (no inverted flags, dimension/domain/category, or thresholds) — that is the future valuation engine's config, keyed by `Question.code`.
 
-`QuestionTemplate.stamp_into(version, section, order)` **copies** a library template into a version as an independent `Question` (and copies its `ChoiceTemplate`s into `Choice`s). The copy keeps a nullable `source` FK back to the template for provenance, but is otherwise fully independent — editing the library never mutates already-stamped questions. This is the mechanism behind the admin "Stamp into survey version" action (`admin.py`) and the core authoring workflows.
+### Question types (`Question.QuestionType`)
+`text, integer, decimal, date, single_choice, multiple_choice, boolean, rating, likert`. Answer parsing per type is in `views.py._parse_value` (and answer-rendering in `apps/core`) — keep these in sync when adding a type.
 
-**Assignment:**
-- `SurveyAssignment` — links a `SurveyVersion` to a `Company` (status active/closed, optional `due_date`). This is what makes a survey available to a company's employees.
+## Conditional visibility (`visibility.py`)
 
-`config` (JSONField on both `QuestionTemplate` and `Question`) holds flexible per-type settings: `min`, `max`, `placeholder`, `labels` (likert), `validation_rules`, etc.
+`visible_when` (on `Module` and `Question`) is a small JSON rule, evaluated by `is_visible()` / `visible_questions()` — the **single source of truth** for both server-side completeness and the client mirror in `static/ts/survey_progress.ts`. Forms:
+- `{"question": "<code>", "equals": <value>}` — single-answer gate.
+- `{"any_in_module": "<module key>", "equals": <value>}` — module aggregate.
 
-### Question types (`QuestionTemplate.QuestionType`)
-`text, integer, decimal, date, single_choice, multiple_choice, boolean, rating, likert`. `Question.QuestionType` is an alias of the same enum. Answer parsing per type is handled in `views.py` (and mirrored in `apps/core` answer-rendering) — keep these in sync when adding a type.
+Null/empty = always visible. A submission is `COMPLETED` only when all **visible** questions are answered; hidden questions never block completion. `_normalize` loosely coerces `"si"/"sí"/"true"` etc. to booleans so rules match boolean answers.
 
 ## Views (`views.py`) — taking a survey
 
-- `survey_detail(assignment_id)` — renders the form and handles POST. Reuses an in-progress `SurveySubmission` per (user, assignment); marks `COMPLETED` only when **all** questions are answered, else `IN_PROGRESS`. Closed/completed assignments redirect to `core:home`. Anonymous submissions are allowed (`user=None`).
-- `autosave_survey(assignment_id)` — POST-only AJAX endpoint; persists single changed fields without changing submission status. Returns JSON.
+- `survey_detail(assignment_id)` — renders modules for the assignment's variant and handles POST. Reuses an in-progress `SurveySubmission` per (user, assignment); marks `COMPLETED` only when all visible questions are answered. Closed/completed assignments redirect to `core:home`. Anonymous submissions allowed (`user=None`).
+- `autosave_survey(assignment_id)` — POST-only AJAX; persists single changed fields without changing status.
 - `survey_submitted(assignment_id)` — confirmation page.
 
-Per-type form parsing (`question_<id>` keys) is duplicated between `survey_detail` and `autosave_survey` — change both together.
+`_parse_value(question, post)` is the shared per-type parser used by both `survey_detail` and `autosave_survey` — change it once.
 
 ## Other files
 
-- `templatetags/survey_extras.py` — `dict_get` and `likert_pairs` (maps likert config `labels` → value/label pairs; values always 1–5, default 5-point Spanish scale).
-- `admin.py` — manages both the library and concrete surveys; notable "Stamp into version" bulk action.
-- `tests/` — split into `test_models.py`, `test_views.py`.
+- `templatetags/survey_extras.py` — `dict_get`, `as_json` (compact JSON for `data-visible-when` attributes), `likert_pairs` (config `labels` → value/label pairs; values 1–5).
+- `admin.py` — registers the flat models (`Survey`, `Module`, `Question`, `Choice`, `SurveyAssignment`) for inspection. No authoring actions.
+- `tests/` — `test_models.py`, `test_views.py`, `test_visibility.py`.
 
 ## Gotchas
 
-- Answers are **not** stored here — see `apps/responses.Answer` (FK to `surveys.Question`, value is JSON whose shape depends on `question_type`).
-- `SurveyAssignment.company` FKs `accounts.Company`.
+- Answers are **not** stored here — see `apps/responses.Answer` (FK to `surveys.Question`).
+- The NOM-035 instrument is built by `python manage.py seed_nom035_survey` (data in `apps/core/management/commands/_nom035_data.py`). There is no interactive authoring CLI.
+- Migrations were reset for this model (ADR-0002); `apps/surveys` and `apps/responses` start at a fresh `0001`.
 - User-facing strings/URLs are Spanish; some validation error strings in `views.py` are still English.
