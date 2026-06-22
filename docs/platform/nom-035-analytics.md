@@ -127,12 +127,13 @@ the stored per-submission rows (cheap and always consistent).
 |---|---|
 | `apps/nom035/apps.py` | `AppConfig` (`name="apps.nom035"`, `label="nom035"`); connects the scoring signal in `ready()` |
 | `apps/nom035/models.py` | `SubmissionScore`, `GroupScore` |
-| `apps/nom035/_nom035_scoring.py` | Scoring config constants (inverted items, taxonomy, thresholds, action text) |
-| `apps/nom035/scoring.py` | `score_submission()` (pure) and `materialize()` (upsert) |
+| `apps/nom035/_nom035_scoring.py` | Scoring config constants (inverted items, taxonomy, thresholds, action text, group labels) |
+| `apps/nom035/scoring.py` | `score_submission()` (pure) + the `ScoreResult`/`GroupResult` dataclasses |
+| `apps/nom035/services.py` | `materialize()` (transactional upsert of the result rows) |
 | `apps/nom035/signals.py` | `post_save` receiver on `responses.SurveySubmission` |
-| `apps/nom035/aggregates.py` | On-demand company aggregation helpers |
+| `apps/nom035/aggregates.py` | On-demand company/employee aggregation helpers |
 | `apps/nom035/management/commands/recompute_nom035_scores.py` | Backfill / refresh command |
-| `apps/nom035/migrations/0001_initial.py` | Result-model schema |
+| `apps/nom035/migrations/` | Result-model schema (`0001_initial`, `0002_*`) |
 | `apps/nom035/tests/` | Engine unit tests + known-case validation |
 | `apps/nom035/CLAUDE.md` | Replaces `apps/analytics/CLAUDE.md` |
 
