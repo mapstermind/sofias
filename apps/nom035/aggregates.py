@@ -19,9 +19,14 @@ def company_valuation(company) -> dict:
             needing_action += 1
         if s.guia1_event:
             guia1_flags += 1
+    distribution_rows = [
+        {"ndr": level, "label": c.NDR_LABELS[level], "count": distribution[level]}
+        for level in c.NDR_ORDER
+    ]
     return {
         "scored_count": len(scores),
         "distribution": distribution,
+        "distribution_rows": distribution_rows,
         "needing_action": needing_action,
         "guia1_flags": guia1_flags,
     }
