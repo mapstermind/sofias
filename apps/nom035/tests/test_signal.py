@@ -31,3 +31,17 @@ def test_completed_submission_is_scored_automatically(assignment):
     sub.save()
 
     assert SubmissionScore.objects.filter(submission=sub).exists()
+
+
+def test_non_nom035_submission_is_not_scored(make_company, survey):
+    # `survey` fixture has key "test-survey"; the engine is NOM-035-specific.
+    assignment = SurveyAssignment.objects.create(
+        company=make_company(),
+        survey=survey,
+        variant=SurveyAssignment.Variant.LARGE,
+        status=SurveyAssignment.Status.ACTIVE,
+    )
+    sub = SurveySubmission.objects.create(
+        assignment=assignment, status=SurveySubmission.Status.COMPLETED
+    )
+    assert not SubmissionScore.objects.filter(submission=sub).exists()

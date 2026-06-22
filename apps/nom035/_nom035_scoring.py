@@ -17,6 +17,10 @@ the taxonomy source below, never scored.
 
 from apps.nom035 import constants as c
 
+# The survey instrument this engine scores (surveys.Survey.key). The engine is
+# NOM-035-specific: only submissions of this survey are scored.
+NOM035_SURVEY_KEY = "nom035"
+
 # ── Guía I (traumatic events) ───────────────────────────────────────────────
 GUIA1_TRIGGER_CODE = "g1-1"
 GUIA1_FOLLOWUP_CODES = [f"g1-{i}" for i in range(2, 16)]
