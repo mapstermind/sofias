@@ -52,13 +52,35 @@
   </div>
 </div>
 
-{# ── Insights (can_view_insights only) ───────────────────────────────────── #}
+{# ── Valoración de resultados (can_view_insights only) ────────────────────── #}
 {% if perms.accounts.can_view_insights %}
 <section class="mb-8">
-  <h2 class="text-base font-semibold text-gray-900 mb-4">Insights</h2>
-  <div class="rounded-2xl border border-dashed border-gray-300 bg-white px-8 py-12 text-center">
-    <p class="text-sm font-medium text-gray-400">Próximamente</p>
-    <p class="mt-1 text-xs text-gray-400">El análisis de insights estará disponible en una versión futura.</p>
+  <h2 class="text-base font-semibold text-gray-900 mb-4">Valoración de resultados</h2>
+  <div class="rounded-2xl border border-gray-200 bg-white px-6 py-5">
+    {% if valuation %}
+      <p class="text-sm text-gray-900">
+        Nivel de riesgo final:
+        <span class="font-semibold">{{ valuation.final_ndr_label }}</span>
+        <span class="text-gray-500">({{ valuation.final_score }})</span>
+      </p>
+      <p class="mt-1 text-sm text-gray-600">{{ valuation.final_action }}</p>
+      {% if valuation.categories %}
+        <ul class="mt-4 space-y-1">
+          {% for cat in valuation.categories %}
+            <li class="text-sm text-gray-700">
+              {{ cat.label }}: <span class="font-medium">{{ cat.ndr_label }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if valuation.guia1_event %}
+        <p class="mt-4 text-sm font-medium text-amber-700">
+          Guía I: posible necesidad de canalización (severidad {{ valuation.guia1_severity }}).
+        </p>
+      {% endif %}
+    {% else %}
+      <p class="text-sm text-gray-500">Sin resultados: la encuesta no ha sido completada.</p>
+    {% endif %}
   </div>
 </section>
 {% endif %}

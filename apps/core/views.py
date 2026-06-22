@@ -388,6 +388,12 @@ class EmployeeDetailView(LoginRequiredMixin, View):
                     }
                 )
 
+        valuation = None
+        if request.user.has_perm("accounts.can_view_insights"):
+            from apps.nom035.aggregates import employee_valuation
+
+            valuation = employee_valuation(employee_user, company)
+
         return render(
             request,
             "core/employee_detail.html",
@@ -397,5 +403,6 @@ class EmployeeDetailView(LoginRequiredMixin, View):
                 "employee_profile": employee_profile,
                 "survey_progress": survey_progress,
                 "submissions_data": submissions_data,
+                "valuation": valuation,
             },
         )
