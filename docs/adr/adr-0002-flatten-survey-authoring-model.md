@@ -33,7 +33,7 @@ question carries a stable `code` so the future valuation engine and reports can
 reference items without the survey model owning any scoring. Material instrument
 changes create a new `Survey`; there is no version chain. The interactive
 authoring CLI is removed in favor of a single declarative `seed_nom035_survey`.
-Full design: `docs/superpowers/specs/2026-06-20-survey-model-redesign-design.md`.
+Full design: `docs/platform/survey-model.md`.
 
 ## Consequences
 
@@ -83,7 +83,7 @@ Full design: `docs/superpowers/specs/2026-06-20-survey-model-redesign-design.md`
 
 ## Links
 
-- Spec: `docs/superpowers/specs/2026-06-20-survey-model-redesign-design.md`
+- Spec: `docs/platform/survey-model.md`
 - Context: `docs/internal/roadmap_context/hoja-de-ruta-nom035.md`,
   `docs/internal/roadmap_context/Guias de Referencia.pdf`
 - App docs: `apps/surveys/CLAUDE.md`, `apps/core/CLAUDE.md`,
