@@ -63,3 +63,13 @@ def test_inverted_items_are_known_codes():
 def test_action_text_exists_for_every_level():
     for level in c.NDR_ORDER:
         assert cfg.action_text(level)
+
+
+def test_group_label_covers_every_categoria_and_dominio():
+    for variant in ("small", "large"):
+        for categoria, dominio in cfg.taxonomy_for_variant(variant).values():
+            assert cfg.group_label(categoria)
+            assert cfg.group_label(dominio)
+    # Labels are the official accented Spanish names, not slug prettifications.
+    assert cfg.group_label(cfg.CAT_TIEMPO) == "Organización del tiempo de trabajo"
+    assert cfg.group_label(cfg.DOM_RECONOCIMIENTO) == "Reconocimiento del desempeño"

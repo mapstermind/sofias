@@ -56,6 +56,25 @@ _DOMINIO_CATEGORIA = {
     DOM_PERTENENCIA: CAT_ENTORNO,
 }
 
+# Display labels (official NOM-035 names) for categoría and dominio keys.
+_GROUP_LABELS = {
+    CAT_AMBIENTE: "Ambiente de trabajo",
+    CAT_FACTORES: "Factores propios de la actividad",
+    CAT_TIEMPO: "Organización del tiempo de trabajo",
+    CAT_LIDERAZGO: "Liderazgo y relaciones en el trabajo",
+    CAT_ENTORNO: "Entorno organizacional",
+    DOM_CONDICIONES: "Condiciones en el ambiente de trabajo",
+    DOM_CARGA: "Carga de trabajo",
+    DOM_CONTROL: "Falta de control sobre el trabajo",
+    DOM_JORNADA: "Jornada de trabajo",
+    DOM_INTERFERENCIA: "Interferencia en la relación trabajo-familia",
+    DOM_LIDERAZGO: "Liderazgo",
+    DOM_RELACIONES: "Relaciones en el trabajo",
+    DOM_VIOLENCIA: "Violencia",
+    DOM_RECONOCIMIENTO: "Reconocimiento del desempeño",
+    DOM_PERTENENCIA: "Insuficiente sentido de pertenencia e inestabilidad",
+}
+
 # ── Guía III (large / 72) — authoritative dominio → item numbers ────────────
 _LARGE_DOMINIO_ITEMS = {
     DOM_CONDICIONES: [1, 2, 3, 4, 5],
@@ -274,3 +293,8 @@ def thresholds_for(level: str, key: str, variant: str) -> list[tuple[float, str]
 
 def action_text(ndr: str) -> str:
     return _ACTION_TEXT[ndr]
+
+
+def group_label(key: str) -> str:
+    """Human-readable Spanish name for a categoría or dominio key."""
+    return _GROUP_LABELS.get(key, key.replace("_", " ").capitalize())

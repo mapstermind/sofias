@@ -46,7 +46,7 @@ def employee_valuation(user, company) -> dict | None:
     categories = [
         {
             "key": g.key,
-            "label": g.key.replace("_", " ").capitalize(),
+            "label": cfg.group_label(g.key),
             "ndr": g.ndr,
             "ndr_label": NDR(g.ndr).label,
             "action": cfg.action_text(g.ndr),
