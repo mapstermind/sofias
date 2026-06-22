@@ -80,7 +80,7 @@ apps/            # Django apps; each app has its own CLAUDE.md with details
   surveys/       # Survey instrument model (Survey→Module→Question) + taking  → apps/surveys/CLAUDE.md
   responses/     # SurveySubmission + Answer storage  → apps/responses/CLAUDE.md
   core/          # Home/dashboards + NOM-035 seed command  → apps/core/CLAUDE.md
-  analytics/     # Placeholder, not yet implemented  → apps/analytics/CLAUDE.md
+  nom035/        # NOM-035 valuation engine (scores → NDR) + Insights  → apps/nom035/CLAUDE.md
   reports/       # Placeholder, not yet implemented  → apps/reports/CLAUDE.md
 ```
 
@@ -90,7 +90,7 @@ apps/            # Django apps; each app has its own CLAUDE.md with details
 
 - **Settings module**: `config.settings` (referenced in `manage.py`).
 - **Root URL conf**: `config.urls` — wires `admin/`, `core` at `/`, `accounts` at `/cuentas/`, `surveys` at `/encuestas/`.
-- **Registered apps** (in `INSTALLED_APPS`): `apps.accounts`, `apps.core`, `apps.surveys`, `apps.responses`. These use fully-qualified `AppConfig.name = "apps.<x>"` with an explicit short `label`. `analytics` and `reports` are **empty stubs, not registered**, and still use bare `AppConfig.name`s — register them before use (see their CLAUDE.md).
+- **Registered apps** (in `INSTALLED_APPS`): `apps.accounts`, `apps.core`, `apps.surveys`, `apps.responses`, `apps.nom035`. These use fully-qualified `AppConfig.name = "apps.<x>"` with an explicit short `label`. `reports` is an **empty stub, not registered**, and still uses a bare `AppConfig.name` — register it before use (see its CLAUDE.md).
 
 ## Cross-cutting concepts
 

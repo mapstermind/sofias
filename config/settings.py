@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.surveys",
     "apps.responses",
+    "apps.nom035",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
