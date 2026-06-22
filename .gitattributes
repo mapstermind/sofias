@@ -1,0 +1,4 @@
+# Normalize line endings: store LF in the repo, check out LF in the working
+# tree on every platform. Prevents CRLF churn when a Windows git/editor
+# touches files (e.g. via WSL).
+* text=auto eol=lf

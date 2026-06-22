@@ -137,7 +137,7 @@ Rules:
 - `status` is either `created` or `skipped`.
 - `row_number` uses spreadsheet-style numbering, where the first data row is `2`.
 - `setup_access_code` is populated only when a `password` row is created.
-- Skipped rows include an explanatory `message`.
+- Every row includes a `message`: created rows carry a confirmation (e.g. `Usuario creado.`), and skipped rows carry an explanation of why they were skipped.
 - The report includes generated setup access codes for created fallback users.
 
 ## Security Invariants

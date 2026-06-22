@@ -16,6 +16,16 @@ Confirm the following records already exist:
 
 The importer does not create companies or groups. Rows with unknown companies or groups are skipped and reported.
 
+### Finding a company's `reference_code`
+
+Each company's `reference_code` is an auto-generated 5-character code (uppercase letters and digits). You do not set it manually, so look it up before building the CSV:
+
+1. Open Django Admin.
+2. Go to **Companies**.
+3. Open the target company and copy its `reference_code`.
+
+Case does not matter in the CSV — the importer uppercases `company_reference_code` before lookup — but the value must match an existing company exactly.
+
 ## CSV Columns
 
 Required columns:

@@ -1,8 +1,7 @@
 # ADR 0001: Use Setup Access Codes for Blocked Email First Login
 
-## Status
-
-Accepted (implemented)
+Date:
+Status: Accepted (implemented)
 
 ## Context
 

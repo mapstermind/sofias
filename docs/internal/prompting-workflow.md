@@ -17,7 +17,8 @@ SOFIAS/
 │   ├── platform/                        # Feature docs and system-level docs (what the app does and how)
 │   │   ├── overview.md
 │   │   ├── data-model.md
-│   │   └── [feature-name].md
+│   │   ├── [feature-name].md            # The feature doc — source of truth (Steps 1–2)
+│   │   └── [feature-name]-tasks.md      # Derived implementation plan — disposable, deleted at cleanup (Step 4 → 10)
 │   ├── internal/                        # Human-only docs — not referenced by the agent
 │   │   ├── prompting-workflow.md
 │   │   ├── user-guides/
@@ -84,7 +85,7 @@ When we're done, rewrite the feature doc as a concrete, complete document writte
 
 Do not leave open questions in the final document. If something cannot be resolved in this session, flag it clearly so I can decide whether to block on it or accept the uncertainty.
 
-Write the updated doc back to docs/platform/[feature-name].md when we're finished.
+IMPORTANT: write the final document to docs/platform/[feature-name].md — overwrite the draft in place. Do not create it under any other path (not docs/superpowers/, not a specs/ folder, not a scratch location). This project keeps all feature docs in docs/platform/.
 ```
 
 **Exit criteria for this step:** The feature doc has no unresolved open questions. You can read it and understand exactly what will be built. Sign off on it before moving to Step 3.
@@ -125,34 +126,34 @@ Status: Accepted
 
 Link the ADR from the feature doc under a `## Linked ADRs` section.
 
-> **Why here and not at the end:** Architectural decisions inform implementation. Writing the ADR before the task breakdown means the agent has the full decision context when it plans the work. Deferring it to cleanup means the agent may implement against an undocumented assumption.
-
 ---
 
 ## Step 4 — Break Down the Work into Tasks
 
 **Who:** Agent  
-**Skill:** `opsx:propose`
+**Skill:** `superpowers:writing-plans`
 
-With a concrete feature doc in place, use OpenSpec to generate the task breakdown. The feature doc functions as your PRD input.
+With a concrete feature doc in place, turn it into an ordered implementation plan. This workflow is documentation-driven, not formal spec-driven: the feature doc in `docs/platform/` is the single source of truth, and the plan is a derived, disposable checklist the implementation session works through. There is no separate spec layer to maintain.
 
 **Prompt:**
 
 ```
-Use opsx:propose.
+Use /writing-plans.
 
-Read docs/platform/[feature-name].md and any linked ADRs. Use this as the source of truth for what needs to be built.
+Read docs/platform/[feature-name].md and any linked ADRs. Use this as the source of truth for what needs to be built — do not restate the design as a separate spec.
 
-Generate a task breakdown for implementing this feature. For each task:
+Produce an ordered implementation plan. For each task:
 - State what needs to be done
 - Identify the files or components affected
 - Note any dependencies between tasks
 - Flag any task that requires a decision or has meaningful implementation risk
 
-Do not begin implementation. Output the task list for my review.
+Structure each task for test-driven development: write a failing test first, implement to pass, then confirm. Keep each task small enough to implement and verify in a single session.
+
+Write the plan to docs/platform/[feature-name]-tasks.md as a checkbox list (one `- [ ]` per task, grouped under numbered headings). Do not write it anywhere else. Do not begin implementation. Output the plan for my review.
 ```
 
-Review the generated task list before proceeding. Remove tasks that are out of scope, reorder if dependencies are wrong, and note anything you want the agent to checkpoint on during implementation.
+Review the generated plan before proceeding. Remove tasks that are out of scope, reorder if dependencies are wrong, and note anything you want the agent to checkpoint on during implementation. The `-tasks.md` file is a working artifact — it gets trimmed or deleted at cleanup (Step 10), not kept as a long-term reference.
 
 ---
 
@@ -196,13 +197,12 @@ Hand the agent the task list and instruct it to work through tasks autonomously,
 ```
 Use /executing-plans and /test-driven-development together.
 
-Here is the task list for this feature:
-[paste task list from Step 4]
+The implementation plan is in docs/platform/[feature-name]-tasks.md. The feature doc docs/platform/[feature-name].md is the source of truth.
 
-Work through the tasks in order. Follow test-driven development: write a failing test before implementing each piece of functionality, then implement to make it pass.
+Work through the tasks in order, checking off each `- [ ]` as you complete it. Follow test-driven development: write a failing test before implementing each piece of functionality, then implement to make it pass.
 
 Rules for this session:
-- Run autonomously through tasks, but stop and ask me before making any decision not covered by the feature doc or task list
+- Run autonomously through tasks, but stop and ask me before making any decision not covered by the feature doc or the plan
 - If you hit a decision point the feature doc doesn't resolve, describe the options and your recommendation — do not decide unilaterally
 - After completing each task, confirm it's done and what was changed before moving to the next
 - Reference docs/platform/[feature-name].md as the source of truth throughout
@@ -258,10 +258,10 @@ Before requesting a code review, run a self-verification pass to catch obvious i
 ```
 Use /verification-before-completion.
 
-Review the work done for this feature against the task list and docs/platform/[feature-name].md.
+Review the work done for this feature against the plan in docs/platform/[feature-name]-tasks.md and docs/platform/[feature-name].md.
 
 Check:
-- All tasks in the list are complete
+- All tasks in the plan are complete
 - Tests exist and pass
 - Nothing in the feature doc was left unimplemented
 - No debug code, TODOs, or placeholder content remains
@@ -353,9 +353,10 @@ The feature branch for [feature-name] has been merged.
 Do the following cleanup:
 1. If a worktree was used, remove it
 2. Delete the merged feature branch locally and confirm it's gone on remote
-3. Check if any temporary files, debug scripts, or implementation notes were added to the repo that should not be committed long-term — list them for my review
+3. Delete the implementation plan docs/platform/[feature-name]-tasks.md — it was disposable scaffolding, now superseded by the merged code and the feature doc
+4. Check if any temporary files, debug scripts, or implementation notes were added to the repo that should not be committed long-term — list them for my review
 
-Do not touch any files in docs/ yet.
+Do not touch docs/platform/[feature-name].md or any other docs/ files yet.
 ```
 
 ### 10b — Human: update the feature doc
@@ -396,7 +397,7 @@ Check: were any architectural decisions made during implementation that weren't 
 | 1. Draft feature doc | Human | — | `docs/platform/[feature].md` (draft) |
 | 2. Expand feature doc | Agent | `superpowers:brainstorming` | `docs/platform/[feature].md` (complete) |
 | 3. Write ADR if needed | Human | — | `docs/adr/ADR-[n].md` |
-| 4. Task breakdown | Agent | `opsx:propose` | Reviewed task list |
+| 4. Task breakdown | Agent | `superpowers:writing-plans` | `docs/platform/[feature]-tasks.md` (reviewed plan) |
 | 5. Set up branch | Agent | `superpowers:using-git-worktrees` | Feature branch / worktree |
 | 6. Implement | Agent | `superpowers:executing-plans`, `/test-driven-development`, `/systematic-debugging`, `/dispatching-parallel-agents` | Working implementation with tests |
 | 7. Pre-PR review | Agent + Human | `superpowers:verification-before-completion`, `/requesting-code-review` | Reviewed findings, human decision |

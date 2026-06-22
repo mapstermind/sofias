@@ -42,15 +42,6 @@ Verification
 
 
   -------------------
-Note on using stamp_into() in admin console.
-
-   One thing to watch out for: the Section dropdown shows all sections across all versions. Make sure the section you pick belongs to
-  the same version you selected — there's no filtering between the two dropdowns yet. If you pick a mismatched section and version,
-  Django will create the question linked to the section's version via the section FK, but the version FK will point elsewhere, which
-  would be inconsistent. For now, either leave Section blank or double-check the pairing.
-
-
-
 Create hooks for formatting and linting:
 but i want to evaluate if it should be invasive to run without the user knowing by running automatically on svae or during editm or have it run only as a pre-commit hook, blocking the commit and foricng  the user to review the chganges. 
 
