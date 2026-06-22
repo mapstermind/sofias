@@ -41,7 +41,7 @@
 **Interfaces:**
 - Produces: a registered, importable Django app `apps.nom035` (label `nom035`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/nom035/tests/test_app.py
@@ -54,12 +54,12 @@ def test_nom035_app_is_registered():
     assert config.name == "apps.nom035"
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/nom035/tests/test_app.py -v`
 Expected: FAIL — `LookupError: No installed app with label 'nom035'` (app not yet registered).
 
-- [ ] **Step 3: Rename the directory and update the app config**
+- [x] **Step 3: Rename the directory and update the app config**
 
 ```bash
 git mv apps/analytics apps/nom035   # moves CLAUDE.md, apps.py, models.py, etc. with history
@@ -76,7 +76,7 @@ class Nom035Config(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
 ```
 
-- [ ] **Step 4: Register the app and empty the stub bodies**
+- [x] **Step 4: Register the app and empty the stub bodies**
 
 ```python
 # config/settings.py  (INSTALLED_APPS)
@@ -102,16 +102,16 @@ from django.db import models  # noqa: F401  (models added in Task 3)
 # Result models are registered in Task 3.
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pytest apps/nom035/tests/test_app.py -v`
 Expected: PASS.
 
-- [ ] **Step 6: Update the doc references**
+- [x] **Step 6: Update the doc references**
 
 Replace `apps/nom035/CLAUDE.md` with a short description of the valuation engine (engine + materialized scores + signal + command, NOM-035-specific). In `.claude/CLAUDE.md` change the `analytics/` architecture line and the "Registered apps" note to reference `apps.nom035`; in `apps/reports/CLAUDE.md` update the `analytics` mention to `nom035`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -143,7 +143,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   - `scoring.classify(bands: list[tuple[float, str]], score: int) -> str` — `bands` ascending by upper bound; returns the level of the first band whose `score < upper`. Last band uses `float("inf")`.
   - `scoring.guia1_severity(event: bool, followup_count: int) -> str`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/nom035/tests/test_scoring_primitives.py
@@ -175,12 +175,12 @@ def test_guia1_severity_bands():
     assert guia1_severity(True, 6) == c.SEV_HIGH
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/nom035/tests/test_scoring_primitives.py -v`
 Expected: FAIL — `ModuleNotFoundError: apps.nom035.constants`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```python
 # apps/nom035/constants.py
@@ -238,12 +238,12 @@ def guia1_severity(event: bool, followup_count: int) -> str:
     return c.SEV_LOW
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest apps/nom035/tests/test_scoring_primitives.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -272,7 +272,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   - `models.GroupScore(submission_score: FK[SubmissionScore, related_name="groups"], level: str, key: str, score: int, ndr: str)` with `unique_together = (submission_score, level, key)`
   - `models.NDR`, `models.Severity`, `models.GroupLevel` (`TextChoices`)
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/nom035/tests/test_models.py
@@ -319,12 +319,12 @@ def test_group_score_unique_per_level_and_key(active_assignment):
         )
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/nom035/tests/test_models.py -v`
 Expected: FAIL — `ImportError: cannot import name 'SubmissionScore'`.
 
-- [ ] **Step 3: Write the models**
+- [x] **Step 3: Write the models**
 
 ```python
 # apps/nom035/models.py
@@ -408,13 +408,13 @@ class SubmissionScoreAdmin(admin.ModelAdmin):
     inlines = [GroupScoreInline]
 ```
 
-- [ ] **Step 4: Make and run the migration**
+- [x] **Step 4: Make and run the migration**
 
 Run: `python manage.py makemigrations nom035`
 Then: `pytest apps/nom035/tests/test_models.py -v`
 Expected: migration `0001_initial.py` created; tests PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -446,7 +446,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   - `thresholds_for(level: str, key: str, variant: str) -> list[tuple[float, str]]` — ascending bands ending in `float("inf")`
   - `action_text(ndr: str) -> str`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/nom035/tests/test_config.py
@@ -499,12 +499,12 @@ def test_known_final_band_large():
     ]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/nom035/tests/test_config.py -v`
 Expected: FAIL — `ModuleNotFoundError: apps.nom035._nom035_scoring`.
 
-- [ ] **Step 3: Build the config module**
+- [x] **Step 3: Build the config module**
 
 Transcribe from `docs/internal/roadmap_context/Guias de Referencia.pdf` and `Ejemplo Reporte Resultados.pdf`. Structure (fill **every** required code; example rows shown):
 
@@ -577,12 +577,12 @@ def action_text(ndr: str) -> str:
 
 > If `thresholds_for` would otherwise raise `KeyError` for a real group during Task 5, that is the signal a band table is missing — add it here and log the assumption, don't swallow the error.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest apps/nom035/tests/test_config.py -v`
 Expected: PASS once every required code is mapped and band tables are present and monotonic.
 
-- [ ] **Step 5: Update the supuestos doc and commit**
+- [x] **Step 5: Update the supuestos doc and commit**
 
 Add a bitácora row for each assumption made (inverted items chosen, threshold gaps filled, taxonomy ambiguities resolved).
 
@@ -613,7 +613,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   - `scoring.ScoreResult(final_score: int, final_ndr: str, groups: list[GroupResult], guia1_event: bool, guia1_followup_count: int, guia1_severity: str)` (frozen dataclass)
   - `scoring.score_submission(submission) -> ScoreResult`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/nom035/tests/test_score_submission.py
@@ -676,12 +676,12 @@ def test_guia1_flag_and_severity(nom035_assignment):
     assert result.guia1_severity == c.SEV_MED
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/nom035/tests/test_score_submission.py -v`
 Expected: FAIL — `ImportError: cannot import name 'score_submission'`.
 
-- [ ] **Step 3: Implement `score_submission`**
+- [x] **Step 3: Implement `score_submission`**
 
 ```python
 # apps/nom035/scoring.py  (append)
@@ -753,12 +753,12 @@ def score_submission(submission) -> ScoreResult:
     )
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest apps/nom035/tests/test_score_submission.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -782,7 +782,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - Consumes: `score_submission` (Task 5), `SubmissionScore`/`GroupScore` (Task 3).
 - Produces: `services.materialize(submission) -> SubmissionScore` (idempotent upsert in a transaction).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/nom035/tests/test_materialize.py
@@ -829,12 +829,12 @@ def test_materialize_is_idempotent(completed_submission):
     assert second.groups.count() == before
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/nom035/tests/test_materialize.py -v`
 Expected: FAIL — `ModuleNotFoundError: apps.nom035.services`.
 
-- [ ] **Step 3: Implement `materialize`**
+- [x] **Step 3: Implement `materialize`**
 
 ```python
 # apps/nom035/services.py
@@ -869,12 +869,12 @@ def materialize(submission) -> SubmissionScore:
     return score
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest apps/nom035/tests/test_materialize.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -901,7 +901,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - Consumes: `materialize` (Task 6).
 - Produces: a connected `post_save` receiver that materializes a score when `submission.status == "completed"`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/nom035/tests/test_signal.py
@@ -939,12 +939,12 @@ def test_completed_submission_is_scored_automatically(assignment):
     assert SubmissionScore.objects.filter(submission=sub).exists()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/nom035/tests/test_signal.py -v`
 Expected: FAIL — `SubmissionScore` not created (no signal connected).
 
-- [ ] **Step 3: Implement the signal and connect it**
+- [x] **Step 3: Implement the signal and connect it**
 
 ```python
 # apps/nom035/signals.py
@@ -975,17 +975,17 @@ class Nom035Config(AppConfig):
         from apps.nom035 import signals  # noqa: F401
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest apps/nom035/tests/test_signal.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Run the surveys view tests to confirm no regression**
+- [x] **Step 5: Run the surveys view tests to confirm no regression**
 
 Run: `pytest apps/surveys/tests/ -v`
 Expected: PASS (submission completion in the survey flow now also scores, without errors).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -1010,7 +1010,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - Consumes: `materialize` (Task 6).
 - Produces: `python manage.py recompute_nom035_scores [--company <reference_code>]` — materializes every completed submission (optionally filtered by company).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/nom035/tests/test_recompute_command.py
@@ -1044,12 +1044,12 @@ def test_recompute_scores_all_completed(make_company):
     assert SubmissionScore.objects.filter(submission=sub).exists()
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/nom035/tests/test_recompute_command.py -v`
 Expected: FAIL — `CommandError: Unknown command 'recompute_nom035_scores'`.
 
-- [ ] **Step 3: Implement the command**
+- [x] **Step 3: Implement the command**
 
 ```python
 # apps/nom035/management/commands/recompute_nom035_scores.py
@@ -1076,12 +1076,12 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Recomputed {count} submission scores."))
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest apps/nom035/tests/test_recompute_command.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -1107,7 +1107,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
   - `aggregates.employee_valuation(user, company) -> dict | None` — `None` if the user has no scored submission in the company. Dict keys: `final_ndr`, `final_ndr_label`, `final_score`, `final_action`, `categories` (list of `{key, ndr, ndr_label, action}`), `guia1_event`, `guia1_severity`.
   - `aggregates.company_valuation(company) -> dict` — keys: `scored_count`, `distribution` (`dict[str, int]` over `NDR_ORDER`), `needing_action` (alto+muy_alto count), `guia1_flags` (count of `guia1_event`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/nom035/tests/test_aggregates.py
@@ -1159,12 +1159,12 @@ def test_employee_valuation_none_when_unscored(make_company, make_user):
     assert employee_valuation(make_user(email="n@x.mx"), make_company()) is None
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/nom035/tests/test_aggregates.py -v`
 Expected: FAIL — `ModuleNotFoundError: apps.nom035.aggregates`.
 
-- [ ] **Step 3: Implement the aggregates**
+- [x] **Step 3: Implement the aggregates**
 
 ```python
 # apps/nom035/aggregates.py
@@ -1227,12 +1227,12 @@ def employee_valuation(user, company) -> dict | None:
     }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `pytest apps/nom035/tests/test_aggregates.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -1257,7 +1257,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - Consumes: `aggregates.employee_valuation` (Task 9).
 - Produces: context key `valuation` on the employee-detail page (only when `can_view_insights`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/core/tests/test_employee_valuation_panel.py
@@ -1298,12 +1298,12 @@ def test_panel_shows_ndr_for_insights_user(
 
 > Confirm the exact reverse name/args for `employee_detail` in `apps/core/urls.py` before running; adjust the `reverse(...)` call if the URL takes `employee_id` under a different kwarg.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/core/tests/test_employee_valuation_panel.py -v`
 Expected: FAIL — content still shows the "Próximamente" placeholder.
 
-- [ ] **Step 3: Add the context in the view**
+- [x] **Step 3: Add the context in the view**
 
 In `EmployeeDetailView.get`, before building the response context, compute:
 
@@ -1317,7 +1317,7 @@ In `EmployeeDetailView.get`, before building the response context, compute:
 
 Add `"valuation": valuation,` to the context dict passed to `render(...)`.
 
-- [ ] **Step 4: Replace the template placeholder**
+- [x] **Step 4: Replace the template placeholder**
 
 ```django
 {# templates/core/employee_detail.html — replace lines 55-64 #}
@@ -1352,12 +1352,12 @@ Add `"valuation": valuation,` to the context dict passed to `render(...)`.
 {% endif %}
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pytest apps/core/tests/test_employee_valuation_panel.py -v`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -1382,7 +1382,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - Consumes: `aggregates.company_valuation` (Task 9).
 - Produces: context key `company_valuation` on the company dashboard (only when `can_view_insights`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/core/tests/test_company_valuation_panel.py
@@ -1421,12 +1421,12 @@ def test_dashboard_shows_distribution(
 
 > Confirm the dashboard URL name in `apps/core/urls.py` (the admin-view-by-`reference_code` route) and adjust `reverse(...)` accordingly.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `pytest apps/core/tests/test_company_valuation_panel.py -v`
 Expected: FAIL — content still shows "Insights coming soon."
 
-- [ ] **Step 3: Add the context in the view**
+- [x] **Step 3: Add the context in the view**
 
 In `CompanyDashboardView.get`, before `render(...)`:
 
@@ -1440,7 +1440,7 @@ In `CompanyDashboardView.get`, before `render(...)`:
 
 Add `"company_valuation": valuation,` to the context dict.
 
-- [ ] **Step 4: Replace the template placeholder**
+- [x] **Step 4: Replace the template placeholder**
 
 ```django
 {# templates/core/company_dashboard.html — replace the Insights panel, lines 190-198 #}
@@ -1473,17 +1473,17 @@ Add `"company_valuation": valuation,` to the context dict.
 {% endif %}
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `pytest apps/core/tests/test_company_valuation_panel.py -v`
 Expected: PASS.
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 Run: `pytest`
 Expected: PASS across all apps.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 ruff format . && ruff check .
