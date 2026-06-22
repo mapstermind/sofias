@@ -37,3 +37,6 @@ Thumbs.db
 
 # Client meetings log
 client_meetings/
+
+# Claude Code worktrees
+.claude/worktrees/
