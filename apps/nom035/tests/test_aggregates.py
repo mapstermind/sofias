@@ -51,3 +51,46 @@ def test_employee_valuation_returns_text(scored):
 
 def test_employee_valuation_none_when_unscored(make_company, make_user):
     assert employee_valuation(make_user(email="n@x.mx"), make_company()) is None
+
+
+def test_employee_valuation_picks_most_recently_completed(make_company, make_user):
+    """When a user has several scored submissions, pick the latest by completion
+    time — not by materialization time (computed_at), which a recompute reorders."""
+    import datetime
+
+    from django.utils import timezone
+
+    from apps.surveys.models import Survey
+
+    company = make_company()
+    user = make_user(email="multi@x.mx")
+    earlier = timezone.make_aware(datetime.datetime(2026, 1, 1, 12, 0))
+    later = timezone.make_aware(datetime.datetime(2026, 1, 2, 12, 0))
+
+    def _scored(key, completed_at, final_score):
+        survey = Survey.objects.create(
+            key=key, title=key, status=Survey.Status.PUBLISHED
+        )
+        assignment = SurveyAssignment.objects.create(
+            company=company,
+            survey=survey,
+            variant=SurveyAssignment.Variant.LARGE,
+            status=SurveyAssignment.Status.ACTIVE,
+        )
+        sub = SurveySubmission.objects.create(
+            assignment=assignment,
+            user=user,
+            status=SurveySubmission.Status.IN_PROGRESS,
+            completed_at=completed_at,
+        )
+        return SubmissionScore.objects.create(
+            submission=sub, final_score=final_score, final_ndr=c.NDR_BAJO
+        )
+
+    # The most-recently-completed submission's score is materialized FIRST,
+    # so ordering by computed_at would (wrongly) prefer the older submission.
+    _scored("recent", later, final_score=11)
+    _scored("old", earlier, final_score=22)
+
+    data = employee_valuation(user, company)
+    assert data["final_score"] == 11

@@ -38,7 +38,7 @@ def employee_valuation(user, company) -> dict | None:
         _scores_for_company(company)
         .filter(submission__user=user)
         .prefetch_related("groups")
-        .order_by("-computed_at")
+        .order_by("-submission__completed_at", "-computed_at")
         .first()
     )
     if score is None:
