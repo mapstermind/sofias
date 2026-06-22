@@ -57,3 +57,59 @@ def test_guia1_flag_and_severity(nom035_assignment):
     assert result.guia1_event is True
     assert result.guia1_followup_count == 3
     assert result.guia1_severity == c.SEV_MED
+
+
+def test_known_case_mixes_normal_and_inverted_items(nom035_assignment):
+    """Hand-computed Guía III case locking inversion + threshold classification.
+
+    g3-1 is a normal item; answering Nunca(5) → 4.
+    g3-17, g3-18 are inverted items; answering Siempre(1) → 4 each.
+    """
+    sub = SurveySubmission.objects.create(
+        assignment=nom035_assignment, status=SurveySubmission.Status.IN_PROGRESS
+    )
+    codes = {
+        q.code: q for q in Question.objects.filter(survey=nom035_assignment.survey)
+    }
+    Answer.objects.create(submission=sub, question=codes["g3-1"], value=5)  # normal→4
+    Answer.objects.create(submission=sub, question=codes["g3-17"], value=1)  # inv→4
+    Answer.objects.create(submission=sub, question=codes["g3-18"], value=1)  # inv→4
+
+    result = score_submission(sub)
+    groups = {(g.level, g.key): g for g in result.groups}
+
+    assert result.final_score == 12
+    assert result.final_ndr == c.NDR_NULO
+    # Jornada dominio = items 17+18 = 8 → Muy alto (bands 1/2/4/6).
+    jornada = groups[(c.LEVEL_DOMINIO, cfg.DOM_JORNADA)]
+    assert jornada.score == 8
+    assert jornada.ndr == c.NDR_MUY_ALTO
+    # Condiciones dominio = item 1 = 4 → Nulo (bands 5/9/11/14).
+    condiciones = groups[(c.LEVEL_DOMINIO, cfg.DOM_CONDICIONES)]
+    assert condiciones.score == 4
+    assert condiciones.ndr == c.NDR_NULO
+    # Categoría organización del tiempo = 8 → Medio (bands 5/7/10/13).
+    assert groups[(c.LEVEL_CATEGORIA, cfg.CAT_TIEMPO)].ndr == c.NDR_MEDIO
+
+
+def test_skipped_conditional_block_sums_only_present_items(nom035_assignment):
+    """Absent items (e.g. the clientes block g3-65..68) contribute nothing.
+
+    Answering the 11 main 'Carga de trabajo' items (g3-6..g3-16, all inverted)
+    at Siempre(1)→4 yields 44, while items 65..68 stay absent.
+    """
+    sub = SurveySubmission.objects.create(
+        assignment=nom035_assignment, status=SurveySubmission.Status.IN_PROGRESS
+    )
+    codes = {
+        q.code: q for q in Question.objects.filter(survey=nom035_assignment.survey)
+    }
+    for n in range(6, 17):
+        Answer.objects.create(submission=sub, question=codes[f"g3-{n}"], value=1)
+
+    result = score_submission(sub)
+    groups = {(g.level, g.key): g for g in result.groups}
+
+    carga = groups[(c.LEVEL_DOMINIO, cfg.DOM_CARGA)]
+    assert carga.score == 44  # 11 present items × 4; 65..68 absent
+    assert carga.ndr == c.NDR_MUY_ALTO

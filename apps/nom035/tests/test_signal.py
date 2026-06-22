@@ -45,3 +45,17 @@ def test_non_nom035_submission_is_not_scored(make_company, survey):
         assignment=assignment, status=SurveySubmission.Status.COMPLETED
     )
     assert not SubmissionScore.objects.filter(submission=sub).exists()
+
+
+def test_anonymous_submission_is_scored(assignment):
+    # Submissions may be anonymous (user=None); they must still score.
+    sub = SurveySubmission.objects.create(
+        assignment=assignment, user=None, status=SurveySubmission.Status.IN_PROGRESS
+    )
+    q = Question.objects.get(survey=assignment.survey, code="g3-1")
+    Answer.objects.create(submission=sub, question=q, value=5)
+
+    sub.status = SurveySubmission.Status.COMPLETED
+    sub.save()
+
+    assert SubmissionScore.objects.filter(submission=sub).exists()
