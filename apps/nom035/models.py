@@ -19,9 +19,10 @@ class Severity(models.TextChoices):
 
 
 class GroupLevel(models.TextChoices):
+    # NOM-035 defines NDR thresholds only at dominio/categoría/final, so no
+    # dimensión level is scored (see docs/platform/nom-035-analytics.md).
     CATEGORIA = c.LEVEL_CATEGORIA, "Categoría"
     DOMINIO = c.LEVEL_DOMINIO, "Dominio"
-    DIMENSION = c.LEVEL_DIMENSION, "Dimensión"
 
 
 class SubmissionScore(models.Model):
