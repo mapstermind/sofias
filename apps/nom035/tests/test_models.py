@@ -8,8 +8,10 @@ pytestmark = pytest.mark.django_db
 
 
 def _submission(active_assignment):
+    # In-progress so the completion signal does not auto-create a score; these
+    # tests exercise the DB constraints by creating score rows manually.
     return SurveySubmission.objects.create(
-        assignment=active_assignment, status=SurveySubmission.Status.COMPLETED
+        assignment=active_assignment, status=SurveySubmission.Status.IN_PROGRESS
     )
 
 
