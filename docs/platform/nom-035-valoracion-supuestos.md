@@ -34,30 +34,45 @@ documento**.
 ## 2. Puntos a validar
 
 ### 2.1 Lista de ítems invertidos 🟡
-Necesitamos confirmar **cuáles ítems se califican al revés**, tanto para la
-**Guía II** (46 ítems, empresas pequeñas) como para la **Guía III** (72 ítems,
-empresas grandes).
+Confirmar **cuáles ítems se califican al revés**.
 
-- **Supuesto actual:** transcribimos la lista a partir de las Guías de Referencia;
-  donde hubo duda, marcamos el ítem según nuestro mejor criterio.
-- **Lo que necesitamos:** una confirmación ítem por ítem de cuáles son invertidos.
+- **Guía III (72 ítems, empresas grandes) 🟢 transcrita:** la lista proviene
+  directamente de la tabla de valores del *Ejemplo Reporte Resultados* (los dos
+  grupos de puntaje 0→4 y 4→0). Pendiente solo una revisión de confirmación.
+- **Guía II (46 ítems, empresas pequeñas) 🟡 reconstruida:** las Guías de Referencia
+  entregadas no traían esta tabla en forma utilizable, así que reconstruimos la lista
+  a partir de la estructura estándar de la Guía II. **Requiere validación ítem por
+  ítem.**
 
 ### 2.2 Tablas de umbrales (Niveles de Riesgo) 🟡
-Necesitamos confirmar los **rangos de puntaje** que definen cada Nivel de Riesgo,
-en cada nivel: por **Dimensión**, por **Dominio**, por **Categoría** y **final**.
+Confirmar los **rangos de puntaje** que definen cada Nivel de Riesgo, por **Dominio**,
+por **Categoría** y **final**.
 
-- **Supuesto actual:** usamos la tabla final conocida (por ejemplo, final: menos de
-  50 = Nulo; 50–75 = Bajo; 75–99 = Medio; 99–140 = Alto; más de 140 = Muy alto) y
-  derivamos las demás del ejemplo de reporte. **La Guía II tiene sus propias tablas,
-  distintas a las de la Guía III**, y esas son las que más necesitamos confirmar.
-- **Lo que necesitamos:** las tablas oficiales completas para Guía II y Guía III.
+- **Guía III 🟢 transcrita:** usamos las tablas oficiales del ejemplo de reporte
+  (final: <50 Nulo, 50–75 Bajo, 75–99 Medio, 99–140 Alto, >140 Muy alto; más las
+  tablas por categoría y por dominio). Los conteos de ítems cuadran con cada tabla.
+- **Guía II 🟡 provisional (placeholder):** como no contamos con sus tablas, los
+  umbrales de la Guía II se **calcularon de forma proporcional** al máximo posible de
+  cada grupo. **Son provisionales** y deben reemplazarse por las tablas oficiales.
+- **Convención de frontera:** cuando un puntaje cae justo en el límite entre dos
+  niveles, lo asignamos al nivel **más alto** (criterio nuestro, a confirmar).
 
-### 2.3 Agrupación Categoría → Dominio → Dimensión → Ítem 🟡
-Necesitamos confirmar a qué **Dimensión, Dominio y Categoría** pertenece cada ítem.
+### 2.3 Nivel de Riesgo por Dimensión — no se calcula 🟡
+La metodología oficial de la NOM-035 **solo publica tablas de umbrales por Dominio,
+por Categoría y final**; **no existe una tabla por Dimensión**.
 
-- **Supuesto actual:** transcribimos la agrupación de las Guías de Referencia.
-- **Lo que necesitamos:** validar el mapa completo, sobre todo en los ítems que
-  cambian entre Guía II y Guía III.
+- **Decisión actual:** la Dimensión se usa únicamente para **organizar** los ítems,
+  pero **no se le asigna un Nivel de Riesgo**. El reporte de ejemplo tampoco clasifica
+  a nivel de dimensión.
+- **Lo que necesitamos:** confirmar que basta con Dominio/Categoría/Final, o indicar
+  el criterio oficial si en el futuro se desea un nivel por dimensión.
+
+### 2.4 Agrupación Categoría → Dominio → Ítem 🟡
+Confirmar a qué **Dominio y Categoría** pertenece cada ítem.
+
+- **Guía III 🟢 transcrita** del ejemplo de reporte (tabla Categoría/Dominio/Dimensión
+  → ítems).
+- **Guía II 🟡 reconstruida** de la estructura estándar; validar el mapa completo.
 
 ### 2.4 Bloques que no aplican a todos (jefes / atención a clientes) 🟡
 Algunas personas **no responden ciertos bloques** (por ejemplo, quien no es jefe o
@@ -108,3 +123,6 @@ supuestos anteriores.
 | Fecha | Punto | Cambio |
 |---|---|---|
 | 2026-06-21 | — | Versión inicial del documento (MVP). |
+| 2026-06-21 | 2.1 / 2.2 / 2.4 | Guía III transcrita (autoritativa) del Ejemplo Reporte; ítems invertidos, agrupación y umbrales por dominio/categoría/final confirmados contra los conteos de ítems. |
+| 2026-06-21 | 2.1 / 2.2 / 2.4 | Guía II reconstruida de la estructura estándar con umbrales proporcionales provisionales (las Guías entregadas no traían sus tablas). Pendiente validación. |
+| 2026-06-21 | 2.3 | Se decide **no** calcular Nivel de Riesgo por Dimensión (la NOM-035 no define umbrales por dimensión). |

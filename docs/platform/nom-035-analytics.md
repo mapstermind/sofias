@@ -8,8 +8,13 @@ Accepted — design complete, MVP.
 
 SOFIA-S turns raw NOM-035 survey answers into a **valuation**: each scored answer
 becomes a number, those numbers roll up into a **Nivel de Riesgo (NDR)** per
-Dimensión, Dominio, Categoría and a final overall score, and the results surface as
+Dominio, Categoría and a final overall score, and the results surface as
 **text-only risk indicators** inside the existing _Insights_ panels.
+
+> **NDR levels follow the official NOM-035 tables, which define thresholds only at
+> the dominio, categoría and final levels.** Dimensión is used to *organize* items
+> within the taxonomy but is **not** assigned an NDR (the standard publishes no
+> per-dimensión threshold table). See the supuestos doc for the validation note.
 
 The work has two halves:
 
@@ -51,11 +56,12 @@ Because the engine is NOM-035-specific, its configuration lives as constants in
 
 - **`INVERTED_ITEMS`** — the set of Likert item codes that are scored in reverse
   because they are positively worded.
-- **`TAXONOMY`** — `item code → Dimensión → Dominio → Categoría`, defined
-  separately for the Guía II (small) and Guía III (large) variants.
+- **`TAXONOMY`** — `item code → (Categoría, Dominio)`, defined separately for the
+  Guía II (small) and Guía III (large) variants. (The taxonomy source is organized
+  by dimensión for traceability, but dimensión is not scored — see the note above.)
 - **`THRESHOLDS`** — band tables mapping a summed score to an NDR level
-  (`{Nulo, Bajo, Medio, Alto, Muy alto}`) at the final, categoría, dominio and
-  dimensión levels. Guía II and Guía III have distinct tables.
+  (`{Nulo, Bajo, Medio, Alto, Muy alto}`) at the **final, categoría, and dominio**
+  levels. Guía II and Guía III have distinct tables.
 - **`ACTION_TEXT`** — the canonical "Necesidad de acción según NOM-035" string for
   each NDR level.
 
@@ -80,9 +86,10 @@ Only **answered, visible** questions are scored; unanswered or
 For a completed submission the engine:
 
 1. Scores each Likert item to 0–4.
-2. Sums items into their **Dimensión**, dimensiones into **Dominios**, dominios
-   into **Categorías**, and everything into the **final** score (`Cfinal`).
-3. Classifies each sum against the matching threshold table to assign an NDR level.
+2. Sums items into their **Dominios**, dominios into **Categorías**, and everything
+   into the **final** score (`Cfinal`).
+3. Classifies each dominio, categoría and final sum against the matching threshold
+   table to assign an NDR level.
 
 ### Guía I — traumatic-events referral flag
 
@@ -167,7 +174,7 @@ Two new tables in `apps/nom035` (migration `0001_initial`):
 | Field | Type | Notes |
 |---|---|---|
 | `submission_score` | `ForeignKey(SubmissionScore, on_delete=CASCADE, related_name="groups")` | |
-| `level` | `CharField(choices)` | `categoria` / `dominio` / `dimension` |
+| `level` | `CharField(choices)` | `categoria` / `dominio` (dimensión is not scored) |
 | `key` | `CharField` | Stable group identifier from the taxonomy |
 | `score` | `IntegerField` | Summed score for the group |
 | `ndr` | `CharField(choices=NDR)` | Group NDR |
@@ -213,16 +220,20 @@ implementation detail, in
 [`docs/platform/nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md),
 which is updated as assumptions are confirmed or refined. In summary:
 
-1. **Inverted-item list** and the **categoría/dominio/dimensión threshold tables**
-   (including Guía II's own tables, distinct from Guía III's) are transcribed from
-   the Guías de Referencia and example report; gaps are filled with documented
-   assumptions.
-2. **Skipped conditional blocks** (a respondent who is not a jefe / does not attend
+1. **Guía III** taxonomy, inverted items, and the **categoría/dominio/final**
+   threshold tables are transcribed authoritatively from `Ejemplo Reporte
+   Resultados.pdf`. **Guía II** is reconstructed from the standard NOM-035 Guía II
+   structure with **proportional placeholder thresholds** (the provided docs lack
+   Guía II's tables); all of Guía II is flagged for expert validation.
+2. **Dimensión is not assigned an NDR** — the official tables define thresholds only
+   at dominio/categoría/final. Flagged for the expert in case per-dimensión scoring
+   is later desired.
+3. **Skipped conditional blocks** (a respondent who is not a jefe / does not attend
    clientes) leave their items absent. The MVP sums only present items but compares
    against the full fixed thresholds — a known bias to validate.
-3. **Guía I severity cutoffs** (follow-up "Sí" count → low/med/high) are an
+4. **Guía I severity cutoffs** (follow-up "Sí" count → low/med/high) are an
    invented MVP heuristic, not a validated clinical instrument.
-4. **At least one fully-worked example** (from `Ejemplo Reporte Resultados.pdf`) is
+5. **At least one fully-worked example** (from `Ejemplo Reporte Resultados.pdf`) is
    needed so an automated test can assert `Cfinal` and NDR against a known case.
 
 ## Scope boundaries
