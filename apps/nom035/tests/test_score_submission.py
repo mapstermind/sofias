@@ -22,6 +22,18 @@ def nom035_assignment(make_company):
     )
 
 
+@pytest.fixture
+def nom035_small_assignment(make_company):
+    call_command("seed_nom035_survey")
+    survey = Survey.objects.get(key="nom035")
+    return SurveyAssignment.objects.create(
+        company=make_company(),
+        survey=survey,
+        variant=SurveyAssignment.Variant.SMALL,
+        status=SurveyAssignment.Status.ACTIVE,
+    )
+
+
 def test_all_nunca_yields_expected_final_and_two_levels(nom035_assignment):
     sub = SurveySubmission.objects.create(
         assignment=nom035_assignment, status=SurveySubmission.Status.COMPLETED
@@ -142,3 +154,41 @@ def test_skipped_conditional_block_sums_only_present_items(nom035_assignment):
     carga = groups[(c.LEVEL_DOMINIO, cfg.DOM_CARGA)]
     assert carga.score == 44  # 11 present items × 4; 65..68 absent
     assert carga.ndr == c.NDR_MUY_ALTO
+
+
+def test_small_variant_known_case(nom035_small_assignment):
+    """Hand-computed Guía II (small) case: locks the official taxonomy, both
+    inversion directions, and the official Guía II threshold bands end-to-end.
+
+    g2-14, g2-15 are inverted; answering Siempre(1) → 4 each → Jornada dominio 8.
+    g2-20 is a non-inverted item; answering Nunca(5) → 4 → Falta de control 4.
+    """
+    sub = SurveySubmission.objects.create(
+        assignment=nom035_small_assignment, status=SurveySubmission.Status.IN_PROGRESS
+    )
+    codes = {
+        q.code: q
+        for q in Question.objects.filter(survey=nom035_small_assignment.survey)
+    }
+    Answer.objects.create(submission=sub, question=codes["g2-14"], value=1)  # inv→4
+    Answer.objects.create(submission=sub, question=codes["g2-15"], value=1)  # inv→4
+    Answer.objects.create(submission=sub, question=codes["g2-20"], value=5)  # normal→4
+
+    result = score_submission(sub)
+    groups = {(g.level, g.key): g for g in result.groups}
+
+    assert result.final_score == 12
+    assert {g.level for g in result.groups} == {c.LEVEL_CATEGORIA, c.LEVEL_DOMINIO}
+    # Jornada dominio = 8 → Muy alto (small bands 1/2/4/6).
+    jornada = groups[(c.LEVEL_DOMINIO, cfg.DOM_JORNADA)]
+    assert jornada.score == 8
+    assert jornada.ndr == c.NDR_MUY_ALTO
+    # Falta de control dominio = 4 → Nulo (small bands 5/8/11/14).
+    control = groups[(c.LEVEL_DOMINIO, cfg.DOM_CONTROL)]
+    assert control.score == 4
+    assert control.ndr == c.NDR_NULO
+    # Categoría "Organización del tiempo" = 8 → Medio (small bands 4/6/9/12).
+    assert groups[(c.LEVEL_CATEGORIA, cfg.CAT_TIEMPO)].ndr == c.NDR_MEDIO
+    # Guía II has no Entorno organizacional groups.
+    assert (c.LEVEL_DOMINIO, cfg.DOM_RECONOCIMIENTO) not in groups
+    assert (c.LEVEL_CATEGORIA, cfg.CAT_ENTORNO) not in groups
