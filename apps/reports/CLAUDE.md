@@ -1,6 +1,6 @@
 # reports
 
-**Placeholder / not yet implemented.** Intended home for dashboard and report generation (exports, rendered reports) built on top of `apps/analytics`.
+**Placeholder / not yet implemented.** Intended home for dashboard and report generation (exports, rendered reports) built on top of `apps/nom035`.
 
 ## Current state
 

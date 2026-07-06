@@ -187,12 +187,32 @@
     {% endif %}
   </section>
 
-  {# Insights panel — only for users with can_view_insights #}
+  {# Valoración de resultados — only for users with can_view_insights #}
   {% if perms.accounts.can_view_insights %}
     <section class="mt-8">
-      <h2 class="text-base font-semibold text-gray-900 mb-4">Insights</h2>
-      <div class="rounded-2xl border border-dashed border-gray-300 bg-white px-8 py-12 text-center">
-        <p class="text-sm text-gray-500">Insights coming soon.</p>
+      <h2 class="text-base font-semibold text-gray-900 mb-4">Valoración de resultados</h2>
+      <div class="rounded-2xl border border-gray-200 bg-white px-6 py-5">
+        {% if company_valuation and company_valuation.scored_count %}
+          <p class="text-sm text-gray-700">
+            Cuestionarios valorados:
+            <span class="font-semibold">{{ company_valuation.scored_count }}</span>
+          </p>
+          <p class="mt-1 text-sm text-gray-700">
+            Colaboradores que requieren acción (Alto/Muy alto):
+            <span class="font-semibold">{{ company_valuation.needing_action }}</span>
+          </p>
+          <p class="mt-1 text-sm text-gray-700">
+            Usuarios positivos a un acontecimiento traumático severo (Guía I):
+            <span class="font-semibold">{{ company_valuation.guia1_positive_count }}</span>
+          </p>
+          <ul class="mt-4 space-y-1">
+            {% for row in company_valuation.distribution_rows %}
+              <li class="text-sm text-gray-600">{{ row.label }}: {{ row.count }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-sm text-gray-500">Aún no hay cuestionarios completados para valorar.</p>
+        {% endif %}
       </div>
     </section>
   {% endif %}

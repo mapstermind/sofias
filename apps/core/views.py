@@ -182,6 +182,12 @@ class CompanyDashboardView(LoginRequiredMixin, View):
                 }
             )
 
+        company_valuation = None
+        if request.user.has_perm("accounts.can_view_insights"):
+            from apps.nom035.aggregates import company_valuation as _company_valuation
+
+            company_valuation = _company_valuation(company)
+
         return render(
             request,
             "core/company_dashboard.html",
@@ -194,6 +200,7 @@ class CompanyDashboardView(LoginRequiredMixin, View):
                 "representative_threshold_pct": representative_threshold_pct,
                 "assignment_data": assignment_data,
                 "is_admin_view": reference_code is not None,
+                "company_valuation": company_valuation,
             },
         )
 
@@ -388,6 +395,12 @@ class EmployeeDetailView(LoginRequiredMixin, View):
                     }
                 )
 
+        valuation = None
+        if request.user.has_perm("accounts.can_view_insights"):
+            from apps.nom035.aggregates import employee_valuation
+
+            valuation = employee_valuation(employee_user, company)
+
         return render(
             request,
             "core/employee_detail.html",
@@ -397,5 +410,6 @@ class EmployeeDetailView(LoginRequiredMixin, View):
                 "employee_profile": employee_profile,
                 "survey_progress": survey_progress,
                 "submissions_data": submissions_data,
+                "valuation": valuation,
             },
         )

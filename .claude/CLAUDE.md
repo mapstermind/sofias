@@ -80,7 +80,7 @@ apps/            # Django apps; each app has its own CLAUDE.md with details
   surveys/       # Survey instrument model (Survey→Module→Question) + taking  → apps/surveys/CLAUDE.md
   responses/     # SurveySubmission + Answer storage  → apps/responses/CLAUDE.md
   core/          # Home/dashboards + NOM-035 seed command  → apps/core/CLAUDE.md
-  analytics/     # Placeholder, not yet implemented  → apps/analytics/CLAUDE.md
+  nom035/        # NOM-035 valuation engine (scores → NDR) + Insights  → apps/nom035/CLAUDE.md
   reports/       # Placeholder, not yet implemented  → apps/reports/CLAUDE.md
 ```
 
@@ -90,11 +90,12 @@ apps/            # Django apps; each app has its own CLAUDE.md with details
 
 - **Settings module**: `config.settings` (referenced in `manage.py`).
 - **Root URL conf**: `config.urls` — wires `admin/`, `core` at `/`, `accounts` at `/cuentas/`, `surveys` at `/encuestas/`.
-- **Registered apps** (in `INSTALLED_APPS`): `apps.accounts`, `apps.core`, `apps.surveys`, `apps.responses`. These use fully-qualified `AppConfig.name = "apps.<x>"` with an explicit short `label`. `analytics` and `reports` are **empty stubs, not registered**, and still use bare `AppConfig.name`s — register them before use (see their CLAUDE.md).
+- **Registered apps** (in `INSTALLED_APPS`): `apps.accounts`, `apps.core`, `apps.surveys`, `apps.responses`, `apps.nom035`. These use fully-qualified `AppConfig.name = "apps.<x>"` with an explicit short `label`. `reports` is an **empty stub, not registered**, and still uses a bare `AppConfig.name` — register it before use (see its CLAUDE.md).
 
 ## Cross-cutting concepts
 
 - **Custom user model**: `AUTH_USER_MODEL = "accounts.User"`; login is by **email**, primarily via passwordless OTP. See `apps/accounts`.
 - **Authorization**: custom permissions are declared on the unmanaged `accounts.Role` model and bundled into four groups (Admins / Principal Exec / Secondary Exec / Employees) by `python manage.py bootstrap_groups` (run this after migrating). Views authorize on permission codenames (e.g. `can_view_dashboard`). Tests get the groups via the `bootstrap_groups` fixture in `conftest.py`.
 - **Survey data flow**: a fixed `Survey` owns `Module`s (`applies_to` all/small/large) of `Question`s → a `SurveyAssignment` exposes the survey to a `Company` with a frozen `variant` (by headcount) → employees submit the variant's modules via `apps/surveys` views (conditional `visible_when` branching) → answers persist as `responses.Answer` (JSON value typed by question type) → `apps/core` renders dashboards/progress. No question library or versions (see `docs/adr/adr-0002-flatten-survey-authoring-model.md`).
+- **NOM-035 valuation source of truth**: [`docs/internal/roadmap_context/Guias de Referencia.md`](docs/internal/roadmap_context/Guias de Referencia.md) is the **single authoritative reference** for all NOM-035 scoring data — item scoring direction (which items score 0→4 vs 4→0), the Categoría/Dominio/Dimensión taxonomy, the threshold tables (Guía II and Guía III, per dominio/categoría/final), and the Guía I clinical-referral rule. The `apps/nom035` scoring constants must match it. If any **other** document (e.g. the example-report PDF, `docs/platform/nom-035-valoracion-supuestos.md`, the feature doc) conflicts with it, treat `Guias de Referencia.md` as correct and **flag the discrepancy for the domain expert** rather than silently diverging.
 - **Testing**: pytest + pytest-django, settings `config.settings`. Tests live in each app's `tests/` package; shared fixtures (users, companies, survey chains, groups) are in the root `conftest.py`. `addopts` use `--reuse-db -x`.
