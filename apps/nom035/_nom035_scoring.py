@@ -1,14 +1,12 @@
 """NOM-035 scoring configuration (data, keyed by surveys.Question.code).
 
-Guía III (large / 72 items) — taxonomy, inverted items, and threshold tables are
-transcribed authoritatively from `Ejemplo Reporte Resultados.pdf` (the official
-NOM-035 mechanism). Item counts reconcile against every threshold table.
+All data below is transcribed authoritatively from the single source of truth,
+`docs/internal/roadmap_context/Guias de Referencia.md`:
 
-Guía II (small / 46 items) — the provided docs do not contain its tables, so the
-taxonomy and inverted-item list are RECONSTRUCTED from the standard NOM-035 Guía II
-structure and the threshold tables are PROPORTIONAL PLACEHOLDERS. All of Guía II is
-flagged for domain-expert validation (see
-docs/platform/nom-035-valoracion-supuestos.md).
+- Guía III (large / 72 items) and Guía II (small / 46 items) — taxonomy
+  (Categoría/Dominio/Dimensión → items), inverted-item lists, and threshold tables
+  come straight from that document's Guía II and Guía III sections. Item counts
+  reconcile against every threshold table.
 
 NDR is classified only at the dominio, categoría and final levels — the standard
 publishes no per-dimensión threshold table, so dimensión is used only to organise
@@ -22,8 +20,13 @@ from apps.nom035 import constants as c
 NOM035_SURVEY_KEY = "nom035"
 
 # ── Guía I (traumatic events) ───────────────────────────────────────────────
-GUIA1_TRIGGER_CODE = "g1-1"
-GUIA1_FOLLOWUP_CODES = [f"g1-{i}" for i in range(2, 16)]
+# Section I is the trigger; the follow-ups split into three sections whose
+# per-section "Sí" counts drive the official clinical-referral rule (see
+# scoring.guia1_positive and Guias de Referencia.md, "Interpretación ... GR.I").
+GUIA1_TRIGGER_CODE = "g1-1"  # Sección I — acontecimiento traumático severo
+GUIA1_SECTION_II_CODES = ["g1-2", "g1-3"]  # Recuerdos persistentes
+GUIA1_SECTION_III_CODES = [f"g1-{i}" for i in range(4, 11)]  # Esfuerzo por evitar
+GUIA1_SECTION_IV_CODES = [f"g1-{i}" for i in range(11, 16)]  # Afectación
 
 # ── Categoría → Dominio structure (shared keys) ─────────────────────────────
 CAT_AMBIENTE = "ambiente_de_trabajo"
@@ -89,17 +92,19 @@ _LARGE_DOMINIO_ITEMS = {
     DOM_PERTENENCIA: [53, 54, 55, 56],
 }
 
-# ── Guía II (small / 46) — reconstructed dominio → item numbers ─────────────
+# ── Guía II (small / 46) — authoritative dominio → item numbers ─────────────
+# From Guias de Referencia.md, Guía II "Grupos de ítems por dimensión, dominio y
+# categoría". Guía II has no "Entorno organizacional" categoría (no Reconocimiento
+# / Pertenencia dominios); items 41–43 (clientes) and 44–46 (jefe) are conditional.
 _SMALL_DOMINIO_ITEMS = {
     DOM_CONDICIONES: [1, 2, 3],
-    DOM_CARGA: [4, 5, 6, 7, 8, 9, 10, 11, 12, 41, 42, 43],
-    DOM_CONTROL: [13, 14, 15, 16, 17, 18, 19, 20],
-    DOM_JORNADA: [21, 22],
-    DOM_INTERFERENCIA: [23, 24, 25],
-    DOM_LIDERAZGO: [26, 27, 28, 29],
-    DOM_RELACIONES: [30, 31, 32, 33],
-    DOM_VIOLENCIA: [34, 35, 36, 37, 38, 39, 40],
-    DOM_RECONOCIMIENTO: [44, 45, 46],
+    DOM_CARGA: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 41, 42, 43],
+    DOM_CONTROL: [18, 19, 20, 21, 22, 26, 27],
+    DOM_JORNADA: [14, 15],
+    DOM_INTERFERENCIA: [16, 17],
+    DOM_LIDERAZGO: [23, 24, 25, 28, 29],
+    DOM_RELACIONES: [30, 31, 32, 44, 45, 46],
+    DOM_VIOLENCIA: [33, 34, 35, 36, 37, 38, 39, 40],
 }
 
 
@@ -160,30 +165,9 @@ _INVERTED_LARGE = {
         72,
     ]
 }
-# Guía II: reconstructed — positively-worded (non-inverted) items are the
-# autonomy/development/leadership/recognition ones; the rest are inverted.
-_SMALL_NON_INVERTED = {
-    1,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
-    19,
-    20,
-    26,
-    27,
-    28,
-    29,
-    30,
-    31,
-    32,
-    33,
-    44,
-    45,
-    46,
-}
+# Guía II: from the value table in Guias de Referencia.md. Items 18–33 score
+# Siempre→0 … Nunca→4 (non-inverted); items 1–17 and 34–46 score 4→0 (inverted).
+_SMALL_NON_INVERTED = set(range(18, 34))
 _INVERTED_SMALL = {f"g2-{n}" for n in range(1, 47) if n not in _SMALL_NON_INVERTED}
 INVERTED_ITEMS = _INVERTED_LARGE | _INVERTED_SMALL
 
@@ -221,35 +205,22 @@ _THRESHOLDS_LARGE = {
     (c.LEVEL_DOMINIO, DOM_PERTENENCIA): _bands(4, 6, 8, 10),
 }
 
-# Guía II — PLACEHOLDER thresholds, proportional to each group's max score.
-# Fractions mirror the Guía III final table (50/75/99/140 of a 288 max).
-_PLACEHOLDER_FRACTIONS = (50 / 288, 75 / 288, 99 / 288, 140 / 288)
-
-
-def _proportional_bands(n_items):
-    max_score = 4 * n_items
-    cutoffs = [round(f * max_score) for f in _PLACEHOLDER_FRACTIONS]
-    # Enforce strictly increasing bands (rounding can collide for small groups).
-    for i in range(1, len(cutoffs)):
-        if cutoffs[i] <= cutoffs[i - 1]:
-            cutoffs[i] = cutoffs[i - 1] + 1
-    return _bands(*cutoffs)
-
-
-def _build_small_thresholds():
-    thresholds = {("final", "final"): _proportional_bands(46)}
-    cat_counts, dom_counts = {}, {}
-    for categoria, dominio in _TAXONOMY_SMALL.values():
-        cat_counts[categoria] = cat_counts.get(categoria, 0) + 1
-        dom_counts[dominio] = dom_counts.get(dominio, 0) + 1
-    for cat, n in cat_counts.items():
-        thresholds[(c.LEVEL_CATEGORIA, cat)] = _proportional_bands(n)
-    for dom, n in dom_counts.items():
-        thresholds[(c.LEVEL_DOMINIO, dom)] = _proportional_bands(n)
-    return thresholds
-
-
-_THRESHOLDS_SMALL = _build_small_thresholds()
+# Guía II — authoritative (Guias de Referencia.md, Guía II range tables).
+_THRESHOLDS_SMALL = {
+    ("final", "final"): _bands(20, 45, 70, 90),
+    (c.LEVEL_CATEGORIA, CAT_AMBIENTE): _bands(3, 5, 7, 9),
+    (c.LEVEL_CATEGORIA, CAT_FACTORES): _bands(10, 20, 30, 40),
+    (c.LEVEL_CATEGORIA, CAT_TIEMPO): _bands(4, 6, 9, 12),
+    (c.LEVEL_CATEGORIA, CAT_LIDERAZGO): _bands(10, 18, 28, 38),
+    (c.LEVEL_DOMINIO, DOM_CONDICIONES): _bands(3, 5, 7, 9),
+    (c.LEVEL_DOMINIO, DOM_CARGA): _bands(12, 16, 20, 24),
+    (c.LEVEL_DOMINIO, DOM_CONTROL): _bands(5, 8, 11, 14),
+    (c.LEVEL_DOMINIO, DOM_JORNADA): _bands(1, 2, 4, 6),
+    (c.LEVEL_DOMINIO, DOM_INTERFERENCIA): _bands(1, 2, 4, 6),
+    (c.LEVEL_DOMINIO, DOM_LIDERAZGO): _bands(3, 5, 8, 11),
+    (c.LEVEL_DOMINIO, DOM_RELACIONES): _bands(5, 8, 11, 14),
+    (c.LEVEL_DOMINIO, DOM_VIOLENCIA): _bands(7, 10, 13, 16),
+}
 
 # ── "Necesidad de acción según NOM-035" per NDR level ───────────────────────
 _ACTION_TEXT = {

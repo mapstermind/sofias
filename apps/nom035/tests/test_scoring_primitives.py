@@ -1,5 +1,5 @@
 from apps.nom035 import constants as c
-from apps.nom035.scoring import classify, guia1_severity, likert_item_score
+from apps.nom035.scoring import classify, guia1_positive, likert_item_score
 
 
 def test_normal_item_maps_1_to_5_onto_0_to_4():
@@ -19,8 +19,27 @@ def test_classify_returns_band_level():
     assert classify(bands, 200) == c.NDR_ALTO
 
 
-def test_guia1_severity_bands():
-    assert guia1_severity(False, 9) == c.SEV_NONE  # no event → no flag
-    assert guia1_severity(True, 1) == c.SEV_LOW
-    assert guia1_severity(True, 3) == c.SEV_MED
-    assert guia1_severity(True, 6) == c.SEV_HIGH
+def test_guia1_positive_requires_an_event():
+    # No Section I event → never positive, regardless of symptom counts.
+    assert (
+        guia1_positive(event=False, section_ii=2, section_iii=7, section_iv=5) is False
+    )
+
+
+def test_guia1_positive_section_thresholds():
+    # Section II: any single "Sí" qualifies.
+    assert guia1_positive(event=True, section_ii=1, section_iii=0, section_iv=0) is True
+    # Section III: needs 3 or more.
+    assert (
+        guia1_positive(event=True, section_ii=0, section_iii=2, section_iv=0) is False
+    )
+    assert guia1_positive(event=True, section_ii=0, section_iii=3, section_iv=0) is True
+    # Section IV: needs 2 or more.
+    assert (
+        guia1_positive(event=True, section_ii=0, section_iii=0, section_iv=1) is False
+    )
+    assert guia1_positive(event=True, section_ii=0, section_iii=0, section_iv=2) is True
+    # Event with sub-threshold symptoms across sections → not positive.
+    assert (
+        guia1_positive(event=True, section_ii=0, section_iii=2, section_iv=1) is False
+    )

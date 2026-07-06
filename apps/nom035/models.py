@@ -11,13 +11,6 @@ class NDR(models.TextChoices):
     MUY_ALTO = c.NDR_MUY_ALTO, "Muy alto"
 
 
-class Severity(models.TextChoices):
-    NONE = c.SEV_NONE, "Ninguna"
-    LOW = c.SEV_LOW, "Baja"
-    MED = c.SEV_MED, "Media"
-    HIGH = c.SEV_HIGH, "Alta"
-
-
 class GroupLevel(models.TextChoices):
     # NOM-035 defines NDR thresholds only at dominio/categoría/final, so no
     # dimensión level is scored (see docs/platform/nom-035-analytics.md).
@@ -33,11 +26,8 @@ class SubmissionScore(models.Model):
     )
     final_score = models.IntegerField(default=0)
     final_ndr = models.CharField(max_length=10, choices=NDR.choices, default=NDR.NULO)
-    guia1_event = models.BooleanField(default=False)
-    guia1_followup_count = models.IntegerField(default=0)
-    guia1_severity = models.CharField(
-        max_length=10, choices=Severity.choices, default=Severity.NONE
-    )
+    # Official Guía I clinical-referral outcome (binary); see scoring.guia1_positive.
+    guia1_positive = models.BooleanField(default=False)
     computed_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

@@ -21,9 +21,7 @@ def test_submission_score_is_one_per_submission(active_assignment):
         submission=sub,
         final_score=120,
         final_ndr=c.NDR_ALTO,
-        guia1_event=True,
-        guia1_followup_count=4,
-        guia1_severity=c.SEV_MED,
+        guia1_positive=True,
     )
     with pytest.raises(Exception):
         SubmissionScore.objects.create(

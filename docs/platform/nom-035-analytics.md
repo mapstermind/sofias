@@ -30,12 +30,13 @@ Charts, the downloadable/PDF report, an employee self-view, and any
 operator-facing scoring-config UI are **out of scope** (see
 [Scope boundaries](#scope-boundaries)).
 
-> This is an **MVP**. The scoring reference data (inverted items, taxonomy,
-> threshold tables) and the Guía I rule carry documented assumptions that a domain
-> expert will validate and refine iteratively. The stakeholder-facing list of those
-> assumptions lives in Spanish at
+> The scoring reference data (inverted items, taxonomy, threshold tables) and the
+> Guía I referral rule are transcribed from the single source of truth,
+> `docs/internal/roadmap_context/Guias de Referencia.md`. Remaining open points for
+> the domain expert (chiefly how to treat skipped conditional blocks) are tracked in
+> Spanish at
 > [`docs/platform/nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md)
-> and is kept in sync as the feature evolves.
+> and kept in sync as the feature evolves.
 
 ## How it works
 
@@ -93,16 +94,19 @@ For a completed submission the engine:
 
 ### Guía I — traumatic-events referral flag
 
-Guía I is **not** scored into the NDR. Its 15 boolean items produce a separate
-flag:
+Guía I is **not** scored into the NDR. Its 15 boolean items produce a single
+**binary** flag, `guia1_positive`, following the official NOM-035 clinical-referral
+rule (Guías de Referencia, "Interpretación … Guía de Referencia I"):
 
-- `guia1_event` is `True` when the trigger question (`g1-1`) is answered "Sí".
-- `guia1_followup_count` is the number of follow-up questions (`g1-2…g1-15`)
-  answered "Sí".
-- `guia1_severity` is derived from that count into `none / low / med / high`.
+- The trigger question (`g1-1`, Sección I) must be answered "Sí" — a severe traumatic
+  event occurred; otherwise the flag is `False`.
+- Given the event, the worker is **positive** when any section threshold is met: any
+  "Sí" in Section II (`g1-2…g1-3`), **or** ≥3 "Sí" in Section III (`g1-4…g1-10`),
+  **or** ≥2 "Sí" in Section IV (`g1-11…g1-15`).
 
-The flag indicates a possible need for clinical valuation/canalización. The exact
-severity cutoffs are a documented MVP assumption (see the Spanish supuestos doc).
+A positive result surfaces as the text **"Usuario positivo a un acontecimiento
+traumático severo."** and indicates the worker requires clinical valuation. There is
+**no severity gradient** — the standard defines a binary referral outcome.
 
 ### When scoring runs (materialized)
 
@@ -165,9 +169,7 @@ Two new tables in `apps/nom035` (migration `0001_initial`):
 | `submission` | `OneToOneField(responses.SurveySubmission, on_delete=CASCADE)` | The scored submission (incl. anonymous, `user=None`) |
 | `final_score` | `IntegerField` | `Cfinal` |
 | `final_ndr` | `CharField(choices=NDR)` | Nulo / Bajo / Medio / Alto / Muy alto |
-| `guia1_event` | `BooleanField` | Trigger answered "Sí" |
-| `guia1_followup_count` | `IntegerField` | Follow-up "Sí" count |
-| `guia1_severity` | `CharField(choices)` | none / low / med / high |
+| `guia1_positive` | `BooleanField` | Official Guía I clinical-referral outcome (binary) |
 | `computed_at` | `DateTimeField(auto_now=True)` | Last materialization |
 
 **`GroupScore`** — per-grouping breakdown for a submission.
@@ -203,9 +205,10 @@ the integration key, exactly as documented in `docs/platform/survey-model.md`.
 - **Decision:** Compute company aggregates on demand from stored rows rather than
   materializing them. **Reason:** They change as each employee completes; deriving
   them keeps results consistent with no extra invalidation logic.
-- **Decision:** Guía I yields a referral flag with severity from the follow-up
-  "Sí" count, separate from the NDR. **Reason:** Matches the instrument (Guía I is
-  a canalización screen, not a psychosocial score) and gives a usable MVP signal.
+- **Decision:** Guía I yields a single **binary** referral flag from the official
+  section-based clinical rule, separate from the NDR. **Reason:** Matches the
+  standard (Guía I is a clinical-referral screen with a defined binary outcome, not
+  a psychosocial score); the norm publishes no severity gradient.
 - **Decision:** Results are visible only to `can_view_insights` roles; employees do
   not see their own results. **Reason:** NOM-035 confidentiality norms and the
   existing permission gating.
@@ -213,29 +216,28 @@ the integration key, exactly as documented in `docs/platform/survey-model.md`.
   `can_view_insights` permission codename. **Reason:** Avoids a permissions
   migration and `bootstrap_groups` churn for a cosmetic change.
 
-## Validation requirements and MVP assumptions
+## Validation requirements and remaining assumptions
 
-This MVP ships with reference data and rules that **require domain-expert
-validation**. They are tracked for the expert, in Spanish and free of
-implementation detail, in
-[`docs/platform/nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md),
-which is updated as assumptions are confirmed or refined. In summary:
+The scoring reference data is transcribed from the single source of truth,
+`docs/internal/roadmap_context/Guias de Referencia.md`. The stakeholder-facing
+tracking of assumptions (Spanish, free of implementation detail) lives in
+[`docs/platform/nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md).
+In summary:
 
-1. **Guía III** taxonomy, inverted items, and the **categoría/dominio/final**
-   threshold tables are transcribed authoritatively from `Ejemplo Reporte
-   Resultados.pdf`. **Guía II** is reconstructed from the standard NOM-035 Guía II
-   structure with **proportional placeholder thresholds** (the provided docs lack
-   Guía II's tables); all of Guía II is flagged for expert validation.
+1. **Guía II and Guía III** taxonomy, inverted items, and the
+   **categoría/dominio/final** threshold tables are transcribed authoritatively from
+   the source-of-truth document (Guía III also reconciles against `Ejemplo Reporte
+   Resultados.pdf`).
 2. **Dimensión is not assigned an NDR** — the official tables define thresholds only
    at dominio/categoría/final. Flagged for the expert in case per-dimensión scoring
    is later desired.
 3. **Skipped conditional blocks** (a respondent who is not a jefe / does not attend
    clientes) leave their items absent. The MVP sums only present items but compares
-   against the full fixed thresholds — a known bias to validate.
-4. **Guía I severity cutoffs** (follow-up "Sí" count → low/med/high) are an
-   invented MVP heuristic, not a validated clinical instrument.
+   against the full fixed thresholds — a known bias, still open for the expert.
+4. **Guía I** uses the official section-based binary referral rule from the source
+   document; there is no invented severity gradient.
 5. **At least one fully-worked example** (from `Ejemplo Reporte Resultados.pdf`) is
-   needed so an automated test can assert `Cfinal` and NDR against a known case.
+   still useful so an automated test can assert `Cfinal` and NDR against a known case.
 
 ## Scope boundaries
 

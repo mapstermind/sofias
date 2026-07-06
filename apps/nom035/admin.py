@@ -14,7 +14,7 @@ class SubmissionScoreAdmin(admin.ModelAdmin):
         "submission",
         "final_ndr",
         "final_score",
-        "guia1_severity",
+        "guia1_positive",
         "computed_at",
     )
     inlines = [GroupScoreInline]

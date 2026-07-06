@@ -13,9 +13,20 @@ def _assert_monotonic_bands(bands):
     assert {level for _, level in bands} <= set(c.NDR_ORDER)
 
 
-def test_guia1_codes():
+def test_guia1_section_codes():
     assert cfg.GUIA1_TRIGGER_CODE == "g1-1"
-    assert set(cfg.GUIA1_FOLLOWUP_CODES) == _required_codes("g1", 15) - {"g1-1"}
+    assert cfg.GUIA1_SECTION_II_CODES == ["g1-2", "g1-3"]
+    assert cfg.GUIA1_SECTION_III_CODES == [f"g1-{i}" for i in range(4, 11)]
+    assert cfg.GUIA1_SECTION_IV_CODES == [f"g1-{i}" for i in range(11, 16)]
+    # Trigger + the three sections cover every Guía I item g1-1..g1-15 exactly once.
+    covered = [
+        cfg.GUIA1_TRIGGER_CODE,
+        *cfg.GUIA1_SECTION_II_CODES,
+        *cfg.GUIA1_SECTION_III_CODES,
+        *cfg.GUIA1_SECTION_IV_CODES,
+    ]
+    assert sorted(covered) == sorted(_required_codes("g1", 15))
+    assert len(covered) == 15  # no overlaps
 
 
 def test_taxonomy_covers_every_likert_item():
@@ -49,6 +60,56 @@ def test_known_final_band_large():
         (99, c.NDR_MEDIO),
         (140, c.NDR_ALTO),
         (float("inf"), c.NDR_MUY_ALTO),
+    ]
+
+
+def _dominio_item_numbers(variant):
+    """{dominio_key: {item numbers}} reconstructed from the taxonomy."""
+    result = {}
+    for code, (_cat, dom) in cfg.taxonomy_for_variant(variant).items():
+        result.setdefault(dom, set()).add(int(code.split("-")[1]))
+    return result
+
+
+def test_small_taxonomy_matches_official_guia2():
+    dom_items = _dominio_item_numbers("small")
+    assert dom_items[cfg.DOM_CONDICIONES] == {1, 2, 3}
+    assert dom_items[cfg.DOM_CARGA] == {4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 41, 42, 43}
+    assert dom_items[cfg.DOM_CONTROL] == {18, 19, 20, 21, 22, 26, 27}
+    assert dom_items[cfg.DOM_JORNADA] == {14, 15}
+    assert dom_items[cfg.DOM_INTERFERENCIA] == {16, 17}
+    assert dom_items[cfg.DOM_LIDERAZGO] == {23, 24, 25, 28, 29}
+    assert dom_items[cfg.DOM_RELACIONES] == {30, 31, 32, 44, 45, 46}
+    assert dom_items[cfg.DOM_VIOLENCIA] == {33, 34, 35, 36, 37, 38, 39, 40}
+    # Guía II has no Entorno organizacional categoría (nor its dominios).
+    assert cfg.DOM_RECONOCIMIENTO not in dom_items
+    assert cfg.DOM_PERTENENCIA not in dom_items
+    small = cfg.taxonomy_for_variant("small")
+    assert cfg.CAT_ENTORNO not in {cat for cat, _ in small.values()}
+
+
+def test_small_inverted_items_match_official_guia2():
+    # Items 18–33 score Siempre→0 … Nunca→4 (not inverted); all others are inverted.
+    non_inverted = {n for n in range(1, 47) if not cfg.is_inverted(f"g2-{n}")}
+    assert non_inverted == set(range(18, 34))
+
+
+def test_known_small_threshold_bands():
+    inf = float("inf")
+    assert cfg.thresholds_for("final", "final", "small") == [
+        (20, c.NDR_NULO),
+        (45, c.NDR_BAJO),
+        (70, c.NDR_MEDIO),
+        (90, c.NDR_ALTO),
+        (inf, c.NDR_MUY_ALTO),
+    ]
+    # Liderazgo dominio: the SME-corrected Medio band closes the old 7–8 gap.
+    assert cfg.thresholds_for(c.LEVEL_DOMINIO, cfg.DOM_LIDERAZGO, "small") == [
+        (3, c.NDR_NULO),
+        (5, c.NDR_BAJO),
+        (8, c.NDR_MEDIO),
+        (11, c.NDR_ALTO),
+        (inf, c.NDR_MUY_ALTO),
     ]
 
 

@@ -28,9 +28,7 @@ def scored(make_company, make_user, survey):
         submission=sub,
         final_score=160,
         final_ndr=c.NDR_MUY_ALTO,
-        guia1_event=True,
-        guia1_followup_count=6,
-        guia1_severity=c.SEV_HIGH,
+        guia1_positive=True,
     )
     return {"company": company, "user": user}
 
@@ -39,7 +37,7 @@ def test_company_valuation_counts(scored):
     data = company_valuation(scored["company"])
     assert data["scored_count"] == 1
     assert data["needing_action"] == 1
-    assert data["guia1_flags"] == 1
+    assert data["guia1_positive_count"] == 1
     assert data["distribution"][c.NDR_MUY_ALTO] == 1
 
 

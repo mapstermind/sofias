@@ -12,13 +12,13 @@ def company_valuation(company) -> dict:
     scores = list(_scores_for_company(company))
     distribution = {level: 0 for level in c.NDR_ORDER}
     needing_action = 0
-    guia1_flags = 0
+    guia1_positive_count = 0
     for s in scores:
         distribution[s.final_ndr] += 1
         if s.final_ndr in (c.NDR_ALTO, c.NDR_MUY_ALTO):
             needing_action += 1
-        if s.guia1_event:
-            guia1_flags += 1
+        if s.guia1_positive:
+            guia1_positive_count += 1
     distribution_rows = [
         {"ndr": level, "label": c.NDR_LABELS[level], "count": distribution[level]}
         for level in c.NDR_ORDER
@@ -28,7 +28,7 @@ def company_valuation(company) -> dict:
         "distribution": distribution,
         "distribution_rows": distribution_rows,
         "needing_action": needing_action,
-        "guia1_flags": guia1_flags,
+        "guia1_positive_count": guia1_positive_count,
     }
 
 
@@ -60,6 +60,5 @@ def employee_valuation(user, company) -> dict | None:
         "final_score": score.final_score,
         "final_action": cfg.action_text(score.final_ndr),
         "categories": categories,
-        "guia1_event": score.guia1_event,
-        "guia1_severity": score.guia1_severity,
+        "guia1_positive": score.guia1_positive,
     }

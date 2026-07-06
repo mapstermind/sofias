@@ -17,16 +17,16 @@ def classify(bands: list[tuple[float, str]], score: int) -> str:
     return bands[-1][1]
 
 
-# MVP assumption (see docs/platform/nom-035-valoracion-supuestos.md §2.5):
-# event with 1–2 follow-ups = low, 3–5 = med, 6+ = high.
-def guia1_severity(event: bool, followup_count: int) -> str:
+# Official NOM-035 Guía I clinical-referral rule (binary). A worker is "positive"
+# (requires clinical attention) when a severe traumatic event occurred AND any of
+# the per-section thresholds is met. See Guias de Referencia.md, "Interpretación de
+# resultados ... Guía de Referencia I".
+def guia1_positive(
+    *, event: bool, section_ii: int, section_iii: int, section_iv: int
+) -> bool:
     if not event:
-        return c.SEV_NONE
-    if followup_count >= 6:
-        return c.SEV_HIGH
-    if followup_count >= 3:
-        return c.SEV_MED
-    return c.SEV_LOW
+        return False
+    return section_ii >= 1 or section_iii >= 3 or section_iv >= 2
 
 
 @dataclass(frozen=True)
@@ -42,9 +42,7 @@ class ScoreResult:
     final_score: int
     final_ndr: str
     groups: list[GroupResult]
-    guia1_event: bool
-    guia1_followup_count: int
-    guia1_severity: str
+    guia1_positive: bool
 
 
 def score_submission(submission) -> ScoreResult:
@@ -78,14 +76,20 @@ def score_submission(submission) -> ScoreResult:
 
     final_ndr = classify(cfg.thresholds_for("final", "final", variant), final)
 
+    def _section_yes(codes):
+        return sum(1 for code in codes if answers.get(code) is True)
+
     event = answers.get(cfg.GUIA1_TRIGGER_CODE) is True
-    followups = sum(1 for code in cfg.GUIA1_FOLLOWUP_CODES if answers.get(code) is True)
+    positive = guia1_positive(
+        event=event,
+        section_ii=_section_yes(cfg.GUIA1_SECTION_II_CODES),
+        section_iii=_section_yes(cfg.GUIA1_SECTION_III_CODES),
+        section_iv=_section_yes(cfg.GUIA1_SECTION_IV_CODES),
+    )
 
     return ScoreResult(
         final_score=final,
         final_ndr=final_ndr,
         groups=groups,
-        guia1_event=event,
-        guia1_followup_count=followups,
-        guia1_severity=guia1_severity(event, followups),
+        guia1_positive=positive,
     )

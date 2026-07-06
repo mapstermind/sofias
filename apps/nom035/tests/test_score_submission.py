@@ -42,21 +42,50 @@ def test_all_nunca_yields_expected_final_and_two_levels(nom035_assignment):
     assert {g.level for g in result.groups} == {c.LEVEL_CATEGORIA, c.LEVEL_DOMINIO}
 
 
-def test_guia1_flag_and_severity(nom035_assignment):
+def _answer_guia1(sub, codes, *, event, yes_codes=()):
+    if event:
+        Answer.objects.create(submission=sub, question=codes["g1-1"], value=True)
+    for code in yes_codes:
+        Answer.objects.create(submission=sub, question=codes[code], value=True)
+
+
+def test_guia1_positive_via_section_ii(nom035_assignment):
     sub = SurveySubmission.objects.create(
         assignment=nom035_assignment, status=SurveySubmission.Status.COMPLETED
     )
     codes = {
         q.code: q for q in Question.objects.filter(survey=nom035_assignment.survey)
     }
-    Answer.objects.create(submission=sub, question=codes["g1-1"], value=True)
-    for code in cfg.GUIA1_FOLLOWUP_CODES[:3]:
-        Answer.objects.create(submission=sub, question=codes[code], value=True)
+    # Event + one "Sí" in Section II (g1-2) → positive.
+    _answer_guia1(sub, codes, event=True, yes_codes=["g1-2"])
 
-    result = score_submission(sub)
-    assert result.guia1_event is True
-    assert result.guia1_followup_count == 3
-    assert result.guia1_severity == c.SEV_MED
+    assert score_submission(sub).guia1_positive is True
+
+
+def test_guia1_not_positive_below_section_thresholds(nom035_assignment):
+    sub = SurveySubmission.objects.create(
+        assignment=nom035_assignment, status=SurveySubmission.Status.COMPLETED
+    )
+    codes = {
+        q.code: q for q in Question.objects.filter(survey=nom035_assignment.survey)
+    }
+    # Event, but only 2 "Sí" in Section III (needs 3) and 1 in Section IV (needs 2).
+    _answer_guia1(sub, codes, event=True, yes_codes=["g1-4", "g1-5", "g1-11"])
+
+    assert score_submission(sub).guia1_positive is False
+
+
+def test_guia1_not_positive_without_event(nom035_assignment):
+    sub = SurveySubmission.objects.create(
+        assignment=nom035_assignment, status=SurveySubmission.Status.COMPLETED
+    )
+    codes = {
+        q.code: q for q in Question.objects.filter(survey=nom035_assignment.survey)
+    }
+    # Symptoms present but Section I answered "No"/absent → not positive.
+    _answer_guia1(sub, codes, event=False, yes_codes=["g1-2", "g1-3"])
+
+    assert score_submission(sub).guia1_positive is False
 
 
 def test_known_case_mixes_normal_and_inverted_items(nom035_assignment):

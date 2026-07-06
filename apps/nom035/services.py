@@ -13,9 +13,7 @@ def materialize(submission) -> SubmissionScore:
         defaults={
             "final_score": result.final_score,
             "final_ndr": result.final_ndr,
-            "guia1_event": result.guia1_event,
-            "guia1_followup_count": result.guia1_followup_count,
-            "guia1_severity": result.guia1_severity,
+            "guia1_positive": result.guia1_positive,
         },
     )
     score.groups.all().delete()

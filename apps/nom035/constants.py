@@ -12,10 +12,5 @@ NDR_LABELS = {
     NDR_MUY_ALTO: "Muy alto",
 }
 
-SEV_NONE = "none"
-SEV_LOW = "low"
-SEV_MED = "med"
-SEV_HIGH = "high"
-
 LEVEL_CATEGORIA = "categoria"
 LEVEL_DOMINIO = "dominio"
