@@ -7,6 +7,7 @@ The schema is organized around three distinct concerns:
 1. **Who** — identity and company membership (`accounts` app)
 2. **What** — the fixed survey instrument: `surveys` app `Survey → Module → Question → Choice`. There is no reusable question library and no numbered versions; operators seed fixed instruments (NOM-035) and a material change means a new `Survey`. See `docs/adr/adr-0002-flatten-survey-authoring-model.md`.
 3. **Context & results** — who must answer, in which variant, and what they said (`surveys` app: `SurveyAssignment`; `responses` app: `SurveySubmission`, `Answer`)
+4. **Derived valuation** — NOM-035 scores/NDR computed from the answers (`nom035` app: `SubmissionScore`, `GroupScore`)
 
 A `Survey` is modular: each `Module` is tagged `applies_to` (`all`/`small`/`large`) and the company's headcount selects a variant (frozen on the assignment). Conditional branching is a data-driven `visible_when` rule.
 
@@ -118,7 +119,7 @@ An ordered group of questions within a survey (replaces the old `Section`). Carr
 Constraint: `UNIQUE (survey, key)`
 
 #### `Question`
-A question owned by a `Module`. Carries a stable `code` — the integration key for the future valuation engine. No scoring data lives here.
+A question owned by a `Module`. Carries a stable `code` — the integration key the valuation engine (`apps/nom035`) consumes. No scoring data lives here.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -191,6 +192,39 @@ The recorded value for one question within a submission.
 
 Constraint: `UNIQUE (submission, question)` — one answer per question per submission.
 
+### `nom035`
+
+Materialized NOM-035 valuation results, derived from `responses.Answer` rows by the
+`apps/nom035` engine (see `docs/platform/nom-035-analytics.md`). Written by a
+`post_save` signal when a submission is completed and re-buildable via
+`python manage.py recompute_nom035_scores`.
+
+#### `SubmissionScore`
+One row per scored submission: the final score, its Nivel de Riesgo (NDR), and the binary Guía I clinical-referral flag.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | BigAutoField | PK |
+| `submission` | OneToOneField → `SurveySubmission` | Cascades; `related_name="nom035_score"` (scored submission, incl. anonymous) |
+| `final_score` | IntegerField | `Cfinal` (sum of scored items) |
+| `final_ndr` | CharField | `nulo` / `bajo` / `medio` / `alto` / `muy_alto` |
+| `guia1_positive` | BooleanField | Official Guía I clinical-referral outcome (binary) |
+| `computed_at` | DateTimeField | `auto_now`; last materialization |
+
+#### `GroupScore`
+Per-grouping breakdown for a submission — one row per categoría and per dominio (dimensión is not scored).
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | BigAutoField | PK |
+| `submission_score` | ForeignKey → `SubmissionScore` | Cascades; `related_name="groups"` |
+| `level` | CharField | `categoria` / `dominio` |
+| `key` | CharField | Stable group identifier from the scoring taxonomy |
+| `score` | IntegerField | Summed score for the group |
+| `ndr` | CharField | Group NDR (same choices as `final_ndr`) |
+
+Constraint: `UNIQUE (submission_score, level, key)`. Indexes on `(submission_score, level)` and `(level, ndr)`.
+
 ---
 
 ## Relation Diagram
@@ -211,6 +245,18 @@ responses_surveysubmission ◄────────────────�
       ▼                                              surveys_question
  responses_answer ───────────────────────────────►  surveys_choice
                           (question)
+```
+
+Derived results (`apps/nom035`), materialized from a submission's answers:
+
+```
+responses_surveysubmission
+      │ (nom035_score, 1:1)
+      ▼
+ nom035_submissionscore
+      │ (groups)
+      ▼
+ nom035_groupscore
 ```
 
 ---
@@ -268,7 +314,7 @@ Completion counts only questions visible under the current answers (see `apps/su
 
 **`visible_when` is data-driven and survey-agnostic.** Branching (Guía I skip, "atiendo clientes"/"soy jefe" gates) is a JSON rule evaluated by one component used server- and client-side. The future second survey reuses it.
 
-**`Question.code` is the scoring boundary.** Codes are stable and unique per survey; the future valuation engine references them. No scoring (inverted flags, dimension/domain/category, thresholds) lives in `apps/surveys`.
+**`Question.code` is the scoring boundary.** Codes are stable and unique per survey; the valuation engine (`apps/nom035`) references them. No scoring (inverted flags, dimensión/dominio/categoría, thresholds) lives in `apps/surveys` — it belongs to the instrument's engine app.
 
 **Company isolation through the assignment.** All response data traces back to a `SurveyAssignment` belonging to exactly one `Company`.
 

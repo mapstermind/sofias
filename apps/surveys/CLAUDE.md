@@ -8,11 +8,11 @@ This is the central concept. Understand it before changing `models.py`. There is
 
 - `Survey` — the instrument. `key` (stable unique slug, e.g. `nom035`), `title`, `description`, `status` (draft/published/archived), `headcount_threshold` (default 50). A material change = a **new** `Survey`, not a version.
 - `Module` — an ordered group of questions within a survey (replaces the old `Section`). `applies_to` ∈ `all`/`small`/`large`; `key` (unique per survey); optional `visible_when`.
-- `Question` — owned by a `Module`. `code` (stable, **unique per survey** — the integration key for the future valuation engine), `question_type`, `text`, `config` (JSON), optional `visible_when`. Carries a denormalized `survey` FK (set in `save()` from `module.survey`) to back the `unique(survey, code)` constraint.
+- `Question` — owned by a `Module`. `code` (stable, **unique per survey** — the integration key the valuation engine consumes), `question_type`, `text`, `config` (JSON), optional `visible_when`. Carries a denormalized `survey` FK (set in `save()` from `module.survey`) to back the `unique(survey, code)` constraint.
 - `Choice` — selectable option for `single_choice`/`multiple_choice`. (Boolean Sí/No renders from hardcoded radios, not `Choice` rows.)
 - `SurveyAssignment` — links a `Survey` to a `Company` with a frozen `variant` (`small`/`large`). `resolve_default_variant(company, survey)` computes the default from `company.members.count()` vs `survey.headcount_threshold` (operator-overridable); `modules_for_variant()` returns the modules to present (`all` plus the variant's).
 
-`apps/surveys` stores **no scoring** (no inverted flags, dimension/domain/category, or thresholds) — that is the future valuation engine's config, keyed by `Question.code`.
+`apps/surveys` stores **no scoring** (no inverted flags, dimensión/dominio/categoría, or thresholds) — that lives in the instrument's engine app, keyed by `Question.code`. For NOM-035 that is `apps/nom035` (see its CLAUDE.md).
 
 ### Question types (`Question.QuestionType`)
 `text, integer, decimal, date, single_choice, multiple_choice, boolean, rating, likert`. Answer parsing per type is in `views.py._parse_value` (and answer-rendering in `apps/core`) — keep these in sync when adding a type.

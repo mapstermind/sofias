@@ -12,7 +12,7 @@ The user-facing interface (copy and URLs) is in Spanish. Code, comments, and ide
 - **Dashboards** — per-company completion stats (registration rate, completion rate per survey, representative-sample minimum) and per-employee progress/answer views, gated by role permissions.
 - **User onboarding** — passwordless email-OTP login (with password and one-time setup-access-code fallbacks), company reference-code activation, and bulk user import from CSV via the admin.
 
-Analytics aggregation and report generation (`apps/analytics`, `apps/reports`) are placeholders — empty apps, not yet registered in `INSTALLED_APPS`.
+NOM-035 valuation (scores → Nivel de Riesgo, plus the Guía I referral flag) is implemented in `apps/nom035` and surfaced as text-only insights in the dashboards. Report generation (`apps/reports`) is still a placeholder — an empty app, not yet registered in `INSTALLED_APPS`.
 
 ## Tech stack
 
@@ -30,7 +30,7 @@ apps/
   surveys/       # Question library, survey templates/versions/questions, survey taking
   responses/     # SurveySubmission + Answer storage
   core/          # Home/dashboards + interactive survey-authoring commands
-  analytics/     # Placeholder (not registered)
+  nom035/        # NOM-035 valuation engine (scores → NDR) + Insights
   reports/       # Placeholder (not registered)
 templates/       # Django templates (Spanish UI)
 static/          # CSS (Tailwind input/output), TS sources, compiled JS

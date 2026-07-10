@@ -86,12 +86,16 @@ per-employee progress.
 
 `apps/surveys` stores **no scoring** — no inverted flags, no
 dimensión/dominio/categoría grouping, no threshold tables. `Question.code` is the
-stable integration key for the future valuation engine (Initiative 1), which holds
-that configuration as data, keyed by `code`.
+stable integration key consumed by the valuation engine, which holds that
+configuration as data, keyed by `code`. For NOM-035 that engine lives in
+`apps/nom035` (see `docs/platform/nom-035-analytics.md`); a future instrument would
+get its own engine app rather than adding scoring here.
 
-## Out of scope (future)
+## Out of scope
 
-The scoring / NDR engine, dimensión/dominio/categoría config and thresholds, the
-representative-sample math (already in `apps/core`), the static PDF report, and the
-second survey. The model is built not to block any of these — chiefly via the
-stable `Question.code` and the survey-agnostic `visible_when`.
+The static PDF report and the second survey instrument remain unbuilt; the
+representative-sample math already lives in `apps/core`. The NOM-035 scoring / NDR
+engine (dimensión/dominio/categoría config and thresholds) is implemented in
+`apps/nom035`, deliberately outside `apps/surveys`. The survey model is built not to
+block any of these — chiefly via the stable `Question.code` and the survey-agnostic
+`visible_when`.

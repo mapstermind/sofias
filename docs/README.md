@@ -16,10 +16,14 @@ docs/
 │   └── adr-NNNN-[decision].md
 ├── platform/                        # Feature and system documentation
 │   ├── [new-feature]-template.md    # Copy this when drafting a new feature
+│   ├── overview.md                  # Start here — how the apps fit together
 │   ├── auth-and-onboarding.md
 │   ├── csv-user-import.md
 │   ├── database.md
-│   └── setup-access-codes.md
+│   ├── nom-035-analytics.md
+│   ├── nom-035-valoracion-supuestos.md
+│   ├── setup-access-codes.md
+│   └── survey-model.md
 ├── internal/                        # Human-only reference — not referenced by the agent
 │   ├── prompting-workflow.md        # End-to-end guide for developing a feature
 │   ├── keep-in-mind.md
@@ -76,11 +80,16 @@ Docs moved here when the feature they describe is retired or superseded. Include
 
 | Document | What it covers |
 |----------|---------------|
+| `platform/overview.md` | **Start here** — system map: the apps, the shared-base + per-instrument-engine shape, and end-to-end data flow |
 | `internal/prompting-workflow.md` | End-to-end feature development workflow |
+| `platform/survey-model.md` | The survey authoring base (Survey→Module→Question), variants, `visible_when` branching |
 | `platform/database.md` | Full database schema reference |
+| `platform/nom-035-analytics.md` | NOM-035 valuation engine (scores → NDR) + Insights panels |
+| `platform/nom-035-valoracion-supuestos.md` | (Spanish) NOM-035 scoring assumptions tracked for the domain expert |
 | `platform/auth-and-onboarding.md` | Login flows, OTP, setup codes, profile activation |
 | `platform/csv-user-import.md` | Bulk user creation via Django Admin |
 | `platform/setup-access-codes.md` | First-login fallback for blocked-email users |
 | `adr/adr-0001-setup-access-codes-for-blocked-email-login.md` | Why setup codes exist instead of temporary passwords |
 | `adr/adr-0002-flatten-survey-authoring-model.md` | Why the survey model is a flat Survey→Module→Question tree (no library/versions) |
+| `adr/adr-0003-per-instrument-survey-processing-apps.md` | Why each instrument gets its own engine app instead of a generic engine |
 | `internal/roadmap_context/hoja-de-ruta-nom035.md` | NOM-035 product roadmap (three initiatives) |

@@ -19,7 +19,7 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
   and `score_submission(submission) -> ScoreResult`.
 - `services.py` — `materialize(submission)`: upserts the result rows in a transaction.
 - `models.py` — `SubmissionScore` (one per submission) and `GroupScore` (per
-  categoría/dominio/dimensión breakdown).
+  categoría/dominio breakdown — dimensión is not scored).
 - `signals.py` — a `post_save` receiver on `responses.SurveySubmission` that
   materializes a score when a submission becomes `completed` (connected in
   `apps.py:ready()`).
