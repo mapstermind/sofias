@@ -160,25 +160,16 @@ Review the generated plan before proceeding. Remove tasks that are out of scope,
 ## Step 5 — Set Up the Branch
 
 **Who:** Agent  
-**Skill:** `superpowers:using-git-worktrees` (recommended) or standard branch
+**When:** After the plan is reviewed, before implementation
 
-Use a worktree to keep the feature branch isolated from your main working tree. This lets you switch context without stashing or committing incomplete work.
+Create a feature branch off `main` to keep this work separate from the mainline history. By this point Steps 1–4 have already produced changes in the working tree (the feature doc and the `-tasks.md` plan), so the branch should carry those uncommitted changes along rather than start from a clean tree. `git switch -c` (or `git checkout -b`) does this automatically — it moves your current, uncommitted changes onto the new branch.
 
 **Prompt:**
 
 ```
-Use /using-git-worktrees.
+Create a new branch called feature/[feature-name] from main and switch to it, bringing the current uncommitted changes (the feature doc and task plan from earlier steps) along onto the branch.
 
-Create a new worktree and branch for this feature. Branch name: [feature/feature-name].
-
-Set it up so implementation work happens in the worktree. Confirm the worktree is ready before we proceed.
-```
-
-If you prefer a standard branch:
-
-```
-Create a new branch called feature/[feature-name] from main and switch to it.
-Confirm the branch is ready before we proceed.
+Run git status first and show me what's currently modified. Confirm all of that work is now on feature/[feature-name] before we proceed — nothing should be left behind on main.
 ```
 
 ---
@@ -351,7 +342,7 @@ This step is not optional. Skipping it is how documentation goes stale.
 The feature branch for [feature-name] has been merged.
 
 Do the following cleanup:
-1. If a worktree was used, remove it
+1. Switch back to main and pull the latest merged changes
 2. Delete the merged feature branch locally and confirm it's gone on remote
 3. Delete the implementation plan docs/platform/[feature-name]-tasks.md — it was disposable scaffolding, now superseded by the merged code and the feature doc
 4. Check if any temporary files, debug scripts, or implementation notes were added to the repo that should not be committed long-term — list them for my review
@@ -398,7 +389,7 @@ Check: were any architectural decisions made during implementation that weren't 
 | 2. Expand feature doc | Agent | `superpowers:brainstorming` | `docs/platform/[feature].md` (complete) |
 | 3. Write ADR if needed | Human | — | `docs/adr/ADR-[n].md` |
 | 4. Task breakdown | Agent | `superpowers:writing-plans` | `docs/platform/[feature]-tasks.md` (reviewed plan) |
-| 5. Set up branch | Agent | `superpowers:using-git-worktrees` | Feature branch / worktree |
+| 5. Set up branch | Agent | — | Feature branch off `main` |
 | 6. Implement | Agent | `superpowers:executing-plans`, `/test-driven-development`, `/systematic-debugging`, `/dispatching-parallel-agents` | Working implementation with tests |
 | 7. Pre-PR review | Agent + Human | `superpowers:verification-before-completion`, `/requesting-code-review` | Reviewed findings, human decision |
 | 8. Act on findings | Agent | `superpowers:receiving-code-review` | Fixes applied |

@@ -1,0 +1,9 @@
+email,company_reference_code,group,auth_method,first_name,last_name,position
+nuevo.valido@acme.mx,ACME1,Employees,otp,Nuevo,Valido,Analista
+duplicado@acme.mx,ACME1,Employees,password,Duplicado,Uno,Tester
+duplicado@acme.mx,ACME1,Employees,otp,Duplicado,Dos,Tester
+fulano@empresa.mx,ZZZZZ,Employees,otp,Fulano,DeTal,X
+mengano@acme.mx,ACME1,Managers,otp,Mengano,DeTal,X
+correo-invalido,ACME1,Employees,otp,Correo,Invalido,X
+zutano@acme.mx,ACME1,Employees,,Zutano,DeTal,X
+perengano@acme.mx,ACME1,Employees,magic,Per,Engano,X
