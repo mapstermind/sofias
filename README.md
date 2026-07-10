@@ -61,12 +61,8 @@ Each app has its own `CLAUDE.md` with model and flow details.
 4. **Seed survey content (optional):**
 
    ```bash
-   python manage.py seed_likert_templates       # Likert question library
-   python manage.py seed_demographic_templates  # demographic question library
-   python manage.py seed_nom035_survey          # NOM-035 survey built from the library
+   python manage.py seed_nom035_survey          # NOM-035 survey (Survey → Module → Question)
    ```
-
-   Run the two library seeds first — `seed_nom035_survey` links its questions to existing library templates.
 
 5. **Run:**
 
@@ -85,16 +81,6 @@ make lint               # ruff check --fix
 make fmt                # ruff format
 make migrate            # apply migrations
 make bootstrap-groups   # create/re-sync permission groups
-```
-
-Interactive survey authoring (terminal workflows over the surveys models):
-
-```bash
-make question-templates # manage the reusable question library
-make survey             # create a survey + first version
-make question           # add questions to a version
-make choices            # manage choices on a question
-make sections           # group questions into sections
 ```
 
 Frontend assets:
