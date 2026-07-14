@@ -2,8 +2,10 @@
 {% load static %}
 
 {% block body %}
+{# A view may pass `container_width` (e.g. "max-w-6xl") to widen its page; the
+   header and <main> share it so they stay aligned. Omit it for the standard width. #}
 <header class="bg-white border-b border-gray-200">
-  <div class="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
+  <div class="mx-auto {{ container_width|default:"max-w-5xl" }} px-4 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <a href="{% url 'core:home' %}" class="flex items-center gap-2">
         <img src="{% static 'img/logo.svg' %}" alt="Logo SOFIA-S" class="h-8 mt-2 mb-3 w-auto">
@@ -21,7 +23,7 @@
   </div>
 </header>
 
-<main class="flex-1 mx-auto w-full max-w-5xl px-4 py-10">
+<main class="flex-1 mx-auto w-full {{ container_width|default:"max-w-5xl" }} px-4 py-10">
   {% block content %}{% endblock %}
 </main>
 {% include "_footer.html" %}

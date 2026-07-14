@@ -179,6 +179,9 @@ def survey_detail(request, assignment_id):
             "is_edit": existing_submission is not None,
             "total_questions": total_questions,
             "answered_count": answered_count,
+            # Nothing answered yet = first visit, so open the instructions modal.
+            "show_instructions": existing_submission is None and answered_count == 0,
+            "container_width": "max-w-6xl",
         },
     )
 

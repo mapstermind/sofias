@@ -1,6 +1,6 @@
 import pytest
 
-from apps.responses.models import SurveySubmission
+from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import SurveyAssignment
 
 pytestmark = pytest.mark.django_db
@@ -29,6 +29,29 @@ class TestSurveyDetailView:
     def test_nonexistent_assignment_returns_404(self, client):
         response = client.get(_survey_url(99999))
         assert response.status_code == 404
+
+    def test_instructions_shown_on_first_visit(self, client, active_assignment):
+        response = client.get(_survey_url(active_assignment.pk))
+        assert response.context["show_instructions"] is True
+
+    def test_instructions_not_shown_once_an_answer_exists(
+        self, client, active_assignment, survey_with_questions, make_user
+    ):
+        user = make_user(email="respondent@example.com")
+        client.force_login(user)
+        submission = SurveySubmission.objects.create(
+            assignment=active_assignment,
+            user=user,
+            status=SurveySubmission.Status.IN_PROGRESS,
+        )
+        Answer.objects.create(
+            submission=submission,
+            question=survey_with_questions["questions"][0],
+            value="una respuesta",
+        )
+
+        response = client.get(_survey_url(active_assignment.pk))
+        assert response.context["show_instructions"] is False
 
     def test_post_all_question_types_creates_submission(
         self, client, active_assignment, survey_with_questions

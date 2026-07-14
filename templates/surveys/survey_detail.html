@@ -16,15 +16,15 @@
 
 <div class="flex gap-6">
 
-<!-- Right sidebar: sticky button + progress bar -->
-<div class="flex flex-col items-end w-70 shrink-0 order-last">
+<!-- Right sidebar: sticky instructions + progress bar -->
+<div class="flex flex-col items-end w-96 shrink-0 order-last">
   <div class="sticky top-6 w-full flex flex-col items-end gap-5">
-    <button
-      type="button"
-      onclick="document.getElementById('instrucciones-modal').style.display='flex'"
-      class="w-full rounded-lg bg-white border border-indigo-200 px-4 py-2.5 text-sm font-medium text-indigo-700 shadow-sm hover:bg-indigo-50 hover:border-indigo-300 transition-colors whitespace-nowrap">
-      Revisar Instrucciones
-    </button>
+    <div class="w-full rounded-lg bg-white border border-indigo-200 shadow-sm p-4">
+      <h2 class="text-sm font-semibold text-gray-900 mb-2">Instrucciones</h2>
+      <div class="text-sm text-gray-600 space-y-3 max-h-[45vh] overflow-y-auto">
+        {% include "surveys/_instrucciones_content.html" %}
+      </div>
+    </div>
     {% if total_questions %}
     <div class="w-full" id="progress-total" data-total="{{ total_questions }}">
       <div class="flex justify-between text-xs text-gray-500 mb-1">
@@ -84,6 +84,12 @@
 {% include "surveys/_instrucciones_modal.html" %}
 {% include "surveys/_progress_saved_modal.html" %}
 {% include "surveys/_session_expired_modal.html" %}
+
+{% if show_instructions %}
+<script>
+  document.getElementById('instrucciones-modal').style.display = 'flex';
+</script>
+{% endif %}
 
 {% if request.GET.saved %}
 <script>

@@ -17,15 +17,7 @@
       </button>
     </div>
     <div class="text-sm text-gray-600 space-y-3">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
-      <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-      <p>
-        Para más información consulta el siguiente recurso:
-        <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer"
-           class="text-indigo-600 hover:text-indigo-800 underline">
-          Ver video de referencia
-        </a>
-      </p>
+      {% include "surveys/_instrucciones_content.html" %}
     </div>
     <div class="mt-6 flex justify-end">
       <button onclick="document.getElementById('instrucciones-modal').style.display='none'"
