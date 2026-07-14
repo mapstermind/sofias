@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -69,6 +70,7 @@ def _flat_questions(modules):
     return out
 
 
+@login_required
 def survey_detail(request, assignment_id):
     assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
 
@@ -79,23 +81,18 @@ def survey_detail(request, assignment_id):
     modules = _modules_with_questions(assignment)
     all_questions = _flat_questions(modules)
 
-    existing_submission = None
+    existing_submission = (
+        SurveySubmission.objects.filter(assignment=assignment, user=request.user)
+        .prefetch_related("answers")
+        .first()
+    )
     existing_answers = {}  # by question_id
-    if request.user.is_authenticated:
-        existing_submission = (
-            SurveySubmission.objects.filter(assignment=assignment, user=request.user)
-            .prefetch_related("answers")
-            .first()
-        )
-        if (
-            existing_submission
-            and existing_submission.status == SurveySubmission.Status.COMPLETED
-        ):
+    if existing_submission:
+        if existing_submission.status == SurveySubmission.Status.COMPLETED:
             return redirect("core:home")
-        if existing_submission:
-            existing_answers = {
-                a.question_id: a.value for a in existing_submission.answers.all()
-            }
+        existing_answers = {
+            a.question_id: a.value for a in existing_submission.answers.all()
+        }
 
     errors = {}
 
@@ -118,7 +115,6 @@ def survey_detail(request, assignment_id):
                 answer_values.get(qid) is not None for qid in visible_ids
             )
 
-            user = request.user if request.user.is_authenticated else None
             now = timezone.now()
             new_status = (
                 SurveySubmission.Status.COMPLETED
@@ -126,22 +122,14 @@ def survey_detail(request, assignment_id):
                 else SurveySubmission.Status.IN_PROGRESS
             )
 
-            if user is not None:
-                submission, _ = SurveySubmission.objects.get_or_create(
-                    assignment=assignment,
-                    user=user,
-                    defaults={"status": new_status},
-                )
-                submission.status = new_status
-                submission.completed_at = now if all_answered else None
-                submission.save(update_fields=["status", "completed_at"])
-            else:
-                submission = SurveySubmission.objects.create(
-                    assignment=assignment,
-                    user=None,
-                    status=new_status,
-                    completed_at=now if all_answered else None,
-                )
+            submission, _ = SurveySubmission.objects.get_or_create(
+                assignment=assignment,
+                user=request.user,
+                defaults={"status": new_status},
+            )
+            submission.status = new_status
+            submission.completed_at = now if all_answered else None
+            submission.save(update_fields=["status", "completed_at"])
 
             for question_id, val in answer_values.items():
                 if val is None:
@@ -189,6 +177,8 @@ def survey_detail(request, assignment_id):
 @require_POST
 def autosave_survey(request, assignment_id):
     """AJAX endpoint — saves changed fields without altering submission status."""
+    # Not @login_required: a login redirect would be useless to the caller. A 401
+    # is what the client script turns into the "session expired" modal.
     if not request.user.is_authenticated:
         return JsonResponse({"ok": False, "error": "unauthenticated"}, status=401)
 
@@ -240,6 +230,7 @@ def autosave_survey(request, assignment_id):
     return JsonResponse({"ok": True})
 
 
+@login_required
 def survey_submitted(request, assignment_id):
     assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
     return render(

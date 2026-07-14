@@ -14,10 +14,24 @@ def _submitted_url(assignment_id):
     return f"/encuestas/asignados/{assignment_id}/enviada/"
 
 
+@pytest.fixture(autouse=True)
+def respondent(client, make_user):
+    """Taking a survey requires a logged-in user; every test here gets one."""
+    user = make_user(email="respondent@example.com")
+    client.force_login(user)
+    return user
+
+
 class TestSurveyDetailView:
     def test_get_returns_200(self, client, active_assignment):
         response = client.get(_survey_url(active_assignment.pk))
         assert response.status_code == 200
+
+    def test_anonymous_redirects_to_login(self, client, active_assignment):
+        client.logout()
+        response = client.get(_survey_url(active_assignment.pk))
+        assert response.status_code == 302
+        assert response["Location"].startswith("/cuentas/ingresar/")
 
     def test_closed_assignment_redirects_to_home(self, client, active_assignment):
         active_assignment.status = SurveyAssignment.Status.CLOSED
@@ -35,13 +49,11 @@ class TestSurveyDetailView:
         assert response.context["show_instructions"] is True
 
     def test_instructions_not_shown_once_an_answer_exists(
-        self, client, active_assignment, survey_with_questions, make_user
+        self, client, active_assignment, survey_with_questions, respondent
     ):
-        user = make_user(email="respondent@example.com")
-        client.force_login(user)
         submission = SurveySubmission.objects.create(
             assignment=active_assignment,
-            user=user,
+            user=respondent,
             status=SurveySubmission.Status.IN_PROGRESS,
         )
         Answer.objects.create(

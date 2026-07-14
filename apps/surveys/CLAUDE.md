@@ -27,7 +27,7 @@ Null/empty = always visible. A submission is `COMPLETED` only when all **visible
 
 ## Views (`views.py`) — taking a survey
 
-- `survey_detail(assignment_id)` — renders modules for the assignment's variant and handles POST. Reuses an in-progress `SurveySubmission` per (user, assignment); marks `COMPLETED` only when all visible questions are answered. Closed/completed assignments redirect to `core:home`. Anonymous submissions allowed (`user=None`).
+- `survey_detail(assignment_id)` — `@login_required`; renders modules for the assignment's variant and handles POST. Reuses an in-progress `SurveySubmission` per (user, assignment); marks `COMPLETED` only when all visible questions are answered. Closed/completed assignments redirect to `core:home`. There is **no anonymous path** — surveys are always taken by a logged-in employee.
 - `autosave_survey(assignment_id)` — POST-only AJAX; persists single changed fields without changing status.
 - `survey_submitted(assignment_id)` — confirmation page.
 

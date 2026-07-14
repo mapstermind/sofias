@@ -193,7 +193,7 @@ Two tables in `apps/nom035`:
 
 | Field | Type | Notes |
 |---|---|---|
-| `submission` | `OneToOneField(responses.SurveySubmission, on_delete=CASCADE, related_name="nom035_score")` | The scored submission (incl. anonymous, `user=None`) |
+| `submission` | `OneToOneField(responses.SurveySubmission, on_delete=CASCADE, related_name="nom035_score")` | The scored submission (incl. one whose `user` went null because the employee was deleted) |
 | `final_score` | `IntegerField` | `Cfinal` |
 | `final_ndr` | `CharField(choices=NDR)` | Nulo / Bajo / Medio / Alto / Muy alto |
 | `guia1_positive` | `BooleanField` | Official Guía I clinical-referral outcome (binary) |

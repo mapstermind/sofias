@@ -205,7 +205,7 @@ One row per scored submission: the final score, its Nivel de Riesgo (NDR), and t
 | Field | Type | Notes |
 |---|---|---|
 | `id` | BigAutoField | PK |
-| `submission` | OneToOneField → `SurveySubmission` | Cascades; `related_name="nom035_score"` (scored submission, incl. anonymous) |
+| `submission` | OneToOneField → `SurveySubmission` | Cascades; `related_name="nom035_score"` (scored submission, incl. one whose `user` went null on employee deletion) |
 | `final_score` | IntegerField | `Cfinal` (sum of scored items) |
 | `final_ndr` | CharField | `nulo` / `bajo` / `medio` / `alto` / `muy_alto` |
 | `guia1_positive` | BooleanField | Official Guía I clinical-referral outcome (binary) |

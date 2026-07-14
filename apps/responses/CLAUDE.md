@@ -6,7 +6,7 @@ Storage for survey submissions and answers. Thin data layer — collection logic
 
 - `SurveySubmission` — one respondent's attempt at a `surveys.SurveyAssignment`.
   - `status`: `in_progress` / `completed`.
-  - `user` is nullable (`SET_NULL`) to allow anonymous submissions; a **partial unique constraint** enforces one submission per (user, assignment) only when `user` is set.
+  - `user` is nullable (`SET_NULL`) so a deleted employee's answers survive (they still count in the NOM-035 aggregates) — **not** to allow anonymous submissions: every submission is created by a logged-in user (`apps/surveys/views.py` is `@login_required`), so `user` is null only for users deleted after the fact. A **partial unique constraint** enforces one submission per (user, assignment) only when `user` is set.
   - `completed_at` is set when all questions are answered (by the survey view).
 - `Answer` — one answer within a submission.
   - FK to `surveys.Question`; `unique(submission, question)`.

@@ -47,8 +47,9 @@ def test_non_nom035_submission_is_not_scored(make_company, survey):
     assert not SubmissionScore.objects.filter(submission=sub).exists()
 
 
-def test_anonymous_submission_is_scored(assignment):
-    # Submissions may be anonymous (user=None); they must still score.
+def test_submission_without_user_is_scored(assignment):
+    # `user` goes null when an employee is deleted (SET_NULL); the submission they
+    # left behind must still score, so it keeps counting in the company aggregates.
     sub = SurveySubmission.objects.create(
         assignment=assignment, user=None, status=SurveySubmission.Status.IN_PROGRESS
     )

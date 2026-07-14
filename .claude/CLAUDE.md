@@ -67,7 +67,21 @@ ruff check .
 # Django migrations
 python manage.py makemigrations
 python manage.py migrate
+
+# Frontend assets (Tailwind CSS / TypeScript → static/)
+npm run build:css     # static/css/main.css  → static/css/output.css
+npm run build:js      # static/ts/*.ts       → static/js/
 ```
+
+## Frontend build — always run it
+
+Tailwind compiles **only the classes it finds in the templates**, and `static/css/output.css` is committed. A template edit that introduces a class not already used somewhere else (e.g. `max-w-6xl`, `w-96`, `max-h-[45vh]`) renders **unstyled** until the CSS is rebuilt — the browser silently ignores the class, so this does not fail any test.
+
+**As the final step of any change touching `templates/` or `static/`, run the matching build and commit the regenerated output:**
+- Touched a template or any file with Tailwind classes → `npm run build:css`
+- Touched `static/ts/*.ts` → `npm run build:js`
+
+Do not assume a `watch:css`/`watch:js` process is running.
 
 ## Architecture
 
