@@ -2,8 +2,12 @@
 {% load static %}
 
 {% block body %}
-{# A view may pass `container_width` (e.g. "max-w-6xl") to widen its page; the
-   header and <main> share it so they stay aligned. Omit it for the standard width. #}
+{% comment %}
+A view may pass `container_width` (e.g. "max-w-6xl") to widen its page; the header,
+main and footer share it so they stay aligned. Omit it for the standard width.
+Any width a view passes must be safelisted in static/css/main.css — Tailwind only
+scans templates/, so a class named in Python is never compiled otherwise.
+{% endcomment %}
 <header class="bg-white border-b border-gray-200">
   <div class="mx-auto {{ container_width|default:"max-w-5xl" }} px-4 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">

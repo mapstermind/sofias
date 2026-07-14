@@ -1,2 +1,7 @@
 @import "tailwindcss";
 @source "../../templates";
+
+/* Widths a view can pass as `container_width` (see templates/base_app.html).
+   They live in Python, which @source above does not scan, so they must be listed
+   here or they are never compiled. */
+@source inline("max-w-5xl max-w-6xl");
