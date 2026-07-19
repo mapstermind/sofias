@@ -12,7 +12,7 @@ from apps.accounts.models import Company, SetupAccessCode, User, UserProfile
 from apps.accounts.utils import generate_unique_username
 
 REQUIRED_HEADERS = {"email", "company_reference_code", "group", "auth_method"}
-OPTIONAL_HEADERS = {"first_name", "last_name", "position"}
+OPTIONAL_HEADERS = {"first_name", "last_name", "position", "department"}
 REPORT_HEADERS = [
     "row_number",
     "email",
@@ -140,6 +140,7 @@ def _import_row(row_number: int, row: dict[str, str]) -> dict[str, str]:
         UserProfile.objects.create(
             user=user,
             position=row.get("position", ""),
+            department=row.get("department", ""),
             company=company,
             is_activated=False,
         )
