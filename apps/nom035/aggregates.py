@@ -4,7 +4,62 @@ from apps.nom035.models import NDR, SubmissionScore
 
 
 def _scores_for_company(company):
-    return SubmissionScore.objects.filter(submission__assignment__company=company)
+    return SubmissionScore.objects.filter(
+        submission__assignment__company=company
+    ).select_related("submission__user__profile")
+
+
+def _department_of(score) -> str:
+    user = score.submission.user
+    profile = getattr(user, "profile", None) if user else None
+    return (getattr(profile, "department", "") or "").strip()
+
+
+def _most_severe_present(distribution: dict[str, int]) -> str | None:
+    present = [level for level in c.NDR_ORDER if distribution[level] > 0]
+    return present[-1] if present else None
+
+
+def _area_breakdown(scores) -> list[dict]:
+    groups: dict[str, dict] = {}
+    for s in scores:
+        raw = _department_of(s)
+        gkey = raw.casefold()
+        area = groups.get(gkey)
+        if area is None:
+            area = groups[gkey] = {
+                "label": raw or "Sin área",
+                "distribution": {level: 0 for level in c.NDR_ORDER},
+                "scored_count": 0,
+                "needing_action": 0,
+                "guia1_positive_count": 0,
+            }
+        area["scored_count"] += 1
+        area["distribution"][s.final_ndr] += 1
+        if s.final_ndr in (c.NDR_ALTO, c.NDR_MUY_ALTO):
+            area["needing_action"] += 1
+        if s.guia1_positive:
+            area["guia1_positive_count"] += 1
+
+    areas = []
+    for area in groups.values():
+        most_severe = _most_severe_present(area["distribution"])
+        area["distribution_rows"] = [
+            {"ndr": level, "label": c.NDR_LABELS[level], "count": area["distribution"][level]}
+            for level in c.NDR_ORDER
+        ]
+        area["action_ndr"] = most_severe or ""
+        area["action_ndr_label"] = c.NDR_LABELS[most_severe] if most_severe else ""
+        area["action"] = cfg.action_text(most_severe) if most_severe else ""
+        areas.append(area)
+
+    # Most-severe areas first, then most people needing action, then name.
+    areas.sort(key=lambda a: (
+        -(c.NDR_ORDER.index(a["action_ndr"]) if a["action_ndr"] else -1),
+        -a["needing_action"],
+        a["label"],
+    ))
+    return areas
 
 
 def company_valuation(company) -> dict:
@@ -29,6 +84,7 @@ def company_valuation(company) -> dict:
         "distribution_rows": distribution_rows,
         "needing_action": needing_action,
         "guia1_positive_count": guia1_positive_count,
+        "areas": _area_breakdown(scores),
     }
 
 

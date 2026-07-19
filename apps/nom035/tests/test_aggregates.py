@@ -1,5 +1,6 @@
 import pytest
 
+from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
 from apps.nom035.aggregates import company_valuation, employee_valuation
 from apps.nom035.models import SubmissionScore
@@ -39,6 +40,38 @@ def test_company_valuation_counts(scored):
     assert data["needing_action"] == 1
     assert data["guia1_positive_count"] == 1
     assert data["distribution"][c.NDR_MUY_ALTO] == 1
+
+
+def test_company_valuation_area_breakdown(make_company, make_user_with_profile, survey):
+    from apps.nom035 import constants as c
+    from apps.nom035.models import SubmissionScore
+
+    company = make_company()
+
+    def _score(email, dept, ndr):
+        user = make_user_with_profile(email=email, company=company)
+        user.profile.department = dept
+        user.profile.save()
+        assignment = SurveyAssignment.objects.create(
+            company=company, survey=survey, variant=SurveyAssignment.Variant.LARGE,
+            status=SurveyAssignment.Status.ACTIVE)
+        sub = SurveySubmission.objects.create(
+            assignment=assignment, user=user, status=SurveySubmission.Status.IN_PROGRESS)
+        SubmissionScore.objects.create(submission=sub, final_score=1, final_ndr=ndr)
+
+    _score("a@x.mx", "Sistemas", c.NDR_MUY_ALTO)
+    _score("b@x.mx", "sistemas ", c.NDR_BAJO)   # same area, different casing/space
+    _score("c@x.mx", "", c.NDR_MEDIO)           # → "Sin área"
+
+    data = company_valuation(company)
+    areas = {a["label"]: a for a in data["areas"]}
+    assert set(areas) == {"Sistemas", "Sin área"}
+    sistemas = areas["Sistemas"]
+    assert sistemas["scored_count"] == 2
+    assert sistemas["needing_action"] == 1
+    assert sistemas["action_ndr"] == c.NDR_MUY_ALTO      # most-severe present
+    assert sistemas["action"] == cfg.action_text(c.NDR_MUY_ALTO)
+    assert areas["Sin área"]["action_ndr"] == c.NDR_MEDIO
 
 
 def test_employee_valuation_returns_nested_scores(scored):
