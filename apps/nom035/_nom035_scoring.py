@@ -108,18 +108,195 @@ _SMALL_DOMINIO_ITEMS = {
 }
 
 
-def _build_taxonomy(prefix, dominio_items):
-    """{code: (categoria, dominio)} from a dominio → item-numbers map."""
+# ── Dimensión → items (finer partition of each dominio; score-only, no NDR) ──
+# (dim_key, official label, item numbers). Transcribed from Guias de Referencia.md
+# "Grupos de ítems por dimensión, dominio y categoría".
+_LARGE_DIMENSION_ITEMS = {
+    DOM_CONDICIONES: [
+        ("cond_peligrosas_inseguras", "Condiciones peligrosas e inseguras", [1, 3]),
+        ("cond_deficientes_insalubres", "Condiciones deficientes e insalubres", [2, 4]),
+        ("trabajos_peligrosos", "Trabajos peligrosos", [5]),
+    ],
+    DOM_CARGA: [
+        ("cargas_cuantitativas", "Cargas cuantitativas", [6, 12]),
+        ("ritmos_acelerados", "Ritmos de trabajo acelerado", [7, 8]),
+        ("carga_mental", "Carga mental", [9, 10, 11]),
+        (
+            "cargas_psicologicas_emocionales",
+            "Cargas psicológicas emocionales",
+            [65, 66, 67, 68],
+        ),
+        ("cargas_alta_responsabilidad", "Cargas de alta responsabilidad", [13, 14]),
+        ("cargas_contradictorias", "Cargas contradictorias o inconsistentes", [15, 16]),
+    ],
+    DOM_CONTROL: [
+        (
+            "falta_control_autonomia",
+            "Falta de control y autonomía sobre el trabajo",
+            [25, 26, 27, 28],
+        ),
+        (
+            "limitada_posibilidad_desarrollo",
+            "Limitada o nula posibilidad de desarrollo",
+            [23, 24],
+        ),
+        (
+            "insuficiente_participacion_cambio",
+            "Insuficiente participación y manejo del cambio",
+            [29, 30],
+        ),
+        ("limitada_capacitacion", "Limitada o inexistente capacitación", [35, 36]),
+    ],
+    DOM_JORNADA: [
+        ("jornadas_extensas", "Jornadas de trabajo extensas", [17, 18]),
+    ],
+    DOM_INTERFERENCIA: [
+        (
+            "influencia_trabajo_fuera",
+            "Influencia del trabajo fuera del centro laboral",
+            [19, 20],
+        ),
+        (
+            "influencia_responsabilidades_familiares",
+            "Influencia de las responsabilidades familiares",
+            [21, 22],
+        ),
+    ],
+    DOM_LIDERAZGO: [
+        ("escasa_claridad_funciones", "Escasa claridad de funciones", [31, 32, 33, 34]),
+        (
+            "caracteristicas_liderazgo",
+            "Características del liderazgo",
+            [37, 38, 39, 40, 41],
+        ),
+    ],
+    DOM_RELACIONES: [
+        (
+            "relaciones_sociales",
+            "Relaciones sociales en el trabajo",
+            [42, 43, 44, 45, 46],
+        ),
+        (
+            "deficiente_relacion_supervisados",
+            "Deficiente relación con los colaboradores que supervisa",
+            [69, 70, 71, 72],
+        ),
+    ],
+    DOM_VIOLENCIA: [
+        ("violencia_laboral", "Violencia laboral", [57, 58, 59, 60, 61, 62, 63, 64]),
+    ],
+    DOM_RECONOCIMIENTO: [
+        (
+            "escasa_retroalimentacion",
+            "Escasa o nula retroalimentación del desempeño",
+            [47, 48],
+        ),
+        (
+            "escaso_reconocimiento_compensacion",
+            "Escaso o nulo reconocimiento y compensación",
+            [49, 50, 51, 52],
+        ),
+    ],
+    DOM_PERTENENCIA: [
+        ("limitado_sentido_pertenencia", "Limitado sentido de pertenencia", [55, 56]),
+        ("inestabilidad_laboral", "Inestabilidad laboral", [53, 54]),
+    ],
+}
+
+_SMALL_DIMENSION_ITEMS = {
+    DOM_CONDICIONES: [
+        ("cond_peligrosas_inseguras", "Condiciones peligrosas e inseguras", [2]),
+        ("cond_deficientes_insalubres", "Condiciones deficientes e insalubres", [1]),
+        ("trabajos_peligrosos", "Trabajos peligrosos", [3]),
+    ],
+    DOM_CARGA: [
+        ("cargas_cuantitativas", "Cargas cuantitativas", [4, 9]),
+        ("ritmos_acelerados", "Ritmos de trabajo acelerado", [5, 6]),
+        ("carga_mental", "Carga mental", [7, 8]),
+        (
+            "cargas_psicologicas_emocionales",
+            "Cargas psicológicas emocionales",
+            [41, 42, 43],
+        ),
+        ("cargas_alta_responsabilidad", "Cargas de alta responsabilidad", [10, 11]),
+        ("cargas_contradictorias", "Cargas contradictorias o inconsistentes", [12, 13]),
+    ],
+    DOM_CONTROL: [
+        (
+            "falta_control_autonomia",
+            "Falta de control y autonomía sobre el trabajo",
+            [20, 21, 22],
+        ),
+        (
+            "limitada_posibilidad_desarrollo",
+            "Limitada o nula posibilidad de desarrollo",
+            [18, 19],
+        ),
+        ("limitada_capacitacion", "Limitada o inexistente capacitación", [26, 27]),
+    ],
+    DOM_JORNADA: [
+        ("jornadas_extensas", "Jornadas de trabajo extensas", [14, 15]),
+    ],
+    DOM_INTERFERENCIA: [
+        (
+            "influencia_trabajo_fuera",
+            "Influencia del trabajo fuera del centro laboral",
+            [16],
+        ),
+        (
+            "influencia_responsabilidades_familiares",
+            "Influencia de las responsabilidades familiares",
+            [17],
+        ),
+    ],
+    DOM_LIDERAZGO: [
+        ("escasa_claridad_funciones", "Escasa claridad de funciones", [23, 24, 25]),
+        ("caracteristicas_liderazgo", "Características del liderazgo", [28, 29]),
+    ],
+    DOM_RELACIONES: [
+        ("relaciones_sociales", "Relaciones sociales en el trabajo", [30, 31, 32]),
+        (
+            "deficiente_relacion_supervisados",
+            "Deficiente relación con los colaboradores que supervisa",
+            [44, 45, 46],
+        ),
+    ],
+    DOM_VIOLENCIA: [
+        ("violencia_laboral", "Violencia laboral", [33, 34, 35, 36, 37, 38, 39, 40]),
+    ],
+}
+
+
+def _build_taxonomy(prefix, dominio_items, dimension_items):
+    """{code: (categoria, dominio, dimension)} from a dominio → item-numbers map
+    and a dominio → [(dim_key, label, item numbers)] map."""
+    dim_of_number = {}
+    for dims in dimension_items.values():
+        for dim_key, _label, numbers in dims:
+            for n in numbers:
+                dim_of_number[n] = dim_key
     taxonomy = {}
     for dominio, numbers in dominio_items.items():
         categoria = _DOMINIO_CATEGORIA[dominio]
         for n in numbers:
-            taxonomy[f"{prefix}-{n}"] = (categoria, dominio)
+            taxonomy[f"{prefix}-{n}"] = (categoria, dominio, dim_of_number[n])
     return taxonomy
 
 
-_TAXONOMY_LARGE = _build_taxonomy("g3", _LARGE_DOMINIO_ITEMS)
-_TAXONOMY_SMALL = _build_taxonomy("g2", _SMALL_DOMINIO_ITEMS)
+_TAXONOMY_LARGE = _build_taxonomy("g3", _LARGE_DOMINIO_ITEMS, _LARGE_DIMENSION_ITEMS)
+_TAXONOMY_SMALL = _build_taxonomy("g2", _SMALL_DOMINIO_ITEMS, _SMALL_DIMENSION_ITEMS)
+
+# Dimensión display labels + dimensión → dominio parent (variant-independent: a
+# dimensión concept belongs to exactly one dominio).
+_DIMENSION_LABELS = {}
+_DIMENSION_DOMINIO = {}
+for _dim_map in (_LARGE_DIMENSION_ITEMS, _SMALL_DIMENSION_ITEMS):
+    for _dominio, _dims in _dim_map.items():
+        for _dim_key, _label, _numbers in _dims:
+            _DIMENSION_LABELS[_dim_key] = _label
+            _DIMENSION_DOMINIO[_dim_key] = _dominio
+
+CATEGORIA_ORDER = [CAT_AMBIENTE, CAT_FACTORES, CAT_TIEMPO, CAT_LIDERAZGO, CAT_ENTORNO]
 
 # ── Inverted items (scored 5 - value: Siempre→4 … Nunca→0) ──────────────────
 # Guía III: the "4,3,2,1,0" group from the Ejemplo Reporte value table.
@@ -249,7 +426,7 @@ _ACTION_TEXT = {
 
 
 # ── Accessors used by the engine ────────────────────────────────────────────
-def taxonomy_for_variant(variant: str) -> dict[str, tuple[str, str]]:
+def taxonomy_for_variant(variant: str) -> dict[str, tuple[str, str, str]]:
     return _TAXONOMY_LARGE if variant == "large" else _TAXONOMY_SMALL
 
 
@@ -267,5 +444,22 @@ def action_text(ndr: str) -> str:
 
 
 def group_label(key: str) -> str:
-    """Human-readable Spanish name for a categoría or dominio key."""
-    return _GROUP_LABELS.get(key, key.replace("_", " ").capitalize())
+    """Human-readable Spanish name for a categoría, dominio, or dimensión key."""
+    return (
+        _GROUP_LABELS.get(key)
+        or _DIMENSION_LABELS.get(key)
+        or key.replace("_", " ").capitalize()
+    )
+
+
+def categoria_of(dominio: str) -> str:
+    return _DOMINIO_CATEGORIA[dominio]
+
+
+def dominios_for_categoria(categoria: str) -> list[str]:
+    return [d for d, cat in _DOMINIO_CATEGORIA.items() if cat == categoria]
+
+
+def dimensions_for_dominio(dominio: str, variant: str) -> list[str]:
+    dim_map = _LARGE_DIMENSION_ITEMS if variant == "large" else _SMALL_DIMENSION_ITEMS
+    return [dim_key for dim_key, _label, _numbers in dim_map.get(dominio, [])]
