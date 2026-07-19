@@ -42,7 +42,9 @@ class GroupScore(models.Model):
     level = models.CharField(max_length=12, choices=GroupLevel.choices)
     key = models.CharField(max_length=64)
     score = models.IntegerField(default=0)
-    ndr = models.CharField(max_length=10, choices=NDR.choices, default=NDR.NULO)
+    ndr = models.CharField(
+        max_length=10, choices=NDR.choices, default=NDR.NULO, blank=True
+    )
 
     class Meta:
         unique_together = ("submission_score", "level", "key")
