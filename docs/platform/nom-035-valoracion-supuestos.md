@@ -12,7 +12,7 @@ canalización de la Guía I— se transcribieron de la fuente única de verdad
 su detalle vive en `docs/platform/nom-035-analytics.md`. Aquí quedan únicamente los
 **puntos abiertos**.
 
-> 🟡 = por validar. Última actualización: 2026-07-09.
+> 🟡 = por validar. Última actualización: 2026-07-18.
 
 ---
 
@@ -38,3 +38,18 @@ calculado (como en el ejemplo de reporte oficial).
   un caso oficial resuelto de forma independiente.
 - **Lo que necesitamos:** un ejemplo completo y su resultado esperado, para comprobar
   que la plataforma llega exactamente al mismo número y nivel.
+
+## 3. Nivel de acción por área/departamento 🟡
+
+Ahora presentamos la **necesidad de acción** a nivel de **área/departamento** (y de la
+empresa), no de la persona: la norma define esta guía para el **centro de trabajo**, no
+como un veredicto individual. Un área, sin embargo, reúne personas en **distintos
+niveles de riesgo**, y la norma **no indica** cómo resumir el área en un solo nivel.
+
+- **Supuesto actual:** el texto de acción de cada área se asocia al **nivel de riesgo
+  más severo presente** entre sus colaboradores (mostrando la distribución completa al
+  lado, para dar contexto). Ejemplo: si al menos una persona del área está en "Muy
+  alto", el área muestra la acción de "Muy alto".
+- **Lo que necesitamos:** confirmar el criterio correcto. ¿Basta con que **una** persona
+  esté en el nivel más alto, o debería depender de una **proporción** del área (p. ej.
+  "≥30% en Alto/Muy alto")? ¿O algún otro criterio de la norma o de la práctica?
