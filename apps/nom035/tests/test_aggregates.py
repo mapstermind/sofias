@@ -41,10 +41,31 @@ def test_company_valuation_counts(scored):
     assert data["distribution"][c.NDR_MUY_ALTO] == 1
 
 
-def test_employee_valuation_returns_text(scored):
+def test_employee_valuation_returns_nested_scores(scored):
+    from apps.nom035 import constants as c
+    from apps.nom035.models import GroupScore, SubmissionScore
+
+    score = SubmissionScore.objects.get(submission__user=scored["user"])
+    GroupScore.objects.create(submission_score=score, level=c.LEVEL_CATEGORIA,
+                              key="ambiente_de_trabajo", score=13, ndr=c.NDR_ALTO)
+    GroupScore.objects.create(submission_score=score, level=c.LEVEL_DOMINIO,
+                              key="condiciones_en_el_ambiente_de_trabajo", score=13, ndr=c.NDR_ALTO)
+    GroupScore.objects.create(submission_score=score, level=c.LEVEL_DIMENSION,
+                              key="trabajos_peligrosos", score=4, ndr="")
+
     data = employee_valuation(scored["user"], scored["company"])
     assert data["final_ndr"] == c.NDR_MUY_ALTO
-    assert data["final_action"]
+    assert "final_action" not in data
+    cat = data["categories"][0]
+    assert cat["key"] == "ambiente_de_trabajo"
+    assert cat["score"] == 13
+    assert cat["ndr_label"] == "Alto"
+    dom = cat["domains"][0]
+    assert dom["score"] == 13
+    dim = dom["dimensions"][0]
+    assert dim["key"] == "trabajos_peligrosos"
+    assert dim["score"] == 4
+    assert "ndr" not in dim  # dimensión is score-only
 
 
 def test_employee_valuation_none_when_unscored(make_company, make_user):
