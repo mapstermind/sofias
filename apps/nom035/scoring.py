@@ -55,8 +55,9 @@ def score_submission(submission) -> ScoreResult:
     taxonomy = cfg.taxonomy_for_variant(variant)
     cat_scores: dict[str, int] = {}
     dom_scores: dict[str, int] = {}
+    dim_scores: dict[str, int] = {}
     final = 0
-    for code, (cat_key, dom_key) in taxonomy.items():
+    for code, (cat_key, dom_key, dim_key) in taxonomy.items():
         value = answers.get(code)
         if value is None:
             continue  # unanswered or hidden block — excluded (see supuestos §2.4)
@@ -64,6 +65,7 @@ def score_submission(submission) -> ScoreResult:
         final += item
         cat_scores[cat_key] = cat_scores.get(cat_key, 0) + item
         dom_scores[dom_key] = dom_scores.get(dom_key, 0) + item
+        dim_scores[dim_key] = dim_scores.get(dim_key, 0) + item
 
     groups = []
     for level, sums in (
@@ -73,6 +75,11 @@ def score_submission(submission) -> ScoreResult:
         for key, score in sums.items():
             ndr = classify(cfg.thresholds_for(level, key, variant), score)
             groups.append(GroupResult(level=level, key=key, score=score, ndr=ndr))
+    # Dimensión: score-only, no NDR (the standard defines no dimensión threshold).
+    for key, score in dim_scores.items():
+        groups.append(
+            GroupResult(level=c.LEVEL_DIMENSION, key=key, score=score, ndr="")
+        )
 
     final_ndr = classify(cfg.thresholds_for("final", "final", variant), final)
 

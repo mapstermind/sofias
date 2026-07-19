@@ -34,7 +34,7 @@ def nom035_small_assignment(make_company):
     )
 
 
-def test_all_nunca_yields_expected_final_and_two_levels(nom035_assignment):
+def test_all_nunca_yields_expected_final_and_three_levels(nom035_assignment):
     sub = SurveySubmission.objects.create(
         assignment=nom035_assignment, status=SurveySubmission.Status.COMPLETED
     )
@@ -50,8 +50,12 @@ def test_all_nunca_yields_expected_final_and_two_levels(nom035_assignment):
     # Nunca → normal item 4, inverted item 0.
     expected_final = sum(0 if cfg.is_inverted(code) else 4 for code in taxonomy)
     assert result.final_score == expected_final
-    # Dimensión is not scored — only categoría and dominio groups exist.
-    assert {g.level for g in result.groups} == {c.LEVEL_CATEGORIA, c.LEVEL_DOMINIO}
+    # Categoría, dominio and dimensión groups all get materialized.
+    assert {g.level for g in result.groups} == {
+        c.LEVEL_CATEGORIA,
+        c.LEVEL_DOMINIO,
+        c.LEVEL_DIMENSION,
+    }
 
 
 def _answer_guia1(sub, codes, *, event, yes_codes=()):
@@ -133,6 +137,28 @@ def test_known_case_mixes_normal_and_inverted_items(nom035_assignment):
     assert groups[(c.LEVEL_CATEGORIA, cfg.CAT_TIEMPO)].ndr == c.NDR_MEDIO
 
 
+def test_score_submission_emits_dimension_groups(nom035_assignment):
+    """Dimensión groups are score-only (no NDR): g3-1 (normal) + g3-3 (inverted)
+    both belong to dimensión 'cond_peligrosas_inseguras' under dominio Condiciones.
+    """
+    sub = SurveySubmission.objects.create(
+        assignment=nom035_assignment, status=SurveySubmission.Status.IN_PROGRESS
+    )
+    codes = {
+        q.code: q for q in Question.objects.filter(survey=nom035_assignment.survey)
+    }
+    # g3-1 normal: value 3 → score 2 ; g3-3 inverted: value 3 → score 2
+    Answer.objects.create(submission=sub, question=codes["g3-1"], value=3)
+    Answer.objects.create(submission=sub, question=codes["g3-3"], value=3)
+
+    result = score_submission(sub)
+    dims = {g.key: g for g in result.groups if g.level == c.LEVEL_DIMENSION}
+
+    assert "cond_peligrosas_inseguras" in dims
+    assert dims["cond_peligrosas_inseguras"].score == 4  # 2 + 2
+    assert dims["cond_peligrosas_inseguras"].ndr == ""  # no NDR at dimensión level
+
+
 def test_skipped_conditional_block_sums_only_present_items(nom035_assignment):
     """Absent items (e.g. the clientes block g3-65..68) contribute nothing.
 
@@ -178,7 +204,11 @@ def test_small_variant_known_case(nom035_small_assignment):
     groups = {(g.level, g.key): g for g in result.groups}
 
     assert result.final_score == 12
-    assert {g.level for g in result.groups} == {c.LEVEL_CATEGORIA, c.LEVEL_DOMINIO}
+    assert {g.level for g in result.groups} == {
+        c.LEVEL_CATEGORIA,
+        c.LEVEL_DOMINIO,
+        c.LEVEL_DIMENSION,
+    }
     # Jornada dominio = 8 → Muy alto (small bands 1/2/4/6).
     jornada = groups[(c.LEVEL_DOMINIO, cfg.DOM_JORNADA)]
     assert jornada.score == 8
