@@ -399,28 +399,34 @@ _THRESHOLDS_SMALL = {
     (c.LEVEL_DOMINIO, DOM_VIOLENCIA): _bands(7, 10, 13, 16),
 }
 
-# ── "Necesidad de acción según NOM-035" per NDR level ───────────────────────
+# ── "Necesidad de acción" per NDR level, framed for the ÁREA / organización ──
+# The NOM-035 action criteria are organizational (Programa de intervención, política
+# de prevención, centro de trabajo); they are surfaced only in aggregate reads, never
+# as a per-person verdict. See docs/platform/nom-035-valuation-presentation.md.
 _ACTION_TEXT = {
     c.NDR_NULO: (
-        "El riesgo resulta despreciable, por lo que no se requiere una acción "
-        "adicional."
+        "El nivel de riesgo del área resulta despreciable, por lo que no se "
+        "requieren medidas adicionales."
     ),
     c.NDR_BAJO: (
-        "Es necesario observar y revisar periódicamente las condiciones de "
-        "trabajo evaluadas."
+        "Es necesaria una mayor difusión, en el área, de la política de prevención "
+        "de riesgos psicosociales y de los programas para la prevención de los "
+        "factores de riesgo psicosocial."
     ),
     c.NDR_MEDIO: (
         "Se requiere revisar la política de prevención de riesgos psicosociales y "
-        "reforzar su aplicación y difusión."
+        "reforzar su aplicación y difusión en el área, mediante un Programa de "
+        "intervención."
     ),
     c.NDR_ALTO: (
-        "Se requiere realizar un análisis de cada categoría y dominio para "
-        "establecer las acciones de intervención apropiadas."
+        "El área requiere un análisis de cada categoría y dominio para determinar "
+        "las acciones de intervención apropiadas, a través de un Programa de "
+        "intervención."
     ),
     c.NDR_MUY_ALTO: (
-        "Se requiere realizar el análisis de cada categoría y dominio para "
-        "establecer acciones de intervención inmediatas, así como la atención "
-        "clínica de los colaboradores que lo requieran."
+        "El área presenta un nivel de riesgo muy alto: se requiere el análisis de "
+        "cada categoría y dominio para establecer acciones de intervención a nivel "
+        "del área o centro de trabajo, mediante un Programa de intervención."
     ),
 }
 
