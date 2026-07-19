@@ -47,22 +47,42 @@ def test_panel_shows_scores_and_hierarchy(
     admin.groups.add(bootstrap_groups["Admins"])
     employee = make_user_with_profile(email="emp2@x.mx", company=company)
     assignment = SurveyAssignment.objects.create(
-        company=company, survey=survey, variant=SurveyAssignment.Variant.LARGE,
-        status=SurveyAssignment.Status.ACTIVE)
+        company=company,
+        survey=survey,
+        variant=SurveyAssignment.Variant.LARGE,
+        status=SurveyAssignment.Status.ACTIVE,
+    )
     sub = SurveySubmission.objects.create(
-        assignment=assignment, user=employee, status=SurveySubmission.Status.IN_PROGRESS)
+        assignment=assignment, user=employee, status=SurveySubmission.Status.IN_PROGRESS
+    )
     score = SubmissionScore.objects.create(
-        submission=sub, final_score=160, final_ndr=c.NDR_MUY_ALTO)
-    GroupScore.objects.create(submission_score=score, level=c.LEVEL_CATEGORIA,
-                              key="ambiente_de_trabajo", score=13, ndr=c.NDR_ALTO)
-    GroupScore.objects.create(submission_score=score, level=c.LEVEL_DOMINIO,
-                              key="condiciones_en_el_ambiente_de_trabajo", score=13, ndr=c.NDR_ALTO)
-    GroupScore.objects.create(submission_score=score, level=c.LEVEL_DIMENSION,
-                              key="trabajos_peligrosos", score=4, ndr="")
+        submission=sub, final_score=160, final_ndr=c.NDR_MUY_ALTO
+    )
+    GroupScore.objects.create(
+        submission_score=score,
+        level=c.LEVEL_CATEGORIA,
+        key="ambiente_de_trabajo",
+        score=13,
+        ndr=c.NDR_ALTO,
+    )
+    GroupScore.objects.create(
+        submission_score=score,
+        level=c.LEVEL_DOMINIO,
+        key="condiciones_en_el_ambiente_de_trabajo",
+        score=13,
+        ndr=c.NDR_ALTO,
+    )
+    GroupScore.objects.create(
+        submission_score=score,
+        level=c.LEVEL_DIMENSION,
+        key="trabajos_peligrosos",
+        score=4,
+        ndr="",
+    )
 
     client.force_login(admin)
     resp = client.get(reverse("core:company_employee_detail", args=[employee.id]))
     body = resp.content.decode()
     assert "Ambiente de trabajo" in body
-    assert "Trabajos peligrosos" in body       # dimensión label rendered
-    assert "Se requiere" not in body            # no action sentence on the card
+    assert "Trabajos peligrosos" in body  # dimensión label rendered
+    assert "Se requiere" not in body  # no action sentence on the card

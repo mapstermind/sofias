@@ -8,7 +8,7 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
 ## What lives here
 
 - `constants.py` — shared string constants: NDR levels (`nulo`…`muy_alto`) and
-  group levels (categoría/dominio — dimensión is not scored).
+  group levels (categoría/dominio/dimensión — dimensión is score-only, no NDR).
 - `_nom035_scoring.py` — the scoring **configuration as data**, keyed by
   `surveys.Question.code`: the Categoría→Dominio→Dimensión taxonomy, the inverted-item
   set, the NDR threshold tables, and the "Necesidad de acción" text. All transcribed
@@ -19,7 +19,7 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
   and `score_submission(submission) -> ScoreResult`.
 - `services.py` — `materialize(submission)`: upserts the result rows in a transaction.
 - `models.py` — `SubmissionScore` (one per submission) and `GroupScore` (per
-  categoría/dominio breakdown — dimensión is not scored).
+  categoría/dominio/dimensión breakdown — dimensión is score-only, no NDR).
 - `signals.py` — a `post_save` receiver on `responses.SurveySubmission` that
   materializes a score when a submission becomes `completed` (connected in
   `apps.py:ready()`).

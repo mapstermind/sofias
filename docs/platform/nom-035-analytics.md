@@ -132,12 +132,14 @@ Scores are **materialized**, not recomputed on every page load:
 `apps/nom035/aggregates.py` exposes two on-demand read helpers consumed by
 `apps/core` views:
 
-- **`employee_valuation(user, company)`** — the latest scored submission for the
-  user, as display text: final NDR + score + action, per-categoría NDRs with action
-  text, and the `guia1_positive` flag.
+- **`employee_valuation(user, company)`** — returns the nested categoría→dominio→
+  dimensión tree with scores (no action text), plus the final NDR + score and the
+  `guia1_positive` flag.
 - **`company_valuation(company)`** — the company roll-up: count of scored
   submissions, the NDR distribution, a "needing action" count (submissions whose
-  final NDR is Alto or Muy alto), and the count of Guía I-positive workers.
+  final NDR is Alto or Muy alto), the count of Guía I-positive workers, plus a
+  per-area breakdown (grouped by `UserProfile.department`, normalized) with an
+  organization-framed action line keyed to the most-severe NDR present.
 
 Company-level figures are **not** materialized — they are computed on demand from
 the stored per-submission rows (cheap and always consistent as employees complete).
@@ -199,12 +201,15 @@ Two tables in `apps/nom035`:
 | `guia1_positive` | `BooleanField` | Official Guía I clinical-referral outcome (binary) |
 | `computed_at` | `DateTimeField(auto_now=True)` | Last materialization |
 
-**`GroupScore`** — per-grouping breakdown for a submission.
+**`GroupScore`** — per-grouping breakdown for a submission. Alongside categoría and
+dominio rows, it also stores a **dimensión** row per dimensión (`level="dimension"`,
+score-only — `ndr` is left blank since the standard defines no per-dimensión
+threshold table).
 
 | Field | Type | Notes |
 |---|---|---|
 | `submission_score` | `ForeignKey(SubmissionScore, on_delete=CASCADE, related_name="groups")` | |
-| `level` | `CharField(choices)` | `categoria` / `dominio` (dimensión is not scored) |
+| `level` | `CharField(choices)` | `categoria` / `dominio` / `dimension` (dimensión is score-only, no NDR) |
 | `key` | `CharField` | Stable group identifier from the taxonomy |
 | `score` | `IntegerField` | Summed score for the group |
 | `ndr` | `CharField(choices=NDR)` | Group NDR |
@@ -233,9 +238,18 @@ company aggregation.
   defined binary outcome, not a psychosocial score; the norm publishes no severity
   gradient.
 - **No per-dimensión NDR.** The official tables define thresholds only at
-  dominio/categoría/final.
+  dominio/categoría/final; dimensión is materialized score-only to support the
+  per-employee panel.
+- **Action text is organization/area-framed, not individual-framed**, and is shown
+  only in aggregate reads (`company_valuation`'s per-area breakdown) — the
+  per-employee tree (`employee_valuation`) carries scores only, no action text. See
+  [`docs/platform/nom-035-valuation-presentation.md`](./nom-035-valuation-presentation.md)
+  for the presentation redesign this drove.
 - **Results visible only to `can_view_insights` roles**; employees do not see their
   own results (NOM-035 confidentiality and existing permission gating).
+- **Open SME question:** the per-area "most-severe-NDR" action rule is a working
+  assumption, not a confirmed norm criterion — see
+  [`nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md) §3.
 - **UI heading is "Valoración de resultados" but the permission codename stays
   `can_view_insights`** — avoids a permissions migration and `bootstrap_groups` churn
   for a cosmetic change.

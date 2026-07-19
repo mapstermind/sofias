@@ -45,7 +45,11 @@ def _area_breakdown(scores) -> list[dict]:
     for area in groups.values():
         most_severe = _most_severe_present(area["distribution"])
         area["distribution_rows"] = [
-            {"ndr": level, "label": c.NDR_LABELS[level], "count": area["distribution"][level]}
+            {
+                "ndr": level,
+                "label": c.NDR_LABELS[level],
+                "count": area["distribution"][level],
+            }
             for level in c.NDR_ORDER
         ]
         area["action_ndr"] = most_severe or ""
@@ -54,11 +58,13 @@ def _area_breakdown(scores) -> list[dict]:
         areas.append(area)
 
     # Most-severe areas first, then most people needing action, then name.
-    areas.sort(key=lambda a: (
-        -(c.NDR_ORDER.index(a["action_ndr"]) if a["action_ndr"] else -1),
-        -a["needing_action"],
-        a["label"],
-    ))
+    areas.sort(
+        key=lambda a: (
+            -(c.NDR_ORDER.index(a["action_ndr"]) if a["action_ndr"] else -1),
+            -a["needing_action"],
+            a["label"],
+        )
+    )
     return areas
 
 
@@ -123,22 +129,26 @@ def employee_valuation(user, company) -> dict | None:
                 for dim_key in cfg.dimensions_for_dominio(dom_key, variant)
                 if (c.LEVEL_DIMENSION, dim_key) in rows
             ]
-            domains.append({
-                "key": dom_key,
-                "label": cfg.group_label(dom_key),
-                "score": dom_row.score,
-                "ndr": dom_row.ndr,
-                "ndr_label": NDR(dom_row.ndr).label,
-                "dimensions": dimensions,
-            })
-        categories.append({
-            "key": cat_key,
-            "label": cfg.group_label(cat_key),
-            "score": cat_row.score,
-            "ndr": cat_row.ndr,
-            "ndr_label": NDR(cat_row.ndr).label,
-            "domains": domains,
-        })
+            domains.append(
+                {
+                    "key": dom_key,
+                    "label": cfg.group_label(dom_key),
+                    "score": dom_row.score,
+                    "ndr": dom_row.ndr,
+                    "ndr_label": NDR(dom_row.ndr).label,
+                    "dimensions": dimensions,
+                }
+            )
+        categories.append(
+            {
+                "key": cat_key,
+                "label": cfg.group_label(cat_key),
+                "score": cat_row.score,
+                "ndr": cat_row.ndr,
+                "ndr_label": NDR(cat_row.ndr).label,
+                "domains": domains,
+            }
+        )
 
     return {
         "final_ndr": score.final_ndr,
