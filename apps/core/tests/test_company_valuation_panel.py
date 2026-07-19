@@ -35,3 +35,26 @@ def test_dashboard_shows_valuation(
     )
     assert resp.status_code == 200
     assert "Valoración de resultados".encode() in resp.content
+
+
+def test_dashboard_shows_area_breakdown(
+    client, bootstrap_groups, make_user_with_profile, make_company, survey
+):
+    company = make_company()
+    admin = make_user_with_profile(email="a2@x.mx", company=company)
+    admin.groups.add(bootstrap_groups["Admins"])
+    employee = make_user_with_profile(email="e2@x.mx", company=company)
+    employee.profile.department = "Sistemas"
+    employee.profile.save()
+    assignment = SurveyAssignment.objects.create(
+        company=company, survey=survey, variant=SurveyAssignment.Variant.LARGE,
+        status=SurveyAssignment.Status.ACTIVE)
+    sub = SurveySubmission.objects.create(
+        assignment=assignment, user=employee, status=SurveySubmission.Status.IN_PROGRESS)
+    SubmissionScore.objects.create(submission=sub, final_score=160, final_ndr=c.NDR_MUY_ALTO)
+
+    client.force_login(admin)
+    resp = client.get(reverse("core:company_dashboard_for", args=[company.reference_code]))
+    body = resp.content.decode()
+    assert "Sistemas" in body
+    assert "El área presenta un nivel de riesgo muy alto" in body
