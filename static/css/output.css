@@ -304,6 +304,9 @@
   .col-span-4 {
     grid-column: span 4 / span 4;
   }
+  .-mx-2 {
+    margin-inline: calc(var(--spacing) * -2);
+  }
   .mx-auto {
     margin-inline: auto;
   }
@@ -539,6 +542,9 @@
   .flex-wrap {
     flex-wrap: wrap;
   }
+  .items-baseline {
+    align-items: baseline;
+  }
   .items-center {
     align-items: center;
   }
@@ -678,6 +684,10 @@
   .border-dashed {
     --tw-border-style: dashed;
     border-style: dashed;
+  }
+  .border-dotted {
+    --tw-border-style: dotted;
+    border-style: dotted;
   }
   .border-gray-100 {
     border-color: var(--color-gray-100);
@@ -1140,6 +1150,28 @@
       }
     }
   }
+  .group-hover\:border-b-2 {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        border-bottom-style: var(--tw-border-style);
+        border-bottom-width: 2px;
+      }
+    }
+  }
+  .group-hover\:border-gray-400 {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        border-color: var(--color-gray-400);
+      }
+    }
+  }
+  .group-hover\:text-gray-900 {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        color: var(--color-gray-900);
+      }
+    }
+  }
   .group-hover\:text-indigo-700 {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
@@ -1152,6 +1184,22 @@
       @media (hover: hover) {
         opacity: 100%;
       }
+    }
+  }
+  .group-focus-visible\:border-b-2 {
+    &:is(:where(.group):focus-visible *) {
+      border-bottom-style: var(--tw-border-style);
+      border-bottom-width: 2px;
+    }
+  }
+  .group-focus-visible\:border-gray-400 {
+    &:is(:where(.group):focus-visible *) {
+      border-color: var(--color-gray-400);
+    }
+  }
+  .group-focus-visible\:text-gray-900 {
+    &:is(:where(.group):focus-visible *) {
+      color: var(--color-gray-900);
     }
   }
   .hover\:border-gray-400 {
@@ -1276,6 +1324,11 @@
     &:focus {
       --tw-outline-style: none;
       outline-style: none;
+    }
+  }
+  .focus-visible\:bg-gray-50 {
+    &:focus-visible {
+      background-color: var(--color-gray-50);
     }
   }
   .sm\:relative {

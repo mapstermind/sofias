@@ -74,29 +74,32 @@
       <div class="space-y-4">
         {% for cat in valuation.categories %}
           <div>
-            <div class="flex items-center justify-between gap-3">
-              <span class="text-sm font-semibold text-gray-900">{{ cat.label }}</span>
+            <div tabindex="0" class="group flex items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md outline-none transition-colors hover:bg-gray-50 focus-visible:bg-gray-50">
+              <span class="shrink-0 text-sm font-semibold text-gray-900">{{ cat.label }}</span>
+              <span class="flex-1 border-b border-dotted border-gray-300 transition-all group-hover:border-b-2 group-hover:border-gray-400 group-focus-visible:border-b-2 group-focus-visible:border-gray-400"></span>
               <span class="shrink-0 flex items-center gap-2">
-                <span class="text-sm tabular-nums text-gray-500">{{ cat.score }}</span>
+                <span class="text-sm tabular-nums text-gray-500 transition-colors group-hover:text-gray-900 group-focus-visible:text-gray-900">{{ cat.score }}</span>
                 <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ cat.ndr|ndr_badge }}">{{ cat.ndr_label }}</span>
               </span>
             </div>
             <div class="mt-2 ml-3 pl-3 border-l border-gray-100 space-y-2">
               {% for dom in cat.domains %}
                 <div>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-sm text-gray-700">{{ dom.label }}</span>
+                  <div tabindex="0" class="group flex items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md outline-none transition-colors hover:bg-gray-50 focus-visible:bg-gray-50">
+                    <span class="shrink-0 text-sm text-gray-700 transition-colors group-hover:text-gray-900 group-focus-visible:text-gray-900">{{ dom.label }}</span>
+                    <span class="flex-1 border-b border-dotted border-gray-300 transition-all group-hover:border-b-2 group-hover:border-gray-400 group-focus-visible:border-b-2 group-focus-visible:border-gray-400"></span>
                     <span class="shrink-0 flex items-center gap-2">
-                      <span class="text-sm tabular-nums text-gray-500">{{ dom.score }}</span>
+                      <span class="text-sm tabular-nums text-gray-500 transition-colors group-hover:text-gray-900 group-focus-visible:text-gray-900">{{ dom.score }}</span>
                       <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ dom.ndr|ndr_badge }}">{{ dom.ndr_label }}</span>
                     </span>
                   </div>
                   {% if dom.dimensions %}
                     <ul class="mt-1 ml-3 pl-3 border-l border-gray-100 space-y-1">
                       {% for dim in dom.dimensions %}
-                        <li class="flex items-center justify-between gap-3 text-xs text-gray-500">
-                          <span>{{ dim.label }}</span>
-                          <span class="tabular-nums">{{ dim.score }}</span>
+                        <li tabindex="0" class="group flex items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md outline-none transition-colors hover:bg-gray-50 focus-visible:bg-gray-50 text-xs text-gray-500">
+                          <span class="shrink-0 transition-colors group-hover:text-gray-900 group-focus-visible:text-gray-900">{{ dim.label }}</span>
+                          <span class="flex-1 border-b border-dotted border-gray-300 transition-all group-hover:border-b-2 group-hover:border-gray-400 group-focus-visible:border-b-2 group-focus-visible:border-gray-400"></span>
+                          <span class="shrink-0 tabular-nums transition-colors group-hover:text-gray-900 group-focus-visible:text-gray-900">{{ dim.score }}</span>
                         </li>
                       {% endfor %}
                     </ul>
