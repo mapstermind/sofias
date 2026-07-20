@@ -57,8 +57,23 @@ class Module(models.Model):
         help_text="Stable identifier, unique within the survey. Referenced by "
         "visible_when rules (any_in_module).",
     )
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
+    title = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Optional divider heading shown above the module's questions. "
+        "Leave blank for a module presented as plain paragraph text only "
+        "(see description).",
+    )
+    intro = models.TextField(
+        blank=True,
+        help_text="Optional heading shown above the module's title/divider, "
+        "for guide-level intro text (e.g. a questionnaire's formal name).",
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Optional paragraph text. Shown under the title as a "
+        "subtitle when title is set, or standalone when title is blank.",
+    )
     order = models.PositiveIntegerField(default=0)
     applies_to = models.CharField(
         max_length=10, choices=AppliesTo.choices, default=AppliesTo.ALL

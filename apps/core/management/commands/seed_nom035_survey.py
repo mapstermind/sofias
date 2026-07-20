@@ -39,7 +39,8 @@ class Command(BaseCommand):
             module = Module.objects.create(
                 survey=survey,
                 key=mod_data["key"],
-                title=mod_data["title"],
+                title=mod_data.get("title", ""),
+                intro=mod_data.get("intro", ""),
                 description=mod_data.get("description", ""),
                 order=order,
                 applies_to=mod_data["applies_to"],

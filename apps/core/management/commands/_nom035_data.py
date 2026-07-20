@@ -249,36 +249,114 @@ def build_modules():
         # --- Guía I (all respondents) ---
         {
             "key": "g1-trigger",
+            "intro": (
+                "Cuestionario para identificar a los trabajadores que fueron "
+                "sujetos a acontecimientos traumáticos severos"
+            ),
             "title": "Acontecimiento traumático severo",
             "applies_to": "all",
             "questions": [_boolean("g1-1", GUIA_I_TRIGGER[0])],
         },
         {
-            "key": "g1-followup",
-            "title": "Reacciones ante el acontecimiento",
+            "key": "g1-recuerdos",
+            "title": "Recuerdos persistentes sobre el acontecimiento (durante el último mes)",
             "applies_to": "all",
             "visible_when": {"any_in_module": "g1-trigger", "equals": True},
             "questions": [
-                _boolean(f"g1-{i + 2}", text) for i, text in enumerate(GUIA_I_FOLLOWUP)
+                _boolean(f"g1-{i + 2}", text)
+                for i, text in enumerate(GUIA_I_FOLLOWUP[0:2], start=0)
+            ],
+        },
+        {
+            "key": "g1-esfuerzo",
+            "title": (
+                "Esfuerzo por evitar circunstancias parecidas o asociadas al "
+                "acontecimiento (durante el último mes)"
+            ),
+            "applies_to": "all",
+            "visible_when": {"any_in_module": "g1-trigger", "equals": True},
+            "questions": [
+                _boolean(f"g1-{i + 2}", text)
+                for i, text in enumerate(GUIA_I_FOLLOWUP[2:9], start=2)
+            ],
+        },
+        {
+            "key": "g1-afectacion",
+            "title": "Afectación (durante el último mes)",
+            "applies_to": "all",
+            "visible_when": {"any_in_module": "g1-trigger", "equals": True},
+            "questions": [
+                _boolean(f"g1-{i + 2}", text)
+                for i, text in enumerate(GUIA_I_FOLLOWUP[9:14], start=9)
             ],
         },
         # --- Guía II (small variant) ---
         {
-            "key": "g2-main",
-            "title": "Factores de riesgo psicosocial",
+            "key": "g2-main-1",
+            "intro": (
+                "Cuestionario para identificar los factores de riesgo "
+                "psicosocial en los centros de trabajo"
+            ),
+            "description": (
+                "Para responder las preguntas siguientes considere las "
+                "condiciones de su centro de trabajo, así como la cantidad y "
+                "ritmo de trabajo en los últimos 3 meses."
+            ),
             "applies_to": "small",
-            "questions": _likert_block("g2", GUIA_II_MAIN, 1),
+            "questions": _likert_block("g2", GUIA_II_MAIN[0:9], 1),
         },
         {
-            "key": "g2-clientes",
-            "title": "Atención a clientes y usuarios",
+            "key": "g2-main-2",
+            "description": (
+                "Las preguntas siguientes están relacionadas con las "
+                "actividades que realiza en su trabajo y las responsabilidades "
+                "que tiene."
+            ),
             "applies_to": "small",
+            "questions": _likert_block("g2", GUIA_II_MAIN[9:13], 10),
+        },
+        {
+            "key": "g2-main-3",
+            "description": (
+                "Las preguntas siguientes están relacionadas con el tiempo "
+                "destinado a su trabajo y sus responsabilidades familiares."
+            ),
+            "applies_to": "small",
+            "questions": _likert_block("g2", GUIA_II_MAIN[13:22], 14),
+        },
+        {
+            "key": "g2-main-4",
+            "description": (
+                "Las preguntas siguientes están relacionadas con la "
+                "capacitación e información que recibe sobre su trabajo."
+            ),
+            "applies_to": "small",
+            "questions": _likert_block("g2", GUIA_II_MAIN[22:27], 23),
+        },
+        {
+            "key": "g2-main-5",
+            "description": (
+                "Las preguntas siguientes se refieren a las relaciones con "
+                "sus compañeros de trabajo y su jefe."
+            ),
+            "applies_to": "small",
+            "questions": _likert_block("g2", GUIA_II_MAIN[27:40], 28),
+        },
+        {
+            "key": "g2-clientes-gate",
+            "applies_to": "small",
+            "questions": [_boolean(g2_clientes_gate_code, GATE_CLIENTES)],
+        },
+        {
+            "key": "g2-clientes-followup",
+            "description": (
+                "Las preguntas siguientes están relacionadas con la atención "
+                "a clientes y usuarios."
+            ),
+            "applies_to": "small",
+            "visible_when": {"question": g2_clientes_gate_code, "equals": True},
             "questions": [
-                _boolean(g2_clientes_gate_code, GATE_CLIENTES),
-                *[
-                    _likert(f"g2-{41 + i}", text)
-                    for i, text in enumerate(GUIA_II_CLIENTES)
-                ],
+                _likert(f"g2-{41 + i}", text) for i, text in enumerate(GUIA_II_CLIENTES)
             ],
             "_gate_followups": (
                 g2_clientes_gate_code,
@@ -286,12 +364,20 @@ def build_modules():
             ),
         },
         {
-            "key": "g2-jefe",
-            "title": "Actitudes de los trabajadores que supervisa",
+            "key": "g2-jefe-gate",
             "applies_to": "small",
+            "questions": [_boolean(g2_jefe_gate_code, GATE_JEFE)],
+        },
+        {
+            "key": "g2-jefe-followup",
+            "description": (
+                "Las siguientes preguntas están relacionadas con las "
+                "actitudes de los trabajadores que supervisa."
+            ),
+            "applies_to": "small",
+            "visible_when": {"question": g2_jefe_gate_code, "equals": True},
             "questions": [
-                _boolean(g2_jefe_gate_code, GATE_JEFE),
-                *[_likert(f"g2-{44 + i}", text) for i, text in enumerate(GUIA_II_JEFE)],
+                _likert(f"g2-{44 + i}", text) for i, text in enumerate(GUIA_II_JEFE)
             ],
             "_gate_followups": (
                 g2_jefe_gate_code,
@@ -300,21 +386,140 @@ def build_modules():
         },
         # --- Guía III (large variant) ---
         {
-            "key": "g3-main",
-            "title": "Factores de riesgo psicosocial y entorno organizacional",
+            "key": "g3-main-1",
+            "intro": (
+                "Cuestionario para identificar los factores de riesgo "
+                "psicosocial y evaluar el entorno organizacional en los "
+                "centros de trabajo"
+            ),
+            "description": (
+                "Para responder las siguientes preguntas considere las "
+                "condiciones ambientales de su centro de trabajo."
+            ),
             "applies_to": "large",
-            "questions": _likert_block("g3", GUIA_III_MAIN, 1),
+            "questions": _likert_block("g3", GUIA_III_MAIN[0:5], 1),
         },
         {
-            "key": "g3-clientes",
-            "title": "Atención a clientes y usuarios",
+            "key": "g3-main-2",
+            "description": (
+                "Para responder a las preguntas siguientes piense en la "
+                "cantidad y ritmo de trabajo que tiene."
+            ),
             "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[5:8], 6),
+        },
+        {
+            "key": "g3-main-3",
+            "description": (
+                "Las preguntas siguientes están relacionadas con el "
+                "esfuerzo mental que le exige su trabajo."
+            ),
+            "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[8:12], 9),
+        },
+        {
+            "key": "g3-main-4",
+            "description": (
+                "Las preguntas siguientes están relacionadas con las "
+                "actividades que realiza en su trabajo y las "
+                "responsabilidades que tiene."
+            ),
+            "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[12:16], 13),
+        },
+        {
+            "key": "g3-main-5",
+            "description": (
+                "Las preguntas siguientes están relacionadas con su "
+                "jornada de trabajo."
+            ),
+            "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[16:22], 17),
+        },
+        {
+            "key": "g3-main-6",
+            "description": (
+                "Las preguntas siguientes están relacionadas con las "
+                "decisiones que puede tomar en su trabajo."
+            ),
+            "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[22:28], 23),
+        },
+        {
+            "key": "g3-main-7",
+            "description": (
+                "Las preguntas siguientes están relacionadas con cualquier "
+                "tipo de cambio que ocurra en su trabajo (considere los "
+                "últimos cambios realizados)."
+            ),
+            "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[28:30], 29),
+        },
+        {
+            "key": "g3-main-8",
+            "description": (
+                "Las preguntas siguientes están relacionadas con la "
+                "capacitación e información que se le proporciona sobre su "
+                "trabajo."
+            ),
+            "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[30:36], 31),
+        },
+        {
+            "key": "g3-main-9",
+            "description": (
+                "Las preguntas siguientes están relacionadas con el o los "
+                "jefes con quien tiene contacto."
+            ),
+            "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[36:41], 37),
+        },
+        {
+            "key": "g3-main-10",
+            "description": (
+                "Las preguntas siguientes se refieren a las relaciones con "
+                "sus compañeros."
+            ),
+            "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[41:46], 42),
+        },
+        {
+            "key": "g3-main-11",
+            "description": (
+                "Las preguntas siguientes están relacionadas con la "
+                "información que recibe sobre su rendimiento en el "
+                "trabajo, el reconocimiento, el sentido de pertenencia y "
+                "la estabilidad que le ofrece su trabajo."
+            ),
+            "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[46:56], 47),
+        },
+        {
+            "key": "g3-main-12",
+            "description": (
+                "Las preguntas siguientes están relacionadas con actos de "
+                "violencia laboral (malos tratos, acoso, hostigamiento, "
+                "acoso psicológico)."
+            ),
+            "applies_to": "large",
+            "questions": _likert_block("g3", GUIA_III_MAIN[56:64], 57),
+        },
+        {
+            "key": "g3-clientes-gate",
+            "applies_to": "large",
+            "questions": [_boolean(g3_clientes_gate_code, GATE_CLIENTES)],
+        },
+        {
+            "key": "g3-clientes-followup",
+            "description": (
+                "Las preguntas siguientes están relacionadas con la "
+                "atención a clientes y usuarios."
+            ),
+            "applies_to": "large",
+            "visible_when": {"question": g3_clientes_gate_code, "equals": True},
             "questions": [
-                _boolean(g3_clientes_gate_code, GATE_CLIENTES),
-                *[
-                    _likert(f"g3-{65 + i}", text)
-                    for i, text in enumerate(GUIA_III_CLIENTES)
-                ],
+                _likert(f"g3-{65 + i}", text)
+                for i, text in enumerate(GUIA_III_CLIENTES)
             ],
             "_gate_followups": (
                 g3_clientes_gate_code,
@@ -322,15 +527,21 @@ def build_modules():
             ),
         },
         {
-            "key": "g3-jefe",
-            "title": "Actitudes de las personas que supervisa",
+            "key": "g3-jefe-gate",
             "applies_to": "large",
+            "questions": [_boolean(g3_jefe_gate_code, GATE_JEFE)],
+        },
+        {
+            "key": "g3-jefe-followup",
+            "description": (
+                "Las preguntas siguientes están relacionadas con las "
+                "actitudes de las personas que supervisa."
+            ),
+            "applies_to": "large",
+            "visible_when": {"question": g3_jefe_gate_code, "equals": True},
             "questions": [
-                _boolean(g3_jefe_gate_code, GATE_JEFE),
-                *[
-                    _likert(f"g3-{69 + i}", text)
-                    for i, text in enumerate(GUIA_III_JEFE)
-                ],
+                _likert(f"g3-{69 + i}", text)
+                for i, text in enumerate(GUIA_III_JEFE)
             ],
             "_gate_followups": (
                 g3_jefe_gate_code,

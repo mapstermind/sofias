@@ -64,12 +64,21 @@
 
     {% for module in modules %}
       <div class="module-card mb-8" data-module-key="{{ module.key }}" data-visible-when="{{ module.visible_when|as_json }}">
-        <div class="mb-4 border-b border-gray-200 pb-2">
-          <h2 class="text-lg font-semibold text-gray-700">{{ module.title }}</h2>
-          {% if module.description %}
-            <p class="text-sm text-gray-500 mt-1">{{ module.description }}</p>
-          {% endif %}
-        </div>
+        {% if module.intro %}
+          <h3 class="text-xl font-semibold text-gray-900 mb-3">{{ module.intro }}</h3>
+        {% endif %}
+        {% if module.title %}
+          <div class="mb-4 border-b border-gray-200 pb-2">
+            <h2 class="text-lg font-semibold text-gray-700">{{ module.title }}</h2>
+            {% if module.description %}
+              <p class="text-sm text-gray-500 mt-1">{{ module.description }}</p>
+            {% endif %}
+          </div>
+        {% elif module.description %}
+          <p class="text-sm text-gray-600 mb-4">{{ module.description }}</p>
+        {% else %}
+          <div class="border-t border-gray-200 mb-4"></div>
+        {% endif %}
 
         {% for question in module.questions.all %}
           {% include "surveys/_question.html" %}

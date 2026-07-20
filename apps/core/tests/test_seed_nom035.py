@@ -41,7 +41,7 @@ class TestSeedNom035:
         call_command("seed_nom035_survey")
         survey = Survey.objects.get(key="nom035")
 
-        followup = survey.modules.get(key="g1-followup")
+        followup = survey.modules.get(key="g1-recuerdos")
         assert followup.visible_when == {"any_in_module": "g1-trigger", "equals": True}
 
         gated = Question.objects.get(survey=survey, code="g2-41")
