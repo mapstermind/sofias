@@ -1,5 +1,5 @@
 {% extends "base_app.html" %}
-{% load survey_extras %}
+{% load survey_extras valuation_extras %}
 
 {% block title %}{{ employee_profile.user.first_name }} {{ employee_profile.user.last_name }} — {{ company.name }} | SOFIA-S{% endblock %}
 
@@ -58,23 +58,61 @@
   <h2 class="text-base font-semibold text-gray-900 mb-4">Valoración de resultados</h2>
   <div class="rounded-2xl border border-gray-200 bg-white px-6 py-5">
     {% if valuation %}
-      <p class="text-sm text-gray-900">
-        Nivel de riesgo final:
-        <span class="font-semibold">{{ valuation.final_ndr_label }}</span>
-        <span class="text-gray-500">({{ valuation.final_score }})</span>
-      </p>
-      <p class="mt-1 text-sm text-gray-600">{{ valuation.final_action }}</p>
-      {% if valuation.categories %}
-        <ul class="mt-4 space-y-1">
-          {% for cat in valuation.categories %}
-            <li class="text-sm text-gray-700">
-              {{ cat.label }}: <span class="font-medium">{{ cat.ndr_label }}</span>
-            </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
+      <div class="flex items-center justify-between gap-4 pb-4 mb-4 border-b border-gray-100">
+        <div>
+          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">Nivel de riesgo final</p>
+          <p class="mt-1 text-lg font-bold text-gray-900">
+            {{ valuation.final_ndr_label }}
+            <span class="ml-1 text-sm font-normal text-gray-400">({{ valuation.final_score }})</span>
+          </p>
+        </div>
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset {{ valuation.final_ndr|ndr_badge }}">
+          {{ valuation.final_ndr_label }}
+        </span>
+      </div>
+
+      <div class="space-y-4">
+        {% for cat in valuation.categories %}
+          <div>
+            <div tabindex="0" class="group flex items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md outline-none transition-colors hover:bg-gray-50 focus-visible:bg-gray-50">
+              <span class="shrink-0 text-sm font-semibold text-gray-900">{{ cat.label }}</span>
+              <span class="flex-1 border-b border-dotted border-gray-300 transition-all group-hover:border-b-2 group-hover:border-gray-400 group-focus-visible:border-b-2 group-focus-visible:border-gray-400"></span>
+              <span class="shrink-0 flex items-center gap-2">
+                <span class="text-sm tabular-nums text-gray-500 transition-colors group-hover:text-gray-900 group-focus-visible:text-gray-900">{{ cat.score }}</span>
+                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ cat.ndr|ndr_badge }}">{{ cat.ndr_label }}</span>
+              </span>
+            </div>
+            <div class="mt-2 ml-3 pl-3 border-l border-gray-100 space-y-2">
+              {% for dom in cat.domains %}
+                <div>
+                  <div tabindex="0" class="group flex items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md outline-none transition-colors hover:bg-gray-50 focus-visible:bg-gray-50">
+                    <span class="shrink-0 text-sm text-gray-700 transition-colors group-hover:text-gray-900 group-focus-visible:text-gray-900">{{ dom.label }}</span>
+                    <span class="flex-1 border-b border-dotted border-gray-300 transition-all group-hover:border-b-2 group-hover:border-gray-400 group-focus-visible:border-b-2 group-focus-visible:border-gray-400"></span>
+                    <span class="shrink-0 flex items-center gap-2">
+                      <span class="text-sm tabular-nums text-gray-500 transition-colors group-hover:text-gray-900 group-focus-visible:text-gray-900">{{ dom.score }}</span>
+                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ dom.ndr|ndr_badge }}">{{ dom.ndr_label }}</span>
+                    </span>
+                  </div>
+                  {% if dom.dimensions %}
+                    <ul class="mt-1 ml-3 pl-3 border-l border-gray-100 space-y-1">
+                      {% for dim in dom.dimensions %}
+                        <li tabindex="0" class="group flex items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md outline-none transition-colors hover:bg-gray-50 focus-visible:bg-gray-50 text-xs text-gray-500">
+                          <span class="shrink-0 transition-colors group-hover:text-gray-900 group-focus-visible:text-gray-900">{{ dim.label }}</span>
+                          <span class="flex-1 border-b border-dotted border-gray-300 transition-all group-hover:border-b-2 group-hover:border-gray-400 group-focus-visible:border-b-2 group-focus-visible:border-gray-400"></span>
+                          <span class="shrink-0 tabular-nums transition-colors group-hover:text-gray-900 group-focus-visible:text-gray-900">{{ dim.score }}</span>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
       {% if valuation.guia1_positive %}
-        <p class="mt-4 text-sm font-medium text-amber-700">
+        <p class="mt-4 pt-4 border-t border-gray-100 text-sm font-medium text-amber-700">
           Usuario positivo a un acontecimiento traumático severo.
         </p>
       {% endif %}
@@ -96,7 +134,7 @@
           <div class="flex items-center justify-between gap-4 mb-1.5">
             <div class="min-w-0">
               <span class="text-sm font-medium text-gray-700 truncate">{{ prog.assignment.survey.title }}</span>
-              <span class="ml-1.5 text-xs text-gray-400">{{ prog.assignment.get_variant_display }}</span>
+              <span class="ml-1.5 text-xs font-semibold text-gray-700">({{ prog.assignment.get_variant_display }})</span>
             </div>
             <div class="shrink-0 flex items-center gap-2">
               <span class="text-sm font-semibold text-gray-900">{{ prog.percent }}%</span>
@@ -137,7 +175,7 @@
           <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
             <div class="min-w-0">
               <p class="font-medium text-gray-900 truncate">{{ item.assignment.survey.title }}</p>
-              <p class="text-xs text-gray-400 mt-0.5">{{ item.assignment.get_variant_display }}</p>
+              <p class="text-xs font-semibold text-gray-700 mt-0.5">({{ item.assignment.get_variant_display }})</p>
             </div>
             {% if not item.submission %}
               <span class="shrink-0 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 ring-1 ring-inset ring-gray-500/20">Sin iniciar</span>

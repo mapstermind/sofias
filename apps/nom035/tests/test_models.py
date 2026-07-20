@@ -1,4 +1,5 @@
 import pytest
+from django.core.exceptions import ValidationError
 
 from apps.nom035 import constants as c
 from apps.nom035.models import GroupScore, SubmissionScore
@@ -49,3 +50,22 @@ def test_group_score_unique_per_level_and_key(active_assignment):
             score=9,
             ndr=c.NDR_BAJO,
         )
+
+
+def test_dimension_group_score_allows_blank_ndr(active_assignment):
+    # Dimensión is score-only (no NDR) by design; full_clean() must accept ndr="".
+    sub = _submission(active_assignment)
+    score = SubmissionScore.objects.create(
+        submission=sub, final_score=10, final_ndr=c.NDR_NULO
+    )
+    group_score = GroupScore(
+        submission_score=score,
+        level=c.LEVEL_DIMENSION,
+        key="trabajos_peligrosos",
+        score=4,
+        ndr="",
+    )
+    try:
+        group_score.full_clean()
+    except ValidationError as e:
+        pytest.fail(f"full_clean() raised ValidationError unexpectedly: {e}")

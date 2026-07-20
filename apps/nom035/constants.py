@@ -14,3 +14,4 @@ NDR_LABELS = {
 
 LEVEL_CATEGORIA = "categoria"
 LEVEL_DOMINIO = "dominio"
+LEVEL_DIMENSION = "dimension"

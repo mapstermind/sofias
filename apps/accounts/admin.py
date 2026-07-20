@@ -87,9 +87,9 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "position", "company", "is_activated")
+    list_display = ("user", "position", "department", "company", "is_activated")
     list_filter = ("is_activated",)
-    search_fields = ("user__username", "user__email", "position")
+    search_fields = ("user__username", "user__email", "position", "department")
     raw_id_fields = ("user",)
 
 

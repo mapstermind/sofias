@@ -12,10 +12,11 @@ class NDR(models.TextChoices):
 
 
 class GroupLevel(models.TextChoices):
-    # NOM-035 defines NDR thresholds only at dominio/categoría/final, so no
-    # dimensión level is scored (see docs/platform/nom-035-analytics.md).
+    # NOM-035 defines NDR thresholds only at dominio/categoría/final. Dimensión is
+    # stored score-only (no NDR) so the per-employee panel can show it.
     CATEGORIA = c.LEVEL_CATEGORIA, "Categoría"
     DOMINIO = c.LEVEL_DOMINIO, "Dominio"
+    DIMENSION = c.LEVEL_DIMENSION, "Dimensión"
 
 
 class SubmissionScore(models.Model):
@@ -41,7 +42,9 @@ class GroupScore(models.Model):
     level = models.CharField(max_length=12, choices=GroupLevel.choices)
     key = models.CharField(max_length=64)
     score = models.IntegerField(default=0)
-    ndr = models.CharField(max_length=10, choices=NDR.choices, default=NDR.NULO)
+    ndr = models.CharField(
+        max_length=10, choices=NDR.choices, default=NDR.NULO, blank=True
+    )
 
     class Meta:
         unique_together = ("submission_score", "level", "key")

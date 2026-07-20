@@ -1,5 +1,6 @@
 import pytest
 
+from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
 from apps.nom035.aggregates import company_valuation, employee_valuation
 from apps.nom035.models import SubmissionScore
@@ -41,10 +42,82 @@ def test_company_valuation_counts(scored):
     assert data["distribution"][c.NDR_MUY_ALTO] == 1
 
 
-def test_employee_valuation_returns_text(scored):
+def test_company_valuation_area_breakdown(make_company, make_user_with_profile, survey):
+    from apps.nom035 import constants as c
+    from apps.nom035.models import SubmissionScore
+
+    company = make_company()
+
+    def _score(email, dept, ndr):
+        user = make_user_with_profile(email=email, company=company)
+        user.profile.department = dept
+        user.profile.save()
+        assignment = SurveyAssignment.objects.create(
+            company=company,
+            survey=survey,
+            variant=SurveyAssignment.Variant.LARGE,
+            status=SurveyAssignment.Status.ACTIVE,
+        )
+        sub = SurveySubmission.objects.create(
+            assignment=assignment, user=user, status=SurveySubmission.Status.IN_PROGRESS
+        )
+        SubmissionScore.objects.create(submission=sub, final_score=1, final_ndr=ndr)
+
+    _score("a@x.mx", "Sistemas", c.NDR_MUY_ALTO)
+    _score("b@x.mx", "sistemas ", c.NDR_BAJO)  # same area, different casing/space
+    _score("c@x.mx", "", c.NDR_MEDIO)  # → "Sin área"
+
+    data = company_valuation(company)
+    areas = {a["label"]: a for a in data["areas"]}
+    assert set(areas) == {"Sistemas", "Sin área"}
+    sistemas = areas["Sistemas"]
+    assert sistemas["scored_count"] == 2
+    assert sistemas["needing_action"] == 1
+    assert sistemas["action_ndr"] == c.NDR_MUY_ALTO  # most-severe present
+    assert sistemas["action"] == cfg.action_text(c.NDR_MUY_ALTO)
+    assert areas["Sin área"]["action_ndr"] == c.NDR_MEDIO
+
+
+def test_employee_valuation_returns_nested_scores(scored):
+    from apps.nom035 import constants as c
+    from apps.nom035.models import GroupScore, SubmissionScore
+
+    score = SubmissionScore.objects.get(submission__user=scored["user"])
+    GroupScore.objects.create(
+        submission_score=score,
+        level=c.LEVEL_CATEGORIA,
+        key="ambiente_de_trabajo",
+        score=13,
+        ndr=c.NDR_ALTO,
+    )
+    GroupScore.objects.create(
+        submission_score=score,
+        level=c.LEVEL_DOMINIO,
+        key="condiciones_en_el_ambiente_de_trabajo",
+        score=13,
+        ndr=c.NDR_ALTO,
+    )
+    GroupScore.objects.create(
+        submission_score=score,
+        level=c.LEVEL_DIMENSION,
+        key="trabajos_peligrosos",
+        score=4,
+        ndr="",
+    )
+
     data = employee_valuation(scored["user"], scored["company"])
     assert data["final_ndr"] == c.NDR_MUY_ALTO
-    assert data["final_action"]
+    assert "final_action" not in data
+    cat = data["categories"][0]
+    assert cat["key"] == "ambiente_de_trabajo"
+    assert cat["score"] == 13
+    assert cat["ndr_label"] == "Alto"
+    dom = cat["domains"][0]
+    assert dom["score"] == 13
+    dim = dom["dimensions"][0]
+    assert dim["key"] == "trabajos_peligrosos"
+    assert dim["score"] == 4
+    assert "ndr" not in dim  # dimensión is score-only
 
 
 def test_employee_valuation_none_when_unscored(make_company, make_user):

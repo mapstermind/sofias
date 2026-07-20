@@ -159,8 +159,8 @@ class SurveyAssignment(models.Model):
         CLOSED = "closed", "Closed"
 
     class Variant(models.TextChoices):
-        SMALL = "small", "Pequeña"
-        LARGE = "large", "Grande"
+        SMALL = "small", "Guía II"
+        LARGE = "large", "Guía III"
 
     company = models.ForeignKey(
         "accounts.Company",

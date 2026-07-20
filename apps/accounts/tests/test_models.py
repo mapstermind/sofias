@@ -1,10 +1,21 @@
 import pytest
 from django.utils import timezone
 
-from apps.accounts.models import EmailOTP, SetupAccessCode
+from apps.accounts.models import EmailOTP, SetupAccessCode, UserProfile
 from apps.accounts.utils import generate_unique_username
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.mark.django_db
+def test_userprofile_department_defaults_blank_and_stores(make_user):
+    user = make_user(email="dept@x.mx")
+    profile = UserProfile.objects.create(user=user)
+    assert profile.department == ""
+    profile.department = "Sistemas"
+    profile.save()
+    profile.refresh_from_db()
+    assert profile.department == "Sistemas"
 
 
 class TestEmailOTPIsValid:

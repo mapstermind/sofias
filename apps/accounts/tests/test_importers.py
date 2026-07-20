@@ -285,3 +285,34 @@ class TestImportUsersFromCSV:
         assert result.skipped_count == 1
         assert not User.objects.filter(email="skipped-password@example.com").exists()
         assert not SetupAccessCode.objects.exists()
+
+    def test_import_sets_department_when_column_present(
+        self, bootstrap_groups, make_company
+    ):
+        from apps.accounts.importers import import_users_from_csv
+        from apps.accounts.models import UserProfile
+
+        company = make_company()
+        csv_text = (
+            "email,company_reference_code,group,auth_method,department\n"
+            f"dep1@x.mx,{company.reference_code},Employees,otp,Sistemas\n"
+        )
+        result = import_users_from_csv(csv_text)
+        assert result.created_count == 1
+        profile = UserProfile.objects.get(user__email="dep1@x.mx")
+        assert profile.department == "Sistemas"
+
+    def test_import_leaves_department_blank_when_column_absent(
+        self, bootstrap_groups, make_company
+    ):
+        from apps.accounts.importers import import_users_from_csv
+        from apps.accounts.models import UserProfile
+
+        company = make_company()
+        csv_text = (
+            "email,company_reference_code,group,auth_method\n"
+            f"dep2@x.mx,{company.reference_code},Employees,otp\n"
+        )
+        result = import_users_from_csv(csv_text)
+        assert result.created_count == 1
+        assert UserProfile.objects.get(user__email="dep2@x.mx").department == ""
