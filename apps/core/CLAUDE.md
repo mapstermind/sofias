@@ -20,6 +20,13 @@ All are `LoginRequiredMixin` class-based views that authorize via the custom per
 
 **Convention:** each view that accepts an optional `reference_code` shows the caller's own company when it's absent, or an arbitrary company (admin-only, `can_manage_surveys`) when present. The list/detail views are heavily optimized to avoid N+1 — prefetch/annotate maps are built up front; preserve that pattern when editing.
 
+## Template filters (`templatetags/valuation_extras.py`)
+
+`ndr_badge` and `ndr_bar` — the single source of truth for NDR→Tailwind-color
+mapping (Nulo/Bajo/Medio/Alto/Muy alto), used by the "Valoración de resultados"
+panels (`employee_detail.html`, `company_dashboard.html`). Add new NDR-derived
+colors here, not as literals in a template.
+
 ## Management commands (`management/commands/`)
 
 ```bash

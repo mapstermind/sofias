@@ -1,7 +1,8 @@
 # nom035
 
 The **NOM-035 valuation engine**: turns submitted survey answers into scores and a
-Nivel de Riesgo (NDR), and surfaces them as text in the `core` dashboards. This app
+Nivel de Riesgo (NDR), and surfaces them in the `core` dashboards as color-coded
+NDR badges over a categoría→dominio→dimensión hierarchy. This app
 is **NOM-035-specific by design** — a future instrument gets its own app, not a
 generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-processing-apps.md`).
 

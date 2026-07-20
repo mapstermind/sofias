@@ -14,7 +14,7 @@ folder; for the reasoning behind a structural choice see the ADRs in `docs/adr/`
 
 | App | Role | Registered |
 |---|---|---|
-| `accounts` | Custom user (email + OTP login), companies, roles/permissions, CSV import | ✅ |
+| `accounts` | Custom user (email + OTP login), companies, roles/permissions, CSV import, employee position/department metadata | ✅ |
 | `surveys` | The **instrument authoring/structure base**: `Survey → Module → Question → Choice`, assignments, and survey-taking | ✅ |
 | `responses` | Response storage: `SurveySubmission` + `Answer` | ✅ |
 | `nom035` | The **NOM-035 valuation engine**: answers → scores → Nivel de Riesgo (NDR) + Guía I referral flag | ✅ |
@@ -52,14 +52,21 @@ frameworks are unwarranted standing complexity.
 
 Only **one** instrument (NOM-035) exists today, so the base+engine split is a
 designed-for pattern validated once, not yet exercised across multiple instruments.
-Two things do not live where the clean pattern would eventually put them:
+Three things do not live where the clean pattern would eventually put them:
 
 - **The NOM-035 instrument definition/seed** lives in `apps/core`
   (`seed_nom035_survey`, data in `_nom035_data.py`), not in `surveys` or `nom035`.
-- **Results presentation** (the text-only "Valoración de resultados" panels)
-  currently renders in `apps/core` views and templates, calling `nom035`'s
-  aggregate helpers. `apps/reports` is reserved as a future, dedicated reporting
-  home but is an empty, unregistered stub today.
+- **Results presentation** (color-coded NDR badges over a nested
+  categoría→dominio→dimensión hierarchy, plus a per-área breakdown on the
+  company dashboard) currently renders in `apps/core` views and templates,
+  calling `nom035`'s aggregate helpers. `apps/reports` is reserved as a future,
+  dedicated reporting home but is an empty, unregistered stub today.
+- **`SurveyAssignment.Variant`'s display labels are NOM-035-specific**
+  (`"Guía II"`/`"Guía III"`) despite `SurveyAssignment` living in the
+  instrument-agnostic `apps/surveys` app. This was accepted as-is when the
+  labels were introduced; **revisit it when a second instrument is added** —
+  those labels would otherwise leak NOM-035 vocabulary onto an unrelated
+  instrument's assignments.
 
 ## End-to-end data flow
 
@@ -68,7 +75,7 @@ seed (apps/core)          →  Survey → Module → Question → Choice        
 assign to a Company       →  SurveyAssignment (frozen variant by headcount)
 employee takes the survey →  SurveySubmission + Answer (JSON, typed)     (apps/responses)
 submission completed      →  post_save signal materializes scores        (apps/nom035)
-                             SubmissionScore + GroupScore (per dominio/categoría)
+                             SubmissionScore + GroupScore (per dominio/categoría/dimensión)
 view results              →  dashboards + valuation panels               (apps/core)
                              gated on can_view_insights
 ```
@@ -86,6 +93,9 @@ with `python manage.py recompute_nom035_scores`.
   permission codenames (e.g. `can_view_dashboard`, `can_view_insights`).
 - **Company isolation** — all response and valuation data traces back to a
   `SurveyAssignment` belonging to exactly one `Company`.
+- **Área/department grouping** — `UserProfile.department` (free-text) groups
+  employees for `nom035.company_valuation`'s per-área breakdown; a blank
+  department falls into a "Sin área" bucket.
 
 ## Where to read next
 
