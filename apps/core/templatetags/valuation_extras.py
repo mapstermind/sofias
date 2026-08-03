@@ -33,3 +33,24 @@ def ndr_badge(ndr):
 def ndr_bar(ndr):
     """Tailwind background class for an NDR distribution-bar segment."""
     return _BAR.get(ndr, _NEUTRAL_BAR)
+
+
+@register.filter
+def ndr_scale(ndr):
+    """The five NDR levels in order, marked up to where `ndr` sits.
+
+    NOM-035 risk is an ordinal scale, so a single badge says the level without
+    saying where it falls. Feeds `core/_ndr_scale.html`: every step up to and
+    including the reached one is colored, the rest stay muted.
+    """
+    reached_index = c.NDR_ORDER.index(ndr) if ndr in c.NDR_ORDER else -1
+    return [
+        {
+            "key": level,
+            "label": c.NDR_LABELS[level],
+            "bar": _BAR[level] if index <= reached_index else _NEUTRAL_BAR,
+            "reached": index <= reached_index,
+            "active": index == reached_index,
+        }
+        for index, level in enumerate(c.NDR_ORDER)
+    ]

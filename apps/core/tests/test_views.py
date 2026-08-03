@@ -2,6 +2,9 @@ import math
 
 import pytest
 from django.contrib.auth.models import Permission
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+from django.utils.html import strip_tags
 
 from apps.accounts.models import User, UserProfile
 from apps.core.views import _representative_minimum
@@ -16,6 +19,54 @@ def _give_perm(user, codename):
     perm = Permission.objects.get(codename=codename)
     user.user_permissions.add(perm)
     return User.objects.get(pk=user.pk)
+
+
+@pytest.fixture
+def gated_survey(db, survey):
+    """Four questions, two of them behind a gate — the shape NOM-035 uses.
+
+    Answering the gate "no" leaves a survey the backend calls completed with
+    only 2 of the 4 authored questions answered.
+    """
+    from apps.surveys.models import Module, Question
+
+    module = Module.objects.create(
+        survey=survey, key="base", title="Base", applies_to="all", order=0
+    )
+    gate = Question.objects.create(
+        module=module, code="gate-q", question_type="boolean", text="¿Es jefe?"
+    )
+    plain = Question.objects.create(
+        module=module, code="plain", question_type="text", text="Puesto"
+    )
+    for n in (1, 2):
+        Question.objects.create(
+            module=module,
+            code=f"f{n}",
+            question_type="text",
+            text=f"Follow {n}",
+            visible_when={"question": "gate-q", "equals": True},
+        )
+    return {"survey": survey, "gate": gate, "plain": plain}
+
+
+def _complete_with_gate_closed(company, employee, gated_survey):
+    """A completed submission that answered only the 2 always-visible questions."""
+    assignment = SurveyAssignment.objects.create(
+        company=company, survey=gated_survey["survey"], variant="small"
+    )
+    submission = SurveySubmission.objects.create(
+        assignment=assignment,
+        user=employee,
+        status=SurveySubmission.Status.COMPLETED,
+    )
+    Answer.objects.create(
+        submission=submission, question=gated_survey["gate"], value=False
+    )
+    Answer.objects.create(
+        submission=submission, question=gated_survey["plain"], value="Analista"
+    )
+    return assignment
 
 
 # ── _representative_minimum ───────────────────────────────────────────────────
@@ -370,6 +421,64 @@ class TestCompanyEmployeeListView:
         assert "Activado".encode() in response.content
         assert "No activado".encode() in response.content
 
+    def test_completed_gated_survey_reads_100_percent(
+        self, client, make_user, make_company, make_user_with_profile, gated_survey
+    ):
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        emp = make_user_with_profile(email="emp@example.com", company=company)
+        _complete_with_gate_closed(company, emp, gated_survey)
+
+        client.force_login(viewer)
+        response = client.get(self.URL)
+
+        entry = next(
+            m for m in response.context["members"] if m["profile"].user_id == emp.id
+        )
+        prog = entry["survey_progress"][0]
+        assert prog["percent"] == 100
+        assert prog["answered"] == prog["total"] == 2
+        assert prog["not_applicable"] == 2
+
+    def test_query_count_does_not_grow_with_members(
+        self, client, make_user, make_company, make_user_with_profile, gated_survey
+    ):
+        """Progress now needs answer values, not just counts — it must still be
+        one sweep, with the module prefetch shared across every member."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        assignment = SurveyAssignment.objects.create(
+            company=company, survey=gated_survey["survey"], variant="small"
+        )
+        client.force_login(viewer)
+        offset = 0
+
+        def add_members(count):
+            nonlocal offset
+            for i in range(offset, offset + count):
+                emp = make_user_with_profile(
+                    email=f"bulk-{i}@example.com", company=company
+                )
+                submission = SurveySubmission.objects.create(
+                    assignment=assignment,
+                    user=emp,
+                    status=SurveySubmission.Status.COMPLETED,
+                )
+                Answer.objects.create(
+                    submission=submission, question=gated_survey["gate"], value=False
+                )
+            offset += count
+
+        def query_count():
+            with CaptureQueriesContext(connection) as captured:
+                assert client.get(self.URL).status_code == 200
+            return len(captured)
+
+        add_members(2)
+        baseline = query_count()
+        add_members(8)
+        assert query_count() == baseline
+
 
 # ── EmployeeDetailView ────────────────────────────────────────────────────────
 
@@ -563,3 +672,110 @@ class TestEmployeeDetailView:
         assert prog["total"] == 9
         assert prog["percent"] == 33
         assert prog["status"] == "in_progress"
+
+    def test_completed_gated_survey_reads_100_percent(
+        self, client, make_user, make_company, make_user_with_profile, gated_survey
+    ):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        _complete_with_gate_closed(company, emp, gated_survey)
+
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+
+        prog = response.context["survey_progress"][0]
+        assert prog["status"] == "completed"
+        assert prog["percent"] == 100
+        assert prog["answered"] == prog["total"] == 2
+        # The two gated-out questions are reported, not silently dropped.
+        assert prog["not_applicable"] == 2
+
+    def test_gated_out_questions_explained_in_page(
+        self, client, make_user, make_company, make_user_with_profile, gated_survey
+    ):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        _complete_with_gate_closed(company, emp, gated_survey)
+
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+
+        # Collapse whitespace/markup so the assertion is on the visible copy.
+        text = " ".join(strip_tags(response.content.decode()).split())
+        assert "2 de 2 respondidas (2 no aplican)" in text
+
+    # ── valoración panel ──────────────────────────────────────────────────────
+
+    def test_valuation_panel_hidden_without_can_view_insights(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+        assert response.context["valuation"] is None
+        assert "Valoración de resultados" not in response.content.decode()
+
+    def test_valuation_empty_state_points_at_completion(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        viewer = self._make_viewer(make_user, company, "can_view_insights")
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+        assert (
+            "La valoración se genera al completar la encuesta."
+            in response.content.decode()
+        )
+
+    def test_valuation_panel_renders_scale_and_categories(
+        self, client, make_user, make_company, make_user_with_profile, survey
+    ):
+        from apps.nom035 import constants as nom
+        from apps.nom035.models import GroupScore, SubmissionScore
+
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        assignment = SurveyAssignment.objects.create(
+            company=company, survey=survey, variant=SurveyAssignment.Variant.LARGE
+        )
+        # In-progress so the completion signal does not overwrite these values.
+        submission = SurveySubmission.objects.create(
+            assignment=assignment, user=emp, status=SurveySubmission.Status.IN_PROGRESS
+        )
+        score = SubmissionScore.objects.create(
+            submission=submission,
+            final_score=160,
+            final_ndr=nom.NDR_MUY_ALTO,
+            guia1_positive=True,
+        )
+        for level, key, value, ndr in [
+            (nom.LEVEL_CATEGORIA, "ambiente_de_trabajo", 13, nom.NDR_ALTO),
+            (
+                nom.LEVEL_DOMINIO,
+                "condiciones_en_el_ambiente_de_trabajo",
+                13,
+                nom.NDR_ALTO,
+            ),
+            (nom.LEVEL_DIMENSION, "trabajos_peligrosos", 4, ""),
+        ]:
+            GroupScore.objects.create(
+                submission_score=score, level=level, key=key, score=value, ndr=ndr
+            )
+
+        viewer = self._make_viewer(make_user, company, "can_view_insights")
+        client.force_login(viewer)
+        body = client.get(self._url(emp.id)).content.decode()
+
+        assert "Nivel de riesgo final" in body
+        assert "160 puntos" in body
+        assert "Nivel de riesgo Muy alto" in body  # the 5-step scale's aria-label
+        assert "Ambiente de trabajo" in body
+        assert "Usuario positivo a un acontecimiento traumático severo." in body
+        # The dominio row is itself the disclosure that reveals its dimensiones.
+        assert "<details" in body
+        assert "Trabajos peligrosos" in body

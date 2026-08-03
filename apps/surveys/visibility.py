@@ -53,13 +53,16 @@ def is_visible(rule, answers_by_code, module_to_codes=None):
     return True
 
 
-def visible_questions(assignment, answers_by_code):
+def visible_questions_for_modules(modules, answers_by_code):
     """
-    Ordered list of Questions visible for this assignment given the current
-    answers (keyed by question code). Applies variant filtering, then module
-    rules, then per-question rules.
+    Ordered list of Questions visible across already-fetched `modules`, given
+    the current answers (keyed by question code). Applies module rules, then
+    per-question rules.
+
+    Takes modules rather than an assignment so callers evaluating many
+    respondents (dashboards, employee lists) can prefetch once instead of
+    issuing a query per respondent.
     """
-    modules = list(assignment.modules_for_variant().prefetch_related("questions"))
     module_to_codes = {m.key: [q.code for q in m.questions.all()] for m in modules}
 
     result = []
@@ -70,3 +73,31 @@ def visible_questions(assignment, answers_by_code):
             if is_visible(question.visible_when, answers_by_code, module_to_codes):
                 result.append(question)
     return result
+
+
+def visible_questions(assignment, answers_by_code):
+    """
+    Ordered list of Questions visible for this assignment given the current
+    answers (keyed by question code). Applies variant filtering, then delegates
+    to `visible_questions_for_modules`.
+    """
+    modules = list(assignment.modules_for_variant().prefetch_related("questions"))
+    return visible_questions_for_modules(modules, answers_by_code)
+
+
+def progress_for_modules(modules, answers_by_qid):
+    """
+    `(answered, total)` over the questions that apply given the answers so far.
+
+    `answers_by_qid` maps `Question.id` to its stored value. `total` counts only
+    visible questions, so answers stranded behind a gate the respondent later
+    flipped are ignored and `answered` can never exceed `total`.
+    """
+    answers_by_code = {
+        q.code: answers_by_qid.get(q.id)
+        for module in modules
+        for q in module.questions.all()
+    }
+    visible = visible_questions_for_modules(modules, answers_by_code)
+    answered = sum(1 for q in visible if answers_by_qid.get(q.id) not in (None, "", []))
+    return answered, len(visible)

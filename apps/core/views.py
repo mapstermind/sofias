@@ -9,6 +9,7 @@ from django.views import View
 from apps.accounts.models import Company, UserProfile
 from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import Module, SurveyAssignment
+from apps.surveys.visibility import progress_for_modules
 
 
 def _representative_minimum(n: int) -> int | None:
@@ -24,6 +25,26 @@ def _variant_question_count(assignment) -> int:
     return assignment.survey.questions.filter(
         module__applies_to__in=[Module.AppliesTo.ALL, assignment.variant]
     ).count()
+
+
+def _progress_entry(assignment, modules, nominal_total, answers_by_qid, status):
+    """One `survey_progress` row.
+
+    `answered`/`total` come from `progress_for_modules`, so they count only the
+    questions that apply given the answers so far — the same rule the
+    survey-taking page uses. `not_applicable` is the remainder of the variant's
+    questions that a gate answer ruled out, which is what lets the UI explain a
+    completed survey that answered fewer questions than the instrument holds.
+    """
+    answered, total = progress_for_modules(modules, answers_by_qid)
+    return {
+        "assignment": assignment,
+        "answered": answered,
+        "total": total,
+        "percent": round(answered / total * 100) if total > 0 else 0,
+        "not_applicable": max(nominal_total - total, 0),
+        "status": status,
+    }
 
 
 class HomeView(LoginRequiredMixin, View):
@@ -234,17 +255,26 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
         # Pre-fetch total question counts per assignment to avoid N+1
         total_questions_map = {a.id: _variant_question_count(a) for a in assignments}
 
-        # Pre-fetch all answers for this company's assignments in one query
-        answered_map: dict[tuple[int, int], int] = {}
-        answer_qs = (
-            Answer.objects.filter(submission__assignment__in=assignments)
-            .values("submission__user_id", "submission__assignment_id")
-            .annotate(count=Count("id"))
+        # One module prefetch per assignment, reused for every member below.
+        modules_map = {
+            a.id: list(a.modules_for_variant().prefetch_related("questions"))
+            for a in assignments
+        }
+
+        # Pre-fetch all answers for this company's assignments in one query.
+        # Values (not just counts) are needed to evaluate the `visible_when`
+        # gates that decide which questions apply to each respondent.
+        answers_map: dict[tuple[int, int], dict[int, object]] = {}
+        answer_rows = Answer.objects.filter(
+            submission__assignment__in=assignments
+        ).values_list(
+            "submission__user_id",
+            "submission__assignment_id",
+            "question_id",
+            "value",
         )
-        for row in answer_qs:
-            answered_map[
-                (row["submission__user_id"], row["submission__assignment_id"])
-            ] = row["count"]
+        for user_id, assignment_id, question_id, value in answer_rows:
+            answers_map.setdefault((user_id, assignment_id), {})[question_id] = value
 
         # Pre-fetch submission statuses per (user, assignment)
         submission_status_map: dict[tuple[int, int], str] = {}
@@ -262,23 +292,16 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
         members_data = []
         for profile in profiles:
             user = profile.user
-            survey_progress = []
-            for assignment in assignments:
-                total = total_questions_map[assignment.id]
-                answered = answered_map.get((user.id, assignment.id), 0)
-                percent = round(answered / total * 100) if total > 0 else 0
-                status = submission_status_map.get(
-                    (user.id, assignment.id), "not_started"
+            survey_progress = [
+                _progress_entry(
+                    assignment,
+                    modules_map[assignment.id],
+                    total_questions_map[assignment.id],
+                    answers_map.get((user.id, assignment.id), {}),
+                    submission_status_map.get((user.id, assignment.id), "not_started"),
                 )
-                survey_progress.append(
-                    {
-                        "assignment": assignment,
-                        "answered": answered,
-                        "total": total,
-                        "percent": percent,
-                        "status": status,
-                    }
-                )
+                for assignment in assignments
+            ]
             members_data.append(
                 {
                     "profile": profile,
@@ -338,24 +361,34 @@ class EmployeeDetailView(LoginRequiredMixin, View):
             assignment__in=assignments, user=employee_user
         ).prefetch_related("answers")
         submissions_by_aid = {s.assignment_id: s for s in submissions_qs}
+        answers_by_aid = {
+            aid: {a.question_id: a for a in submission.answers.all()}
+            for aid, submission in submissions_by_aid.items()
+        }
 
-        # Progress bars (always visible to can_manage_employees users).
+        # One module prefetch per assignment, shared by progress and answers.
+        modules_map = {
+            a.id: list(a.modules_for_variant().prefetch_related("questions__choices"))
+            for a in assignments
+        }
+
+        # Progress rings (always visible to can_manage_employees users).
         total_questions_map = {a.id: _variant_question_count(a) for a in assignments}
         survey_progress = []
         for assignment in assignments:
             submission = submissions_by_aid.get(assignment.id)
-            total = total_questions_map[assignment.id]
-            answered = submission.answers.count() if submission else 0
-            percent = round(answered / total * 100) if total > 0 else 0
-            status = submission.status if submission else "not_started"
+            values_by_qid = {
+                qid: answer.value
+                for qid, answer in answers_by_aid.get(assignment.id, {}).items()
+            }
             survey_progress.append(
-                {
-                    "assignment": assignment,
-                    "answered": answered,
-                    "total": total,
-                    "percent": percent,
-                    "status": status,
-                }
+                _progress_entry(
+                    assignment,
+                    modules_map[assignment.id],
+                    total_questions_map[assignment.id],
+                    values_by_qid,
+                    submission.status if submission else "not_started",
+                )
             )
 
         # Full answers breakdown (only for can_view_submissions).
@@ -363,18 +396,7 @@ class EmployeeDetailView(LoginRequiredMixin, View):
         if request.user.has_perm("accounts.can_view_submissions"):
             submissions_data = []
             for assignment in assignments:
-                submission = submissions_by_aid.get(assignment.id)
-                answers_by_qid = (
-                    {a.question_id: a for a in submission.answers.all()}
-                    if submission
-                    else {}
-                )
-
-                modules = list(
-                    assignment.modules_for_variant().prefetch_related(
-                        "questions__choices"
-                    )
-                )
+                answers_by_qid = answers_by_aid.get(assignment.id, {})
 
                 modules_with_answers = [
                     {
@@ -384,13 +406,13 @@ class EmployeeDetailView(LoginRequiredMixin, View):
                             for q in module.questions.all()
                         ],
                     }
-                    for module in modules
+                    for module in modules_map[assignment.id]
                 ]
 
                 submissions_data.append(
                     {
                         "assignment": assignment,
-                        "submission": submission,
+                        "submission": submissions_by_aid.get(assignment.id),
                         "modules": modules_with_answers,
                     }
                 )
@@ -411,5 +433,6 @@ class EmployeeDetailView(LoginRequiredMixin, View):
                 "survey_progress": survey_progress,
                 "submissions_data": submissions_data,
                 "valuation": valuation,
+                "container_width": "max-w-6xl",
             },
         )

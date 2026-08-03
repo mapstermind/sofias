@@ -25,6 +25,10 @@ This is the central concept. Understand it before changing `models.py`. There is
 
 Null/empty = always visible. A submission is `COMPLETED` only when all **visible** questions are answered; hidden questions never block completion. `_normalize` loosely coerces `"si"/"sí"/"true"` etc. to booleans so rules match boolean answers.
 
+Two companions exist for callers evaluating many respondents at once (dashboards, employee lists):
+- `visible_questions_for_modules(modules, answers_by_code)` — same rules against already-fetched modules, so the prefetch happens once instead of per respondent.
+- `progress_for_modules(modules, answers_by_qid)` → `(answered, total)` over the questions that **apply** given the answers so far. This is the only correct way to compute survey progress: a nominal question count ignores gates, so a gated-out submission the backend marked `COMPLETED` would read below 100%. Used by `survey_detail` and by both `apps/core` employee views.
+
 ## Views (`views.py`) — taking a survey
 
 - `survey_detail(assignment_id)` — `@login_required`; renders modules for the assignment's variant and handles POST. Reuses an in-progress `SurveySubmission` per (user, assignment); marks `COMPLETED` only when all visible questions are answered. Closed/completed assignments redirect to `core:home`. There is **no anonymous path** — surveys are always taken by a logged-in employee.

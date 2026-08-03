@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 
 from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import Question, SurveyAssignment
-from apps.surveys.visibility import visible_questions
+from apps.surveys.visibility import progress_for_modules, visible_questions
 
 
 def _parse_value(question, post):
@@ -148,12 +148,7 @@ def survey_detail(request, assignment_id):
             return redirect(f"{request.path}?saved=1")
 
     # Progress: count visible questions answered (using stored answers).
-    answers_by_code = {q.code: existing_answers.get(q.id) for q in all_questions}
-    visible = visible_questions(assignment, answers_by_code)
-    total_questions = len(visible)
-    answered_count = sum(
-        1 for q in visible if existing_answers.get(q.id) not in (None, "", [])
-    )
+    answered_count, total_questions = progress_for_modules(modules, existing_answers)
 
     return render(
         request,

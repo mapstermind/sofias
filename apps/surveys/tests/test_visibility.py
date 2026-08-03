@@ -1,7 +1,11 @@
 import pytest
 
 from apps.surveys.models import Module, Question, SurveyAssignment
-from apps.surveys.visibility import is_visible, visible_questions
+from apps.surveys.visibility import (
+    is_visible,
+    progress_for_modules,
+    visible_questions,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -84,3 +88,53 @@ class TestVisibleQuestions:
         a = branching_survey
         codes = {q.code for q in visible_questions(a, {"t1": True, "gate-q": True})}
         assert {"t1", "f1", "gate-q", "gated"} <= codes
+
+
+class TestProgressForModules:
+    def _modules(self, assignment):
+        return list(assignment.modules_for_variant().prefetch_related("questions"))
+
+    def _by_code(self, assignment):
+        return {
+            q.code: q.id for m in self._modules(assignment) for q in m.questions.all()
+        }
+
+    def test_no_modules(self):
+        assert progress_for_modules([], {}) == (0, 0)
+
+    def test_nothing_answered_counts_only_ungated_questions(self, branching_survey):
+        # 4 questions authored; f1 and `gated` need a "yes" that has not happened.
+        assert progress_for_modules(self._modules(branching_survey), {}) == (0, 2)
+
+    def test_gated_out_survey_reaches_total(self, branching_survey):
+        codes = self._by_code(branching_survey)
+        answers = {codes["t1"]: False, codes["gate-q"]: False}
+        answered, total = progress_for_modules(self._modules(branching_survey), answers)
+        assert (answered, total) == (2, 2)
+
+    def test_gated_in_survey_counts_the_revealed_questions(self, branching_survey):
+        codes = self._by_code(branching_survey)
+        answers = {
+            codes["t1"]: True,
+            codes["gate-q"]: True,
+            codes["f1"]: True,
+            codes["gated"]: "x",
+        }
+        assert progress_for_modules(self._modules(branching_survey), answers) == (4, 4)
+
+    def test_stale_answers_behind_a_flipped_gate_are_ignored(self, branching_survey):
+        # Answered the follow-ups, then flipped both gates back to No.
+        codes = self._by_code(branching_survey)
+        answers = {
+            codes["t1"]: False,
+            codes["gate-q"]: False,
+            codes["f1"]: True,
+            codes["gated"]: "x",
+        }
+        answered, total = progress_for_modules(self._modules(branching_survey), answers)
+        assert (answered, total) == (2, 2)  # never exceeds total
+
+    def test_blank_values_do_not_count_as_answered(self, branching_survey):
+        codes = self._by_code(branching_survey)
+        answers = {codes["t1"]: False, codes["gate-q"]: ""}
+        assert progress_for_modules(self._modules(branching_survey), answers) == (1, 2)

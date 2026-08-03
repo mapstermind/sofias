@@ -1,0 +1,20 @@
+{% load valuation_extras %}
+{% comment %}
+The NOM-035 risk scale as a five-step ladder, filled up to the reached level.
+Include with `only`:
+  {% include "core/_ndr_scale.html" with ndr=... ndr_label=... show_labels=True only %}
+`show_labels` renders the level names beneath; omit it for the compact form.
+{% endcomment %}
+<div class="flex items-end {% if show_labels %}gap-1.5{% else %}gap-1{% endif %}"
+     role="img" aria-label="Nivel de riesgo {{ ndr_label }}, en una escala de Nulo a Muy alto">
+  {% for step in ndr|ndr_scale %}
+    <div class="min-w-0 flex-1">
+      <div class="rounded-full {{ step.bar }} {% if step.active %}h-2{% else %}h-1{% endif %}"></div>
+      {% if show_labels %}
+        <p class="mt-2 text-[10px] leading-tight uppercase tracking-wide {% if step.active %}font-semibold text-gray-900{% else %}text-gray-400{% endif %}">
+          {{ step.label }}
+        </p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>

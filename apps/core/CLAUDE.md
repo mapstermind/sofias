@@ -22,10 +22,12 @@ All are `LoginRequiredMixin` class-based views that authorize via the custom per
 
 ## Template filters (`templatetags/valuation_extras.py`)
 
-`ndr_badge` and `ndr_bar` — the single source of truth for NDR→Tailwind-color
-mapping (Nulo/Bajo/Medio/Alto/Muy alto), used by the "Valoración de resultados"
-panels (`employee_detail.html`, `company_dashboard.html`). Add new NDR-derived
-colors here, not as literals in a template.
+`ndr_badge`, `ndr_bar` and `ndr_scale` — the single source of truth for
+NDR→Tailwind-color mapping (Nulo/Bajo/Medio/Alto/Muy alto), used by the
+"Valoración de resultados" panels (`employee_detail.html`,
+`company_dashboard.html`). Add new NDR-derived colors here, not as literals in a
+template. `ndr_scale` returns the five levels in order, filled up to the reached
+one; render it through `templates/core/_ndr_scale.html`.
 
 ## Management commands (`management/commands/`)
 
@@ -38,6 +40,7 @@ python manage.py seed_nom035_survey   # seed (idempotent) the NOM-035 survey
 ## Gotchas
 
 - Authorization is permission-based, not group-name-based (except the `Admins` group, checked by name in a few places). Run `bootstrap_groups` (in `apps/accounts`) before these views behave correctly.
-- Per-assignment question totals in dashboards use `_variant_question_count` (counts the variant's modules); preserve the prefetch/annotate N+1-avoidance pattern when editing list/detail views.
+- Per-employee progress goes through `_progress_entry`, which delegates to `apps.surveys.visibility.progress_for_modules` so `answered`/`total` count only the questions a respondent's gate answers leave visible — that is what makes a completed survey read 100%. `_variant_question_count` is still used, but only as the *nominal* total, to derive the `not_applicable` figure the UI shows. Never compute progress from `_variant_question_count` alone.
+- The employee list needs answer **values** (not just counts) to evaluate gates: one `values_list` sweep over `Answer` plus one module prefetch per assignment, both reused across every member. Preserve that pattern — a per-member query here is an N+1 in a page that renders the whole company.
 - `tests/` covers views and the seed (`test_views.py`, `test_seed_nom035.py`).
 - User-facing strings/URLs are Spanish.
