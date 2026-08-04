@@ -13,7 +13,7 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
 - `_nom035_scoring.py` — the scoring **configuration as data**, keyed by
   `surveys.Question.code`: the Categoría→Dominio→Dimensión taxonomy, the inverted-item
   set, the NDR threshold tables, and the "Necesidad de acción" text. All transcribed
-  from `docs/internal/roadmap_context/Guias de Referencia.md` (the single source of
+  from `docs/internal/Guias de Referencia.md` (the single source of
   truth). No config DB tables; change the config by editing here and re-running the
   recompute command.
 - `scoring.py` — pure functions: `likert_item_score`, `classify`, `guia1_positive`,

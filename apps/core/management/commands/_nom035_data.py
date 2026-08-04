@@ -1,7 +1,7 @@
 """
 Declarative source of truth for the NOM-035 survey instrument.
 
-Transcribed from docs/internal/roadmap_context/Guias de Referencia.pdf:
+Transcribed from docs/internal/Guias de Referencia.md:
 - Guía I  — Acontecimientos traumáticos severos (Sí/No), applies to everyone.
 - Guía II — Factores de riesgo psicosocial (Likert), small variant (<=50).
 - Guía III — ... y entorno organizacional (Likert), large variant (>50).

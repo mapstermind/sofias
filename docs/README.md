@@ -29,8 +29,8 @@ docs/
 │   ├── keep-in-mind.md
 │   ├── HARNESS-ENGINEERING.md
 │   ├── characterization-testing.md
+│   ├── Guias de Referencia.md       # NOM-035 scoring source of truth
 │   ├── meetings/
-│   ├── roadmap_context/
 │   └── user-guides/
 └── archive/                         # Retired docs — moved here with a note of when/why
     └── internal/
@@ -68,7 +68,8 @@ Guides, meeting notes, roadmap context, and workflows for the team. These are no
 
 - `prompting-workflow.md` is the master guide for how to develop a feature end-to-end.
 - `user-guides/` contains operator procedures (CSV import, user onboarding).
-- `meetings/` and `roadmap_context/` contain background context.
+- `meetings/` contains background context. `Guias de Referencia.md` is the single
+  source of truth for NOM-035 scoring data (see `.claude/CLAUDE.md`).
 
 ### `docs/archive/` — Retired docs
 
@@ -92,4 +93,4 @@ Docs moved here when the feature they describe is retired or superseded. Include
 | `adr/adr-0001-setup-access-codes-for-blocked-email-login.md` | Why setup codes exist instead of temporary passwords |
 | `adr/adr-0002-flatten-survey-authoring-model.md` | Why the survey model is a flat Survey→Module→Question tree (no library/versions) |
 | `adr/adr-0003-per-instrument-survey-processing-apps.md` | Why each instrument gets its own engine app instead of a generic engine |
-| `internal/roadmap_context/hoja-de-ruta-nom035.md` | NOM-035 product roadmap (three initiatives) |
+| `internal/Guias de Referencia.md` | Single source of truth for NOM-035 scoring data |

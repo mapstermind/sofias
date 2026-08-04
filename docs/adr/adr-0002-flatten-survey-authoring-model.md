@@ -84,7 +84,6 @@ Full design: `docs/platform/survey-model.md`.
 ## Links
 
 - Spec: `docs/platform/survey-model.md`
-- Context: `docs/internal/roadmap_context/hoja-de-ruta-nom035.md`,
-  `docs/internal/roadmap_context/Guias de Referencia.pdf`
+- Context: `docs/internal/Guias de Referencia.md`
 - App docs: `apps/surveys/CLAUDE.md`, `apps/core/CLAUDE.md`,
   `apps/responses/CLAUDE.md`

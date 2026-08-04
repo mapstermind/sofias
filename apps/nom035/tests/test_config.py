@@ -61,7 +61,7 @@ def test_thresholds_present_and_monotonic_for_every_group():
 
 
 def test_known_final_band_large():
-    # From the documented Guía III final table (Ejemplo Reporte Resultados).
+    # From the documented Guía III final table (Guias de Referencia.md).
     assert cfg.thresholds_for("final", "final", "large") == [
         (50, c.NDR_NULO),
         (75, c.NDR_BAJO),

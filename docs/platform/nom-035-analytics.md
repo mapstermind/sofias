@@ -35,7 +35,7 @@ threshold table.
 
 All scoring reference data (inverted items, taxonomy, threshold tables) and the
 Guía I referral rule are transcribed from the single source of truth,
-[`docs/internal/roadmap_context/Guias de Referencia.md`](../internal/roadmap_context/Guias%20de%20Referencia.md)
+[`docs/internal/Guias de Referencia.md`](../internal/Guias%20de%20Referencia.md)
 (Guía II and Guía III). Stakeholder-facing tracking of the scoring assumptions
 lives in Spanish at
 [`docs/platform/nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md).

@@ -30,7 +30,7 @@ instrument is made by creating a **new** `Survey`.
 ## NOM-035 is modular
 
 NOM-035 ships as three reference guides, which map onto module applicability
-(see `docs/internal/roadmap_context/Guias de Referencia.pdf`):
+(see `docs/internal/Guias de Referencia.md`):
 
 | Guide | Items | `applies_to` | Type | Scored into NDR? |
 |---|---|---|---|---|

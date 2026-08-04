@@ -1,7 +1,7 @@
 """NOM-035 scoring configuration (data, keyed by surveys.Question.code).
 
 All data below is transcribed authoritatively from the single source of truth,
-`docs/internal/roadmap_context/Guias de Referencia.md`:
+`docs/internal/Guias de Referencia.md`:
 
 - Guía III (large / 72 items) and Guía II (small / 46 items) — taxonomy
   (Categoría/Dominio/Dimensión → items), inverted-item lists, and threshold tables
@@ -362,7 +362,7 @@ def _bands(b, m, a, mu):
     ]
 
 
-# Guía III — authoritative (Ejemplo Reporte Resultados).
+# Guía III — authoritative (Guias de Referencia.md).
 _THRESHOLDS_LARGE = {
     ("final", "final"): _bands(50, 75, 99, 140),
     (c.LEVEL_CATEGORIA, CAT_AMBIENTE): _bands(5, 9, 11, 14),

@@ -5,8 +5,7 @@ Status: Accepted
 
 ## Context
 
-The product roadmap (`docs/internal/roadmap_context/hoja-de-ruta-nom035.md`,
-Iniciativa 1) proposes a **generic, configurable valuation engine**: per-answer
+The product roadmap (Iniciativa 1) proposes a **generic, configurable valuation engine**: per-answer
 values, inverted-item flags, the Categoría→Dominio→Dimensión taxonomy, and the NDR
 threshold tables would all be stored as **data** (not code) so that future
 instruments — clima laboral, validated in-house surveys — could be scored without
@@ -81,5 +80,4 @@ Python constants**, not generic database configuration, and is keyed by the stab
   `docs/platform/nom-035-valoracion-supuestos.md`
 - Related: `docs/adr/adr-0002-flatten-survey-authoring-model.md`,
   `docs/platform/survey-model.md`
-- Context: `docs/internal/roadmap_context/hoja-de-ruta-nom035.md`
 - App docs: `apps/nom035/CLAUDE.md` (replaces `apps/analytics/CLAUDE.md`)

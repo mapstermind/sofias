@@ -8,7 +8,7 @@ Este documento reúne, **en lenguaje no técnico**, los supuestos que aún debem
 Los datos de calificación ya confirmados —ítems invertidos, agrupación
 Categoría/Dominio, tablas de umbrales por dominio/categoría/final y la regla de
 canalización de la Guía I— se transcribieron de la fuente única de verdad
-(`docs/internal/roadmap_context/Guias de Referencia.md`) y se consideran resueltos;
+(`docs/internal/Guias de Referencia.md`) y se consideran resueltos;
 su detalle vive en `docs/platform/nom-035-analytics.md`. Aquí quedan únicamente los
 **puntos abiertos**.
 
