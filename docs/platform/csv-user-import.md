@@ -41,8 +41,12 @@ email,company_reference_code,group,auth_method
 Optional headers:
 
 ```text
-first_name,last_name,position
+first_name,last_name,position,area
 ```
+
+`area` must name an **existing, active `CompanyArea` of that row's company**. Matching is case-insensitive and surrounding whitespace is ignored. The importer never creates catalog entries: an área that does not exist imports the user with no área and appends a warning ("Aviso: el área «…» no existe…") to that row's `message` in the report, rather than skipping the row. The employee can still pick their área at activation.
+
+`location` is not yet supported by the importer.
 
 Current accepted `auth_method` values:
 
@@ -52,9 +56,9 @@ Current accepted `auth_method` values:
 Example:
 
 ```csv
-email,company_reference_code,group,auth_method,first_name,last_name,position
-ana.lopez@empresa.com,A1B2C,Employees,otp,Ana,Lopez,Analista
-maria.santos@empresa.com,A1B2C,Employees,password,Maria,Santos,Coordinadora
+email,company_reference_code,group,auth_method,first_name,last_name,position,area
+ana.lopez@empresa.com,A1B2C,Employees,otp,Ana,Lopez,Analista,Sistemas
+maria.santos@empresa.com,A1B2C,Employees,password,Maria,Santos,Coordinadora,Ventas
 ```
 
 Header names are part of the public import contract. Future changes should either preserve backward compatibility or include a migration/compatibility note in this spec.
@@ -104,6 +108,7 @@ For every created row:
   - `user`: the created user
   - `company`: company matched by `company_reference_code`
   - `position`: optional CSV value or `""`
+  - `area`: the company's matching active `CompanyArea`, or `None` (never created)
   - `is_activated=False`
 
 For `auth_method=otp`:

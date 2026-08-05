@@ -14,8 +14,16 @@ Before creating users, confirm the company already exists in Django Admin and ha
 - `RFC` (optional)
 - `address` (optional)
 - `reference_code`
+- **Áreas** — at least one
+- **Localidades** — optional
 
 The `reference_code` is generated automatically and is required during first-time profile activation. Share this company reference code only with the correct company contact.
+
+**Áreas and localidades are loaded on the company itself**, in the *Áreas* and *Localidades* sections at the bottom of the company page in Django Admin. Each company has its own lists. They must be loaded **before** employees try to activate their accounts, because the employee picks their área from this list.
+
+> **At least one área is required.** An employee whose company has no áreas cannot finish activation — they will see a message asking them to contact their administrator. The company list in Django Admin shows an *Áreas* count column so you can spot companies that still need one.
+
+Names are unique per company and ignore capitalization: adding both `Ventas` and `ventas` to the same company is rejected. To retire an área or localidad that is no longer used, **uncheck *activa*** instead of deleting it — that removes it from the picker while the employees already assigned to it keep their history. Deleting one that still has employees assigned is blocked.
 
 ## Create the User
 
@@ -51,6 +59,7 @@ Each non-admin user needs a `UserProfile`.
    - `user`: the user created above.
    - `position`: the employee’s role or job title.
    - `company`: the company where the user works.
+   - `area` / `localidad`: optional here — the employee normally picks these themselves during activation. The dropdowns only offer entries belonging to the profile’s company.
    - `is_activated`: leave disabled for first-time users.
 4. Save the profile.
 
@@ -68,8 +77,8 @@ Use this path when the user can receive emails from SOFIA-S.
 6. The user enters the code at `/cuentas/verificar/`.
 7. After successful verification, SOFIA-S logs the user in.
 8. If this is the user’s first login, they are redirected to `/cuentas/completar-perfil/`.
-9. The user enters the company `reference_code`.
-10. If the code matches the company linked to their profile, `is_activated` becomes enabled and the user proceeds into the app.
+9. The user enters the company `reference_code` and selects their **área** from the company’s list. If the company has more than one localidad, they also select their **localidad**; with exactly one localidad it is assigned automatically and not shown.
+10. If the code matches the company linked to their profile, `is_activated` becomes enabled, the área/localidad are saved, and the user proceeds into the app.
 
 ## Path B: Setup Access Code Fallback
 

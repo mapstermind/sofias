@@ -286,23 +286,41 @@ class TestImportUsersFromCSV:
         assert not User.objects.filter(email="skipped-password@example.com").exists()
         assert not SetupAccessCode.objects.exists()
 
-    def test_import_sets_department_when_column_present(
-        self, bootstrap_groups, make_company
+    @pytest.mark.parametrize("value", ["Sistemas", "sistemas", "  Sistemas  "])
+    def test_import_resolves_area_case_insensitively(
+        self, bootstrap_groups, make_company, make_area, value
     ):
         from apps.accounts.importers import import_users_from_csv
         from apps.accounts.models import UserProfile
 
         company = make_company()
+        area = make_area(company, name="Sistemas")
         csv_text = (
-            "email,company_reference_code,group,auth_method,department\n"
-            f"dep1@x.mx,{company.reference_code},Employees,otp,Sistemas\n"
+            "email,company_reference_code,group,auth_method,area\n"
+            f"dep1@x.mx,{company.reference_code},Employees,otp,{value}\n"
         )
         result = import_users_from_csv(csv_text)
         assert result.created_count == 1
-        profile = UserProfile.objects.get(user__email="dep1@x.mx")
-        assert profile.department == "Sistemas"
+        assert UserProfile.objects.get(user__email="dep1@x.mx").area == area
 
-    def test_import_leaves_department_blank_when_column_absent(
+    def test_unrecognized_column_is_ignored(
+        self, bootstrap_groups, make_company, make_area
+    ):
+        """`area` is the only header that assigns an área; others are ignored."""
+        from apps.accounts.importers import import_users_from_csv
+        from apps.accounts.models import UserProfile
+
+        company = make_company()
+        make_area(company, name="Sistemas")
+        csv_text = (
+            "email,company_reference_code,group,auth_method,unidad\n"
+            f"unknown-col@x.mx,{company.reference_code},Employees,otp,Sistemas\n"
+        )
+        result = import_users_from_csv(csv_text)
+        assert result.created_count == 1
+        assert UserProfile.objects.get(user__email="unknown-col@x.mx").area is None
+
+    def test_import_leaves_area_null_when_column_absent(
         self, bootstrap_groups, make_company
     ):
         from apps.accounts.importers import import_users_from_csv
@@ -315,4 +333,60 @@ class TestImportUsersFromCSV:
         )
         result = import_users_from_csv(csv_text)
         assert result.created_count == 1
-        assert UserProfile.objects.get(user__email="dep2@x.mx").department == ""
+        assert UserProfile.objects.get(user__email="dep2@x.mx").area is None
+
+    def test_unknown_area_still_imports_with_a_warning(
+        self, bootstrap_groups, make_company, make_area
+    ):
+        """A typo in an optional column must not block creating a real account."""
+        from apps.accounts.importers import import_users_from_csv
+        from apps.accounts.models import CompanyArea, UserProfile
+
+        company = make_company()
+        make_area(company, name="Sistemas")
+        csv_text = (
+            "email,company_reference_code,group,auth_method,area\n"
+            f"typo@x.mx,{company.reference_code},Employees,otp,Sistmas\n"
+        )
+        result = import_users_from_csv(csv_text)
+
+        assert result.created_count == 1
+        assert UserProfile.objects.get(user__email="typo@x.mx").area is None
+        assert "Aviso" in result.rows[0]["message"]
+        # The importer must never invent catalog entries from CSV text.
+        assert CompanyArea.objects.count() == 1
+
+    def test_import_never_uses_another_companys_area(
+        self, bootstrap_groups, make_company, make_area
+    ):
+        from apps.accounts.importers import import_users_from_csv
+        from apps.accounts.models import UserProfile
+
+        company = make_company(name="Cliente A")
+        other = make_company(name="Cliente B")
+        make_area(other, name="Ajena")
+        csv_text = (
+            "email,company_reference_code,group,auth_method,area\n"
+            f"cross@x.mx,{company.reference_code},Employees,otp,Ajena\n"
+        )
+        result = import_users_from_csv(csv_text)
+
+        assert result.created_count == 1
+        assert UserProfile.objects.get(user__email="cross@x.mx").area is None
+
+    def test_inactive_area_is_not_resolved(
+        self, bootstrap_groups, make_company, make_area
+    ):
+        from apps.accounts.importers import import_users_from_csv
+        from apps.accounts.models import UserProfile
+
+        company = make_company()
+        make_area(company, name="Retirada", is_active=False)
+        csv_text = (
+            "email,company_reference_code,group,auth_method,area\n"
+            f"inactive@x.mx,{company.reference_code},Employees,otp,Retirada\n"
+        )
+        result = import_users_from_csv(csv_text)
+
+        assert result.created_count == 1
+        assert UserProfile.objects.get(user__email="inactive@x.mx").area is None

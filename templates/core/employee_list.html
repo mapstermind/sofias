@@ -62,6 +62,11 @@
                 {% else %}
                   <span class="text-xs text-gray-400 italic">Sin cargo</span>
                 {% endif %}
+                {% if profile.area %}
+                  <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
+                    {{ profile.area.name }}
+                  </span>
+                {% endif %}
                 <span class="text-xs text-indigo-500 group-hover:text-indigo-700 transition-colors">Ver detalles &rarr;</span>
               </div>
             </div>

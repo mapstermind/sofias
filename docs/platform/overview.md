@@ -14,7 +14,7 @@ folder; for the reasoning behind a structural choice see the ADRs in `docs/adr/`
 
 | App | Role | Registered |
 |---|---|---|
-| `accounts` | Custom user (email + OTP login), companies, roles/permissions, CSV import, employee position/department metadata | ✅ |
+| `accounts` | Custom user (email + OTP login), companies and their área/localidad catalogs, roles/permissions, CSV import, employee position/área/localidad metadata | ✅ |
 | `surveys` | The **instrument authoring/structure base**: `Survey → Module → Question → Choice`, assignments, and survey-taking | ✅ |
 | `responses` | Response storage: `SurveySubmission` + `Answer` | ✅ |
 | `nom035` | The **NOM-035 valuation engine**: answers → scores → Nivel de Riesgo (NDR) + Guía I referral flag | ✅ |
@@ -93,9 +93,13 @@ with `python manage.py recompute_nom035_scores`.
   permission codenames (e.g. `can_view_dashboard`, `can_view_insights`).
 - **Company isolation** — all response and valuation data traces back to a
   `SurveyAssignment` belonging to exactly one `Company`.
-- **Área/department grouping** — `UserProfile.department` (free-text) groups
-  employees for `nom035.company_valuation`'s per-área breakdown; a blank
-  department falls into a "Sin área" bucket.
+- **Per-company catalogs** — `CompanyArea` and `CompanyLocation` are admin-curated
+  lists unique to each company (case-insensitively unique by name), which the
+  employee picks from during activation.
+- **Área grouping** — `UserProfile.area` (FK to `CompanyArea`) groups employees
+  for `nom035.company_valuation`'s per-área breakdown; a profile with no área
+  falls into a "Sin área" bucket. Grouping is by pk, so identically named áreas
+  in different companies never merge.
 
 ## Where to read next
 

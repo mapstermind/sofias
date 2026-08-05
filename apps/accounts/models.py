@@ -3,8 +3,10 @@ import string
 
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Lower
 from django.utils import timezone
 
 
@@ -42,10 +44,70 @@ class Company(models.Model):
         super().save(*args, **kwargs)
 
 
+class CompanyCatalogEntry(models.Model):
+    """Abstract base for the per-company preloaded lists (áreas, localidades).
+
+    Entries are curated by an admin and are what an employee picks from when
+    activating their account. Deliberately case-insensitively unique per company:
+    "Ventas" and "ventas" must not become two separate dashboard buckets.
+    """
+
+    name = models.CharField(
+        "nombre",
+        max_length=120,
+        help_text="Como debe aparecer en la lista que ve el colaborador.",
+    )
+    is_active = models.BooleanField(
+        "activa",
+        default=True,
+        help_text=(
+            "Desmarca para retirarla de la lista sin borrarla. "
+            "Los colaboradores ya asignados la conservan."
+        ),
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                "company",
+                Lower("name"),
+                name="%(app_label)s_%(class)s_unique_name_per_company",
+            )
+        ]
+
+    def __str__(self):
+        return self.name
+
+    def clean(self):
+        super().clean()
+        self.name = (self.name or "").strip()
+        if not self.name:
+            raise ValidationError({"name": "El nombre no puede estar vacío."})
+
+
+class CompanyArea(CompanyCatalogEntry):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="areas")
+
+    class Meta(CompanyCatalogEntry.Meta):
+        verbose_name = "área"
+        verbose_name_plural = "áreas"
+
+
+class CompanyLocation(CompanyCatalogEntry):
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="locations"
+    )
+
+    class Meta(CompanyCatalogEntry.Meta):
+        verbose_name = "localidad"
+        verbose_name_plural = "localidades"
+
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     position = models.CharField(max_length=255, blank=True)
-    department = models.CharField(max_length=255, blank=True, default="")
     is_activated = models.BooleanField(default=False)
     company = models.ForeignKey(
         Company,
@@ -54,9 +116,38 @@ class UserProfile(models.Model):
         blank=True,
         related_name="members",
     )
+    # SET_NULL rather than PROTECT: Company -> catalog is CASCADE, so PROTECT here
+    # would block deleting a Company outright. Accidental deletion is guarded in the
+    # admin inline formset instead (retiring is `is_active=False`, not deletion).
+    area = models.ForeignKey(
+        CompanyArea,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+        verbose_name="área",
+    )
+    location = models.ForeignKey(
+        CompanyLocation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+        verbose_name="localidad",
+    )
 
     def __str__(self):
         return f"{self.user.username} profile"
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        for field in ("area", "location"):
+            entry = getattr(self, field, None)
+            if entry is not None and entry.company_id != self.company_id:
+                errors[field] = "Debe pertenecer a la misma empresa que el colaborador."
+        if errors:
+            raise ValidationError(errors)
 
 
 class SetupAccessCode(models.Model):

@@ -31,6 +31,18 @@ Represents an organization that participates in surveys.
 | `created_at` | DateTimeField | Auto-set on creation |
 | `updated_at` | DateTimeField | Auto-updated on save |
 
+#### `CompanyArea` / `CompanyLocation`
+Per-company catalogs of áreas and localidades, curated by an admin as inlines on the Company change page and offered to employees as pickers during account activation. Both derive from the abstract `CompanyCatalogEntry` and have identical fields. See [ADR-0004](../adr/adr-0004-per-company-area-and-locality-catalogs.md).
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | BigAutoField | PK |
+| `company` | ForeignKey → `Company` | CASCADE on company delete; `related_name` `areas` / `locations` |
+| `name` | CharField(120) | Shown to the employee in the picker |
+| `is_active` | BooleanField | Default `True`; unset to retire an entry without deleting it |
+
+Constraint: `UniqueConstraint(company, Lower(name))` — names are unique per company **case-insensitively**, so "Ventas"/"ventas" cannot coexist, while two different companies may each have an "Operaciones". Default ordering is alphabetical by `name`. Neither model is registered as a standalone admin, so the Company inline is the only write surface.
+
 #### `User`
 Extends Django's `AbstractUser`. Inherits all standard auth fields (`username`, `email`, `password`, `is_staff`, etc.).
 
@@ -49,6 +61,10 @@ Extends `User` with business context. Created separately from the auth user.
 | `position` | CharField(255) | Job title, optional |
 | `is_activated` | BooleanField | First-login activation flag, default `False` |
 | `company` | ForeignKey → `Company` | SET NULL on company delete; nullable |
+| `area` | ForeignKey → `CompanyArea` | SET NULL; nullable. Chosen by the employee at activation; groups the per-área NOM-035 breakdown |
+| `location` | ForeignKey → `CompanyLocation` | SET NULL; nullable. Chosen at activation only when the company has >1; auto-assigned when it has exactly 1 |
+
+`clean()` rejects an `area`/`location` belonging to a different company than `company`.
 
 #### `Role`
 Sentinel model used only to define project permissions. It is `managed = False`, so Django does not create a database table for it.
@@ -104,7 +120,7 @@ A fixed survey instrument (e.g. NOM-035). Owns its modules directly. No library,
 | `created_at` / `updated_at` | DateTimeField | Auto |
 
 #### `Module`
-An ordered group of questions within a survey (replaces the old `Section`). Carries applicability and an optional branching rule.
+An ordered group of questions within a survey. Carries applicability and an optional branching rule.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -247,6 +263,20 @@ responses_surveysubmission ◄────────────────�
                           (question)
 ```
 
+The per-company catalogs hang off `Company` and are pointed at by `UserProfile`:
+
+```
+      accounts_company
+        │           │ (locations)
+        │ (areas)   ▼
+        ▼      accounts_companylocation
+accounts_companyarea      │
+        │                 │ (members)
+        │ (members)       │
+        ▼                 ▼
+      accounts_userprofile
+```
+
 Derived results (`apps/nom035`), materialized from a submission's answers:
 
 ```
@@ -267,11 +297,15 @@ responses_surveysubmission
 
 ```
 Company.create(name, legal_name)              ← reference_code auto-generated
+  ├─ CompanyArea.create(company, name)        ← at least one, or activation is blocked
+  ├─ CompanyLocation.create(company, name)    ← optional
   └─ User.create(username, email, password, ...)
        └─ UserProfile.create(user, position, company, is_activated=False)
 ```
 
-A `Company` is created first. Users are then created via Django's auth system, manual admin entry, or CSV import. A `UserProfile` links non-admin users to their company; company headcount is `company.members.count()`.
+A `Company` is created first, **together with its áreas and localidades** — these are curated as inlines on the Company change page in the admin. Loading at least one área matters: an employee whose company has no active área cannot complete activation (the activation screen tells them to contact their administrator). The Company changelist shows área/localidad counts so the gap is visible before anyone hits it.
+
+Users are then created via Django's auth system, manual admin entry, or CSV import. A `UserProfile` links non-admin users to their company; company headcount is `company.members.count()`. The employee's `area`/`location` are normally set by themselves at activation; the CSV importer can pre-set `area` by name (lookup-only — it never creates catalog entries).
 
 ### 2. Seed the survey instrument
 
@@ -319,3 +353,5 @@ Completion counts only questions visible under the current answers (see `apps/su
 **Company isolation through the assignment.** All response data traces back to a `SurveyAssignment` belonging to exactly one `Company`.
 
 **Users are decoupled from companies at the auth level.** `User` is a standard Django auth model; company membership lives in `UserProfile`.
+
+**Company-scoped catalogs, case-insensitively unique.** Áreas and localidades are per-company child tables rather than free text or a shared enum, because the employee picks from them at activation and the per-área NOM-035 breakdown groups by their pk. `UniqueConstraint(company, Lower(name))` makes duplicate spellings impossible within a company while leaving names free across companies. Entries are retired with `is_active=False`, not deleted — the FKs are `SET_NULL` (so deleting a `Company` stays possible) and the admin inline blocks deleting an entry that still has members. See `docs/adr/adr-0004-per-company-area-and-locality-catalogs.md`.

@@ -7,7 +7,7 @@ Survey instrument data model and the employee survey-taking experience. URL pref
 This is the central concept. Understand it before changing `models.py`. There is **no reusable question library, no numbered versions, and no copy-on-stamp** — surveys are fixed instruments, seeded once. Rationale: `docs/adr/adr-0002-flatten-survey-authoring-model.md`.
 
 - `Survey` — the instrument. `key` (stable unique slug, e.g. `nom035`), `title`, `description`, `status` (draft/published/archived), `headcount_threshold` (default 50). A material change = a **new** `Survey`, not a version.
-- `Module` — an ordered group of questions within a survey (replaces the old `Section`). `applies_to` ∈ `all`/`small`/`large`; `key` (unique per survey); optional `visible_when`.
+- `Module` — an ordered group of questions within a survey. `applies_to` ∈ `all`/`small`/`large`; `key` (unique per survey); optional `visible_when`.
 - `Question` — owned by a `Module`. `code` (stable, **unique per survey** — the integration key the valuation engine consumes), `question_type`, `text`, `config` (JSON), optional `visible_when`. Carries a denormalized `survey` FK (set in `save()` from `module.survey`) to back the `unique(survey, code)` constraint.
 - `Choice` — selectable option for `single_choice`/`multiple_choice`. (Boolean Sí/No renders from hardcoded radios, not `Choice` rows.)
 - `SurveyAssignment` — links a `Survey` to a `Company` with a frozen `variant` (`small`/`large`). `resolve_default_variant(company, survey)` computes the default from `company.members.count()` vs `survey.headcount_threshold` (operator-overridable); `modules_for_variant()` returns the modules to present (`all` plus the variant's).

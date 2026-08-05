@@ -25,7 +25,9 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
   materializes a score when a submission becomes `completed` (connected in
   `apps.py:ready()`).
 - `aggregates.py` — on-demand `employee_valuation` and `company_valuation` read by
-  `apps/core` views.
+  `apps/core` views. The per-área breakdown groups by `UserProfile.area` **pk** (FK to
+  `accounts.CompanyArea`), not by name, so identically named áreas in different
+  companies never merge; a null área falls into a "Sin área" bucket.
 - `management/commands/recompute_nom035_scores.py` — backfill/refresh.
 
 ## Conventions & gotchas

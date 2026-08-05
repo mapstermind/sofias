@@ -38,14 +38,13 @@ def test_dashboard_shows_valuation(
 
 
 def test_dashboard_shows_area_breakdown(
-    client, bootstrap_groups, make_user_with_profile, make_company, survey
+    client, bootstrap_groups, make_user_with_profile, make_company, make_area, survey
 ):
     company = make_company()
+    area = make_area(company, name="Sistemas")
     admin = make_user_with_profile(email="a2@x.mx", company=company)
     admin.groups.add(bootstrap_groups["Admins"])
-    employee = make_user_with_profile(email="e2@x.mx", company=company)
-    employee.profile.department = "Sistemas"
-    employee.profile.save()
+    employee = make_user_with_profile(email="e2@x.mx", company=company, area=area)
     assignment = SurveyAssignment.objects.create(
         company=company,
         survey=survey,

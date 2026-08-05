@@ -67,6 +67,7 @@ Copy `[new-feature]-template.md` when starting a new feature doc.
 Guides, meeting notes, roadmap context, and workflows for the team. These are not referenced by the agent in normal sessions.
 
 - `prompting-workflow.md` is the master guide for how to develop a feature end-to-end.
+- `open-findings.md` tracks issues found during development that were out of scope for the change that found them.
 - `user-guides/` contains operator procedures (CSV import, user onboarding).
 - `meetings/` contains background context. `Guias de Referencia.md` is the single
   source of truth for NOM-035 scoring data (see `.claude/CLAUDE.md`).

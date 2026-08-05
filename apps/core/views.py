@@ -285,7 +285,7 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 "status"
             ]
 
-        profiles = company.members.select_related("user").order_by(
+        profiles = company.members.select_related("user", "area", "location").order_by(
             "user__first_name", "user__last_name"
         )
 
@@ -344,7 +344,7 @@ class EmployeeDetailView(LoginRequiredMixin, View):
             company = profile.company
 
         employee_profile = get_object_or_404(
-            UserProfile.objects.select_related("user"),
+            UserProfile.objects.select_related("user", "area", "location"),
             user_id=employee_id,
             company=company,
         )

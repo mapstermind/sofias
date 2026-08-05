@@ -1,21 +1,114 @@
 import pytest
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from django.utils import timezone
 
-from apps.accounts.models import EmailOTP, SetupAccessCode, UserProfile
+from apps.accounts.models import (
+    CompanyArea,
+    CompanyLocation,
+    EmailOTP,
+    SetupAccessCode,
+)
 from apps.accounts.utils import generate_unique_username
 
 pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.django_db
-def test_userprofile_department_defaults_blank_and_stores(make_user):
-    user = make_user(email="dept@x.mx")
-    profile = UserProfile.objects.create(user=user)
-    assert profile.department == ""
-    profile.department = "Sistemas"
-    profile.save()
-    profile.refresh_from_db()
-    assert profile.department == "Sistemas"
+class TestCompanyCatalogs:
+    """CompanyArea / CompanyLocation share an abstract base, so both are covered."""
+
+    @pytest.mark.parametrize("model", [CompanyArea, CompanyLocation])
+    def test_duplicate_name_in_same_company_is_rejected_case_insensitively(
+        self, make_company, model
+    ):
+        company = make_company()
+        model.objects.create(company=company, name="Ventas")
+        with pytest.raises(IntegrityError):
+            model.objects.create(company=company, name="ventas")
+
+    @pytest.mark.parametrize("model", [CompanyArea, CompanyLocation])
+    def test_same_name_allowed_across_companies(self, make_company, model):
+        first = make_company(name="Cliente A")
+        second = make_company(name="Cliente B")
+        model.objects.create(company=first, name="Operaciones")
+        model.objects.create(company=second, name="Operaciones")
+        assert model.objects.filter(name="Operaciones").count() == 2
+
+    @pytest.mark.parametrize("model", [CompanyArea, CompanyLocation])
+    def test_str_is_the_name(self, make_company, model):
+        entry = model.objects.create(company=make_company(), name="Almacén")
+        assert str(entry) == "Almacén"
+
+    @pytest.mark.parametrize("model", [CompanyArea, CompanyLocation])
+    def test_default_ordering_is_alphabetical(self, make_company, model):
+        company = make_company()
+        model.objects.create(company=company, name="Ventas")
+        model.objects.create(company=company, name="Almacén")
+        assert [e.name for e in model.objects.all()] == ["Almacén", "Ventas"]
+
+    @pytest.mark.parametrize("model", [CompanyArea, CompanyLocation])
+    def test_clean_strips_whitespace_and_rejects_blank(self, make_company, model):
+        company = make_company()
+        entry = model(company=company, name="  Ventas  ")
+        entry.clean()
+        assert entry.name == "Ventas"
+
+        with pytest.raises(ValidationError):
+            model(company=company, name="   ").clean()
+
+    def test_deleting_company_cascades_both_catalogs(
+        self, make_company, make_area, make_location
+    ):
+        company = make_company()
+        make_area(company, name="Ventas")
+        make_location(company, name="Matriz")
+        company.delete()
+        assert CompanyArea.objects.count() == 0
+        assert CompanyLocation.objects.count() == 0
+
+
+class TestUserProfileCatalogLinks:
+    def test_deleting_area_nulls_the_profile_but_keeps_it(
+        self, make_company, make_area, make_user_with_profile
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        user = make_user_with_profile(email="a@x.mx", company=company, area=area)
+
+        area.delete()
+
+        user.profile.refresh_from_db()
+        assert user.profile.pk is not None
+        assert user.profile.area is None
+        assert user.profile.company == company
+
+    def test_full_clean_rejects_area_from_another_company(
+        self, make_company, make_area, make_user_with_profile
+    ):
+        own = make_company(name="Cliente A")
+        other = make_company(name="Cliente B")
+        foreign_area = make_area(other, name="Ventas")
+        user = make_user_with_profile(email="b@x.mx", company=own)
+
+        profile = user.profile
+        profile.area = foreign_area
+        with pytest.raises(ValidationError) as exc:
+            profile.full_clean()
+        assert "area" in exc.value.message_dict
+
+    def test_full_clean_rejects_location_from_another_company(
+        self, make_company, make_location, make_user_with_profile
+    ):
+        own = make_company(name="Cliente A")
+        other = make_company(name="Cliente B")
+        foreign_location = make_location(other, name="Matriz")
+        user = make_user_with_profile(email="c@x.mx", company=own)
+
+        profile = user.profile
+        profile.location = foreign_location
+        with pytest.raises(ValidationError) as exc:
+            profile.full_clean()
+        assert "location" in exc.value.message_dict
 
 
 class TestEmailOTPIsValid:
