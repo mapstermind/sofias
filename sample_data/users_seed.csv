@@ -1,9 +1,9 @@
-email,company_reference_code,group,auth_method,first_name,last_name,position
-ana.lopez@acme.mx,ACME1,Employees,otp,Ana,Lopez,Analista
-maria.santos@acme.mx,ACME1,Employees,password,Maria,Santos,Coordinadora
-jose.ramirez@acme.mx,ACME1,Employees,otp,Jose,Ramirez,Operador
-carlos.mendez@acme.mx,ACME1,Employees,otp,,,
-laura.torres@acme.mx,ACME1,Principal Exec,password,Laura,Torres,Directora de RH
-pedro.gomez@globx.mx,GLOBX,Employees,otp,Pedro,Gomez,Chofer
-sofia.reyes@globx.mx,GLOBX,Secondary Exec,password,Sofia,Reyes,Gerente de Operaciones
-diego.flores@globx.mx,GLOBX,Employees,otp,Diego,Flores,Almacenista
+email,company_reference_code,group,auth_method
+ana.lopez@acme.mx,ACME1,Employees,otp
+maria.santos@acme.mx,ACME1,Employees,password
+jose.ramirez@acme.mx,ACME1,Employees,otp
+carlos.mendez@acme.mx,ACME1,Employees,otp
+laura.torres@acme.mx,ACME1,Principal Exec,password
+pedro.gomez@globx.mx,GLOBX,Employees,otp
+sofia.reyes@globx.mx,GLOBX,Secondary Exec,password
+diego.flores@globx.mx,GLOBX,Employees,otp

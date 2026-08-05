@@ -1,0 +1,3 @@
+email,company_reference_code,group,auth_method,first_name,area,unidad
+extra.uno@acme.mx,ACME1,Employees,otp,Ana,Sistemas,Norte
+extra.dos@acme.mx,ACME1,Employees,otp,Jose,Ventas,Sur

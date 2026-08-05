@@ -24,12 +24,11 @@
       {% endfor %}
     </ul>
 
-    <h2>Columnas opcionales</h2>
-    <ul>
-      {% for column in optional_columns %}
-        <li><code>{{ column }}</code></li>
-      {% endfor %}
-    </ul>
+    <p>
+      Estas son las únicas columnas que el CSV necesita. Cualquier otra columna
+      se ignora. El colaborador captura su nombre, cargo, área y localidad al
+      activar su cuenta.
+    </p>
 
     <p>
       <code>auth_method</code> debe ser <code>otp</code> o <code>password</code>.

@@ -199,6 +199,10 @@ class OTPVerifyForm(forms.Form):
         return code
 
 
+_TEXT_CLASSES = (
+    "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm "
+    "focus:border-indigo-500 focus:ring-indigo-500"
+)
 _SELECT_CLASSES = (
     "block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm "
     "focus:border-indigo-500 focus:ring-indigo-500"
@@ -215,6 +219,37 @@ class ProfileActivationForm(forms.Form):
                 "autofocus": True,
                 "placeholder": "XXXXX",
                 "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm uppercase tracking-widest focus:border-indigo-500 focus:ring-indigo-500",
+            }
+        ),
+    )
+    # Name and cargo are collected here rather than at import: the admin's roster
+    # only has to carry what identifies the account, and the employee is the
+    # authority on their own name anyway.
+    first_name = forms.CharField(
+        label="Nombre(s)",
+        max_length=150,
+        error_messages={"required": "Escribe tu nombre."},
+        widget=forms.TextInput(
+            attrs={"autocomplete": "given-name", "class": _TEXT_CLASSES}
+        ),
+    )
+    last_name = forms.CharField(
+        label="Apellidos",
+        max_length=150,
+        error_messages={"required": "Escribe tus apellidos."},
+        widget=forms.TextInput(
+            attrs={"autocomplete": "family-name", "class": _TEXT_CLASSES}
+        ),
+    )
+    position = forms.CharField(
+        label="Cargo",
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "organization-title",
+                "placeholder": "Opcional",
+                "class": _TEXT_CLASSES,
             }
         ),
     )

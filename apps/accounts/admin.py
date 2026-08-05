@@ -8,7 +8,11 @@ from django.template.response import TemplateResponse
 from django.urls import path
 
 from .forms import UserCSVImportForm
-from .importers import import_users_from_csv, render_import_report_csv
+from .importers import (
+    REQUIRED_HEADERS,
+    import_users_from_csv,
+    render_import_report_csv,
+)
 from .models import (
     Company,
     CompanyArea,
@@ -73,13 +77,7 @@ class CustomUserAdmin(UserAdmin):
             "title": "Importar usuarios desde CSV",
             "form": form,
             "opts": self.model._meta,
-            "required_columns": [
-                "email",
-                "company_reference_code",
-                "group",
-                "auth_method",
-            ],
-            "optional_columns": ["first_name", "last_name", "position", "area"],
+            "required_columns": REQUIRED_HEADERS,
         }
         return TemplateResponse(
             request,

@@ -550,6 +550,17 @@ class TestChangePasswordView:
 SETUP_PROFILE_URL = "/cuentas/completar-perfil/"
 
 
+def _activation_post(company, **overrides):
+    """A complete activation body. Name is required, so every POST carries it."""
+    payload = {
+        "reference_code": company.reference_code,
+        "first_name": "Ana",
+        "last_name": "López",
+    }
+    payload.update(overrides)
+    return payload
+
+
 class TestSetupProfileView:
     def test_admin_get_redirects_to_home(self, client, make_user, bootstrap_groups):
         user = make_user(email="admin2@example.com")
@@ -585,8 +596,7 @@ class TestSetupProfileView:
         client.force_login(user)
 
         response = client.post(
-            SETUP_PROFILE_URL,
-            {"reference_code": company.reference_code, "area": area.pk},
+            SETUP_PROFILE_URL, _activation_post(company, area=area.pk)
         )
 
         user.profile.refresh_from_db()
@@ -604,7 +614,8 @@ class TestSetupProfileView:
         client.force_login(user)
 
         response = client.post(
-            SETUP_PROFILE_URL, {"reference_code": "ZZZZZ", "area": area.pk}
+            SETUP_PROFILE_URL,
+            _activation_post(company, reference_code="ZZZZZ", area=area.pk),
         )
 
         user.profile.refresh_from_db()
@@ -623,8 +634,7 @@ class TestSetupProfileView:
         client.force_login(user)
 
         response = client.post(
-            SETUP_PROFILE_URL,
-            {"reference_code": company.reference_code, "area": foreign.pk},
+            SETUP_PROFILE_URL, _activation_post(company, area=foreign.pk)
         )
 
         user.profile.refresh_from_db()
@@ -640,9 +650,7 @@ class TestSetupProfileView:
         user = make_user_with_profile(email="noarea@example.com", company=company)
         client.force_login(user)
 
-        response = client.post(
-            SETUP_PROFILE_URL, {"reference_code": company.reference_code}
-        )
+        response = client.post(SETUP_PROFILE_URL, _activation_post(company))
 
         user.profile.refresh_from_db()
         assert response.status_code == 200
@@ -671,8 +679,7 @@ class TestSetupProfileView:
         client.force_login(user)
 
         response = client.post(
-            SETUP_PROFILE_URL,
-            {"reference_code": company.reference_code, "area": retired.pk},
+            SETUP_PROFILE_URL, _activation_post(company, area=retired.pk)
         )
 
         user.profile.refresh_from_db()
@@ -691,10 +698,7 @@ class TestSetupProfileView:
         page = client.get(SETUP_PROFILE_URL)
         assert 'name="location"' not in page.content.decode()
 
-        client.post(
-            SETUP_PROFILE_URL,
-            {"reference_code": company.reference_code, "area": area.pk},
-        )
+        client.post(SETUP_PROFILE_URL, _activation_post(company, area=area.pk))
 
         user.profile.refresh_from_db()
         assert user.profile.is_activated is True
@@ -713,11 +717,7 @@ class TestSetupProfileView:
 
         client.post(
             SETUP_PROFILE_URL,
-            {
-                "reference_code": company.reference_code,
-                "area": area.pk,
-                "location": foreign_location.pk,
-            },
+            _activation_post(company, area=area.pk, location=foreign_location.pk),
         )
 
         user.profile.refresh_from_db()
@@ -738,19 +738,14 @@ class TestSetupProfileView:
         assert 'name="location"' in page.content.decode()
 
         response = client.post(
-            SETUP_PROFILE_URL,
-            {"reference_code": company.reference_code, "area": area.pk},
+            SETUP_PROFILE_URL, _activation_post(company, area=area.pk)
         )
         assert response.status_code == 200
         assert "location" in response.context["form"].errors
 
         client.post(
             SETUP_PROFILE_URL,
-            {
-                "reference_code": company.reference_code,
-                "area": area.pk,
-                "location": norte.pk,
-            },
+            _activation_post(company, area=area.pk, location=norte.pk),
         )
         user.profile.refresh_from_db()
         assert user.profile.location == norte
@@ -763,14 +758,106 @@ class TestSetupProfileView:
         user = make_user_with_profile(email="zeroloc@example.com", company=company)
         client.force_login(user)
 
-        client.post(
-            SETUP_PROFILE_URL,
-            {"reference_code": company.reference_code, "area": area.pk},
-        )
+        client.post(SETUP_PROFILE_URL, _activation_post(company, area=area.pk))
 
         user.profile.refresh_from_db()
         assert user.profile.is_activated is True
         assert user.profile.location is None
+
+    def test_activation_saves_name_and_cargo(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        user = make_user_with_profile(email="identity@example.com", company=company)
+        client.force_login(user)
+
+        client.post(
+            SETUP_PROFILE_URL,
+            _activation_post(
+                company,
+                area=area.pk,
+                first_name="Ana",
+                last_name="López",
+                position="Analista",
+            ),
+        )
+
+        user.refresh_from_db()
+        user.profile.refresh_from_db()
+        assert user.first_name == "Ana"
+        assert user.last_name == "López"
+        assert user.profile.position == "Analista"
+
+    def test_missing_name_blocks_activation(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        user = make_user_with_profile(email="noname@example.com", company=company)
+        client.force_login(user)
+
+        response = client.post(
+            SETUP_PROFILE_URL,
+            _activation_post(company, area=area.pk, first_name="", last_name=""),
+        )
+
+        user.profile.refresh_from_db()
+        assert response.status_code == 200
+        assert user.profile.is_activated is False
+        assert "first_name" in response.context["form"].errors
+
+    def test_activation_without_cargo_leaves_it_blank(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        user = make_user_with_profile(email="nocargo@example.com", company=company)
+        client.force_login(user)
+
+        client.post(SETUP_PROFILE_URL, _activation_post(company, area=area.pk))
+
+        user.profile.refresh_from_db()
+        assert user.profile.is_activated is True
+        assert user.profile.position == ""
+
+    def test_form_prefills_details_already_on_record(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        """An admin who filled a user in by hand shouldn't make them retype it."""
+        company = make_company()
+        make_area(company, name="Ventas")
+        user = make_user_with_profile(email="prefill@example.com", company=company)
+        user.first_name = "Ana"
+        user.last_name = "López"
+        user.save(update_fields=["first_name", "last_name"])
+        user.profile.position = "Analista"
+        user.profile.save(update_fields=["position"])
+        client.force_login(user)
+
+        form = client.get(SETUP_PROFILE_URL).context["form"]
+
+        assert form.initial["first_name"] == "Ana"
+        assert form.initial["last_name"] == "López"
+        assert form.initial["position"] == "Analista"
+
+    def test_name_is_not_saved_when_activation_fails(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        """A rejected reference code must leave the user row untouched."""
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        user = make_user_with_profile(email="atomic@example.com", company=company)
+        client.force_login(user)
+
+        client.post(
+            SETUP_PROFILE_URL,
+            _activation_post(company, reference_code="ZZZZZ", area=area.pk),
+        )
+
+        user.refresh_from_db()
+        assert user.first_name == ""
+        assert user.profile.is_activated is False
 
     def test_already_activated_redirects_to_home(
         self, client, make_user_with_profile, make_company

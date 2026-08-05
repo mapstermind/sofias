@@ -58,6 +58,10 @@ decision in `docs/platform/nom-035-analytics.md`.
   needs.
 - The catalogs are ordinary child models, so a future operator-facing UI outside Django
   admin gets `inlineformset_factory` rather than needing a bespoke JSON list widget.
+- The activation picker is the **only** path that assigns an área, so a mismatched or
+  misspelled assignment is structurally impossible rather than merely validated against.
+  The CSV importer carries no área column and every imported profile starts at
+  `area=None`.
 
 **Negative:**
 
@@ -75,8 +79,9 @@ decision in `docs/platform/nom-035-analytics.md`.
 - `SET_NULL` means deleting an área silently orphans members at the ORM level; the
   admin inline formset guards the only deletion path, but code paths outside it (shell,
   future APIs) are unguarded.
-- The CSV importer resolves área **by name, lookup-only**, so a typo imports the
-  user with no área plus a report warning rather than failing.
+- There is no bulk pre-assignment. Because activation is the only write path, a company's
+  área breakdown stays empty until its employees activate individually — an admin cannot
+  load a roster that already knows who sits where.
 
 ## Alternatives considered
 

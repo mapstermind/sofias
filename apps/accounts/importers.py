@@ -10,15 +10,16 @@ from django.utils.crypto import get_random_string
 
 from apps.accounts.models import (
     Company,
-    CompanyArea,
     SetupAccessCode,
     User,
     UserProfile,
 )
 from apps.accounts.utils import generate_unique_username
 
-REQUIRED_HEADERS = {"email", "company_reference_code", "group", "auth_method"}
-OPTIONAL_HEADERS = {"first_name", "last_name", "position", "area"}
+# The whole contract. Everything the employee knows about themselves — name,
+# cargo, área, localidad — is collected at activation instead, so the admin
+# only has to supply what identifies the account and grants it access.
+REQUIRED_HEADERS = ("email", "company_reference_code", "group", "auth_method")
 REPORT_HEADERS = [
     "row_number",
     "email",
@@ -42,7 +43,7 @@ def import_users_from_csv(csv_text: str) -> ImportResult:
         raise ValueError("El archivo CSV está vacío.")
 
     normalized_headers = [header.strip() for header in reader.fieldnames]
-    missing_headers = REQUIRED_HEADERS - set(normalized_headers)
+    missing_headers = set(REQUIRED_HEADERS) - set(normalized_headers)
     if missing_headers:
         missing = ", ".join(sorted(missing_headers))
         raise ValueError(f"Faltan columnas requeridas: {missing}.")
@@ -126,21 +127,6 @@ def _import_row(row_number: int, row: dict[str, str]) -> dict[str, str]:
         report_row["message"] = "No existe un grupo con ese nombre."
         return report_row
 
-    # Lookup-only, never create: auto-creating áreas from CSV text would
-    # reintroduce the typo-driven duplicate catalog the catalogs exist to avoid.
-    area = None
-    area_warning = ""
-    area_name = row.get("area", "").strip()
-    if area_name:
-        area = CompanyArea.objects.filter(
-            company=company, name__iexact=area_name, is_active=True
-        ).first()
-        if area is None:
-            area_warning = (
-                f" Aviso: el área «{area_name}» no existe o está inactiva en "
-                "esta empresa; el usuario quedó sin área."
-            )
-
     with transaction.atomic():
         if User.objects.filter(email=email).exists():
             report_row["message"] = "Ya existe un usuario con ese email."
@@ -149,8 +135,6 @@ def _import_row(row_number: int, row: dict[str, str]) -> dict[str, str]:
         user = User(
             username=username,
             email=email,
-            first_name=row.get("first_name", ""),
-            last_name=row.get("last_name", ""),
             must_change_password=auth_method == "password",
         )
 
@@ -160,9 +144,7 @@ def _import_row(row_number: int, row: dict[str, str]) -> dict[str, str]:
         user.groups.add(group)
         UserProfile.objects.create(
             user=user,
-            position=row.get("position", ""),
             company=company,
-            area=area,
             is_activated=False,
         )
         if auth_method == "password":
@@ -171,7 +153,7 @@ def _import_row(row_number: int, row: dict[str, str]) -> dict[str, str]:
     report_row.update(
         {
             "status": "created",
-            "message": "Usuario creado." + area_warning,
+            "message": "Usuario creado.",
             "username": username,
             "setup_access_code": setup_access_code,
         }

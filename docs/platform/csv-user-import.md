@@ -9,6 +9,8 @@ The CSV user import feature lets platform admins bulk-create pre-approved users 
 - one group assignment
 - optional setup-code fallback access for users who cannot receive OTP emails
 
+The import carries **only what grants access to an account**: who it is (`email`), which company it belongs to, what it may do (`group`), and how it logs in (`auth_method`). Everything an employee knows about themselves — nombre, cargo, área, localidad — is collected from them at activation instead, which keeps the admin's roster to four columns and makes the employee the source of their own details. See `docs/platform/auth-and-onboarding.md` §Profile activation for the other half of the flow.
+
 This document captures the current behavior so future refactors can safely add fields, rename columns, or move the feature to another UI without changing core guarantees unintentionally.
 
 ## Actors
@@ -32,21 +34,13 @@ The upload endpoint must require the same permission level as adding users.
 
 ## Input CSV Contract
 
-Required headers:
+These four headers are the whole contract, and all of them are required:
 
 ```text
 email,company_reference_code,group,auth_method
 ```
 
-Optional headers:
-
-```text
-first_name,last_name,position,area
-```
-
-`area` must name an **existing, active `CompanyArea` of that row's company**. Matching is case-insensitive and surrounding whitespace is ignored. The importer never creates catalog entries: an área that does not exist imports the user with no área and appends a warning ("Aviso: el área «…» no existe…") to that row's `message` in the report, rather than skipping the row. The employee can still pick their área at activation.
-
-`location` is not yet supported by the importer.
+There are no optional headers. Any additional column is ignored — a roster exported from another system can be uploaded as-is without stripping its extra columns first, and no extra column assigns anything. In particular an `area` column does **not** resolve to a `CompanyArea`; the employee picks their área at activation.
 
 Current accepted `auth_method` values:
 
@@ -56,32 +50,35 @@ Current accepted `auth_method` values:
 Example:
 
 ```csv
-email,company_reference_code,group,auth_method,first_name,last_name,position,area
-ana.lopez@empresa.com,A1B2C,Employees,otp,Ana,Lopez,Analista,Sistemas
-maria.santos@empresa.com,A1B2C,Employees,password,Maria,Santos,Coordinadora,Ventas
+email,company_reference_code,group,auth_method
+ana.lopez@empresa.com,A1B2C,Employees,otp
+maria.santos@empresa.com,A1B2C,Employees,password
 ```
 
-Header names are part of the public import contract. Future changes should either preserve backward compatibility or include a migration/compatibility note in this spec.
+Header names are part of the public import contract. Because every header is required, a misspelled one (`Email`, `grupo`) rejects the whole file with a message naming what is missing, rather than silently importing rows with a field unset.
 
 ## Normalization Rules
 
-- Input files are decoded as UTF-8 with optional BOM support.
 - Header names are stripped of surrounding whitespace.
 - Row values are stripped of surrounding whitespace.
 - `email` is lowercased before validation and storage.
 - `company_reference_code` is uppercased before lookup.
 - `auth_method` is lowercased before validation.
-- Blank optional fields are saved as empty strings.
 - Extra CSV columns are ignored.
 
 ## Validation Rules
 
-File-level validation:
+File-level validation splits across two layers. `import_users_from_csv` receives an already-decoded `str`, so everything about the *file* is enforced by the admin upload form and view before the importer is called:
 
-- Empty CSV files are rejected.
-- Missing required headers reject the whole file.
-- Non-UTF-8 files are rejected by the admin form view.
-- Files must use the `.csv` extension.
+| Rule | Enforced by |
+|---|---|
+| Files must use the `.csv` extension | `UserCSVImportForm.clean_csv_file` |
+| Files are decoded as UTF-8, BOM tolerated | `CustomUserAdmin.import_csv_view` (`utf-8-sig`) |
+| Non-UTF-8 files are rejected with a field error | `CustomUserAdmin.import_csv_view` |
+| Empty CSV files are rejected | `import_users_from_csv` |
+| Missing required headers reject the whole file | `import_users_from_csv` |
+
+A second entry point that calls the importer directly gets the last two rules and must supply the first three itself.
 
 Row-level validation:
 
@@ -102,14 +99,13 @@ For every created row:
 
 - Generate `username` from the email local part using `generate_unique_username`.
 - Create `User.email` from the normalized email.
-- Save `first_name` and `last_name` from optional CSV fields or `""`.
 - Assign exactly one Django group from the `group` column.
 - Create `UserProfile` with:
   - `user`: the created user
   - `company`: company matched by `company_reference_code`
-  - `position`: optional CSV value or `""`
-  - `area`: the company's matching active `CompanyArea`, or `None` (never created)
   - `is_activated=False`
+
+`User.first_name`, `User.last_name`, `UserProfile.position`, `UserProfile.area`, and `UserProfile.location` are left at their blank/null defaults. The employee fills them in at activation, and until they do the roster renders them as *Sin nombre* / *Sin cargo*.
 
 For `auth_method=otp`:
 
@@ -166,6 +162,7 @@ The current feature does not:
 - persist import batches or upload history
 - preview imports before creation
 - let company managers upload users from the platform UI
+- carry any employee-supplied detail (nombre, cargo, área, localidad)
 
 ## Acceptance Criteria
 
@@ -179,7 +176,9 @@ Given a CSV with valid and invalid rows, when the CSV is imported, then valid ro
 
 Given a row with an unknown company reference code, unknown group, invalid email, missing required value, or invalid `auth_method`, when the CSV is imported, then that row is skipped.
 
-Given optional fields are blank, when the row is valid, then the user/profile is created with empty strings for those fields.
+Given a CSV carrying extra columns, when the CSV is imported, then those columns are ignored, the rows are created, and no área is assigned from them.
+
+Given a created row, when the import finishes, then the user has no name, cargo, área, or localidad, and the report message is exactly `Usuario creado.`
 
 Given an email local part collides with an existing username, when the row is valid, then the importer generates a unique username.
 
@@ -187,18 +186,18 @@ Given an email local part collides with an existing username, when the row is va
 
 When adding fields:
 
-- Decide whether the field is required or optional.
-- Update the input CSV contract.
-- Define normalization and blank-value behavior.
+- First ask whether the admin can actually know the value. If it is something only the employee knows, it belongs on the activation form, not in the CSV.
+- If it does belong here, make it required. There are no optional headers, and that is what lets a misspelled header fail loudly instead of importing a column's worth of blanks.
+- Update the input CSV contract and `REQUIRED_HEADERS`, which the admin upload page reads directly so the two cannot drift.
+- Define normalization behavior.
 - Add row-level validation if needed.
 - Update the report only if admins need visibility into the result.
 - Add acceptance criteria and tests for the new field.
 
 When renaming columns:
 
-- Prefer accepting both old and new headers for at least one transition period.
-- Document which header is canonical.
-- Add tests for backward compatibility.
+- Rename outright and update this document, the admin upload page, and the user guide together. The platform is pre-production, so there is no transition period to support and no back-compatibility alias to carry (see `.claude/CLAUDE.md`).
+- Existing CSVs are re-exported, not migrated.
 
 When moving to a platform UI:
 

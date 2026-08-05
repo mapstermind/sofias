@@ -108,6 +108,10 @@ This applies to everything an agent or developer reads as current truth: `docs/p
 
 **The only two exceptions are `docs/adr/` and `docs/archive/`**, whose entire purpose is to record why an approach was abandoned — they must describe the superseded implementation, and are where that history belongs. Link to the ADR instead of restating the history inline. Database migrations are also necessarily historical and may reference removed fields.
 
+**Never edit a file under `docs/adr/` without explicit approval.** When a change makes an ADR inaccurate, describe the discrepancy and the proposed wording, then wait — do not fold it into the change silently. An ADR carries the reasoning behind a decision, so an unreviewed edit can erase why an approach was rejected while looking like routine upkeep.
+
+What may be corrected once approved is the **Consequences** section, and only where a consequence describes a downstream implementation detail that has since changed. Context, Decision, and Alternatives considered are frozen: they state what was true and what was weighed at the time, and stay that way even when the code moves on. If the decision itself no longer holds, that calls for a new ADR superseding this one, not a rewrite of it.
+
 Rationale: the platform is pre-production, so there are no external consumers to warn about a transition. Migration notes in live docs are pure noise that ages badly and misleads readers into thinking a compatibility path exists.
 
 - **Settings module**: `config.settings` (referenced in `manage.py`).

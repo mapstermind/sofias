@@ -35,33 +35,7 @@ Add a test asserting a user of company A gets 404 on company B's assignment.
 
 ---
 
-## 2. Employee addition workflow needs rework for the new fields 🟡
-
-**Where:** `apps/accounts/importers.py`, the Django admin user-creation path, and
-`docs/platform/csv-user-import.md`.
-
-**What:** Adding `UserProfile.area` / `location` changed the shape of what an
-employee record needs. The CSV importer got only the minimal change required to
-keep working (an optional `area` column, resolved by name, lookup-only). The
-broader workflow was deliberately not reworked.
-
-Known rough edges to fold into that work:
-
-- `OPTIONAL_HEADERS` in `apps/accounts/importers.py` is defined but never
-  referenced — unknown columns are silently ignored by `_normalize_row`.
-- Because only *required* headers are validated, a CSV using a misspelled header
-  (`Area`, `área`) imports every row with `area=None` and reports plain
-  `"Usuario creado."` — the área warning only fires when an `area` *value* is
-  present. Consider warning once per file on unrecognized headers.
-- The importer cannot set `location` at all.
-- An área pre-set by the importer is not offered as the default at activation —
-  `ProfileActivationForm` sets no `initial`, so the employee's pick overwrites it.
-
-**Status:** Owner has scheduled this as its own session.
-
----
-
-## 3. Django admin mixes English and Spanish 🟡 — promoted to a feature doc
+## 2. Django admin mixes English and Spanish 🟡 — promoted to a feature doc
 
 **Where:** `config/settings.py` (`LANGUAGE_CODE = "en-us"`) and model metadata
 across all four apps.
@@ -74,7 +48,7 @@ Kept here only as a pointer — see that document for the analysis.
 
 ---
 
-## 4. Tailwind compiles utilities out of Markdown prose 🟢
+## 3. Tailwind compiles utilities out of Markdown prose 🟢
 
 **Where:** `static/css/main.css` / the Tailwind v4 build.
 
@@ -91,26 +65,25 @@ and `static/` are scanned.
 
 ---
 
-## 5. Accent-sensitive catalog uniqueness is undocumented 🟢
+## 4. Accent-sensitive catalog uniqueness is undocumented 🟢
 
 **Where:** `apps/accounts/models.py` — `UniqueConstraint(company, Lower("name"))`
 on `CompanyCatalogEntry`.
 
 **What:** `Lower()` case-folds but does **not** fold accents, so `Dirección` and
-`Direccion` are two distinct áreas within the same company, and the CSV
-importer's `name__iexact` lookup will not match across the accent (it emits the
-"no existe o está inactiva" warning instead).
+`Direccion` are two distinct áreas within the same company. Both appear in the
+activation picker, and an employee choosing between them is picking between two
+spellings of one área — which then aggregate as separate buckets.
 
 **Why it may be fine:** arguably correct — they are different strings, and the
 admin curates the list. But nobody has decided this on purpose.
 
-**If it should change:** use `unaccent` (requires the Postgres extension) in both
-the constraint and the importer lookup. Either way, record the decision and add a
-test pinning it.
+**If it should change:** use `unaccent` (requires the Postgres extension) in the
+constraint. Either way, record the decision and add a test pinning it.
 
 ---
 
-## 6. Retiring a localidad mid-activation silently substitutes another 🟢
+## 5. Retiring a localidad mid-activation silently substitutes another 🟢
 
 **Where:** `apps/accounts/views.py` `setup_profile` +
 `apps/accounts/forms.py` `ProfileActivationForm.implicit_location`.

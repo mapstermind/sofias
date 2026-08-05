@@ -22,8 +22,9 @@ Identity, authentication, authorization, and company/employee onboarding. Define
   pickers at activation. Retire with `is_active=False` rather than deleting. See
   `docs/adr/adr-0004-per-company-area-and-locality-catalogs.md`.
 - `UserProfile` — OneToOne with `User`; `is_activated` gates app access; FK to `Company`;
-  free-text `position` (cargo); `area` and `location` FKs (both `SET_NULL`, nullable) set
-  by the employee at activation. `area` drives `apps/nom035`'s per-área company
+  free-text `position` (cargo); `area` and `location` FKs (both `SET_NULL`, nullable). The
+  cargo, área and localidad — along with `User.first_name`/`last_name` — are all supplied
+  by the employee at activation, not at import. `area` drives `apps/nom035`'s per-área company
   aggregation — a null área falls into a "Sin área" bucket. `clean()` rejects an
   área/localidad belonging to a different company.
 - `EmailOTP` — 6-digit code keyed by **email string, not a User FK** (the user may not exist yet). Self-sets `expires_at` from `OTP_EXPIRY_MINUTES` (default 10).
@@ -38,8 +39,8 @@ Permissions are defined on `Role.Meta.permissions`; groups that bundle them are 
 
 - `backends.py` — `EmailOTPBackend`: a near-empty backend; OTP validation happens in the view, the backend exists only so `login()` can record it. `ModelBackend` stays first in `AUTHENTICATION_BACKENDS` to keep admin password login working.
 - `middleware.py` — `RequirePasswordChangeMiddleware`: traps users with `must_change_password=True` on the change-password flow (admin/static/logout exempted).
-- `views.py` — the auth flows: `request_otp` → `verify_otp`, `password_login`, `setup_access_code_login`, `change_password`, `setup_profile`, `logout_view` (POST-only). `_redirect_after_login` routes by group/profile state. `setup_profile` blocks activation when the company has **no active áreas** (nothing to pick from) and saves `area`/`location`/`is_activated` together.
-- `importers.py` — `import_users_from_csv`: transactional, per-row report; required CSV headers `email, company_reference_code, group, auth_method` (`otp`|`password`), plus an **optional** `area` column. Área resolution is **lookup-only and never creates entries** — an unknown name imports the user with `area=None` plus a warning in the report `message`, rather than skipping the row. Generates setup access codes for `password` users.
+- `views.py` — the auth flows: `request_otp` → `verify_otp`, `password_login`, `setup_access_code_login`, `change_password`, `setup_profile`, `logout_view` (POST-only). `_redirect_after_login` routes by group/profile state. `setup_profile` blocks activation when the company has **no active áreas** (nothing to pick from), prefills the identity fields from whatever is already on record, and writes the `User` and `UserProfile` rows in one transaction.
+- `importers.py` — `import_users_from_csv`: transactional, per-row report. `REQUIRED_HEADERS` (`email, company_reference_code, group, auth_method`, the latter `otp`|`password`) is the **entire** contract — there are no optional headers, and any extra column is ignored. The importer sets nothing an employee reports about themselves (name, cargo, área, localidad); those are collected by `ProfileActivationForm`. `CustomUserAdmin.import_csv_view` reads `REQUIRED_HEADERS` for its help text, so the page cannot drift from the code. Generates setup access codes for `password` users.
 - `emails.py` — `send_otp_email`; raises `SMTPException` on failure (callers catch).
 - `forms.py`, `utils.py`, `admin.py` (custom `User` admin with a `import-csv/` view).
 

@@ -48,7 +48,13 @@ class TestProfileActivationFormCleanReferenceCode:
     def _form(self, code, company_with_area):
         company, area = company_with_area
         return ProfileActivationForm(
-            data={"reference_code": code, "area": area.pk}, company=company
+            data={
+                "reference_code": code,
+                "first_name": "Ana",
+                "last_name": "López",
+                "area": area.pk,
+            },
+            company=company,
         )
 
     def test_lowercased_input_is_uppercased(self, company_with_area):
@@ -76,6 +82,59 @@ class TestProfileActivationFormCleanReferenceCode:
 
 
 @pytest.mark.django_db
+class TestProfileActivationFormIdentityFields:
+    """Name and cargo are collected here, so the CSV import doesn't carry them."""
+
+    @pytest.fixture
+    def company_with_area(self, make_company, make_area):
+        company = make_company()
+        return company, make_area(company, name="Ventas")
+
+    def _data(self, company, area, **overrides):
+        data = {
+            "reference_code": company.reference_code,
+            "first_name": "Ana",
+            "last_name": "López",
+            "area": area.pk,
+        }
+        data.update(overrides)
+        return data
+
+    def test_name_is_required(self, company_with_area):
+        company, area = company_with_area
+        form = ProfileActivationForm(
+            data=self._data(company, area, first_name="", last_name=""),
+            company=company,
+        )
+        assert not form.is_valid()
+        assert "first_name" in form.errors
+        assert "last_name" in form.errors
+
+    def test_cargo_is_optional_and_defaults_to_blank(self, company_with_area):
+        company, area = company_with_area
+        form = ProfileActivationForm(data=self._data(company, area), company=company)
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["position"] == ""
+
+    def test_values_are_stripped(self, company_with_area):
+        company, area = company_with_area
+        form = ProfileActivationForm(
+            data=self._data(
+                company,
+                area,
+                first_name="  Ana  ",
+                last_name="  López  ",
+                position="  Analista  ",
+            ),
+            company=company,
+        )
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["first_name"] == "Ana"
+        assert form.cleaned_data["last_name"] == "López"
+        assert form.cleaned_data["position"] == "Analista"
+
+
+@pytest.mark.django_db
 class TestProfileActivationFormScoping:
     def test_area_choices_limited_to_active_entries_of_the_company(
         self, make_company, make_area
@@ -96,7 +155,12 @@ class TestProfileActivationFormScoping:
         foreign = make_area(other, name="Ajena")
 
         form = ProfileActivationForm(
-            data={"reference_code": company.reference_code, "area": foreign.pk},
+            data={
+                "reference_code": company.reference_code,
+                "first_name": "Ana",
+                "last_name": "López",
+                "area": foreign.pk,
+            },
             company=company,
         )
         assert not form.is_valid()

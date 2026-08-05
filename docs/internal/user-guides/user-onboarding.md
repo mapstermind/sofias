@@ -44,7 +44,7 @@ The manual procedure below is for OTP-only users:
 6. Save the user.
 7. Open the saved user record and complete these fields:
    - `email`: the employee’s institutional email. This must be exact because login starts from this email.
-   - `first_name` and `last_name`, if available.
+   - `first_name` and `last_name`: optional. The employee is asked for these at activation, and anything you enter here is prefilled for them to confirm.
    - `is_active`: enabled.
    - Groups/permissions: assign the correct role group, for example `Employees`, `Principal Exec`, `Secondary Exec`, or `Admins`.
 8. Save again.
@@ -57,9 +57,8 @@ Each non-admin user needs a `UserProfile`.
 2. Create a profile for the user, or open the existing profile.
 3. Set:
    - `user`: the user created above.
-   - `position`: the employee’s role or job title.
-   - `company`: the company where the user works.
-   - `area` / `localidad`: optional here — the employee normally picks these themselves during activation. The dropdowns only offer entries belonging to the profile’s company.
+   - `company`: the company where the user works. This is the only field you have to set.
+   - `position`, `area`, `localidad`: optional here — the employee supplies these during activation, and anything you enter is prefilled for them. The dropdowns only offer entries belonging to the profile’s company.
    - `is_activated`: leave disabled for first-time users.
 4. Save the profile.
 
@@ -77,8 +76,8 @@ Use this path when the user can receive emails from SOFIA-S.
 6. The user enters the code at `/cuentas/verificar/`.
 7. After successful verification, SOFIA-S logs the user in.
 8. If this is the user’s first login, they are redirected to `/cuentas/completar-perfil/`.
-9. The user enters the company `reference_code` and selects their **área** from the company’s list. If the company has more than one localidad, they also select their **localidad**; with exactly one localidad it is assigned automatically and not shown.
-10. If the code matches the company linked to their profile, `is_activated` becomes enabled, the área/localidad are saved, and the user proceeds into the app.
+9. The user enters the company `reference_code`, their **nombre(s)** and **apellidos** (both required) and an optional **cargo**, then selects their **área** from the company’s list. If the company has more than one localidad, they also select their **localidad**; with exactly one localidad it is assigned automatically and not shown.
+10. If the code matches the company linked to their profile, `is_activated` becomes enabled, the name, cargo, área and localidad are saved, and the user proceeds into the app. Until this happens the employee roster shows them as *Sin nombre*.
 
 ## Path B: Setup Access Code Fallback
 

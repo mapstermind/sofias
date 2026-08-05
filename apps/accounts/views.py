@@ -290,10 +290,17 @@ def setup_profile(request):
         return render(request, "accounts/profile_setup.html", {"no_areas": True})
 
     if request.method == "GET":
+        # Prefill so a user whose details an admin already filled in by hand
+        # isn't made to retype them.
+        initial = {
+            "first_name": request.user.first_name,
+            "last_name": request.user.last_name,
+            "position": profile.position,
+        }
         return render(
             request,
             "accounts/profile_setup.html",
-            {"form": ProfileActivationForm(company=company)},
+            {"form": ProfileActivationForm(company=company, initial=initial)},
         )
 
     form = ProfileActivationForm(request.POST, company=company)
@@ -308,10 +315,19 @@ def setup_profile(request):
         )
         return render(request, "accounts/profile_setup.html", {"form": form})
 
-    profile.area = form.cleaned_data["area"]
-    profile.location = form.cleaned_data.get("location") or form.implicit_location
-    profile.is_activated = True
-    profile.save(update_fields=["area", "location", "is_activated"])
+    # Both rows or neither: a half-activated profile with a name but no área
+    # would pass the is_activated gate with nothing to aggregate on.
+    with transaction.atomic():
+        user = request.user
+        user.first_name = form.cleaned_data["first_name"]
+        user.last_name = form.cleaned_data["last_name"]
+        user.save(update_fields=["first_name", "last_name"])
+
+        profile.position = form.cleaned_data["position"]
+        profile.area = form.cleaned_data["area"]
+        profile.location = form.cleaned_data.get("location") or form.implicit_location
+        profile.is_activated = True
+        profile.save(update_fields=["position", "area", "location", "is_activated"])
 
     return redirect(settings.LOGIN_REDIRECT_URL)
 
