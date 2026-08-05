@@ -13,7 +13,7 @@ Dominio, Categoría and a final overall score, and the results surface inside th
 _Insights_ panels of the company dashboard and employee-detail pages, under the
 heading **"Valoración de resultados"**, as color-coded NDR badges over a
 categoría → dominio → dimensión hierarchy on the employee card, and a
-company-wide summary plus a per-área/department breakdown on the company
+company-wide summary plus a per-área breakdown on the company
 dashboard (see [Presentation](#presentation)).
 
 The feature has two halves:
@@ -45,9 +45,9 @@ lives in Spanish at
 ### The app
 
 `apps/nom035` is a dedicated, **NOM-035-specific** app (`AppConfig` with
-`name="apps.nom035"`, `label="nom035"`, registered in `INSTALLED_APPS`). It was
-created by repurposing the previously-empty `analytics` stub. A future second
-instrument would get its own app rather than being generalized into this one (see
+`name="apps.nom035"`, `label="nom035"`, registered in `INSTALLED_APPS`). A future
+second instrument would get its own app rather than being generalized into this
+one (see
 [ADR-0003](../adr/adr-0003-per-instrument-survey-processing-apps.md)).
 
 ### Scoring configuration (data as Python)
@@ -133,20 +133,29 @@ Scores are **materialized**, not recomputed on every page load:
 - `python manage.py recompute_nom035_scores [--company <reference_code>]` backfills
   existing submissions and refreshes all scores after a configuration change.
 
-### Area/department grouping
+### Area grouping
 
-Company-level aggregation groups employees by **área/departamento** so risk can
-be read per area, not just company-wide. `UserProfile.department`
-(`apps/accounts`) is a free-text field — mirroring the existing free-text
-`position` (cargo) — with **no fixed enum and no per-company Department
-model**: area names vary between companies and the admin uploads
-already-cleaned data. It's populated via the `UserProfile` admin or an
-**optional** `department` column in the user CSV importer
-(`import_users_from_csv`) — the column isn't in the required-headers set, so
-CSVs without it still import (department stays blank). Grouping normalizes by
-`department.strip()` case-folded, displaying the first-seen original casing;
-a blank department falls into a **"Sin área"** bucket so no scored employee is
-dropped from the breakdown.
+Company-level aggregation groups employees by **área** so risk can be read per
+area, not just company-wide. `UserProfile.area` (`apps/accounts`) is a
+`SET_NULL` FK to **`CompanyArea`**, a per-company catalog curated by an admin as
+an inline on the Company change page and offered to the employee as a picker
+during activation (see
+[`auth-and-onboarding.md`](./auth-and-onboarding.md) and
+[ADR-0004](../adr/adr-0004-per-company-area-and-locality-catalogs.md)).
+
+An área is only used as a label when it belongs to the company being aggregated;
+a submission whose respondent belongs to a *different* company buckets as "Sin
+área" rather than printing another client's catalog name on this dashboard.
+
+Grouping is by área **pk**, not by name: `CompanyArea` carries a
+`UniqueConstraint(company, Lower("name"))`, so duplicate spellings within a
+company are impossible, and two companies that both have an "Operaciones" área
+stay distinct. A profile with no área (CSV-imported without the optional `area`
+column, or whose área was deleted) falls into a **"Sin área"** bucket so no
+scored employee is dropped from the breakdown.
+
+`UserProfile.location` (FK to `CompanyLocation`) exists alongside it but does
+**not** yet drive any aggregation.
 
 ### Reads and aggregation
 
@@ -159,7 +168,7 @@ dropped from the breakdown.
 - **`company_valuation(company)`** — the company roll-up: count of scored
   submissions, the NDR distribution, a "needing action" count (submissions whose
   final NDR is Alto or Muy alto), the count of Guía I-positive workers, plus a
-  per-area breakdown (grouped by `UserProfile.department`, normalized) with an
+  per-area breakdown (grouped by `UserProfile.area`) with an
   organization-framed action line keyed to the most-severe NDR present.
 
 Company-level figures are **not** materialized — they are computed on demand from
@@ -298,10 +307,11 @@ company aggregation.
   individual, so a per-person "necesidad de acción" verdict would misrepresent
   what the platform (and the SME operating it) is entitled to conclude about a
   named employee.
-- **Free-text `UserProfile.department`, not a model/enum.** Area names vary
-  between companies and the admin uploads already-cleaned data; a managed
-  Department model/list would add an unneeded management surface for no
-  aggregation benefit today.
+- **Per-company `CompanyArea` catalog, curated by an admin.** The employee
+  *picks* their área from a preloaded list, so the options must exist as data;
+  grouping by pk also gives the pending área-level valuation work a stable key.
+  See
+  [ADR-0004](../adr/adr-0004-per-company-area-and-locality-catalogs.md).
 - **NDR colors centralized in one template-filter module**
   (`apps/core/templatetags/valuation_extras.py`), not literal Tailwind classes
   scattered per template, so the Nulo/Bajo/Medio/Alto/Muy alto ramp stays a
@@ -321,22 +331,26 @@ company aggregation.
 including dimensión score-only materialization and the
 `recompute_nom035_scores` backfill/refresh command); on-demand company
 aggregation with a per-área breakdown; the NOM-035 scoring config; the
-free-text `UserProfile.department` field (+ optional CSV column, admin
-editing) backing that grouping; and the "Valoración de resultados" panels —
+`UserProfile.area` FK (+ optional CSV column, admin editing) backing that
+grouping; and the "Valoración de resultados" panels —
 the nested categoría→dominio→dimensión employee breakdown with NDR badges,
 and the company-wide summary plus per-área company dashboard — gated on
 `can_view_insights`.
 
 **Out of scope:** interactive charts/graphs beyond the distribution bars; the
 downloadable/static PDF report (Iniciativa 2); an employee-facing self-view of
-results; any operator UI for authoring scoring configuration; a managed
-Department model or department-management UI; a second survey instrument; and
-automatic generation of the Plan Bianual de Prevención.
+results; any operator UI for authoring scoring configuration; a
+`CompanyLocation`-based breakdown (the FK exists but drives no aggregation
+yet); a second survey instrument; and automatic generation of the Plan Bianual
+de Prevención.
 
 ## Linked ADRs
 
 - [ADR-0003 — per-instrument survey-processing apps](../adr/adr-0003-per-instrument-survey-processing-apps.md)
   — the decision to build a NOM-035-specific engine in its own app rather than a
   generic configurable engine.
+- [ADR-0004 — per-company área/localidad catalogs](../adr/adr-0004-per-company-area-and-locality-catalogs.md)
+  — why the per-área breakdown groups by a curated per-company `CompanyArea`
+  catalog.
 - [ADR-0002 — flatten survey authoring model](../adr/adr-0002-flatten-survey-authoring-model.md)
   — establishes `Question.code` as the stable integration key this engine consumes.

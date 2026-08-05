@@ -1,3 +1,5 @@
+import pytest
+
 from apps.accounts.forms import (
     EmailRequestForm,
     OTPVerifyForm,
@@ -5,7 +7,8 @@ from apps.accounts.forms import (
     SetupAccessCodeLoginForm,
 )
 
-# Forms are pure Python — no database access needed for these tests.
+# Most forms are pure Python and need no database. ProfileActivationForm is the
+# exception — its área/localidad pickers are company-scoped querysets.
 
 
 class TestOTPVerifyFormCleanCode:
@@ -35,32 +38,101 @@ class TestOTPVerifyFormCleanCode:
         assert not form.is_valid()
 
 
+@pytest.mark.django_db
 class TestProfileActivationFormCleanReferenceCode:
-    def _form(self, code):
-        return ProfileActivationForm(data={"reference_code": code})
+    @pytest.fixture
+    def company_with_area(self, make_company, make_area):
+        company = make_company()
+        return company, make_area(company, name="Ventas")
 
-    def test_lowercased_input_is_uppercased(self):
-        form = self._form("abc12")
+    def _form(self, code, company_with_area):
+        company, area = company_with_area
+        return ProfileActivationForm(
+            data={"reference_code": code, "area": area.pk}, company=company
+        )
+
+    def test_lowercased_input_is_uppercased(self, company_with_area):
+        form = self._form("abc12", company_with_area)
         assert form.is_valid(), form.errors
         assert form.cleaned_data["reference_code"] == "ABC12"
 
-    def test_already_uppercase_passes(self):
-        form = self._form("XYZ99")
+    def test_already_uppercase_passes(self, company_with_area):
+        form = self._form("XYZ99", company_with_area)
         assert form.is_valid()
         assert form.cleaned_data["reference_code"] == "XYZ99"
 
-    def test_special_characters_rejected(self):
-        form = self._form("AB-12")
+    def test_special_characters_rejected(self, company_with_area):
+        form = self._form("AB-12", company_with_area)
         assert not form.is_valid()
         assert "reference_code" in form.errors
 
-    def test_too_short_rejected(self):
-        form = self._form("AB1")
+    def test_too_short_rejected(self, company_with_area):
+        form = self._form("AB1", company_with_area)
         assert not form.is_valid()
 
-    def test_empty_rejected(self):
-        form = self._form("")
+    def test_empty_rejected(self, company_with_area):
+        form = self._form("", company_with_area)
         assert not form.is_valid()
+
+
+@pytest.mark.django_db
+class TestProfileActivationFormScoping:
+    def test_area_choices_limited_to_active_entries_of_the_company(
+        self, make_company, make_area
+    ):
+        company = make_company(name="Cliente A")
+        other = make_company(name="Cliente B")
+        mine = make_area(company, name="Ventas")
+        make_area(company, name="Retirada", is_active=False)
+        make_area(other, name="Ajena")
+
+        form = ProfileActivationForm(company=company)
+        assert list(form.fields["area"].queryset) == [mine]
+
+    def test_foreign_company_area_is_rejected(self, make_company, make_area):
+        company = make_company(name="Cliente A")
+        other = make_company(name="Cliente B")
+        make_area(company, name="Ventas")
+        foreign = make_area(other, name="Ajena")
+
+        form = ProfileActivationForm(
+            data={"reference_code": company.reference_code, "area": foreign.pk},
+            company=company,
+        )
+        assert not form.is_valid()
+        assert "area" in form.errors
+
+    def test_location_field_absent_when_company_has_none(self, make_company, make_area):
+        company = make_company()
+        make_area(company, name="Ventas")
+
+        form = ProfileActivationForm(company=company)
+        assert "location" not in form.fields
+        assert form.implicit_location is None
+
+    def test_single_location_is_implicit_not_asked(
+        self, make_company, make_area, make_location
+    ):
+        company = make_company()
+        make_area(company, name="Ventas")
+        only = make_location(company, name="Matriz")
+
+        form = ProfileActivationForm(company=company)
+        assert "location" not in form.fields
+        assert form.implicit_location == only
+
+    def test_location_required_when_company_has_several(
+        self, make_company, make_area, make_location
+    ):
+        company = make_company()
+        make_area(company, name="Ventas")
+        make_location(company, name="Matriz")
+        make_location(company, name="Norte")
+
+        form = ProfileActivationForm(company=company)
+        assert "location" in form.fields
+        assert form.fields["location"].required
+        assert form.implicit_location is None
 
 
 class TestEmailRequestForm:

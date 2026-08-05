@@ -1,7 +1,12 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 
-from apps.accounts.models import User, normalize_setup_access_code
+from apps.accounts.models import (
+    CompanyArea,
+    CompanyLocation,
+    User,
+    normalize_setup_access_code,
+)
 
 
 class UserCSVImportForm(forms.Form):
@@ -194,6 +199,12 @@ class OTPVerifyForm(forms.Form):
         return code
 
 
+_SELECT_CLASSES = (
+    "block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm "
+    "focus:border-indigo-500 focus:ring-indigo-500"
+)
+
+
 class ProfileActivationForm(forms.Form):
     reference_code = forms.CharField(
         label="Código de referencia de la empresa",
@@ -207,6 +218,55 @@ class ProfileActivationForm(forms.Form):
             }
         ),
     )
+    area = forms.ModelChoiceField(
+        queryset=CompanyArea.objects.none(),
+        label="Área",
+        empty_label="Selecciona tu área",
+        error_messages={
+            "required": "Selecciona el área a la que perteneces.",
+            "invalid_choice": "Selecciona un área válida de tu empresa.",
+        },
+        widget=forms.Select(attrs={"class": _SELECT_CLASSES}),
+    )
+    location = forms.ModelChoiceField(
+        queryset=CompanyLocation.objects.none(),
+        label="Localidad",
+        empty_label="Selecciona tu localidad",
+        error_messages={
+            "required": "Selecciona la localidad en la que trabajas.",
+            "invalid_choice": "Selecciona una localidad válida de tu empresa.",
+        },
+        widget=forms.Select(attrs={"class": _SELECT_CLASSES}),
+    )
+
+    def __init__(self, *args, company, **kwargs):
+        """Scope the pickers to `company`, which is always required.
+
+        Narrowing the querysets is the security boundary, not just a UX nicety:
+        ModelChoiceField resolves a submitted pk *within its queryset*, so a
+        foreign company's pk fails as `invalid_choice` before the view sees it.
+        """
+        super().__init__(*args, **kwargs)
+        self.company = company
+
+        self.fields["area"].queryset = CompanyArea.objects.filter(
+            company=company, is_active=True
+        )
+        active_locations = CompanyLocation.objects.filter(
+            company=company, is_active=True
+        )
+        self.active_locations = list(active_locations)
+        if len(self.active_locations) > 1:
+            self.fields["location"].queryset = active_locations
+        else:
+            # 0 or 1 localidad: nothing to choose. Dropping the field means a
+            # posted pk is structurally ignored rather than trusted.
+            del self.fields["location"]
+
+    @property
+    def implicit_location(self):
+        """The single localidad to auto-assign when the picker isn't shown."""
+        return self.active_locations[0] if len(self.active_locations) == 1 else None
 
     def clean_reference_code(self):
         code = self.cleaned_data["reference_code"].strip().upper()

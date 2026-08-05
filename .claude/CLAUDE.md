@@ -102,6 +102,14 @@ apps/            # Django apps; each app has its own CLAUDE.md with details
 
 **Feature docs live in `docs/platform/`.** This project is documentation-driven (see `docs/internal/prompting-workflow.md`): the per-feature doc `docs/platform/<feature>.md` is the source of truth, and its derived implementation plan is `docs/platform/<feature>-tasks.md`. When a skill (brainstorming, writing-plans, etc.) produces or rewrites either artifact, write it under `docs/platform/` — never under `docs/superpowers/`, a `specs/` folder, or a scratch path.
 
+**Live documentation describes only the current implementation.** After a refactor, rewrite the affected docs as if the new implementation were always the original. Do **not** leave migration commentary behind — no "replaces the old X", "formerly Y", "superseded Z", "deprecated alias", "no longer supported", or before/after comparisons. A reader should not be able to tell from a live doc that a previous implementation ever existed.
+
+This applies to everything an agent or developer reads as current truth: `docs/platform/`, `docs/internal/` (including `user-guides/`), every `CLAUDE.md`, and code comments and test names.
+
+**The only two exceptions are `docs/adr/` and `docs/archive/`**, whose entire purpose is to record why an approach was abandoned — they must describe the superseded implementation, and are where that history belongs. Link to the ADR instead of restating the history inline. Database migrations are also necessarily historical and may reference removed fields.
+
+Rationale: the platform is pre-production, so there are no external consumers to warn about a transition. Migration notes in live docs are pure noise that ages badly and misleads readers into thinking a compatibility path exists.
+
 - **Settings module**: `config.settings` (referenced in `manage.py`).
 - **Root URL conf**: `config.urls` — wires `admin/`, `core` at `/`, `accounts` at `/cuentas/`, `surveys` at `/encuestas/`.
 - **Registered apps** (in `INSTALLED_APPS`): `apps.accounts`, `apps.core`, `apps.surveys`, `apps.responses`, `apps.nom035`. These use fully-qualified `AppConfig.name = "apps.<x>"` with an explicit short `label`. `reports` is an **empty stub, not registered**, and still uses a bare `AppConfig.name` — register it before use (see its CLAUDE.md).

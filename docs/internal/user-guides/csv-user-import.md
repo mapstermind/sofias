@@ -40,17 +40,20 @@ Optional columns:
 - `first_name`
 - `last_name`
 - `position`
+- `area`: must match an área already loaded on that company (see the company setup guide). Matching ignores capitalization and surrounding spaces.
 
 Blank optional values are allowed. Existing users are never updated; duplicate emails are skipped.
+
+**If an `area` value does not match any área on the company**, the user is still created — with no área — and the report row says `Aviso: el área «…» no existe en esta empresa`. The importer never creates new áreas, so a typo shows up as a warning instead of silently adding a duplicate área. The employee can also pick their área themselves when they activate their account.
 
 ## CSV Example
 
 ```csv
-email,company_reference_code,group,auth_method,first_name,last_name,position
-ana.lopez@empresa.com,A1B2C,Employees,otp,Ana,Lopez,Analista
-carlos.ruiz@empresa.com,A1B2C,Principal Exec,otp,Carlos,Ruiz,Director General
-maria.santos@empresa.com,A1B2C,Employees,password,Maria,Santos,Coordinadora
-sin.nombre@empresa.com,A1B2C,Employees,otp,,,
+email,company_reference_code,group,auth_method,first_name,last_name,position,area
+ana.lopez@empresa.com,A1B2C,Employees,otp,Ana,Lopez,Analista,Sistemas
+carlos.ruiz@empresa.com,A1B2C,Principal Exec,otp,Carlos,Ruiz,Director General,Dirección
+maria.santos@empresa.com,A1B2C,Employees,password,Maria,Santos,Coordinadora,Ventas
+sin.nombre@empresa.com,A1B2C,Employees,otp,,,,
 ```
 
 Use `otp` when the user can receive the login code by email. Use `password` only when the company blocks external email delivery and HR needs to distribute a código temporal de acceso internally.

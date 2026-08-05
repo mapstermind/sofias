@@ -42,40 +42,125 @@ def test_company_valuation_counts(scored):
     assert data["distribution"][c.NDR_MUY_ALTO] == 1
 
 
-def test_company_valuation_area_breakdown(make_company, make_user_with_profile, survey):
-    from apps.nom035 import constants as c
+def _make_score(company, survey, user, ndr):
     from apps.nom035.models import SubmissionScore
 
+    assignment = SurveyAssignment.objects.create(
+        company=company,
+        survey=survey,
+        variant=SurveyAssignment.Variant.LARGE,
+        status=SurveyAssignment.Status.ACTIVE,
+    )
+    sub = SurveySubmission.objects.create(
+        assignment=assignment, user=user, status=SurveySubmission.Status.IN_PROGRESS
+    )
+    SubmissionScore.objects.create(submission=sub, final_score=1, final_ndr=ndr)
+
+
+def test_company_valuation_area_breakdown(
+    make_company, make_user_with_profile, make_area, survey
+):
+    from apps.nom035 import constants as c
+
     company = make_company()
+    sistemas = make_area(company, name="Sistemas")
 
-    def _score(email, dept, ndr):
-        user = make_user_with_profile(email=email, company=company)
-        user.profile.department = dept
-        user.profile.save()
-        assignment = SurveyAssignment.objects.create(
-            company=company,
-            survey=survey,
-            variant=SurveyAssignment.Variant.LARGE,
-            status=SurveyAssignment.Status.ACTIVE,
-        )
-        sub = SurveySubmission.objects.create(
-            assignment=assignment, user=user, status=SurveySubmission.Status.IN_PROGRESS
-        )
-        SubmissionScore.objects.create(submission=sub, final_score=1, final_ndr=ndr)
-
-    _score("a@x.mx", "Sistemas", c.NDR_MUY_ALTO)
-    _score("b@x.mx", "sistemas ", c.NDR_BAJO)  # same area, different casing/space
-    _score("c@x.mx", "", c.NDR_MEDIO)  # → "Sin área"
+    _make_score(
+        company,
+        survey,
+        make_user_with_profile(email="a@x.mx", company=company, area=sistemas),
+        c.NDR_MUY_ALTO,
+    )
+    _make_score(
+        company,
+        survey,
+        make_user_with_profile(email="b@x.mx", company=company, area=sistemas),
+        c.NDR_BAJO,
+    )
+    # No área → its own bucket, so no scored employee is dropped.
+    _make_score(
+        company,
+        survey,
+        make_user_with_profile(email="c@x.mx", company=company),
+        c.NDR_MEDIO,
+    )
 
     data = company_valuation(company)
     areas = {a["label"]: a for a in data["areas"]}
     assert set(areas) == {"Sistemas", "Sin área"}
-    sistemas = areas["Sistemas"]
-    assert sistemas["scored_count"] == 2
-    assert sistemas["needing_action"] == 1
-    assert sistemas["action_ndr"] == c.NDR_MUY_ALTO  # most-severe present
-    assert sistemas["action"] == cfg.action_text(c.NDR_MUY_ALTO)
+    bucket = areas["Sistemas"]
+    assert bucket["scored_count"] == 2
+    assert bucket["needing_action"] == 1
+    assert bucket["action_ndr"] == c.NDR_MUY_ALTO  # most-severe present
+    assert bucket["action"] == cfg.action_text(c.NDR_MUY_ALTO)
     assert areas["Sin área"]["action_ndr"] == c.NDR_MEDIO
+
+
+def test_identically_named_areas_in_different_companies_do_not_merge(
+    make_company, make_user_with_profile, make_area, survey
+):
+    """Grouping is by área pk, not by name — the point of the catalog models."""
+    from apps.nom035 import constants as c
+
+    company = make_company(name="Cliente A")
+    other = make_company(name="Cliente B")
+    mine = make_area(company, name="Operaciones")
+    theirs = make_area(other, name="Operaciones")
+
+    _make_score(
+        company,
+        survey,
+        make_user_with_profile(email="mine@x.mx", company=company, area=mine),
+        c.NDR_BAJO,
+    )
+    _make_score(
+        other,
+        survey,
+        make_user_with_profile(email="theirs@x.mx", company=other, area=theirs),
+        c.NDR_MUY_ALTO,
+    )
+
+    data = company_valuation(company)
+    assert len(data["areas"]) == 1
+    assert data["areas"][0]["scored_count"] == 1
+    assert data["areas"][0]["area_id"] == mine.pk
+    assert data["areas"][0]["action_ndr"] == c.NDR_BAJO
+
+
+def test_user_without_a_profile_falls_into_sin_area(make_company, make_user, survey):
+    """select_related through the reverse O2O makes this path non-obvious."""
+    from apps.nom035 import constants as c
+
+    company = make_company()
+    _make_score(company, survey, make_user(email="noprofile@x.mx"), c.NDR_BAJO)
+
+    data = company_valuation(company)
+    assert [a["label"] for a in data["areas"]] == ["Sin área"]
+    assert data["areas"][0]["area_id"] is None
+
+
+def test_foreign_company_area_is_not_labelled_on_this_dashboard(
+    make_company, make_user_with_profile, make_area, survey
+):
+    """Assignments are looked up without company scoping in apps/surveys, so a
+    submission can reach the wrong roll-up. It must not print the other client's
+    catalog name here."""
+    from apps.nom035 import constants as c
+
+    company = make_company(name="Cliente A")
+    other = make_company(name="Cliente B")
+    foreign_area = make_area(other, name="AreaSecretaDeB")
+    employee_of_b = make_user_with_profile(
+        email="crossed@x.mx", company=other, area=foreign_area
+    )
+
+    # Submission belongs to Cliente A's assignment, respondent belongs to B.
+    _make_score(company, survey, employee_of_b, c.NDR_BAJO)
+
+    data = company_valuation(company)
+    labels = [a["label"] for a in data["areas"]]
+    assert "AreaSecretaDeB" not in labels
+    assert labels == ["Sin área"]
 
 
 def test_employee_valuation_returns_nested_scores(scored):

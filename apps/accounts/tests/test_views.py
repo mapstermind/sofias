@@ -577,10 +577,67 @@ class TestSetupProfileView:
         assert "ingresar" in response["Location"]
 
     def test_correct_code_activates_and_redirects(
-        self, client, make_user_with_profile, make_company
+        self, client, make_user_with_profile, make_company, make_area
     ):
         company = make_company()
+        area = make_area(company, name="Ventas")
         user = make_user_with_profile(email="activate@example.com", company=company)
+        client.force_login(user)
+
+        response = client.post(
+            SETUP_PROFILE_URL,
+            {"reference_code": company.reference_code, "area": area.pk},
+        )
+
+        user.profile.refresh_from_db()
+        assert user.profile.is_activated is True
+        assert user.profile.area == area
+        assert response.status_code == 302
+        assert "completar-perfil" not in response["Location"]
+
+    def test_wrong_code_shows_error(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        user = make_user_with_profile(email="wrongcode@example.com", company=company)
+        client.force_login(user)
+
+        response = client.post(
+            SETUP_PROFILE_URL, {"reference_code": "ZZZZZ", "area": area.pk}
+        )
+
+        user.profile.refresh_from_db()
+        assert user.profile.is_activated is False
+        assert user.profile.area is None
+        assert response.status_code == 200
+
+    def test_foreign_company_area_is_rejected(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company(name="Cliente A")
+        other = make_company(name="Cliente B")
+        make_area(company, name="Ventas")
+        foreign = make_area(other, name="Ajena")
+        user = make_user_with_profile(email="foreign@example.com", company=company)
+        client.force_login(user)
+
+        response = client.post(
+            SETUP_PROFILE_URL,
+            {"reference_code": company.reference_code, "area": foreign.pk},
+        )
+
+        user.profile.refresh_from_db()
+        assert response.status_code == 200
+        assert user.profile.is_activated is False
+        assert user.profile.area is None
+
+    def test_missing_area_shows_field_error(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company()
+        make_area(company, name="Ventas")
+        user = make_user_with_profile(email="noarea@example.com", company=company)
         client.force_login(user)
 
         response = client.post(
@@ -588,20 +645,132 @@ class TestSetupProfileView:
         )
 
         user.profile.refresh_from_db()
-        assert user.profile.is_activated is True
-        assert response.status_code == 302
-        assert "completar-perfil" not in response["Location"]
+        assert response.status_code == 200
+        assert user.profile.is_activated is False
+        assert "area" in response.context["form"].errors
 
-    def test_wrong_code_shows_error(self, client, make_user_with_profile, make_company):
+    def test_company_without_areas_blocks_activation(
+        self, client, make_user_with_profile, make_company
+    ):
         company = make_company()
-        user = make_user_with_profile(email="wrongcode@example.com", company=company)
+        user = make_user_with_profile(email="noareas@example.com", company=company)
         client.force_login(user)
 
-        response = client.post(SETUP_PROFILE_URL, {"reference_code": "ZZZZZ"})
+        response = client.get(SETUP_PROFILE_URL)
+
+        assert response.status_code == 200
+        assert response.context["no_areas"] is True
+
+    def test_inactive_area_is_not_selectable(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company()
+        make_area(company, name="Ventas")
+        retired = make_area(company, name="Retirada", is_active=False)
+        user = make_user_with_profile(email="retired@example.com", company=company)
+        client.force_login(user)
+
+        response = client.post(
+            SETUP_PROFILE_URL,
+            {"reference_code": company.reference_code, "area": retired.pk},
+        )
 
         user.profile.refresh_from_db()
-        assert user.profile.is_activated is False
         assert response.status_code == 200
+        assert user.profile.is_activated is False
+
+    def test_single_location_is_auto_assigned_and_not_rendered(
+        self, client, make_user_with_profile, make_company, make_area, make_location
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        only = make_location(company, name="Matriz")
+        user = make_user_with_profile(email="oneloc@example.com", company=company)
+        client.force_login(user)
+
+        page = client.get(SETUP_PROFILE_URL)
+        assert 'name="location"' not in page.content.decode()
+
+        client.post(
+            SETUP_PROFILE_URL,
+            {"reference_code": company.reference_code, "area": area.pk},
+        )
+
+        user.profile.refresh_from_db()
+        assert user.profile.is_activated is True
+        assert user.profile.location == only
+
+    def test_posted_location_ignored_when_field_hidden(
+        self, client, make_user_with_profile, make_company, make_area, make_location
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        only = make_location(company, name="Matriz")
+        other_company = make_company(name="Cliente B")
+        foreign_location = make_location(other_company, name="Ajena")
+        user = make_user_with_profile(email="ignoreloc@example.com", company=company)
+        client.force_login(user)
+
+        client.post(
+            SETUP_PROFILE_URL,
+            {
+                "reference_code": company.reference_code,
+                "area": area.pk,
+                "location": foreign_location.pk,
+            },
+        )
+
+        user.profile.refresh_from_db()
+        assert user.profile.location == only
+
+    def test_several_locations_require_a_choice(
+        self, client, make_user_with_profile, make_company, make_area, make_location
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        make_location(company, name="Matriz")
+        norte = make_location(company, name="Norte")
+        user = make_user_with_profile(email="multiloc@example.com", company=company)
+        client.force_login(user)
+
+        # The picker must actually render, or the page is unsubmittable.
+        page = client.get(SETUP_PROFILE_URL)
+        assert 'name="location"' in page.content.decode()
+
+        response = client.post(
+            SETUP_PROFILE_URL,
+            {"reference_code": company.reference_code, "area": area.pk},
+        )
+        assert response.status_code == 200
+        assert "location" in response.context["form"].errors
+
+        client.post(
+            SETUP_PROFILE_URL,
+            {
+                "reference_code": company.reference_code,
+                "area": area.pk,
+                "location": norte.pk,
+            },
+        )
+        user.profile.refresh_from_db()
+        assert user.profile.location == norte
+
+    def test_zero_locations_activates_with_null_location(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        user = make_user_with_profile(email="zeroloc@example.com", company=company)
+        client.force_login(user)
+
+        client.post(
+            SETUP_PROFILE_URL,
+            {"reference_code": company.reference_code, "area": area.pk},
+        )
+
+        user.profile.refresh_from_db()
+        assert user.profile.is_activated is True
+        assert user.profile.location is None
 
     def test_already_activated_redirects_to_home(
         self, client, make_user_with_profile, make_company

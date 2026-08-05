@@ -94,10 +94,13 @@ Activation behavior:
 - A user without a `UserProfile` sees the profile activation page with a generic account-not-linked error.
 - A user whose profile has no company sees the profile activation page with the same generic account-not-linked error.
 - A user whose profile is already activated is redirected to the app home route.
-- A user with an inactive profile and linked company sees the company reference code form.
+- A user whose company has **no active áreas** sees a blocked-activation notice telling them to contact their administrator; activation is not possible until an admin loads at least one área.
+- A user with an inactive profile and linked company sees the activation form: company reference code, área picker, and — only when the company has more than one active localidad — a localidad picker.
 - The submitted reference code is stripped, uppercased, must be exactly 5 characters, and must be alphanumeric.
+- The área and localidad choices are restricted to the **active entries of the user's own company**. A submitted primary key belonging to another company (or to an inactive entry) is rejected as an invalid choice and the profile remains inactive.
+- Área is always required. Localidad is required only when the company has more than one active localidad; when it has exactly one, that localidad is auto-assigned and the field is not rendered (a posted value is ignored); when it has none, `location` stays null.
 - If the code does not match the linked company's `reference_code`, the form is re-rendered and the profile remains inactive.
-- If the code matches, `UserProfile.is_activated` is set to `True`, and the user is redirected to the app home route.
+- If everything validates, `UserProfile.area`, `UserProfile.location` and `UserProfile.is_activated` are saved together, and the user is redirected to the app home route.
 
 ### Logout
 
@@ -121,6 +124,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Password fallback email and password.
 - New password and confirmation.
 - Company reference code.
+- Área selection (and localidad selection when the company has more than one).
 - Session value `otp_email`.
 - Environment-backed settings for email delivery, OTP expiry, session lifetime, and debug mode.
 
@@ -132,7 +136,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Created and updated `SetupAccessCode` records.
 - Updated Django session authentication state.
 - Updated `User.password` and `User.must_change_password`.
-- Updated `UserProfile.is_activated`.
+- Updated `UserProfile.is_activated`, `UserProfile.area`, and `UserProfile.location`.
 - OTP email sent through Django's configured email backend.
 
 ## API / routes / commands
@@ -149,8 +153,8 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | `/cuentas/primer-ingreso/` | POST | `email`, `setup_access_code` | Login and password-change redirect or form errors | Marks valid setup code used and clears its stored code. |
 | `/cuentas/cambiar-contrasena/` | GET | authenticated user | Password-change form or redirect | Requires login. Users without `must_change_password` are rerouted through post-login routing. |
 | `/cuentas/cambiar-contrasena/` | POST | `new_password1`, `new_password2` | Redirect or form errors | Uses Django password validators. |
-| `/cuentas/completar-perfil/` | GET | authenticated user | Activation form, account-linked error, or redirect | Requires login. Admins skip activation. |
-| `/cuentas/completar-perfil/` | POST | `reference_code` | Activate profile and redirect or form errors | Admins skip activation even on POST. |
+| `/cuentas/completar-perfil/` | GET | authenticated user | Activation form, account-linked error, no-áreas notice, or redirect | Requires login. Admins skip activation. Localidad picker rendered only when the company has >1. |
+| `/cuentas/completar-perfil/` | POST | `reference_code`, `area`, optional `location` | Activate profile and redirect or form errors | Admins skip activation even on POST. Área/localidad pks are validated against the user's own company. |
 | `/cuentas/cerrar-sesion/` | POST | authenticated or anonymous session | Logout and redirect | GET and other methods return 405. |
 | `python manage.py bootstrap_groups` | command | none | Creates or syncs auth groups | Idempotently assigns custom `accounts.Role` permissions. |
 
@@ -258,6 +262,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Users with `must_change_password=True` must change their password before using normal non-admin, non-static app routes.
 - `must_change_password` must be cleared only after a valid password change.
 - Non-admin users must not complete first-login activation unless their entered reference code matches their linked company.
+- Activation must only accept área/localidad entries that are active and belong to the user's own company.
 - The company reference code is an activation check, not a password or authentication secret.
 - Logout must not be possible by GET.
 
@@ -315,9 +320,15 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | Wrong code rejected | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_wrong_code_shows_error` |
 | Activated profile redirects | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_already_activated_redirects_to_home` |
 | Missing company shows linked-account error | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_no_company_linked_shows_error_page` |
+| Company without áreas blocks activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_company_without_areas_blocks_activation` |
+| Área is required to activate | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_missing_area_shows_field_error` |
+| Foreign-company área rejected | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_foreign_company_area_is_rejected` |
+| Inactive área not selectable | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_inactive_area_is_not_selectable` |
+| Conditional localidad picker | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_single_location_is_auto_assigned_and_not_rendered`, `test_posted_location_ignored_when_field_hidden`, `test_several_locations_require_a_choice`, `test_zero_locations_activates_with_null_location` |
 | Logout is POST-only and clears session | `apps/accounts/tests/test_views.py` | `TestLogoutView::test_get_returns_405`, `test_post_logs_out_and_redirects` |
 | OTP code validation | `apps/accounts/tests/test_forms.py` | `TestOTPVerifyFormCleanCode::*` |
 | Reference code normalization and validation | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormCleanReferenceCode::*` |
+| Activation picker scoping | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormScoping::*` |
 | OTP validity rules | `apps/accounts/tests/test_models.py` | `TestEmailOTPIsValid::*` |
 | Setup access code rules | `apps/accounts/tests/test_models.py` | `TestSetupAccessCode::*` |
 | Company reference code generation | `apps/accounts/tests/test_models.py` | `TestCompanyReferenceCode::*` |

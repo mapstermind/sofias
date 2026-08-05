@@ -15,7 +15,7 @@ instrument is made by creating a **new** `Survey`.
 - **`Survey`** — the instrument. `key` (stable unique slug, e.g. `nom035`),
   `title`, `description`, `status` (draft/published/archived), and
   `headcount_threshold` (default 50).
-- **`Module`** — an ordered group of questions (it replaces the old `Section`).
+- **`Module`** — an ordered group of questions.
   `applies_to` is `all`, `small`, or `large`; `key` is unique per survey;
   `visible_when` is an optional branching rule.
 - **`Question`** — owned by a `Module`. Carries a stable `code` (unique per

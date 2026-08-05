@@ -66,8 +66,18 @@
       <div class="min-w-0">
         <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Área</dt>
         <dd class="mt-1 text-sm font-medium text-gray-900">
-          {% if employee_profile.department %}
-            {{ employee_profile.department }}
+          {% if employee_profile.area %}
+            {{ employee_profile.area.name }}
+          {% else %}
+            <span class="text-gray-400 font-normal italic">Sin asignar</span>
+          {% endif %}
+        </dd>
+      </div>
+      <div class="min-w-0">
+        <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Localidad</dt>
+        <dd class="mt-1 text-sm font-medium text-gray-900">
+          {% if employee_profile.location %}
+            {{ employee_profile.location.name }}
           {% else %}
             <span class="text-gray-400 font-normal italic">Sin asignar</span>
           {% endif %}

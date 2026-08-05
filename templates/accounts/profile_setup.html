@@ -5,7 +5,7 @@
 {% block card_header %}
   <h1 class="text-2xl font-bold text-gray-900">Activa tu cuenta</h1>
   <p class="mt-2 text-sm text-gray-500">
-    Ingresa el código de referencia de tu empresa para confirmar tu acceso.
+    Confirma el código de referencia de tu empresa y elige tu área.
   </p>
 {% endblock %}
 
@@ -13,6 +13,10 @@
   {% if no_company or no_profile %}
     <div class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
       Tu cuenta no está vinculada a ninguna empresa. Contacta a tu administrador.
+    </div>
+  {% elif no_areas %}
+    <div class="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      Tu empresa aún no tiene áreas configuradas. Contacta a tu administrador para continuar.
     </div>
   {% else %}
     {% if form.non_field_errors %}
@@ -36,6 +40,34 @@
           El código de 5 caracteres proporcionado por tu administrador.
         </p>
       </div>
+
+      <div class="mb-6">
+        <label for="{{ form.area.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+          Área
+        </label>
+        {{ form.area }}
+        {% if form.area.errors %}
+          <p class="mt-1 text-xs text-red-600">{{ form.area.errors.0 }}</p>
+        {% endif %}
+        <p class="mt-1 text-xs text-gray-400">
+          El área de tu empresa a la que perteneces.
+        </p>
+      </div>
+
+      {% if "location" in form.fields %}
+        <div class="mb-6">
+          <label for="{{ form.location.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+            Localidad
+          </label>
+          {{ form.location }}
+          {% if form.location.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ form.location.errors.0 }}</p>
+          {% endif %}
+          <p class="mt-1 text-xs text-gray-400">
+            La localidad en la que trabajas.
+          </p>
+        </div>
+      {% endif %}
 
       <button type="submit"
         class="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">

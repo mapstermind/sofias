@@ -6,13 +6,23 @@ from apps.nom035.models import NDR, SubmissionScore
 def _scores_for_company(company):
     return SubmissionScore.objects.filter(
         submission__assignment__company=company
-    ).select_related("submission__user__profile")
+    ).select_related("submission__user__profile__area")
 
 
-def _department_of(score) -> str:
+def _area_of(score, company):
+    """The respondent's área, but only if it belongs to `company`.
+
+    A submission can reach a company's roll-up while its respondent belongs to a
+    different company (assignments are looked up by id without company scoping in
+    `apps/surveys`). Returning the foreign área would print another client's
+    catalog name on this dashboard, so it buckets as "Sin área" instead.
+    """
     user = score.submission.user
     profile = getattr(user, "profile", None) if user else None
-    return (getattr(profile, "department", "") or "").strip()
+    area = getattr(profile, "area", None) if profile is not None else None
+    if area is not None and area.company_id != company.pk:
+        return None
+    return area
 
 
 def _most_severe_present(distribution: dict[str, int]) -> str | None:
@@ -20,15 +30,19 @@ def _most_severe_present(distribution: dict[str, int]) -> str | None:
     return present[-1] if present else None
 
 
-def _area_breakdown(scores) -> list[dict]:
-    groups: dict[str, dict] = {}
+def _area_breakdown(scores, company) -> list[dict]:
+    # Grouped by área pk, not by name: two companies that both have an
+    # "Operaciones" área must stay distinct. Profiles with no área (CSV-imported
+    # or cleared) keep their own bucket so no scored employee is dropped.
+    groups: dict[int | None, dict] = {}
     for s in scores:
-        raw = _department_of(s)
-        gkey = raw.casefold()
+        entry = _area_of(s, company)
+        gkey = entry.pk if entry is not None else None
         area = groups.get(gkey)
         if area is None:
             area = groups[gkey] = {
-                "label": raw or "Sin área",
+                "area_id": gkey,
+                "label": entry.name if entry is not None else "Sin área",
                 "distribution": {level: 0 for level in c.NDR_ORDER},
                 "scored_count": 0,
                 "needing_action": 0,
@@ -90,7 +104,7 @@ def company_valuation(company) -> dict:
         "distribution_rows": distribution_rows,
         "needing_action": needing_action,
         "guia1_positive_count": guia1_positive_count,
-        "areas": _area_breakdown(scores),
+        "areas": _area_breakdown(scores, company),
     }
 
 

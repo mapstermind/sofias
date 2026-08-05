@@ -18,7 +18,13 @@ from apps.accounts.forms import (
     RequiredPasswordChangeForm,
     SetupAccessCodeLoginForm,
 )
-from apps.accounts.models import EmailOTP, SetupAccessCode, User, UserProfile
+from apps.accounts.models import (
+    CompanyArea,
+    EmailOTP,
+    SetupAccessCode,
+    User,
+    UserProfile,
+)
 
 _RATE_LIMIT_SECONDS = 30
 
@@ -263,7 +269,7 @@ def setup_profile(request):
         return render(
             request,
             "accounts/profile_setup.html",
-            {"form": ProfileActivationForm(), "no_profile": True},
+            {"no_profile": True},
         )
 
     if profile.is_activated:
@@ -273,28 +279,39 @@ def setup_profile(request):
         return render(
             request,
             "accounts/profile_setup.html",
-            {"form": ProfileActivationForm(), "no_company": True},
+            {"no_company": True},
         )
+
+    company = profile.company
+
+    # Without áreas there is nothing to pick, and letting people through would
+    # build a "Sin área" pile that can't be fixed without re-interviewing them.
+    if not CompanyArea.objects.filter(company=company, is_active=True).exists():
+        return render(request, "accounts/profile_setup.html", {"no_areas": True})
 
     if request.method == "GET":
         return render(
-            request, "accounts/profile_setup.html", {"form": ProfileActivationForm()}
+            request,
+            "accounts/profile_setup.html",
+            {"form": ProfileActivationForm(company=company)},
         )
 
-    form = ProfileActivationForm(request.POST)
+    form = ProfileActivationForm(request.POST, company=company)
     if not form.is_valid():
         return render(request, "accounts/profile_setup.html", {"form": form})
 
     reference_code = form.cleaned_data["reference_code"]
-    if reference_code != profile.company.reference_code:
+    if reference_code != company.reference_code:
         form.add_error(
             "reference_code",
             "El código no coincide con tu empresa asignada. Por favor, verifica con tu administrador.",
         )
         return render(request, "accounts/profile_setup.html", {"form": form})
 
+    profile.area = form.cleaned_data["area"]
+    profile.location = form.cleaned_data.get("location") or form.implicit_location
     profile.is_activated = True
-    profile.save(update_fields=["is_activated"])
+    profile.save(update_fields=["area", "location", "is_activated"])
 
     return redirect(settings.LOGIN_REDIRECT_URL)
 

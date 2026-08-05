@@ -82,11 +82,22 @@ def make_user_with_profile(db, make_user):
     """
     from apps.accounts.models import UserProfile
 
-    def factory(email="emp@example.com", company=None, position="Analyst", **kwargs):
+    def factory(
+        email="emp@example.com",
+        company=None,
+        position="Analyst",
+        area=None,
+        location=None,
+        **kwargs,
+    ):
+        # area/location are explicit params, not **kwargs — they must not fall
+        # through to make_user, which would pass them to the User constructor.
         user = make_user(email=email, **kwargs)
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.position = position
         profile.company = company
+        profile.area = area
+        profile.location = location
         profile.save()
         return user
 
@@ -103,6 +114,28 @@ def make_company(db):
 
     def factory(name="Acme Corp", legal_name="Acme Corp SA de CV", **kwargs):
         return Company.objects.create(name=name, legal_name=legal_name, **kwargs)
+
+    return factory
+
+
+@pytest.fixture
+def make_area(db):
+    """Returns a callable: make_area(company, name="...") → CompanyArea."""
+    from apps.accounts.models import CompanyArea
+
+    def factory(company, name="Sistemas", **kwargs):
+        return CompanyArea.objects.create(company=company, name=name, **kwargs)
+
+    return factory
+
+
+@pytest.fixture
+def make_location(db):
+    """Returns a callable: make_location(company, name="...") → CompanyLocation."""
+    from apps.accounts.models import CompanyLocation
+
+    def factory(company, name="Matriz", **kwargs):
+        return CompanyLocation.objects.create(company=company, name=name, **kwargs)
 
     return factory
 
