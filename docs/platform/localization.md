@@ -130,26 +130,48 @@ The four migrations are `accounts/0005`, `surveys/0002`, `responses/0002` and
 
 ## Permission names
 
-`auth_permission.name` is what the Groups permission picker displays, and two
-Django behaviors keep it from following `verbose_name` on its own:
+`auth_permission.name` is what the Groups permission picker displays, and it does
+not follow `Meta.verbose_name` on its own. Django builds the four built-in
+permission names from a hardcoded, **untranslated** `"Can %s %s"` template
+(`django/contrib/auth/management/__init__.py`), so a Spanish `verbose_name`
+alone yields `"Can add empresa"` — English and Spanish in one string.
 
-- The four built-in permission names are built from a hardcoded, **untranslated**
-  `"Can %s %s"` template (`django/contrib/auth/management/__init__.py`), so a
-  Spanish `Meta.verbose_name` alone yields `"Can add empresa"` — English and
-  Spanish in one string.
-- `create_permissions` only ever **creates** missing rows. It never renames one
-  whose label changed, so editing `Role.Meta.permissions` would not reach a
-  database that already has the row.
-
-`apps/core/permissions.py` closes both with a `post_migrate` receiver,
-`rename_permissions_to_spanish`, connected in `CoreConfig.ready()`. It rewrites
-`Permission.name` for the four project apps on every `migrate` and leaves
-Django's own apps alone. It is display-only: codenames are never touched, so
-`bootstrap_groups` and every `has_perm` check are unaffected.
+`apps/core/permissions.py` fixes this with a `post_migrate` receiver,
+`rename_permissions_to_spanish`, connected in `CoreConfig.ready()`. It derives
+each name from the model's own `verbose_name`, rewrites `Permission.name` for the
+four project apps on every `migrate`, and leaves Django's own apps alone. It is
+display-only: codenames are never touched, so `bootstrap_groups` and every
+`has_perm` check are unaffected.
 
 It is connected without a sender because each app's permissions only exist once
 that app's own `post_migrate` has fired; `django.contrib.auth` sits earlier in
 `INSTALLED_APPS`, so `create_permissions` always runs first.
+
+### Why a receiver rather than declaring the names
+
+Declaring them is possible. Setting `Meta.default_permissions = ()` and listing
+all four actions in `Meta.permissions` with Spanish names produces identical
+codenames and passes `manage.py check`. Without the empty `default_permissions`
+it does not: the explicit codenames collide with the built-ins and every model
+raises `auth.E005`.
+
+The receiver is preferred for three reasons:
+
+- **Failure mode.** `default_permissions = ()` means a model whose `permissions`
+  block is missing or incomplete gets **no permissions at all** — nobody can be
+  granted access to it, and the breakage surfaces later as a puzzling
+  authorization bug. Forgetting the receiver's app-label list costs an English
+  label instead.
+- **Volume.** Four hardcoded strings on each of the seventeen models, versus one
+  ~45-line module.
+- **Drift.** Declared names are literals, so renaming a model's `verbose_name`
+  silently leaves four stale permission strings behind. The receiver derives the
+  name, so the two cannot disagree.
+
+One further difference: `create_permissions` reads the **historical migration
+state**, so a `verbose_name` edit does not reach `auth_permission` until its
+`AlterModelOptions` migration exists. The receiver reads the live app registry
+and is not subject to that lag.
 
 ## Key decisions
 
@@ -173,6 +195,15 @@ that app's own `post_migrate` has fired; `django.contrib.auth` sits earlier in
   ones.
   **Reason:** Consistency, and the boundary leaks anyway — an unregistered
   model's auto-generated permissions still surface in the Groups picker.
+
+- **Decision:** Spanish permission names come from a `post_migrate` receiver, not
+  from `default_permissions = ()` plus explicitly declared `Meta.permissions`.
+  **Reason:** Both produce the same codenames and names. The receiver wins on
+  failure mode — an incomplete declaration creates no permissions at all, while a
+  gap in the receiver's coverage only leaves an English label. It is also ~45
+  lines against four strings on each of seventeen models, and it derives names
+  from `verbose_name` instead of duplicating them. See
+  [Why a receiver rather than declaring the names](#why-a-receiver-rather-than-declaring-the-names).
 
 - **Decision:** `User.first_name` / `last_name` are labelled `"nombre(s)"` and
   `"apellidos"` rather than reusing Django's catalog.

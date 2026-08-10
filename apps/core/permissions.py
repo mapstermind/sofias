@@ -2,10 +2,13 @@
 
 Django builds the four built-in permission names from a hardcoded, untranslated
 `"Can %s %s"` template, so a Spanish `Meta.verbose_name` alone produces
-"Can add empresa" in the Groups permission picker. `create_permissions` also
-only ever *creates* missing rows — it never renames one whose label changed —
-so an edit to `Role.Meta.permissions` would otherwise never reach a database
-that already has the row.
+"Can add empresa" in the Groups permission picker. `create_permissions` only
+ever *creates* missing rows and never renames one whose label changed, so the
+correction has to be applied here rather than left to it.
+
+Declaring the names instead — `Meta.default_permissions = ()` plus all four
+actions in `Meta.permissions` — also works, but a model with an incomplete
+block then gets no permissions at all. See `docs/platform/localization.md`.
 """
 
 from django.contrib.auth import get_permission_codename
