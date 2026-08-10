@@ -1244,7 +1244,7 @@ git commit -m "Name the User admin fieldset in Spanish"
 
 **Why this exists:** Django builds the four built-in permission names from an untranslated `"Can %s %s"` template (`django/contrib/auth/management/__init__.py:32`), so a Spanish `verbose_name` alone yields `"Can add empresa"` — mixed English and Spanish on an operator screen. And `create_permissions` only *creates* missing rows: it never renames one whose label changed, so Task 3's new `Role.Meta.permissions` labels would never reach an existing database. One receiver fixes both.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `apps/core/tests/test_localization.py`:
 
@@ -1278,14 +1278,14 @@ def test_permission_renaming_leaves_django_own_apps_alone():
     assert perm.name == "Can add group"
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/core/tests/test_localization.py -k permission --create-db -v`
 Expected: 6 failures reading `"Can add empresa"`, `"Can view asignación de encuesta"`, `"Can manage surveys"`, etc.
 
 `--create-db` is **mandatory** here. `addopts` carries `--reuse-db`, and permission rows are written by `post_migrate` at database-creation time only — a reused test database keeps whatever names it was born with, so without `--create-db` this test lies in both directions.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `apps/core/permissions.py`:
 
@@ -1366,12 +1366,12 @@ class CoreConfig(AppConfig):
         post_migrate.connect(rename_permissions_to_spanish)
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest apps/core/tests/test_localization.py --create-db -v`
 Expected: PASS (17 tests)
 
-- [ ] **Step 5: Verify against a real database**
+- [x] **Step 5: Verify against a real database**
 
 ```bash
 python manage.py migrate
@@ -1385,12 +1385,12 @@ for p in Permission.objects.filter(content_type__app_label__in=['accounts','surv
 
 Expected: `bootstrap_groups` runs clean (it matches on codename, which nothing here changes), and every printed name is Spanish. Then open `/admin/auth/group/add/` and confirm the permission picker shows no English.
 
-- [ ] **Step 6: Run the whole suite**
+- [x] **Step 6: Run the whole suite**
 
 Run: `pytest --create-db`
 Expected: PASS. Use `--create-db` once here so the test database is rebuilt with the new permission rows; later runs can go back to the default `--reuse-db`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/core/permissions.py apps/core/apps.py apps/core/tests/test_localization.py

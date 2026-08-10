@@ -85,3 +85,30 @@ def test_admin_index_groups_apps_under_spanish_names(app_label, expected):
     from django.apps import apps as django_apps
 
     assert django_apps.get_app_config(app_label).verbose_name == expected
+
+
+@pytest.mark.parametrize(
+    "codename,expected",
+    [
+        # Built-in permissions: Django's "Can %s %s" template is not translated.
+        ("add_company", "Puede agregar empresa"),
+        ("view_surveyassignment", "Puede consultar asignación de encuesta"),
+        ("change_submissionscore", "Puede modificar valoración"),
+        ("delete_answer", "Puede eliminar respuesta"),
+        # Custom permissions declared on Role.Meta.
+        ("can_view_dashboard", "Puede ver el tablero"),
+        ("can_view_insights", "Puede ver la valoración de resultados"),
+    ],
+)
+def test_permission_names_in_the_groups_picker_are_spanish(codename, expected):
+    from django.contrib.auth.models import Permission
+
+    assert Permission.objects.get(codename=codename).name == expected
+
+
+def test_permission_renaming_leaves_django_own_apps_alone():
+    """Only the project's four apps are rewritten; auth/admin keep Django's names."""
+    from django.contrib.auth.models import Permission
+
+    perm = Permission.objects.get(content_type__app_label="auth", codename="add_group")
+    assert perm.name == "Can add group"
