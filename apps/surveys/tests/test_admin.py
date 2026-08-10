@@ -6,10 +6,6 @@ from apps.surveys.models import Module, Question, Survey, SurveyAssignment
 pytestmark = pytest.mark.django_db
 
 
-def test_no_surveys_model_shows_an_auto_derived_label(assert_explicit_labels):
-    assert_explicit_labels("surveys")
-
-
 @pytest.mark.parametrize(
     "model,field,value,expected",
     [

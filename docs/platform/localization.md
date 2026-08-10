@@ -64,8 +64,16 @@ translations and `LANGUAGE_CODE` picks them up.
 
 The `assert_explicit_labels` fixture in the root `conftest.py` walks an app and
 fails listing every field whose label Django derived from its English
-identifier. Each app's `tests/test_admin.py` calls it, so a new model that
-forgets a `verbose_name` fails the build rather than shipping an English label.
+identifier, plus every `Meta` name the model did not declare. It checks the two
+`Meta` options through `original_attrs` — the record of what a model actually
+declared — because comparing rendered strings would call `áreas` an offender
+while missing `valoraciones`, `opciones` and `códigos temporales de acceso`,
+which are exactly the plurals worth catching.
+
+`test_every_project_app_is_covered_by_the_label_guard` runs it over
+`project_app_labels()`, so a model that forgets a `verbose_name` fails the build
+— and a **newly registered app** is picked up without anyone remembering to add
+it anywhere.
 
 ## Scope
 
@@ -113,6 +121,27 @@ An administrator opening the Django admin sees:
 Nothing about the public employee-facing app changes except displayed times,
 which shift with `TIME_ZONE`.
 
+## Glossary
+
+One concept, one word. No test can catch a synonym, and two words for the same
+thing on one screen make an operator guess whether they mean the same
+population.
+
+| Concept | Term | Not |
+|---|---|---|
+| A person who answers a survey | **colaborador** | empleado, usuario |
+| The company being surveyed | **empresa** | compañía, cliente |
+| Read access, in a permission name | **ver** | consultar, visualizar |
+| One respondent's attempt at an assignment | **envío de encuesta** | respuesta, participación |
+| One answer within an attempt | **respuesta** | contestación |
+| The NOM-035 result for a submission | **valoración** | puntuación, evaluación |
+| A person's job title | **cargo** | puesto, posición |
+
+`usuario` is reserved for the `auth` sense — an account that logs in. The human
+being behind it is a *colaborador*, which is why `UserProfile` is a *perfil de
+colaborador* and `can_manage_employees` reads *Puede administrar colaboradores*
+despite its English codename.
+
 ## Timezone
 
 `USE_TZ` stays `True`, so storage remains UTC and only display shifts.
@@ -137,11 +166,23 @@ permission names from a hardcoded, **untranslated** `"Can %s %s"` template
 alone yields `"Can add empresa"` — English and Spanish in one string.
 
 `apps/core/permissions.py` fixes this with a `post_migrate` receiver,
-`rename_permissions_to_spanish`, connected in `CoreConfig.ready()`. It derives
-each name from the model's own `verbose_name`, rewrites `Permission.name` for the
-four project apps on every `migrate`, and leaves Django's own apps alone. It is
-display-only: codenames are never touched, so `bootstrap_groups` and every
-`has_perm` check are unaffected.
+`rename_permissions_to_spanish`, connected in `CoreConfig.ready()`. It rewrites
+`Permission.name` on every `migrate` for the apps `project_app_labels()`
+returns — those under `apps.` that own models, derived from `INSTALLED_APPS`
+rather than listed — and leaves Django's own apps alone. It is display-only:
+codenames are never touched, so `bootstrap_groups` and every `has_perm` check
+are unaffected.
+
+The name comes from `str(opts.verbose_name)` under an explicit
+`translation.override(LANGUAGE_CODE)`, **not** from `verbose_name_raw`.
+`verbose_name_raw` renders the *untranslated* name, which is correct for
+Django's own purposes and wrong here: `User` inherits `AbstractUser`'s lazy
+`_("user")`, so it is the one model where the two differ, and the raw form
+yields "Puede agregar user".
+
+`apps` and `using` carry defaults, mirroring Django's own `create_permissions`.
+`post_migrate` is not sent only by `migrate` — `manage.py flush` emits it with
+no `apps` kwarg, and so does the teardown of every `transaction=True` test.
 
 It is connected without a sender because each app's permissions only exist once
 that app's own `post_migrate` has fired; `django.contrib.auth` sits earlier in
@@ -223,9 +264,16 @@ and is not subject to that lag.
 
 | Behavior | Location |
 |---|---|
-| Language, timezone, admin chrome, app index names, permission names | `apps/core/tests/test_localization.py` |
-| No auto-derived label in an app; representative rendered labels | `apps/<app>/tests/test_admin.py` |
+| Language, timezone, admin chrome, app index names | `apps/core/tests/test_localization.py` |
+| Every field and `Meta` name across every project app is explicit | `test_every_project_app_is_covered_by_the_label_guard` |
+| Every permission name matches its model's Spanish label | `test_every_project_permission_name_reads_as_its_spanish_model_label` |
+| The receiver survives a `post_migrate` without `apps` | `test_receiver_survives_a_post_migrate_without_the_apps_kwarg` |
+| Choice labels and representative rendered labels | `apps/<app>/tests/test_admin.py` |
 | The label guard itself | `assert_explicit_labels` in `conftest.py` |
+
+The two whole-set tests are deliberately exhaustive rather than sampled: the
+sampled version of the permission test missed `User`, the only model whose
+`verbose_name` is lazy.
 
 The permission-name tests read rows written by `post_migrate` at
 database-creation time. `addopts` carries `--reuse-db`, so run them with

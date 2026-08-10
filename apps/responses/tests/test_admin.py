@@ -5,10 +5,6 @@ from apps.responses.models import SurveySubmission
 pytestmark = pytest.mark.django_db
 
 
-def test_no_responses_model_shows_an_auto_derived_label(assert_explicit_labels):
-    assert_explicit_labels("responses")
-
-
 @pytest.mark.parametrize(
     "value,expected",
     [

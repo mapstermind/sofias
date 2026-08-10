@@ -344,11 +344,6 @@ def test_setup_access_code_admin_does_not_show_used_code_value(client, make_user
 
 
 class TestSpanishAdminLabels:
-    def test_no_accounts_model_shows_an_auto_derived_label(
-        self, assert_explicit_labels
-    ):
-        assert_explicit_labels("accounts")
-
     def test_company_change_form_labels_are_spanish(self, staff_client, make_company):
         company = make_company()
 

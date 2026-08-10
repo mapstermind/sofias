@@ -299,7 +299,7 @@ class Role(models.Model):
             ("can_view_dashboard", "Puede ver el tablero"),
             ("can_view_insights", "Puede ver la valoración de resultados"),
             ("can_take_assigned_surveys", "Puede contestar las encuestas asignadas"),
-            ("can_manage_employees", "Puede administrar empleados"),
+            ("can_manage_employees", "Puede administrar colaboradores"),
             ("can_view_submissions", "Puede ver los envíos"),
         ]
 
