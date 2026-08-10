@@ -14,10 +14,20 @@ def _submitted_url(assignment_id):
     return f"/encuestas/asignados/{assignment_id}/enviada/"
 
 
+def _autosave_url(assignment_id):
+    return f"/encuestas/asignados/{assignment_id}/autoguardar/"
+
+
 @pytest.fixture(autouse=True)
-def respondent(client, make_user):
-    """Taking a survey requires a logged-in user; every test here gets one."""
-    user = make_user(email="respondent@example.com")
+def respondent(client, company, make_user_with_profile, bootstrap_groups):
+    """Every test here gets a logged-in employee **of the assignment's company**.
+
+    Both halves matter: the views require `can_take_assigned_surveys` and scope
+    the assignment lookup to the caller's own company, so a bare user with no
+    profile or group would 404 out of every test in this module.
+    """
+    user = make_user_with_profile(email="respondent@example.com", company=company)
+    user.groups.add(bootstrap_groups["Employees"])
     client.force_login(user)
     return user
 
@@ -154,7 +164,7 @@ class TestSurveyDetailView:
 
 
 @pytest.fixture
-def variant_survey(db, survey, make_company):
+def variant_survey(db, survey):
     """Survey with an `all` trigger+followup, a small-only and large-only question."""
     from apps.surveys.models import Module, Question
 
@@ -191,28 +201,29 @@ def variant_survey(db, survey, make_company):
 
 
 class TestVariantPresentation:
-    def _assignment(self, survey, make_company, variant):
+    def _assignment(self, survey, company, variant):
         return SurveyAssignment.objects.create(
-            company=make_company(), survey=survey, variant=variant
+            company=company, survey=survey, variant=variant
         )
 
-    def test_small_shows_small_not_large(self, client, variant_survey, make_company):
-        a = self._assignment(variant_survey, make_company, "small")
+    def test_small_shows_small_not_large(self, client, variant_survey, company):
+        a = self._assignment(variant_survey, company, "small")
         body = client.get(_survey_url(a.pk)).content.decode()
         assert "Small only" in body
         assert "Large only" not in body
 
-    def test_large_shows_large_not_small(self, client, variant_survey, make_company):
-        a = self._assignment(variant_survey, make_company, "large")
+    def test_large_shows_large_not_small(self, client, variant_survey, company):
+        a = self._assignment(variant_survey, company, "large")
         body = client.get(_survey_url(a.pk)).content.decode()
         assert "Large only" in body
         assert "Small only" not in body
 
     def test_skip_path_completes_without_hidden_followup(
-        self, client, variant_survey, make_company, make_user
+        self, client, variant_survey, company, make_user_with_profile, bootstrap_groups
     ):
-        a = self._assignment(variant_survey, make_company, "small")
-        user = make_user(email="emp@x.com")
+        a = self._assignment(variant_survey, company, "small")
+        user = make_user_with_profile(email="emp@x.com", company=company)
+        user.groups.add(bootstrap_groups["Employees"])
         client.force_login(user)
         # Trigger = No hides f1; answer the visible questions only.
         from apps.surveys.models import Question
@@ -238,3 +249,118 @@ class TestSurveySubmittedView:
         active_assignment.save()
         response = client.get(_submitted_url(active_assignment.pk))
         assert response.status_code == 200
+
+
+class TestCompanyScoping:
+    """An assignment is reachable only by employees of its own company.
+
+    The respondent fixture belongs to `company`; `foreign_assignment` belongs to
+    a second one. Every check here is from the logged-in respondent's session.
+    """
+
+    @pytest.fixture
+    def foreign_assignment(self, make_company, survey_with_questions):
+        return SurveyAssignment.objects.create(
+            company=make_company(name="Cliente B", legal_name="B SA de CV"),
+            survey=survey_with_questions["survey"],
+            variant=SurveyAssignment.Variant.SMALL,
+            status=SurveyAssignment.Status.ACTIVE,
+        )
+
+    @pytest.fixture
+    def foreign_question(self, survey_with_questions):
+        return survey_with_questions["questions"][0]
+
+    def test_detail_404s_on_another_companys_assignment(
+        self, client, foreign_assignment
+    ):
+        response = client.get(_survey_url(foreign_assignment.pk))
+        assert response.status_code == 404
+
+    def test_submitted_404s_on_another_companys_assignment(
+        self, client, foreign_assignment
+    ):
+        response = client.get(_submitted_url(foreign_assignment.pk))
+        assert response.status_code == 404
+
+    def test_autosave_404s_on_another_companys_assignment(
+        self, client, foreign_assignment, foreign_question
+    ):
+        response = client.post(
+            _autosave_url(foreign_assignment.pk),
+            {f"question_{foreign_question.id}": "intruso"},
+        )
+        assert response.status_code == 404
+        assert not Answer.objects.exists()
+
+    def test_post_cannot_submit_into_another_companys_assignment(
+        self, client, foreign_assignment, foreign_question
+    ):
+        """The consequential one: a submission here would enter another
+        company's NOM-035 roll-up."""
+        response = client.post(
+            _survey_url(foreign_assignment.pk),
+            {f"question_{foreign_question.id}": "intruso"},
+        )
+        assert response.status_code == 404
+        assert not SurveySubmission.objects.filter(
+            assignment=foreign_assignment
+        ).exists()
+
+    def test_enumeration_is_indistinguishable_from_a_missing_id(
+        self, client, foreign_assignment
+    ):
+        """Same status for "exists but not yours" and "does not exist", so the
+        id space cannot be walked to discover other companies' assignments."""
+        foreign = client.get(_survey_url(foreign_assignment.pk))
+        missing = client.get(_survey_url(foreign_assignment.pk + 10_000))
+        assert foreign.status_code == missing.status_code == 404
+
+    def test_user_without_a_profile_is_sent_to_activation(
+        self, client, active_assignment, make_user, bootstrap_groups
+    ):
+        stray = make_user(email="sinperfil@example.com")
+        stray.groups.add(bootstrap_groups["Employees"])
+        client.force_login(stray)
+
+        response = client.get(_survey_url(active_assignment.pk))
+
+        assert response.status_code == 302
+        assert response["Location"] == "/cuentas/completar-perfil/"
+
+    def test_user_without_a_company_is_sent_to_activation(
+        self, client, active_assignment, make_user_with_profile, bootstrap_groups
+    ):
+        stray = make_user_with_profile(email="sinempresa@example.com", company=None)
+        stray.groups.add(bootstrap_groups["Employees"])
+        client.force_login(stray)
+
+        response = client.get(_survey_url(active_assignment.pk))
+
+        assert response.status_code == 302
+        assert response["Location"] == "/cuentas/completar-perfil/"
+
+    def test_admin_cannot_open_a_survey(
+        self, client, active_assignment, make_user, bootstrap_groups
+    ):
+        """Admins hold no `can_take_assigned_surveys` and answer no surveys."""
+        admin = make_user(email="admin@example.com")
+        admin.groups.add(bootstrap_groups["Admins"])
+        client.force_login(admin)
+
+        response = client.get(_survey_url(active_assignment.pk))
+
+        assert response.status_code == 302
+        assert response["Location"] == "/cuentas/completar-perfil/"
+
+    def test_autosave_rejects_a_caller_who_cannot_take_surveys(
+        self, client, active_assignment, make_user, bootstrap_groups
+    ):
+        admin = make_user(email="admin2@example.com")
+        admin.groups.add(bootstrap_groups["Admins"])
+        client.force_login(admin)
+
+        response = client.post(_autosave_url(active_assignment.pk), {})
+
+        assert response.status_code == 403
+        assert response.json()["error"] == "forbidden"

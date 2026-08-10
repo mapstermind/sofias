@@ -12,10 +12,11 @@ def _scores_for_company(company):
 def _area_of(score, company):
     """The respondent's área, but only if it belongs to `company`.
 
-    A submission can reach a company's roll-up while its respondent belongs to a
-    different company (assignments are looked up by id without company scoping in
-    `apps/surveys`). Returning the foreign área would print another client's
-    catalog name on this dashboard, so it buckets as "Sin área" instead.
+    The survey views only let an employee answer their own company's
+    assignments, so a mismatch should not arise through the app. This stays as a
+    second line of defence for rows written outside those views — the shell,
+    fixtures, a future API — because the failure it prevents is printing another
+    client's catalog name on this dashboard. A mismatch buckets as "Sin área".
     """
     user = score.submission.user
     profile = getattr(user, "profile", None) if user else None

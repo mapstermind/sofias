@@ -93,8 +93,14 @@ class TestCompanyListView:
         assert response.status_code == 302
         assert "ingresar" in response["Location"]
 
-    def test_no_permission_returns_403(self, client, make_user):
-        client.force_login(make_user())
+    def test_no_permission_returns_403(
+        self, client, make_user_with_profile, make_company
+    ):
+        # Activated on purpose: the 403 must come from the missing permission,
+        # not from RequireProfileActivationMiddleware redirecting first.
+        client.force_login(
+            make_user_with_profile(email="noperm@example.com", company=make_company())
+        )
         response = client.get(self.URL)
         assert response.status_code == 403
 
@@ -132,8 +138,14 @@ class TestCompanyDashboardView:
         assert response.status_code == 302
         assert "ingresar" in response["Location"]
 
-    def test_no_permission_returns_403(self, client, make_user):
-        client.force_login(make_user())
+    def test_no_permission_returns_403(
+        self, client, make_user_with_profile, make_company
+    ):
+        # Activated on purpose: the 403 must come from the missing permission,
+        # not from RequireProfileActivationMiddleware redirecting first.
+        client.force_login(
+            make_user_with_profile(email="noperm@example.com", company=make_company())
+        )
         response = client.get(self.URL)
         assert response.status_code == 403
 
@@ -146,6 +158,7 @@ class TestCompanyDashboardView:
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.company = company
         profile.position = "Analyst"
+        profile.is_activated = True
         profile.save()
 
         client.force_login(user)
@@ -157,6 +170,7 @@ class TestCompanyDashboardView:
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.company = company
         profile.position = "Analyst"
+        profile.is_activated = True
         profile.save()
         client.force_login(user)
         return client.get(self.URL)
@@ -193,6 +207,7 @@ class TestCompanyDashboardView:
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.company = company
         profile.position = "Analyst"
+        profile.is_activated = True
         profile.save()
         client.force_login(user)
 
@@ -233,9 +248,9 @@ class TestHomeViewRouting:
         assert response["Location"].endswith("/empresas/")
 
     def test_employee_group_redirects_to_survey_list(
-        self, client, make_user, bootstrap_groups
+        self, client, make_user_with_profile, make_company, bootstrap_groups
     ):
-        user = make_user()
+        user = make_user_with_profile(email="emp@example.com", company=make_company())
         user.groups.add(bootstrap_groups["Employees"])
         client.force_login(user)
         response = client.get(self.URL)
@@ -255,6 +270,7 @@ class TestEmployeeSurveyListView:
         if company is not None:
             profile, _ = UserProfile.objects.get_or_create(user=user)
             profile.company = company
+            profile.is_activated = True
             profile.save()
         return user
 
@@ -263,8 +279,12 @@ class TestEmployeeSurveyListView:
         assert response.status_code == 302
         assert "ingresar" in response["Location"]
 
-    def test_non_employee_returns_403(self, client, make_user):
-        client.force_login(make_user())
+    def test_non_employee_returns_403(
+        self, client, make_user_with_profile, make_company
+    ):
+        client.force_login(
+            make_user_with_profile(email="nonemp@example.com", company=make_company())
+        )
         response = client.get(self.URL)
         assert response.status_code == 403
 
@@ -395,6 +415,7 @@ class TestCompanyEmployeeListView:
         user = _give_perm(make_user(email="viewer@example.com"), "can_manage_employees")
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.company = company
+        profile.is_activated = True
         profile.save()
         return User.objects.get(pk=user.pk)
 
@@ -407,10 +428,8 @@ class TestCompanyEmployeeListView:
             email="active@example.com", company=company
         )
         inactive_user = make_user_with_profile(
-            email="inactive@example.com", company=company
+            email="inactive@example.com", company=company, is_activated=False
         )
-        active_user.profile.is_activated = True
-        active_user.profile.save(update_fields=["is_activated"])
 
         client.force_login(viewer)
         response = client.get(self.URL)
@@ -498,6 +517,7 @@ class TestEmployeeDetailView:
             user = _give_perm(user, perm)
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.company = company
+        profile.is_activated = True
         profile.save()
         return User.objects.get(pk=user.pk)
 
@@ -520,7 +540,11 @@ class TestEmployeeDetailView:
     ):
         company = make_company()
         emp = self._make_employee(make_user_with_profile, company)
-        client.force_login(make_user(email="noperm@example.com"))
+        # Activated on purpose: the 403 must come from the missing permission,
+        # not from RequireProfileActivationMiddleware redirecting first.
+        client.force_login(
+            make_user_with_profile(email="noperm@example.com", company=company)
+        )
         response = client.get(self._url(emp.id))
         assert response.status_code == 403
 

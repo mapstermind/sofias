@@ -35,6 +35,10 @@ Two companions exist for callers evaluating many respondents at once (dashboards
 - `autosave_survey(assignment_id)` — POST-only AJAX; persists single changed fields without changing status.
 - `survey_submitted(assignment_id)` — confirmation page.
 
+**Every assignment lookup here is scoped by `_respondent_company(user)`** — the caller must hold `can_take_assigned_surveys` *and* have a profile linked to a company, and the assignment must belong to that company. This is the tenant boundary, not a convenience: an unscoped `get_object_or_404(SurveyAssignment, id=...)` lets any authenticated user answer any client's assignment by walking the integer id space, and that submission then feeds the other company's NOM-035 roll-up. A foreign id must 404 identically to a nonexistent one. When adding a view here, scope it the same way — `apps/nom035`'s `_area_of` guard is a second line of defence, not a substitute.
+
+Callers that cannot use a redirect say so in their own dialect: `autosave_survey` returns `403 forbidden` / `404 not_found` as JSON, since the client script treats any non-401 failure as "fall back to the manual save button".
+
 `_parse_value(question, post)` is the shared per-type parser used by both `survey_detail` and `autosave_survey` — change it once.
 
 ## Other files

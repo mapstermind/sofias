@@ -9,33 +9,7 @@ team decides it is not worth fixing (say which, and why).
 
 ---
 
-## 1. Survey assignments are not scoped to the caller's company 🔴
-
-**Where:** `apps/surveys/views.py` — `survey_detail(request, assignment_id)` does
-`get_object_or_404(SurveyAssignment, id=assignment_id)` with no company filter.
-
-**What:** Any authenticated user can open — and submit against — any company's
-assignment by guessing or enumerating its integer id. There is no check that the
-assignment's company matches the caller's `UserProfile.company`.
-
-**Why it matters:** This is a tenant-isolation break, not a cosmetic one. A
-submission created this way lands in another company's `SurveyAssignment`, so it
-flows into that company's NOM-035 roll-up and dashboards.
-
-**Found by:** code review of the área/localidad feature (Aug 2026). The
-aggregation code was defensively hardened in that change — `_area_of()` in
-`apps/nom035/aggregates.py` refuses to label a submission with an área belonging
-to a different company, so a cross-company submission buckets as "Sin área"
-instead of printing another client's catalog name. **That is mitigation of one
-symptom, not a fix.** The underlying authorization gap is untouched.
-
-**Suggested fix:** Scope the lookup to the caller's company (admins excepted),
-mirroring the `reference_code` convention already used in `apps/core/views.py`.
-Add a test asserting a user of company A gets 404 on company B's assignment.
-
----
-
-## 2. Django admin mixes English and Spanish 🟡 — promoted to a feature doc
+## 1. Django admin mixes English and Spanish 🟡 — promoted to a feature doc
 
 **Where:** `config/settings.py` (`LANGUAGE_CODE = "en-us"`) and model metadata
 across all four apps.
@@ -48,7 +22,7 @@ Kept here only as a pointer — see that document for the analysis.
 
 ---
 
-## 3. Tailwind compiles utilities out of Markdown prose 🟢
+## 2. Tailwind compiles utilities out of Markdown prose 🟢
 
 **Where:** `static/css/main.css` / the Tailwind v4 build.
 
@@ -65,7 +39,7 @@ and `static/` are scanned.
 
 ---
 
-## 4. Accent-sensitive catalog uniqueness is undocumented 🟢
+## 3. Accent-sensitive catalog uniqueness is undocumented 🟢
 
 **Where:** `apps/accounts/models.py` — `UniqueConstraint(company, Lower("name"))`
 on `CompanyCatalogEntry`.
@@ -83,7 +57,7 @@ constraint. Either way, record the decision and add a test pinning it.
 
 ---
 
-## 5. Retiring a localidad mid-activation silently substitutes another 🟢
+## 4. Retiring a localidad mid-activation silently substitutes another 🟢
 
 **Where:** `apps/accounts/views.py` `setup_profile` +
 `apps/accounts/forms.py` `ProfileActivationForm.implicit_location`.

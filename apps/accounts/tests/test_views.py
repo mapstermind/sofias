@@ -202,7 +202,7 @@ class TestVerifyOTPView:
     ):
         company = make_company()
         email = "notyet@example.com"
-        make_user_with_profile(email=email, company=company)
+        make_user_with_profile(email=email, company=company, is_activated=False)
         self._create_otp(email)
         self._set_session_email(client, email)
 
@@ -592,7 +592,9 @@ class TestSetupProfileView:
     ):
         company = make_company()
         area = make_area(company, name="Ventas")
-        user = make_user_with_profile(email="activate@example.com", company=company)
+        user = make_user_with_profile(
+            email="activate@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         response = client.post(
@@ -610,7 +612,9 @@ class TestSetupProfileView:
     ):
         company = make_company()
         area = make_area(company, name="Ventas")
-        user = make_user_with_profile(email="wrongcode@example.com", company=company)
+        user = make_user_with_profile(
+            email="wrongcode@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         response = client.post(
@@ -630,7 +634,9 @@ class TestSetupProfileView:
         other = make_company(name="Cliente B")
         make_area(company, name="Ventas")
         foreign = make_area(other, name="Ajena")
-        user = make_user_with_profile(email="foreign@example.com", company=company)
+        user = make_user_with_profile(
+            email="foreign@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         response = client.post(
@@ -647,7 +653,9 @@ class TestSetupProfileView:
     ):
         company = make_company()
         make_area(company, name="Ventas")
-        user = make_user_with_profile(email="noarea@example.com", company=company)
+        user = make_user_with_profile(
+            email="noarea@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         response = client.post(SETUP_PROFILE_URL, _activation_post(company))
@@ -661,7 +669,9 @@ class TestSetupProfileView:
         self, client, make_user_with_profile, make_company
     ):
         company = make_company()
-        user = make_user_with_profile(email="noareas@example.com", company=company)
+        user = make_user_with_profile(
+            email="noareas@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         response = client.get(SETUP_PROFILE_URL)
@@ -675,7 +685,9 @@ class TestSetupProfileView:
         company = make_company()
         make_area(company, name="Ventas")
         retired = make_area(company, name="Retirada", is_active=False)
-        user = make_user_with_profile(email="retired@example.com", company=company)
+        user = make_user_with_profile(
+            email="retired@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         response = client.post(
@@ -692,7 +704,9 @@ class TestSetupProfileView:
         company = make_company()
         area = make_area(company, name="Ventas")
         only = make_location(company, name="Matriz")
-        user = make_user_with_profile(email="oneloc@example.com", company=company)
+        user = make_user_with_profile(
+            email="oneloc@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         page = client.get(SETUP_PROFILE_URL)
@@ -712,7 +726,9 @@ class TestSetupProfileView:
         only = make_location(company, name="Matriz")
         other_company = make_company(name="Cliente B")
         foreign_location = make_location(other_company, name="Ajena")
-        user = make_user_with_profile(email="ignoreloc@example.com", company=company)
+        user = make_user_with_profile(
+            email="ignoreloc@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         client.post(
@@ -730,7 +746,9 @@ class TestSetupProfileView:
         area = make_area(company, name="Ventas")
         make_location(company, name="Matriz")
         norte = make_location(company, name="Norte")
-        user = make_user_with_profile(email="multiloc@example.com", company=company)
+        user = make_user_with_profile(
+            email="multiloc@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         # The picker must actually render, or the page is unsubmittable.
@@ -755,7 +773,9 @@ class TestSetupProfileView:
     ):
         company = make_company()
         area = make_area(company, name="Ventas")
-        user = make_user_with_profile(email="zeroloc@example.com", company=company)
+        user = make_user_with_profile(
+            email="zeroloc@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         client.post(SETUP_PROFILE_URL, _activation_post(company, area=area.pk))
@@ -769,7 +789,9 @@ class TestSetupProfileView:
     ):
         company = make_company()
         area = make_area(company, name="Ventas")
-        user = make_user_with_profile(email="identity@example.com", company=company)
+        user = make_user_with_profile(
+            email="identity@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         client.post(
@@ -794,7 +816,9 @@ class TestSetupProfileView:
     ):
         company = make_company()
         area = make_area(company, name="Ventas")
-        user = make_user_with_profile(email="noname@example.com", company=company)
+        user = make_user_with_profile(
+            email="noname@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         response = client.post(
@@ -812,7 +836,9 @@ class TestSetupProfileView:
     ):
         company = make_company()
         area = make_area(company, name="Ventas")
-        user = make_user_with_profile(email="nocargo@example.com", company=company)
+        user = make_user_with_profile(
+            email="nocargo@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         client.post(SETUP_PROFILE_URL, _activation_post(company, area=area.pk))
@@ -827,7 +853,9 @@ class TestSetupProfileView:
         """An admin who filled a user in by hand shouldn't make them retype it."""
         company = make_company()
         make_area(company, name="Ventas")
-        user = make_user_with_profile(email="prefill@example.com", company=company)
+        user = make_user_with_profile(
+            email="prefill@example.com", company=company, is_activated=False
+        )
         user.first_name = "Ana"
         user.last_name = "López"
         user.save(update_fields=["first_name", "last_name"])
@@ -847,7 +875,9 @@ class TestSetupProfileView:
         """A rejected reference code must leave the user row untouched."""
         company = make_company()
         area = make_area(company, name="Ventas")
-        user = make_user_with_profile(email="atomic@example.com", company=company)
+        user = make_user_with_profile(
+            email="atomic@example.com", company=company, is_activated=False
+        )
         client.force_login(user)
 
         client.post(
@@ -863,7 +893,9 @@ class TestSetupProfileView:
         self, client, make_user_with_profile, make_company
     ):
         company = make_company()
-        user = make_user_with_profile(email="alreadyon@example.com", company=company)
+        user = make_user_with_profile(
+            email="alreadyon@example.com", company=company, is_activated=False
+        )
         user.profile.is_activated = True
         user.profile.save()
         client.force_login(user)
@@ -882,6 +914,155 @@ class TestSetupProfileView:
 
         assert response.status_code == 200
         assert response.context["no_company"] is True
+
+
+# ── RequireProfileActivationMiddleware ────────────────────────────────────────
+
+
+class TestRequireProfileActivationMiddleware:
+    """Activation has to hold on every request, not only the login redirect.
+
+    Routing at login is trivially escaped by typing a URL, and an unactivated
+    profile has `area=None` — so anything it answers scores into the "Sin área"
+    bucket that ADR-0004 exists to prevent.
+    """
+
+    HOME_URL = "/"
+
+    @pytest.fixture
+    def unactivated(
+        self, client, make_user_with_profile, make_company, bootstrap_groups
+    ):
+        user = make_user_with_profile(
+            email="pendiente@example.com",
+            company=make_company(),
+            is_activated=False,
+        )
+        user.groups.add(bootstrap_groups["Employees"])
+        client.force_login(user)
+        return user
+
+    def test_unactivated_user_is_redirected_from_the_app(self, client, unactivated):
+        response = client.get(self.HOME_URL)
+        assert response.status_code == 302
+        assert response["Location"] == SETUP_PROFILE_URL
+
+    def test_unactivated_user_cannot_reach_the_survey_list(self, client, unactivated):
+        response = client.get("/encuestas/")
+        assert response.status_code == 302
+        assert response["Location"] == SETUP_PROFILE_URL
+
+    def test_unactivated_user_cannot_answer_a_survey(
+        self, client, unactivated, active_assignment, survey_with_questions
+    ):
+        """The reason the gate exists: no submission may be created."""
+        from apps.responses.models import SurveySubmission
+
+        question = survey_with_questions["questions"][0]
+        url = f"/encuestas/asignados/{active_assignment.pk}/"
+
+        assert client.get(url).status_code == 302
+        post = client.post(url, {f"question_{question.id}": "respuesta"})
+
+        assert post["Location"] == SETUP_PROFILE_URL
+        assert not SurveySubmission.objects.exists()
+
+    def test_activation_page_itself_is_reachable(self, client, unactivated):
+        """Otherwise the redirect would loop forever."""
+        assert client.get(SETUP_PROFILE_URL).status_code == 200
+
+    def test_logout_is_reachable(self, client, unactivated):
+        response = client.post(LOGOUT_URL)
+        assert response.status_code == 302
+        assert "ingresar" in response["Location"]
+
+    def test_password_change_wins_over_activation(
+        self, client, make_user_with_profile, make_company
+    ):
+        """Both gates can apply at once; the password step comes first and must
+        not be bounced away by this middleware."""
+        user = make_user_with_profile(
+            email="ambos@example.com",
+            company=make_company(),
+            is_activated=False,
+            must_change_password=True,
+        )
+        client.force_login(user)
+
+        assert client.get(self.HOME_URL)["Location"] == CHANGE_PASSWORD_URL
+        assert client.get(CHANGE_PASSWORD_URL).status_code == 200
+
+    def test_activated_user_passes_through(
+        self, client, make_user_with_profile, make_company, bootstrap_groups
+    ):
+        user = make_user_with_profile(email="lista@example.com", company=make_company())
+        user.groups.add(bootstrap_groups["Employees"])
+        client.force_login(user)
+
+        response = client.get("/encuestas/")
+
+        assert response.status_code == 200
+
+    def test_operator_without_a_profile_is_not_gated(
+        self, client, make_user, bootstrap_groups
+    ):
+        """Admins never get a profile, so they must pass through — otherwise they
+        would bounce between the activation page and home forever.
+
+        They fall out on `can_take_assigned_surveys`, not on any admin-specific
+        carve-out: someone who cannot answer a survey cannot create the
+        unattributed submission this gate exists to prevent.
+        """
+        admin = make_user(email="operador@example.com")
+        admin.groups.add(bootstrap_groups["Admins"])
+        client.force_login(admin)
+
+        response = client.get(self.HOME_URL)
+
+        assert response.status_code == 302
+        assert response["Location"].endswith("/empresas/")
+
+    def test_superuser_without_a_profile_is_not_locked_out(
+        self, client, make_user, bootstrap_groups
+    ):
+        """`has_perm` is True for everything on a superuser, so without an
+        explicit bypass the root account gates itself out of the entire front
+        end — and has no profile it could activate to escape."""
+        root = make_user(email="root@example.com", is_staff=True, is_superuser=True)
+        root.groups.add(bootstrap_groups["Admins"])
+        client.force_login(root)
+
+        response = client.get(self.HOME_URL)
+
+        assert response.status_code == 302
+        assert response["Location"].endswith("/empresas/")
+
+    def test_gate_follows_the_permission_not_the_group_name(
+        self, client, make_user_with_profile, make_company
+    ):
+        """A directly granted permission is gated identically to group
+        membership, so the rule cannot be sidestepped by how a role was set up.
+        """
+        from django.contrib.auth.models import Permission
+
+        from apps.accounts.models import User
+
+        user = make_user_with_profile(
+            email="suelto@example.com", company=make_company(), is_activated=False
+        )
+        user.user_permissions.add(
+            Permission.objects.get(codename="can_take_assigned_surveys")
+        )
+        client.force_login(User.objects.get(pk=user.pk))
+
+        response = client.get(self.HOME_URL)
+
+        assert response.status_code == 302
+        assert response["Location"] == SETUP_PROFILE_URL
+
+    def test_anonymous_requests_are_untouched(self, client):
+        response = client.get(REQUEST_OTP_URL)
+        assert response.status_code == 200
 
 
 # ── logout_view ───────────────────────────────────────────────────────────────

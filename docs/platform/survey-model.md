@@ -82,6 +82,29 @@ used by both POST paths. Answers persist in `apps/responses`
 JSON value typed by `question_type`). `apps/core` reads these for dashboards and
 per-employee progress.
 
+### Who may answer an assignment
+
+A respondent must hold `can_take_assigned_surveys` and have an **activated**
+profile linked to a company, and the assignment must belong to **that** company.
+All three views resolve the caller's company first and filter the assignment
+lookup by it, so an assignment id belonging to another client is
+indistinguishable from one that does not exist — the id space cannot be walked to
+reach another company's survey.
+
+`RequireProfileActivationMiddleware` already turns unactivated users away before
+they reach these views; the activation condition is repeated here so the survey
+path stays correct on its own rather than depending on middleware ordering.
+
+This is a tenancy guarantee rather than a convenience. `SurveySubmission` rows
+feed `apps/nom035`, which rolls them up per company: a submission written against
+the wrong assignment would silently contaminate another client's NOM-035 results,
+and nothing downstream could tell it apart from a legitimate one. `apps/nom035`
+independently refuses to label a score with an área from a different company, but
+that guard only cleans up a display symptom — the boundary is enforced here.
+
+Admins hold no `can_take_assigned_surveys` and have no profile, so they cannot
+open a survey at all; there is no operator preview path today.
+
 ## The scoring boundary
 
 `apps/surveys` stores **no scoring** — no inverted flags, no

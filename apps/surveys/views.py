@@ -9,6 +9,34 @@ from apps.surveys.models import Question, SurveyAssignment
 from apps.surveys.visibility import progress_for_modules, visible_questions
 
 
+def _respondent_company(user):
+    """The company whose assignments `user` may answer, or None.
+
+    None means the caller has no business opening any assignment at all: they
+    lack `can_take_assigned_surveys` (admins, notably, who have no profile and do
+    not respond to surveys), or their profile is not activated, or it is not
+    linked to a company.
+
+    Every assignment lookup in this module filters on the result. That filter is
+    the tenant boundary — an assignment id belonging to another client must 404
+    exactly as an id that does not exist does, so the sequential id space cannot
+    be walked to reach another company's survey. Answering one would land the
+    submission in that company's roll-up and skew its NOM-035 results.
+
+    `RequireProfileActivationMiddleware` already turns unactivated users away
+    before they reach here; the activation check is repeated so this path stays
+    correct on its own rather than depending on middleware ordering.
+    """
+    if not user.has_perm("accounts.can_take_assigned_surveys"):
+        return None
+    # RelatedObjectDoesNotExist subclasses AttributeError, so getattr also
+    # covers a user with no profile row at all.
+    profile = getattr(user, "profile", None)
+    if profile is None or not profile.is_activated:
+        return None
+    return profile.company
+
+
 def _parse_value(question, post):
     """Parse the posted value for a single question by its type.
 
@@ -72,7 +100,11 @@ def _flat_questions(modules):
 
 @login_required
 def survey_detail(request, assignment_id):
-    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    company = _respondent_company(request.user)
+    if company is None:
+        return redirect("accounts:setup_profile")
+
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id, company=company)
 
     if assignment.status == SurveyAssignment.Status.CLOSED:
         return redirect("core:home")
@@ -177,7 +209,19 @@ def autosave_survey(request, assignment_id):
     if not request.user.is_authenticated:
         return JsonResponse({"ok": False, "error": "unauthenticated"}, status=401)
 
-    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    # JSON rather than a redirect/HTML 404: this endpoint's contract is JSON,
+    # and the client script treats any non-401 failure as "fall back to the
+    # manual save button".
+    company = _respondent_company(request.user)
+    if company is None:
+        return JsonResponse({"ok": False, "error": "forbidden"}, status=403)
+
+    assignment = SurveyAssignment.objects.filter(
+        id=assignment_id, company=company
+    ).first()
+    if assignment is None:
+        return JsonResponse({"ok": False, "error": "not_found"}, status=404)
+
     if assignment.status == SurveyAssignment.Status.CLOSED:
         return JsonResponse({"ok": False, "error": "closed"}, status=403)
 
@@ -227,7 +271,11 @@ def autosave_survey(request, assignment_id):
 
 @login_required
 def survey_submitted(request, assignment_id):
-    assignment = get_object_or_404(SurveyAssignment, id=assignment_id)
+    company = _respondent_company(request.user)
+    if company is None:
+        return redirect("accounts:setup_profile")
+
+    assignment = get_object_or_404(SurveyAssignment, id=assignment_id, company=company)
     return render(
         request,
         "surveys/survey_submitted.html",

@@ -88,6 +88,25 @@ When such a user is authenticated:
 
 Non-admin users who do not have an activated profile are routed to `/cuentas/completar-perfil/`.
 
+This is enforced on **every request** by `RequireProfileActivationMiddleware`, not
+just by the redirect that follows login. A user who is merely routed at login can
+navigate away and reach the rest of the app unactivated, and an unactivated
+profile has `area=None` — so every survey it answers scores into the "Sin área"
+bucket that ADR-0004 blocks activation to avoid. Allowed through while
+unactivated: the activation page itself, the password-change URL, logout, static
+files, and `/admin/`.
+
+The gate applies to holders of `can_take_assigned_surveys` — precisely the people
+who can create the unattributed submission it exists to prevent. Operators do not
+hold it, so they pass through without an admin-specific exemption and without
+needing a `UserProfile` at all; this is also what stops the activation page and
+the app home from redirecting to each other forever. Keying on the permission
+rather than the `Admins` group name means a directly granted permission is gated
+identically to group membership.
+
+A respondent with no profile row is treated as unactivated and sent to the same
+place, where they are told their account is not linked to a company.
+
 Activation behavior:
 
 - Admin-group users skip profile activation and are redirected to the app home route.
@@ -330,6 +349,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | Name and cargo saved at activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_activation_saves_name_and_cargo`, `test_activation_without_cargo_leaves_it_blank` |
 | Name is required to activate | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_missing_name_blocks_activation` |
 | Existing details are prefilled | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_form_prefills_details_already_on_record` |
+| Activation is enforced on every request | `apps/accounts/tests/test_views.py` | `TestRequireProfileActivationMiddleware::*` |
 | Failed activation writes nothing | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_name_is_not_saved_when_activation_fails` |
 | Logout is POST-only and clears session | `apps/accounts/tests/test_views.py` | `TestLogoutView::test_get_returns_405`, `test_post_logs_out_and_redirects` |
 | OTP code validation | `apps/accounts/tests/test_forms.py` | `TestOTPVerifyFormCleanCode::*` |

@@ -88,16 +88,24 @@ def make_user_with_profile(db, make_user):
         position="Analyst",
         area=None,
         location=None,
+        is_activated=True,
         **kwargs,
     ):
-        # area/location are explicit params, not **kwargs — they must not fall
-        # through to make_user, which would pass them to the User constructor.
+        # area/location/is_activated are explicit params, not **kwargs — they
+        # must not fall through to make_user, which would pass them to the User
+        # constructor.
+        #
+        # is_activated defaults True: an unactivated profile is bounced to the
+        # activation flow by RequireProfileActivationMiddleware, so a test that
+        # wants to exercise any other view needs an activated user. Tests about
+        # activation itself pass is_activated=False.
         user = make_user(email=email, **kwargs)
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.position = position
         profile.company = company
         profile.area = area
         profile.location = location
+        profile.is_activated = is_activated
         profile.save()
         return user
 
@@ -116,6 +124,17 @@ def make_company(db):
         return Company.objects.create(name=name, legal_name=legal_name, **kwargs)
 
     return factory
+
+
+@pytest.fixture
+def company(make_company):
+    """One company, shared by fixtures that have to agree on tenancy.
+
+    Views scope assignment lookups to the caller's own company, so a test whose
+    respondent and assignment come from two separate `make_company()` calls gets
+    a 404 rather than the page it meant to exercise.
+    """
+    return make_company()
 
 
 @pytest.fixture
@@ -204,11 +223,10 @@ def survey_with_questions(db, survey, survey_module):
 
 
 @pytest.fixture
-def active_assignment(db, make_company, survey):
-    """An ACTIVE SurveyAssignment linking a fresh company to the survey."""
+def active_assignment(db, company, survey):
+    """An ACTIVE SurveyAssignment linking the shared company to the survey."""
     from apps.surveys.models import SurveyAssignment
 
-    company = make_company()
     return SurveyAssignment.objects.create(
         company=company,
         survey=survey,
