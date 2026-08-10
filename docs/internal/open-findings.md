@@ -9,13 +9,19 @@ team decides it is not worth fixing (say which, and why).
 
 ---
 
-## 1. Django admin mixes English and Spanish 🟡 — promoted to a feature doc
+## 1. Authorization group names are in English 🟡
 
-**Where:** `config/settings.py` (`LANGUAGE_CODE = "en-us"`) and model metadata
-across all four apps.
+**Where:** `apps/accounts/management/commands/bootstrap_groups.py`
+(`GROUP_PERMISSIONS`), `apps/accounts/importers.py`, `apps/accounts/views.py`
+(`_redirect_after_login`), `conftest.py` (`bootstrap_groups` fixture).
 
-**Status:** Scoped and written up as
-[`docs/platform/localization.md`](../platform/localization.md). Scheduled for its
-own session; three open questions there need answers before implementation.
+**What:** The four groups — `Admins`, `Principal Exec`, `Secondary Exec`,
+`Employees` — appear in English in the admin's Groups list and in the CSV
+importer's `group` column, on an otherwise Spanish operator surface.
 
-Kept here only as a pointer — see that document for the analysis.
+**Why it was left alone:** `auth.Group.name` is looked up **by string** in four
+places, and the CSV import contract accepts it as a column value. Renaming is a
+behavior change with an input-format consequence, not the presentation-only
+sweep that [`docs/platform/localization.md`](../platform/localization.md)
+covers. Doing it properly means picking Spanish names, updating all four call
+sites, and deciding whether the importer keeps accepting the English spellings.

@@ -1418,7 +1418,7 @@ git commit -m "Rewrite auto-generated permission names into Spanish"
 
 Live docs describe only the current implementation. Write every edit below as if es-MX had always been the setup — no "formerly", no "now Spanish", no before/after. `docs/adr/` is untouched: this sets a convention rather than choosing between competing architectures, so no ADR is warranted and none becomes inaccurate.
 
-- [ ] **Step 1: Record the convention in `.claude/CLAUDE.md`**
+- [x] **Step 1: Record the convention in `.claude/CLAUDE.md`**
 
 Add a bullet to **Cross-cutting concepts**, after the **Authorization** bullet:
 
@@ -1426,7 +1426,7 @@ Add a bullet to **Cross-cutting concepts**, after the **Authorization** bullet:
 - **Spanish UI, English code**: `LANGUAGE_CODE = "es-mx"` and `TIME_ZONE = "America/Mexico_City"` (storage stays UTC via `USE_TZ`). Django ships layer 1 — its own chrome, validation and date formats. Everything else an operator reads is metadata we write, so **every model field carries an explicit lowercase Spanish `verbose_name`, every model a Spanish `Meta.verbose_name`/`verbose_name_plural`, and every `TextChoices` a Spanish label** — without them Django derives the label from the English attribute name and leaks it onto the screen. Strings are hardcoded; there is no `gettext`, no `.po` files and no second language. `apps/core/permissions.py` rewrites the auto-generated `auth_permission` names, which Django builds from an untranslated template. `conftest.py`'s `assert_explicit_labels` fixture fails a build that forgets one. See `docs/platform/localization.md`.
 ```
 
-- [ ] **Step 2: Rewrite `docs/platform/localization.md` as shipped documentation**
+- [x] **Step 2: Rewrite `docs/platform/localization.md` as shipped documentation**
 
 - **Status** → `Implemented.`
 - Delete **Open questions** entirely — all three are answered and now belong in **Key decisions**.
@@ -1437,7 +1437,7 @@ Add a bullet to **Cross-cutting concepts**, after the **Authorization** bullet:
 - Under **Test mapping**, list what actually exists: `apps/core/tests/test_localization.py` plus a `test_admin.py` per app.
 - Keep the **Data model impact** wrinkle about `auth_permission` only as far as it is still true — the receiver now rewrites those rows on every `migrate`, so the "chore once there is data worth keeping" caveat goes away.
 
-- [ ] **Step 3: Retire the open finding and record the new one**
+- [x] **Step 3: Retire the open finding and record the new one**
 
 In `docs/internal/open-findings.md`, delete section **1** in full and replace it with:
 
@@ -1460,7 +1460,7 @@ picking Spanish names, updating all four call sites, and deciding whether the
 importer keeps accepting the English spellings.
 ```
 
-- [ ] **Step 4: Update the operator guides to the labels they now see**
+- [x] **Step 4: Update the operator guides to the labels they now see**
 
 In `docs/internal/user-guides/csv-user-import.md`: `**Companies**` → `**Empresas**` (line 25), `**Users**` → `**Usuarios**` (line 59).
 
@@ -1468,7 +1468,7 @@ In `docs/internal/user-guides/user-onboarding.md`: `**Users**` → `**Usuarios**
 
 Re-read both guides end to end and fix any other reference to an admin screen or field label that no longer matches — including the *Áreas* count column mentioned at `user-onboarding.md:24` (unchanged, but confirm).
 
-- [ ] **Step 5: Update `apps/accounts/CLAUDE.md`**
+- [x] **Step 5: Update `apps/accounts/CLAUDE.md`**
 
 Replace the first bullet of **Conventions & gotchas** — currently "**User-facing strings are in Spanish**; code/comments in English" — with a version that names the mechanism:
 
@@ -1476,7 +1476,7 @@ Replace the first bullet of **Conventions & gotchas** — currently "**User-faci
 - **User-facing strings are in Spanish**; code, identifiers and comments in English. Every field carries an explicit Spanish `verbose_name` and every model a Spanish `Meta.verbose_name` — that metadata is the only thing standing between an English attribute name and a Spanish admin screen. `Role.Meta.permissions` labels are Spanish too; they surface in the Groups permission picker.
 ```
 
-- [ ] **Step 6: Verify**
+- [x] **Step 6: Verify**
 
 Run: `pytest`
 Expected: PASS (docs-only step, but confirms the branch is green before finishing).
@@ -1487,7 +1487,7 @@ Expected: no hits — the no-`gettext` constraint holds.
 Run: `git diff --stat main -- docs/adr/`
 Expected: empty. No ADR may be touched.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add .claude/CLAUDE.md docs/platform/localization.md \
@@ -1500,9 +1500,9 @@ git commit -m "Document the es-MX localization convention"
 
 ## Final verification
 
-- [ ] `ruff format --check .` and `ruff check .` are clean.
-- [ ] `python manage.py check` reports no issues.
-- [ ] `python manage.py makemigrations --check --dry-run` reports no pending changes.
-- [ ] `pytest --create-db` passes end to end.
-- [ ] On a freshly created database: `python manage.py migrate && python manage.py bootstrap_groups && python manage.py seed_nom035_survey` all run clean.
+- [x] `ruff format --check .` and `ruff check .` are clean.
+- [x] `python manage.py check` reports no issues.
+- [x] `python manage.py makemigrations --check --dry-run` reports no pending changes.
+- [x] `pytest --create-db` passes end to end.
+- [x] On a freshly created database: `python manage.py migrate && python manage.py bootstrap_groups && python manage.py seed_nom035_survey` all run clean.
 - [ ] Eyeball in a browser: `/admin/` index (Spanish app groups, `Administración SOFIA-S`), a Company change form (inlines, Spanish labels, Mexico City timestamps), the Groups permission picker, and the public app home + a survey page (unchanged except for displayed times).

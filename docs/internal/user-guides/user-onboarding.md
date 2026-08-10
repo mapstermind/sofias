@@ -9,15 +9,15 @@ This document defines the end-to-end process for creating a pre-approved user an
 
 Before creating users, confirm the company already exists in Django Admin and has:
 
-- `name`
-- `legal_name`
-- `RFC` (optional)
-- `address` (optional)
-- `reference_code`
+- **Nombre comercial**
+- **Razón social**
+- **RFC** (optional)
+- **Domicilio** (optional)
+- **Código de referencia**
 - **Áreas** — at least one
 - **Localidades** — optional
 
-The `reference_code` is generated automatically and is required during first-time profile activation. Share this company reference code only with the correct company contact.
+The **Código de referencia** is generated automatically and is required during first-time profile activation. Share this company reference code only with the correct company contact.
 
 **Áreas and localidades are loaded on the company itself**, in the *Áreas* and *Localidades* sections at the bottom of the company page in Django Admin. Each company has its own lists. They must be loaded **before** employees try to activate their accounts, because the employee picks their área from this list.
 
@@ -37,31 +37,31 @@ assignment, and the setup access code in one step.
 The manual procedure below is for OTP-only users:
 
 1. Open Django Admin.
-2. Go to **Users**.
-3. Click **Add user**.
-4. Enter a unique `username`.
+2. Go to **Usuarios**.
+3. Click **Agregar usuario**.
+4. Enter a unique **Nombre de usuario**.
    - Recommended pattern: use the email local part, for example `jane.doe` for `jane.doe@company.com`.
    - If that username already exists, append a number, for example `jane.doe1`.
-5. Choose **disabled** password-based authentication. OTP users never need a password.
+5. Set **Autenticación basada en contraseña** to **Deshabilitado**. OTP users never need a password.
 6. Save the user.
 7. Open the saved user record and complete these fields:
-   - `email`: the employee’s institutional email. This must be exact because login starts from this email.
-   - `first_name` and `last_name`: optional. The employee is asked for these at activation, and anything you enter here is prefilled for them to confirm.
-   - `is_active`: enabled.
-   - Groups/permissions: assign the correct role group, for example `Employees`, `Principal Exec`, `Secondary Exec`, or `Admins`.
+   - **Correo electrónico**: the employee’s institutional email. This must be exact because login starts from this email.
+   - **Nombre(s)** and **Apellidos**: optional. The employee is asked for these at activation, and anything you enter here is prefilled for them to confirm.
+   - **Activo**: enabled.
+   - **Grupos**: assign the correct role group, for example `Employees`, `Principal Exec`, `Secondary Exec`, or `Admins`.
 8. Save again.
 
 ## Create or Update the User Profile
 
 Each non-admin user needs a `UserProfile`.
 
-1. In Django Admin, go to **User profiles**.
+1. In Django Admin, go to **Perfiles de colaborador**.
 2. Create a profile for the user, or open the existing profile.
 3. Set:
-   - `user`: the user created above.
-   - `company`: the company where the user works. This is the only field you have to set.
-   - `position`, `area`, `localidad`: optional here — the employee supplies these during activation, and anything you enter is prefilled for them. The dropdowns only offer entries belonging to the profile’s company.
-   - `is_activated`: leave disabled for first-time users.
+   - **Usuario**: the user created above.
+   - **Empresa**: the company where the user works. This is the only field you have to set.
+   - **Cargo**, **Área**, **Localidad**: optional here — the employee supplies these during activation, and anything you enter is prefilled for them. The dropdowns only offer entries belonging to the profile’s company.
+   - **Cuenta activada**: leave disabled for first-time users.
 4. Save the profile.
 
 Admins can skip profile activation, but company employees and executives must have a profile linked to their company.
@@ -79,24 +79,24 @@ Use this path when the user can receive emails from SOFIA-S.
 7. After successful verification, SOFIA-S logs the user in.
 8. If this is the user’s first login, they are redirected to `/cuentas/completar-perfil/`.
 9. The user enters the company `reference_code`, their **nombre(s)** and **apellidos** (both required) and an optional **cargo**, then selects their **área** from the company’s list. If the company has more than one localidad, they also select their **localidad**; with exactly one localidad it is assigned automatically and not shown.
-10. If the code matches the company linked to their profile, `is_activated` becomes enabled, the name, cargo, área and localidad are saved, and the user proceeds into the app. Until this happens the employee roster shows them as *Sin nombre*.
+10. If the code matches the company linked to their profile, **Cuenta activada** becomes enabled, the name, cargo, área and localidad are saved, and the user proceeds into the app. Until this happens the employee roster shows them as *Sin nombre*.
 
 ## Path B: Setup Access Code Fallback
 
 Use this path only when the company blocks external email, so OTP messages never reach the user.
 
-1. The platform admin imports the user through the CSV importer with `auth_method=password`. SOFIA-S creates the user with an unusable password, sets `must_change_password`, and generates a 9-digit setup access code that appears in the import report.
+1. The platform admin imports the user through the CSV importer with `auth_method=password`. SOFIA-S creates the user with an unusable password, sets **Debe cambiar su contraseña**, and generates a 9-digit setup access code that appears in the import report.
 2. The platform admin sends the código temporal de acceso to the company’s trusted HR or internal administrator through an approved internal channel.
 3. HR gives the código temporal de acceso to the employee using the company’s internal process.
 4. The user opens `/cuentas/primer-ingreso/`.
 5. The user enters their institutional email and código temporal de acceso.
 6. SOFIA-S logs the user in, marks the setup access code used, clears the stored code, and immediately redirects them to `/cuentas/cambiar-contrasena/`.
 7. The user creates a contraseña. Django password validation rules apply.
-8. SOFIA-S clears `must_change_password`.
+8. SOFIA-S clears **Debe cambiar su contraseña**.
 9. Future fallback logins use `/cuentas/ingresar-con-contrasena/`.
 10. If this is the user’s first login, they are redirected to `/cuentas/completar-perfil/`.
 11. The user enters the company `reference_code`.
-12. If the code matches their linked company, `is_activated` becomes enabled and the user proceeds into the app.
+12. If the code matches their linked company, **Cuenta activada** becomes enabled and the user proceeds into the app.
 
 ## Security Rules
 
@@ -104,7 +104,7 @@ Use this path only when the company blocks external email, so OTP messages never
 - Do not create passwords for users who can receive OTP emails.
 - Do not share setup access codes by email from SOFIA-S if email delivery is the problem.
 - Do not use the company `reference_code` as a password.
-- Set `must_change_password` for every setup-code fallback user.
+- Set **Debe cambiar su contraseña** for every setup-code fallback user.
 - Confirm the user’s profile is linked to the correct company before sharing either the reference code or a código temporal de acceso.
 - If a setup access code may have been exposed before use, delete the code in Django Admin. There is no regeneration mechanism: if access is still required, delete the user and re-import them via CSV.
 
@@ -116,17 +116,17 @@ For OTP-only onboarding:
 - Password-based authentication is disabled.
 - User has the correct group.
 - UserProfile exists and points to the correct company.
-- UserProfile `is_activated` is disabled.
-- Company contact has the company `reference_code`.
+- UserProfile **Cuenta activada** is disabled.
+- Company contact has the company **Código de referencia**.
 
 For fallback onboarding:
 
 - User exists with exact institutional email.
 - Password-based authentication is disabled until the user creates a contraseña.
 - Setup access code exists, is unused, and has 9 digits.
-- `must_change_password` is enabled.
+- **Debe cambiar su contraseña** is enabled.
 - User has the correct group.
 - UserProfile exists and points to the correct company.
-- UserProfile `is_activated` is disabled.
+- UserProfile **Cuenta activada** is disabled.
 - HR has the código temporal de acceso through a trusted internal channel.
-- Company contact has the company `reference_code`.
+- Company contact has the company **Código de referencia**.
