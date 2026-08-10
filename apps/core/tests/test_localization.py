@@ -70,3 +70,18 @@ def test_admin_renders_timestamps_in_mexico_city_time(staff_client, make_company
     # Django's es_MX catalog capitalizes month names.
     assert "9 de Agosto de 2026 a las 15:00" in body
     assert "21:00" not in body
+
+
+@pytest.mark.parametrize(
+    "app_label,expected",
+    [
+        ("accounts", "Cuentas"),
+        ("surveys", "Encuestas"),
+        ("responses", "Respuestas"),
+        ("nom035", "NOM-035"),
+    ],
+)
+def test_admin_index_groups_apps_under_spanish_names(app_label, expected):
+    from django.apps import apps as django_apps
+
+    assert django_apps.get_app_config(app_label).verbose_name == expected

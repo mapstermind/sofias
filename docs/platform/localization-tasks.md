@@ -212,7 +212,7 @@ git commit -m "Switch the project to es-MX and Mexico City time"
 - Consumes: nothing from Task 1 beyond the test file existing.
 - Produces: `AppConfig.verbose_name` on four apps, which `templates/admin/accounts/user/import_csv.html:8` already renders in its breadcrumb via `opts.app_config.verbose_name`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `apps/core/tests/test_localization.py`:
 
@@ -232,12 +232,12 @@ def test_admin_index_groups_apps_under_spanish_names(app_label, expected):
     assert django_apps.get_app_config(app_label).verbose_name == expected
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/core/tests/test_localization.py -k spanish_names -v`
 Expected: 4 failures — Django derives `"Accounts"`, `"Surveys"`, `"Responses"`, `"Nom035"` from the class names.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Add one `verbose_name` line to each `AppConfig`, keeping the existing attribute order:
 
@@ -280,12 +280,12 @@ class Nom035Config(AppConfig):
         from apps.nom035 import signals  # noqa: F401
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest apps/core/tests/test_localization.py -v`
 Expected: PASS (9 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/accounts/apps.py apps/surveys/apps.py apps/responses/apps.py \
