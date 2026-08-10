@@ -23,18 +23,6 @@ CATALOGS = [
 ]
 
 
-@pytest.fixture
-def staff_client(client, make_user):
-    staff = make_user(
-        email="catalog-staff@example.com",
-        password="Pass12345!",
-        is_staff=True,
-        is_superuser=True,
-    )
-    client.force_login(staff)
-    return client
-
-
 def _catalog_formset(model, prefix, company, data):
     """Build the same formset class the Company admin inlines use."""
     FormSet = inlineformset_factory(

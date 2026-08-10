@@ -50,6 +50,22 @@ def bootstrap_groups(db):
     return groups
 
 
+# ── Admin ─────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def staff_client(client, make_user):
+    """A test client logged in as a superuser, for exercising admin screens."""
+    staff = make_user(
+        email="admin-staff@example.com",
+        password="Pass12345!",
+        is_staff=True,
+        is_superuser=True,
+    )
+    client.force_login(staff)
+    return client
+
+
 # ── User factories ────────────────────────────────────────────────────────────
 
 

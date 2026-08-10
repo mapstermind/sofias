@@ -18,6 +18,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+# Django's default chrome names the framework; operators should see the product.
+admin.site.site_header = "Administración SOFIA-S"
+admin.site.site_title = "SOFIA-S"
+admin.site.index_title = "Panel de administración"
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include(("apps.core.urls", "core"))),

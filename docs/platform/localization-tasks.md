@@ -129,8 +129,9 @@ def test_admin_renders_timestamps_in_mexico_city_time(staff_client, make_company
     response = staff_client.get(reverse("admin:accounts_company_changelist"))
 
     body = response.content.decode()
-    assert "9 de agosto de 2026" in body
-    assert "15:00" in body
+    # Django's es_MX catalog capitalizes month names.
+    assert "9 de Agosto de 2026 a las 15:00" in body
+    assert "21:00" not in body
 ```
 
 Add to `conftest.py`, under a new `# ── Admin ─────` banner comment matching the file's existing style:

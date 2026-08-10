@@ -129,9 +129,11 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "es-mx"
 
-TIME_ZONE = "UTC"
+# Storage stays UTC (USE_TZ). This only shifts what an operator reads: without
+# it a 15:00 submission from a Mexican client displays as 21:00.
+TIME_ZONE = "America/Mexico_City"
 
 USE_I18N = True
 
