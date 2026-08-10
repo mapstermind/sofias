@@ -919,7 +919,7 @@ git commit -m "Label every surveys model, field and choice in Spanish"
 - Consumes: `assert_explicit_labels` from `conftest.py` (Task 3).
 - Produces: the Spanish word for a submission — **"envío"** — which Task 6 reuses for `SubmissionScore.submission`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `apps/responses/tests/test_admin.py`:
 
@@ -955,12 +955,12 @@ def test_submission_str_is_spanish(active_assignment, make_user):
     assert str(submission).startswith(f"Envío {submission.pk} — ")
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/responses/tests/test_admin.py -v`
 Expected: 4 failures — 8 auto-derived labels, `In Progress`/`Completed`, and `"Submission 1 — ..."`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 In `apps/responses/models.py`, keeping both `Meta.constraints` blocks and `Meta.ordering` unchanged:
 
@@ -1039,19 +1039,19 @@ class Answer(models.Model):
         return f"Respuesta a la pregunta {self.question_id} del envío {self.submission_id}"
 ```
 
-- [ ] **Step 4: Generate the migration and confirm it is a no-op**
+- [x] **Step 4: Generate the migration and confirm it is a no-op**
 
 Run: `python manage.py makemigrations responses`
 Expected: `apps/responses/migrations/0002_*.py` with only `AlterModelOptions` and `AlterField`.
 
 Run: `python manage.py migrate responses`
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `pytest apps/responses apps/surveys apps/nom035 -v`
 Expected: PASS. `apps/surveys` and `apps/nom035` are included because they create submissions; nothing asserts on `str(submission)` today, so this is a regression check rather than an expected break.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/responses/models.py apps/responses/migrations/ \
