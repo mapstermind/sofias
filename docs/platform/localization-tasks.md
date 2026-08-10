@@ -617,7 +617,7 @@ git commit -m "Label every accounts model and field in Spanish"
 **Interfaces:**
 - Consumes: `assert_explicit_labels` and `staff_client` fixtures from `conftest.py` (Tasks 1 and 3).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `apps/surveys/tests/test_admin.py`:
 
@@ -657,12 +657,12 @@ def test_survey_change_form_labels_are_spanish(staff_client, survey):
     assert "Headcount threshold" not in body
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/surveys/tests/test_admin.py -v`
 Expected: 6 failures — 33 auto-derived labels, four English choice labels (`Published`, `Small variant`, `Likert Scale`, `Active`), and `Headcount threshold` on the change form. The `Guía III` case already passes.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 In `apps/surveys/models.py`, keep every docstring, `save()`, `__str__`, `Meta.ordering`, `Meta.constraints` and `@staticmethod` exactly as they are. Change only labels, help texts and choice labels.
 
@@ -885,19 +885,19 @@ In `apps/surveys/models.py`, keep every docstring, `save()`, `__str__`, `Meta.or
         ordering = ["-created_at"]
 ```
 
-- [ ] **Step 4: Generate the migration and confirm it is a no-op**
+- [x] **Step 4: Generate the migration and confirm it is a no-op**
 
 Run: `python manage.py makemigrations surveys`
 Expected: `apps/surveys/migrations/0002_*.py` with only `AlterModelOptions` and `AlterField`. Confirm each `AlterField` preserves `max_length`, `null`, `blank`, `unique`, `editable` and `default`.
 
 Run: `python manage.py migrate surveys`
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `pytest apps/surveys apps/core -v`
 Expected: PASS. `apps/core` is included because its templates call `get_variant_display` — the `Variant` labels are deliberately unchanged, and this proves it.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/surveys/models.py apps/surveys/migrations/ apps/surveys/tests/test_admin.py

@@ -9,29 +9,33 @@ class Survey(models.Model):
     """
 
     class Status(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        PUBLISHED = "published", "Published"
-        ARCHIVED = "archived", "Archived"
+        DRAFT = "draft", "Borrador"
+        PUBLISHED = "published", "Publicada"
+        ARCHIVED = "archived", "Archivada"
 
     key = models.SlugField(
+        "clave",
         max_length=64,
         unique=True,
-        help_text="Stable identifier for the instrument, e.g. 'nom035'.",
+        help_text="Identificador estable del instrumento, p. ej. 'nom035'.",
     )
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
+    title = models.CharField("título", max_length=255)
+    description = models.TextField("descripción", blank=True)
     status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.DRAFT
+        "estado", max_length=20, choices=Status.choices, default=Status.DRAFT
     )
     headcount_threshold = models.PositiveIntegerField(
+        "umbral de plantilla",
         default=50,
-        help_text="Companies with headcount strictly greater than this get the "
-        "'large' variant, otherwise 'small'.",
+        help_text="Las empresas con más colaboradores que este número reciben la "
+        "variante grande; las demás, la pequeña.",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField("fecha de creación", auto_now_add=True)
+    updated_at = models.DateTimeField("última actualización", auto_now=True)
 
     class Meta:
+        verbose_name = "encuesta"
+        verbose_name_plural = "encuestas"
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -47,44 +51,55 @@ class Module(models.Model):
     """
 
     class AppliesTo(models.TextChoices):
-        ALL = "all", "All respondents"
-        SMALL = "small", "Small variant"
-        LARGE = "large", "Large variant"
+        ALL = "all", "Todos los participantes"
+        SMALL = "small", "Variante pequeña"
+        LARGE = "large", "Variante grande"
 
-    survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name="modules")
+    survey = models.ForeignKey(
+        Survey,
+        on_delete=models.CASCADE,
+        related_name="modules",
+        verbose_name="encuesta",
+    )
     key = models.SlugField(
+        "clave",
         max_length=64,
-        help_text="Stable identifier, unique within the survey. Referenced by "
-        "visible_when rules (any_in_module).",
+        help_text="Identificador estable, único dentro de la encuesta. Lo "
+        "referencian las reglas de visible_when (any_in_module).",
     )
     title = models.CharField(
+        "título",
         max_length=255,
         blank=True,
-        help_text="Optional divider heading shown above the module's questions. "
-        "Leave blank for a module presented as plain paragraph text only "
-        "(see description).",
+        help_text="Encabezado divisor opcional, arriba de las preguntas del "
+        "módulo. Déjalo vacío si el módulo solo presenta texto (ver descripción).",
     )
     intro = models.TextField(
+        "introducción",
         blank=True,
-        help_text="Optional heading shown above the module's title/divider, "
-        "for guide-level intro text (e.g. a questionnaire's formal name).",
+        help_text="Encabezado opcional arriba del título o divisor, para el texto "
+        "introductorio de una guía (p. ej. el nombre formal del cuestionario).",
     )
     description = models.TextField(
+        "descripción",
         blank=True,
-        help_text="Optional paragraph text. Shown under the title as a "
-        "subtitle when title is set, or standalone when title is blank.",
+        help_text="Párrafo opcional. Se muestra como subtítulo bajo el título, o "
+        "por sí solo cuando el título está vacío.",
     )
-    order = models.PositiveIntegerField(default=0)
+    order = models.PositiveIntegerField("orden", default=0)
     applies_to = models.CharField(
-        max_length=10, choices=AppliesTo.choices, default=AppliesTo.ALL
+        "aplica a", max_length=10, choices=AppliesTo.choices, default=AppliesTo.ALL
     )
     visible_when = models.JSONField(
+        "condición de visibilidad",
         null=True,
         blank=True,
-        help_text="Optional conditional-visibility rule. Null = always visible.",
+        help_text="Regla opcional de visibilidad condicional. Vacío = siempre visible.",
     )
 
     class Meta:
+        verbose_name = "módulo"
+        verbose_name_plural = "módulos"
         ordering = ["order"]
         constraints = [
             models.UniqueConstraint(
@@ -98,44 +113,58 @@ class Module(models.Model):
 
 class Question(models.Model):
     class QuestionType(models.TextChoices):
-        TEXT = "text", "Text"
-        INTEGER = "integer", "Integer"
-        DECIMAL = "decimal", "Decimal"
-        DATE = "date", "Date"
-        SINGLE_CHOICE = "single_choice", "Single Choice"
-        MULTIPLE_CHOICE = "multiple_choice", "Multiple Choice"
-        BOOLEAN = "boolean", "Boolean"
-        RATING = "rating", "Rating"
-        LIKERT = "likert", "Likert Scale"
+        TEXT = "text", "Texto"
+        INTEGER = "integer", "Número entero"
+        DECIMAL = "decimal", "Número decimal"
+        DATE = "date", "Fecha"
+        SINGLE_CHOICE = "single_choice", "Opción única"
+        MULTIPLE_CHOICE = "multiple_choice", "Opción múltiple"
+        BOOLEAN = "boolean", "Sí / No"
+        RATING = "rating", "Calificación"
+        LIKERT = "likert", "Escala Likert"
 
     module = models.ForeignKey(
-        Module, on_delete=models.CASCADE, related_name="questions"
+        Module,
+        on_delete=models.CASCADE,
+        related_name="questions",
+        verbose_name="módulo",
     )
     # Denormalized from module.survey so `code` can be unique per survey at the
     # database level. Kept in sync by save().
     survey = models.ForeignKey(
-        Survey, on_delete=models.CASCADE, related_name="questions", editable=False
+        Survey,
+        on_delete=models.CASCADE,
+        related_name="questions",
+        editable=False,
+        verbose_name="encuesta",
     )
     code = models.SlugField(
+        "código",
         max_length=64,
-        help_text="Stable per-survey identifier, e.g. 'g3-29'. The integration "
-        "key for the future valuation engine.",
+        help_text="Identificador estable dentro de la encuesta, p. ej. 'g3-29'. Es "
+        "la llave de integración que consume el motor de valoración.",
     )
-    question_type = models.CharField(max_length=20, choices=QuestionType.choices)
-    text = models.TextField()
-    order = models.PositiveIntegerField(default=0)
+    question_type = models.CharField(
+        "tipo de pregunta", max_length=20, choices=QuestionType.choices
+    )
+    text = models.TextField("texto")
+    order = models.PositiveIntegerField("orden", default=0)
     config = models.JSONField(
+        "configuración",
         default=dict,
         blank=True,
-        help_text="Flexible per-type config: min, max, placeholder, labels, etc.",
+        help_text="Configuración flexible por tipo: min, max, placeholder, labels, etc.",
     )
     visible_when = models.JSONField(
+        "condición de visibilidad",
         null=True,
         blank=True,
-        help_text="Optional conditional-visibility rule. Null = always visible.",
+        help_text="Regla opcional de visibilidad condicional. Vacío = siempre visible.",
     )
 
     class Meta:
+        verbose_name = "pregunta"
+        verbose_name_plural = "preguntas"
         ordering = ["order"]
         constraints = [
             models.UniqueConstraint(
@@ -155,13 +184,18 @@ class Question(models.Model):
 
 class Choice(models.Model):
     question = models.ForeignKey(
-        Question, on_delete=models.CASCADE, related_name="choices"
+        Question,
+        on_delete=models.CASCADE,
+        related_name="choices",
+        verbose_name="pregunta",
     )
-    label = models.CharField(max_length=255)
-    value = models.CharField(max_length=255)
-    order = models.PositiveIntegerField(default=0)
+    label = models.CharField("etiqueta", max_length=255)
+    value = models.CharField("valor", max_length=255)
+    order = models.PositiveIntegerField("orden", default=0)
 
     class Meta:
+        verbose_name = "opción"
+        verbose_name_plural = "opciones"
         ordering = ["order"]
 
     def __str__(self):
@@ -170,8 +204,8 @@ class Choice(models.Model):
 
 class SurveyAssignment(models.Model):
     class Status(models.TextChoices):
-        ACTIVE = "active", "Active"
-        CLOSED = "closed", "Closed"
+        ACTIVE = "active", "Activa"
+        CLOSED = "closed", "Cerrada"
 
     class Variant(models.TextChoices):
         SMALL = "small", "Guía II"
@@ -181,22 +215,29 @@ class SurveyAssignment(models.Model):
         "accounts.Company",
         on_delete=models.CASCADE,
         related_name="survey_assignments",
+        verbose_name="empresa",
     )
     survey = models.ForeignKey(
-        Survey, on_delete=models.CASCADE, related_name="assignments"
+        Survey,
+        on_delete=models.CASCADE,
+        related_name="assignments",
+        verbose_name="encuesta",
     )
     variant = models.CharField(
+        "variante",
         max_length=10,
         choices=Variant.choices,
-        help_text="Frozen at creation; does not change if headcount changes.",
+        help_text="Se fija al crear la asignación; no cambia si cambia la plantilla.",
     )
     status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.ACTIVE
+        "estado", max_length=20, choices=Status.choices, default=Status.ACTIVE
     )
-    due_date = models.DateField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    due_date = models.DateField("fecha límite", null=True, blank=True)
+    created_at = models.DateTimeField("fecha de creación", auto_now_add=True)
 
     class Meta:
+        verbose_name = "asignación de encuesta"
+        verbose_name_plural = "asignaciones de encuesta"
         ordering = ["-created_at"]
 
     def __str__(self):
