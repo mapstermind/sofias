@@ -1180,7 +1180,7 @@ git commit -m "Label every nom035 model and field in Spanish"
 
 Everything else in the admin layer already resolves to Spanish for free: inline headings (`ModuleInline`, `QuestionInline`, `ChoiceInline`, `AnswerInline`, `GroupScoreInline`) read their model's `Meta.verbose_name_plural`, and `CompanyAdmin.area_count` / `location_count` already declare `description="Áreas"` / `"Localidades"`. The two `"SOFIA-S access"` fieldset titles are the only hardcoded English left.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to the `TestSpanishAdminLabels` class in `apps/accounts/tests/test_admin.py`:
 
@@ -1197,12 +1197,12 @@ Append to the `TestSpanishAdminLabels` class in `apps/accounts/tests/test_admin.
             assert "SOFIA-S access" not in body, url
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/accounts/tests/test_admin.py -k fieldsets -v`
 Expected: FAIL — `assert "Acceso SOFIA-S" in body`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 In `apps/accounts/admin.py`:
 
@@ -1215,12 +1215,12 @@ In `apps/accounts/admin.py`:
     )
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest apps/accounts -v`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/accounts/admin.py apps/accounts/tests/test_admin.py

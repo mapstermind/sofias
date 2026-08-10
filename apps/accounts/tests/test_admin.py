@@ -364,3 +364,14 @@ class TestSpanishAdminLabels:
         user = make_user_with_profile(email="etiqueta@x.mx")
 
         assert str(user.profile) == "Perfil de etiqueta@x.mx"
+
+    def test_user_add_and_change_fieldsets_are_spanish(self, staff_client, make_user):
+        user = make_user(email="fieldset@x.mx")
+
+        for url in (
+            reverse("admin:accounts_user_add"),
+            reverse("admin:accounts_user_change", args=[user.pk]),
+        ):
+            body = staff_client.get(url).content.decode()
+            assert "Acceso SOFIA-S" in body, url
+            assert "SOFIA-S access" not in body, url

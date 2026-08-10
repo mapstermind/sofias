@@ -30,10 +30,10 @@ class CustomUserAdmin(UserAdmin):
     change_list_template = "admin/accounts/user/change_list.html"
     list_display = UserAdmin.list_display + ("must_change_password",)
     fieldsets = UserAdmin.fieldsets + (
-        ("SOFIA-S access", {"fields": ("must_change_password",)}),
+        ("Acceso SOFIA-S", {"fields": ("must_change_password",)}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
-        ("SOFIA-S access", {"fields": ("must_change_password",)}),
+        ("Acceso SOFIA-S", {"fields": ("must_change_password",)}),
     )
 
     def get_urls(self):
