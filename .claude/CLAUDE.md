@@ -79,7 +79,9 @@ npm run build:js      # static/ts/*.ts       → static/js/
 
 ## Frontend build — always run it
 
-Tailwind compiles **only the classes it finds in the templates**, and `static/css/output.css` is committed. A template edit that introduces a class not already used somewhere else (e.g. `max-w-6xl`, `w-96`, `max-h-[45vh]`) renders **unstyled** until the CSS is rebuilt — the browser silently ignores the class, so this does not fail any test.
+Tailwind compiles **only the classes it finds in the sources listed in `static/css/main.css`**, and `static/css/output.css` is committed. A template edit that introduces a class not already used somewhere else (e.g. `max-w-6xl`, `w-96`, `max-h-[45vh]`) renders **unstyled** until the CSS is rebuilt — the browser silently ignores the class, so this does not fail any test.
+
+Automatic source detection is off (`@import "tailwindcss" source(none)`), so the `@source` lines in `main.css` are the complete list of places a class may live: `templates/`, `apps/**/*.py` (widget `attrs`), `static/ts/`, plus `@source inline(...)` for names only assembled at runtime. **Putting a class anywhere else compiles nothing** — add the location to `main.css` instead.
 
 **As the final step of any change touching `templates/` or `static/`, run the matching build and commit the regenerated output:**
 - Touched a template or any file with Tailwind classes → `npm run build:css`

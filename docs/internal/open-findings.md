@@ -19,20 +19,3 @@ across all four apps.
 own session; three open questions there need answers before implementation.
 
 Kept here only as a pointer — see that document for the analysis.
-
----
-
-## 2. Tailwind compiles utilities out of Markdown prose 🟢
-
-**Where:** `static/css/main.css` / the Tailwind v4 build.
-
-**What:** Tailwind v4's automatic source detection scans the repository in
-addition to the explicit `@source` lines, so English words in Markdown that
-happen to match utility names get compiled into shipped CSS. Observed: `.invert`
-compiled from the word "invert" in an ADR sentence.
-
-**Impact:** A few dead rules; harmless today but it accumulates silently.
-
-**Suggested fix:** `@import "tailwindcss" source(none);` in
-`static/css/main.css`, keeping the explicit `@source` lines so only `templates/`
-and `static/` are scanned.

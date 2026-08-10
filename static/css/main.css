@@ -1,7 +1,21 @@
-@import "tailwindcss";
+/* `source(none)` disables Tailwind's automatic source detection, which scans the
+   whole repository and so compiles utilities out of English prose — the word
+   "invert" in a Markdown sentence shipped an `.invert` rule. Every place a class
+   can actually appear is listed below instead; a class used anywhere else is
+   never compiled, so add the location here rather than expecting detection.
+
+   The Python entries are individual files, not a directory-wide glob: scanning
+   every module would sweep up comments, docstrings and tests, which is how
+   words like "filter" and "table" end up compiled as CSS. */
+@import "tailwindcss" source(none);
+
 @source "../../templates";
+/* Form widgets carry their classes in `attrs={"class": ...}`. */
+@source "../../apps/accounts/forms.py";
+/* NDR badge and bar palettes, keyed by risk level. */
+@source "../../apps/core/templatetags/valuation_extras.py";
+@source "../ts";
 
 /* Widths a view can pass as `container_width` (see templates/base_app.html).
-   They live in Python, which @source above does not scan, so they must be listed
-   here or they are never compiled. */
+   They are chosen in Python by name, so no scan can see them. */
 @source inline("max-w-5xl max-w-6xl");
