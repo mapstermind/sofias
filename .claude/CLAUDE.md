@@ -29,6 +29,10 @@ sudo -u postgres psql -c "CREATE USER sofias WITH PASSWORD 'sofias';"
 sudo -u postgres psql -c "CREATE DATABASE sofias OWNER sofias;"
 ```
 
+The server must be built with **ICU** (the standard PGDG/Ubuntu packages are): the
+Spanish-text columns declare the `es-MX-x-icu` collation, so migrations fail without
+it. Check with `psql -c "select 1 from pg_collation where collname = 'es-MX-x-icu'"`.
+
 ## Environment Variables
 
 Configuration is loaded from `.env` at the project root via `python-dotenv`. Key variables:

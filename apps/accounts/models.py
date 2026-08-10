@@ -7,6 +7,14 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+
+# Columns holding Spanish text an operator or employee reads as a sorted list.
+# The database's own collation is byte order, which files every accented name
+# after `Z` ("Álvaro Obregón" below "Zacatecas") and `ñ` after `z`; this ICU
+# collation is what makes ORDER BY match what a Spanish speaker expects. It is
+# deterministic, so equality and uniqueness are unaffected.
+SPANISH_COLLATION = "es-MX-x-icu"
 
 # Spanish vowel accents and the diaeresis carry no lexical weight — "Direccion"
 # and "Dirección" are one área typed two ways — so catalog uniqueness folds them.
@@ -49,10 +57,20 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     must_change_password = models.BooleanField(default=False)
 
+    # Redeclared purely to carry the collation: the employee roster is ordered by
+    # these two columns, and an "Álvarez" sorting below every ASCII surname is
+    # the most visible instance of the byte-order problem.
+    first_name = models.CharField(
+        _("first name"), max_length=150, blank=True, db_collation=SPANISH_COLLATION
+    )
+    last_name = models.CharField(
+        _("last name"), max_length=150, blank=True, db_collation=SPANISH_COLLATION
+    )
+
 
 class Company(models.Model):
-    name = models.CharField(max_length=255)
-    legal_name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_collation=SPANISH_COLLATION)
+    legal_name = models.CharField(max_length=255, db_collation=SPANISH_COLLATION)
     rfc = models.CharField("RFC", max_length=13, blank=True)
     address = models.CharField(max_length=500, blank=True)
     reference_code = models.CharField(max_length=5, unique=True, blank=True)
@@ -86,6 +104,7 @@ class CompanyCatalogEntry(models.Model):
         "nombre",
         max_length=120,
         help_text="Como debe aparecer en la lista que ve el colaborador.",
+        db_collation=SPANISH_COLLATION,
     )
     is_active = models.BooleanField(
         "activa",

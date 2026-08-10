@@ -4,10 +4,12 @@ from django.db import IntegrityError
 from django.utils import timezone
 
 from apps.accounts.models import (
+    Company,
     CompanyArea,
     CompanyLocation,
     EmailOTP,
     SetupAccessCode,
+    User,
 )
 from apps.accounts.utils import generate_unique_username
 
@@ -79,6 +81,21 @@ class TestCompanyCatalogs:
         entry.clean()
         assert entry.name == "Recursos Humanos"
 
+    @pytest.mark.parametrize("model", [CompanyArea, CompanyLocation])
+    def test_ordering_places_accented_names_where_spanish_expects_them(
+        self, make_company, model
+    ):
+        company = make_company()
+        for name in ("Zacatecas", "Álvaro Obregón", "Cazador", "Cañada"):
+            model.objects.create(company=company, name=name)
+
+        assert [e.name for e in model.objects.all()] == [
+            "Álvaro Obregón",
+            "Cañada",
+            "Cazador",
+            "Zacatecas",
+        ]
+
     def test_deleting_company_cascades_both_catalogs(
         self, make_company, make_area, make_location
     ):
@@ -88,6 +105,34 @@ class TestCompanyCatalogs:
         company.delete()
         assert CompanyArea.objects.count() == 0
         assert CompanyLocation.objects.count() == 0
+
+
+class TestSpanishTextOrdering:
+    """The Spanish-language lists an operator or employee actually reads.
+
+    The database is created with a byte-order collation, so these columns carry
+    an explicit Spanish one — without it every accented name sinks below `Z`.
+    """
+
+    def test_company_list_orders_accents_as_spanish(self, make_company):
+        for name in ("Zapata", "Ángeles", "Cañón", "Cuervo"):
+            make_company(name=name)
+
+        assert [c.name for c in Company.objects.order_by("name")] == [
+            "Ángeles",
+            "Cañón",
+            "Cuervo",
+            "Zapata",
+        ]
+
+    def test_employee_roster_orders_surnames_as_spanish(self, make_user):
+        for i, surname in enumerate(("Zamora", "Álvarez", "Núñez", "Nogales")):
+            make_user(email=f"user{i}@example.com", last_name=surname)
+
+        assert [
+            u.last_name
+            for u in User.objects.exclude(last_name="").order_by("last_name")
+        ] == ["Álvarez", "Nogales", "Núñez", "Zamora"]
 
 
 class TestUserProfileCatalogLinks:

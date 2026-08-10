@@ -23,8 +23,8 @@ Represents an organization that participates in surveys.
 | Field | Type | Notes |
 |---|---|---|
 | `id` | BigAutoField | PK |
-| `name` | CharField(255) | Display name |
-| `legal_name` | CharField(255) | Official registered name |
+| `name` | CharField(255) | Display name; Spanish collation |
+| `legal_name` | CharField(255) | Official registered name; Spanish collation |
 | `rfc` | CharField(13) | Optional RFC |
 | `address` | CharField(500) | Optional address |
 | `reference_code` | CharField(5) | Unique alphanumeric identifier; auto-generated on save if blank |
@@ -38,7 +38,7 @@ Per-company catalogs of áreas and localidades, curated by an admin as inlines o
 |---|---|---|
 | `id` | BigAutoField | PK |
 | `company` | ForeignKey → `Company` | CASCADE on company delete; `related_name` `areas` / `locations` |
-| `name` | CharField(120) | Shown to the employee in the picker |
+| `name` | CharField(120) | Shown to the employee in the picker; Spanish collation |
 | `is_active` | BooleanField | Default `True`; unset to retire an entry without deleting it |
 
 Constraint: `UniqueConstraint(company, FoldCatalogName(name))` — names are unique per company under a fold of case, Spanish vowel accents (`á é í ó ú ü`) and whitespace runs, so "Ventas"/"ventas" and "Dirección"/"Direccion" cannot coexist, while two different companies may each have an "Operaciones". `ñ` is not folded, so "Cañada" and "Canada" are distinct entries. `FoldCatalogName` compiles to `translate(lower(name), 'áéíóúü', 'aeiouu')`; `translate` is `IMMUTABLE`, which is what allows it inside a unique index (Postgres' `unaccent()` is only `STABLE`, and folds `ñ`). Default ordering is alphabetical by `name`. Neither model is registered as a standalone admin, so the Company inline is the only write surface.
@@ -50,6 +50,7 @@ Extends Django's `AbstractUser`. Inherits all standard auth fields (`username`, 
 |---|---|---|
 | `email` | EmailField | Unique; used by OTP, setup-code, and password fallback login |
 | `must_change_password` | BooleanField | Forces setup-code/password-fallback users through the password-change flow |
+| `first_name` / `last_name` | CharField(150) | Redeclared from `AbstractUser` solely to carry the Spanish collation — the employee roster orders by them |
 
 #### `UserProfile`
 Extends `User` with business context. Created separately from the auth user.
@@ -355,3 +356,5 @@ Completion counts only questions visible under the current answers (see `apps/su
 **Users are decoupled from companies at the auth level.** `User` is a standard Django auth model; company membership lives in `UserProfile`.
 
 **Company-scoped catalogs, unique under a normalizing fold.** Áreas and localidades are per-company child tables rather than free text or a shared enum, because the employee picks from them at activation and the per-área NOM-035 breakdown groups by their pk. `UniqueConstraint(company, FoldCatalogName(name))` makes duplicate spellings impossible within a company — case, Spanish vowel accents and whitespace runs all collapse to one key — while leaving names free across companies. That matters because the breakdown groups by pk: a second spelling of one área is an unmergeable split into two dashboard rows. Entries are retired with `is_active=False`, not deleted — the FKs are `SET_NULL` (so deleting a `Company` stays possible) and the admin inline blocks deleting an entry that still has members. See `docs/adr/adr-0004-per-company-area-and-locality-catalogs.md`.
+
+**Spanish text sorts under an explicit column collation.** Every column holding Spanish text that a user reads as a sorted list — `Company.name`/`legal_name`, `CompanyCatalogEntry.name`, and `User.first_name`/`last_name` — declares `db_collation = SPANISH_COLLATION` (`es-MX-x-icu`, defined in `apps/accounts/models.py`). The database's own collation is byte order, under which every accented name sorts after `Z`: "Álvaro Obregón" below "Zacatecas", "Cañada" below "Cazador". Putting the collation on the column rather than on the database means it lives in the schema, so migrations carry it to every environment including the test database, which is built from the cluster template rather than from the application database. The collation is deterministic, so equality and uniqueness — including the `FoldCatalogName` unique index — are unaffected. This requires a PostgreSQL built with ICU, which the standard packages are.
