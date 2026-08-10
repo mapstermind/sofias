@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 
 # Columns holding Spanish text an operator or employee reads as a sorted list.
 # The database's own collation is byte order, which files every accented name
@@ -54,31 +53,46 @@ def _generate_reference_code() -> str:
 
 
 class User(AbstractUser):
-    email = models.EmailField(unique=True)
-    must_change_password = models.BooleanField(default=False)
+    email = models.EmailField("correo electrónico", unique=True)
+    must_change_password = models.BooleanField(
+        "debe cambiar su contraseña",
+        default=False,
+        help_text="Obliga a definir una contraseña nueva en el siguiente ingreso.",
+    )
 
     # Redeclared purely to carry the collation: the employee roster is ordered by
     # these two columns, and an "Álvarez" sorting below every ASCII surname is
     # the most visible instance of the byte-order problem.
     first_name = models.CharField(
-        _("first name"), max_length=150, blank=True, db_collation=SPANISH_COLLATION
+        "nombre(s)", max_length=150, blank=True, db_collation=SPANISH_COLLATION
     )
     last_name = models.CharField(
-        _("last name"), max_length=150, blank=True, db_collation=SPANISH_COLLATION
+        "apellidos", max_length=150, blank=True, db_collation=SPANISH_COLLATION
     )
 
 
 class Company(models.Model):
-    name = models.CharField(max_length=255, db_collation=SPANISH_COLLATION)
-    legal_name = models.CharField(max_length=255, db_collation=SPANISH_COLLATION)
+    name = models.CharField(
+        "nombre comercial", max_length=255, db_collation=SPANISH_COLLATION
+    )
+    legal_name = models.CharField(
+        "razón social", max_length=255, db_collation=SPANISH_COLLATION
+    )
     rfc = models.CharField("RFC", max_length=13, blank=True)
-    address = models.CharField(max_length=500, blank=True)
-    reference_code = models.CharField(max_length=5, unique=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    address = models.CharField("domicilio", max_length=500, blank=True)
+    reference_code = models.CharField(
+        "código de referencia",
+        max_length=5,
+        unique=True,
+        blank=True,
+        help_text="Se genera solo. El colaborador lo captura al activar su cuenta.",
+    )
+    created_at = models.DateTimeField("fecha de alta", auto_now_add=True)
+    updated_at = models.DateTimeField("última actualización", auto_now=True)
 
     class Meta:
-        verbose_name_plural = "companies"
+        verbose_name = "empresa"
+        verbose_name_plural = "empresas"
 
     def __str__(self):
         return self.name
@@ -137,7 +151,9 @@ class CompanyCatalogEntry(models.Model):
 
 
 class CompanyArea(CompanyCatalogEntry):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="areas")
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="areas", verbose_name="empresa"
+    )
 
     class Meta(CompanyCatalogEntry.Meta):
         verbose_name = "área"
@@ -146,7 +162,10 @@ class CompanyArea(CompanyCatalogEntry):
 
 class CompanyLocation(CompanyCatalogEntry):
     company = models.ForeignKey(
-        Company, on_delete=models.CASCADE, related_name="locations"
+        Company,
+        on_delete=models.CASCADE,
+        related_name="locations",
+        verbose_name="empresa",
     )
 
     class Meta(CompanyCatalogEntry.Meta):
@@ -155,15 +174,22 @@ class CompanyLocation(CompanyCatalogEntry):
 
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
-    position = models.CharField(max_length=255, blank=True)
-    is_activated = models.BooleanField(default=False)
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="profile", verbose_name="usuario"
+    )
+    position = models.CharField("cargo", max_length=255, blank=True)
+    is_activated = models.BooleanField(
+        "cuenta activada",
+        default=False,
+        help_text="Se marca sola cuando el colaborador completa su activación.",
+    )
     company = models.ForeignKey(
         Company,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="members",
+        verbose_name="empresa",
     )
     # SET_NULL rather than PROTECT: Company -> catalog is CASCADE, so PROTECT here
     # would block deleting a Company outright. Accidental deletion is guarded in the
@@ -185,8 +211,12 @@ class UserProfile(models.Model):
         verbose_name="localidad",
     )
 
+    class Meta:
+        verbose_name = "perfil de colaborador"
+        verbose_name_plural = "perfiles de colaborador"
+
     def __str__(self):
-        return f"{self.user.username} profile"
+        return f"Perfil de {self.user.email}"
 
     def clean(self):
         super().clean()
@@ -205,13 +235,24 @@ class SetupAccessCode(models.Model):
     """
 
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="setup_access_codes"
+        User,
+        on_delete=models.CASCADE,
+        related_name="setup_access_codes",
+        verbose_name="usuario",
     )
-    code = models.CharField(max_length=9, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    used_at = models.DateTimeField(null=True, blank=True)
+    code = models.CharField(
+        "código",
+        max_length=9,
+        null=True,
+        blank=True,
+        help_text="Se borra en cuanto se usa.",
+    )
+    created_at = models.DateTimeField("fecha de creación", auto_now_add=True)
+    used_at = models.DateTimeField("fecha de uso", null=True, blank=True)
 
     class Meta:
+        verbose_name = "código temporal de acceso"
+        verbose_name_plural = "códigos temporales de acceso"
         constraints = [
             models.UniqueConstraint(
                 fields=["code"],
@@ -235,7 +276,7 @@ class SetupAccessCode(models.Model):
         self.save(update_fields=["used_at", "code"])
 
     def __str__(self):
-        return f"Setup access code for {self.user.email}"
+        return f"Código temporal de acceso para {self.user.email}"
 
 
 def normalize_setup_access_code(code: str) -> str:
@@ -251,13 +292,15 @@ class Role(models.Model):
 
     class Meta:
         managed = False
+        verbose_name = "rol"
+        verbose_name_plural = "roles"
         permissions = [
-            ("can_manage_surveys", "Can manage surveys"),
-            ("can_view_dashboard", "Can view dashboard"),
-            ("can_view_insights", "Can view insights"),
-            ("can_take_assigned_surveys", "Can take assigned surveys"),
-            ("can_manage_employees", "Can manage employees"),
-            ("can_view_submissions", "Can view submissions"),
+            ("can_manage_surveys", "Puede administrar encuestas"),
+            ("can_view_dashboard", "Puede ver el tablero"),
+            ("can_view_insights", "Puede ver la valoración de resultados"),
+            ("can_take_assigned_surveys", "Puede contestar las encuestas asignadas"),
+            ("can_manage_employees", "Puede administrar empleados"),
+            ("can_view_submissions", "Puede ver los envíos"),
         ]
 
 
@@ -269,11 +312,15 @@ class EmailOTP(models.Model):
     the OTP is created (first-time sign-up flow).
     """
 
-    email = models.EmailField(db_index=True)
-    code = models.CharField(max_length=6)
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
-    is_used = models.BooleanField(default=False)
+    email = models.EmailField("correo electrónico", db_index=True)
+    code = models.CharField("código", max_length=6)
+    created_at = models.DateTimeField("fecha de creación", auto_now_add=True)
+    expires_at = models.DateTimeField("expira el")
+    is_used = models.BooleanField("usado", default=False)
+
+    class Meta:
+        verbose_name = "código OTP"
+        verbose_name_plural = "códigos OTP"
 
     def save(self, *args, **kwargs):
         if not self.pk and not self.expires_at:
@@ -285,4 +332,4 @@ class EmailOTP(models.Model):
         return not self.is_used and timezone.now() < self.expires_at
 
     def __str__(self):
-        return f"OTP for {self.email} ({'used' if self.is_used else 'active'})"
+        return f"OTP para {self.email} ({'usado' if self.is_used else 'vigente'})"

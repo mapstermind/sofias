@@ -66,6 +66,35 @@ def staff_client(client, make_user):
     return client
 
 
+@pytest.fixture
+def assert_explicit_labels():
+    """Fail listing every label Django derived from an English identifier.
+
+    `verbose_name` is the bridge that keeps English code from leaking onto a
+    Spanish screen, so a missing one is a UI bug, not a style nit. Plural forms
+    are not checked: a correct Spanish plural is usually the singular plus "s",
+    which is exactly what Django would have derived anyway.
+    """
+    from django.apps import apps as django_apps
+    from django.utils.text import camel_case_to_spaces
+
+    def _assert(app_label):
+        offenders = []
+        for model in django_apps.get_app_config(app_label).get_models():
+            opts = model._meta
+            if str(opts.verbose_name) == camel_case_to_spaces(model.__name__):
+                offenders.append(f"{opts.label}.Meta.verbose_name")
+            for field in opts.get_fields():
+                verbose_name = getattr(field, "verbose_name", None)
+                if verbose_name is None:
+                    continue
+                if str(verbose_name) == field.name.replace("_", " "):
+                    offenders.append(f"{opts.label}.{field.name}")
+        assert offenders == [], "Auto-derived English labels: " + ", ".join(offenders)
+
+    return _assert
+
+
 # ── User factories ────────────────────────────────────────────────────────────
 
 

@@ -341,3 +341,26 @@ def test_setup_access_code_admin_does_not_show_used_code_value(client, make_user
 
     assert response.status_code == 200
     assert b"123456789" not in response.content
+
+
+class TestSpanishAdminLabels:
+    def test_no_accounts_model_shows_an_auto_derived_label(
+        self, assert_explicit_labels
+    ):
+        assert_explicit_labels("accounts")
+
+    def test_company_change_form_labels_are_spanish(self, staff_client, make_company):
+        company = make_company()
+
+        response = staff_client.get(
+            reverse("admin:accounts_company_change", args=[company.pk])
+        )
+
+        body = response.content.decode()
+        assert "Razón social" in body
+        assert "Legal name" not in body
+
+    def test_userprofile_str_is_spanish(self, make_user_with_profile):
+        user = make_user_with_profile(email="etiqueta@x.mx")
+
+        assert str(user.profile) == "Perfil de etiqueta@x.mx"

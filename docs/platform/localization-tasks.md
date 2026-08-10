@@ -312,7 +312,7 @@ Tasks 3–6 are independent of each other but all depend on the `assert_explicit
 **Interfaces:**
 - Produces: `assert_explicit_labels` fixture — a callable `(app_label: str) -> None` that fails listing every field whose label Django auto-derived from its English attribute name, plus every model whose `Meta.verbose_name` is auto-derived. Tasks 4–6 consume it.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `conftest.py`, under the `# ── Admin ─────` banner from Task 1:
 
@@ -372,12 +372,12 @@ class TestSpanishAdminLabels:
         assert str(user.profile) == "Perfil de etiqueta@x.mx"
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/accounts/tests/test_admin.py::TestSpanishAdminLabels -v`
 Expected: 3 failures. The first lists ~24 offenders including `accounts.company.name`, `accounts.userprofile.user`, `accounts.emailotp.email`, `accounts.Company.Meta.verbose_name`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 In `apps/accounts/models.py`:
 
@@ -581,7 +581,7 @@ And its `__str__`:
         return f"OTP para {self.email} ({'usado' if self.is_used else 'vigente'})"
 ```
 
-- [ ] **Step 4: Generate the migration and confirm it is a no-op**
+- [x] **Step 4: Generate the migration and confirm it is a no-op**
 
 Run: `python manage.py makemigrations accounts`
 Expected: `apps/accounts/migrations/0005_*.py` containing only `AlterModelOptions` and `AlterField` operations.
@@ -590,12 +590,12 @@ Read the generated file and confirm **every** `AlterField` preserves the origina
 
 Run: `python manage.py migrate accounts`
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `pytest apps/accounts -v`
 Expected: PASS, including the three new tests.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/accounts/models.py apps/accounts/migrations/ conftest.py \
