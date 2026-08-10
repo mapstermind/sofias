@@ -146,6 +146,73 @@ class TestCompanyCatalogAdmin:
         assert "ya está en la lista" in str(formset.errors)
 
     @pytest.mark.parametrize("model,prefix,factory_name", CATALOGS)
+    def test_two_new_rows_differing_only_in_accents_are_rejected(
+        self, request, make_company, model, prefix, factory_name
+    ):
+        company = make_company()
+
+        formset = _catalog_formset(
+            model,
+            prefix,
+            company,
+            {
+                **_management_form(prefix, total=2),
+                f"{prefix}-0-name": "Dirección",
+                f"{prefix}-0-is_active": "on",
+                f"{prefix}-1-name": "Direccion",
+                f"{prefix}-1-is_active": "on",
+            },
+        )
+
+        assert not formset.is_valid()
+        assert "ya está en la lista" in str(formset.errors)
+
+    @pytest.mark.parametrize("model,prefix,factory_name", CATALOGS)
+    def test_two_new_rows_differing_only_in_spacing_are_rejected(
+        self, request, make_company, model, prefix, factory_name
+    ):
+        company = make_company()
+
+        formset = _catalog_formset(
+            model,
+            prefix,
+            company,
+            {
+                **_management_form(prefix, total=2),
+                f"{prefix}-0-name": "Recursos Humanos",
+                f"{prefix}-0-is_active": "on",
+                f"{prefix}-1-name": "Recursos  Humanos",
+                f"{prefix}-1-is_active": "on",
+            },
+        )
+
+        assert not formset.is_valid()
+        assert "ya está en la lista" in str(formset.errors)
+
+    @pytest.mark.parametrize("model,prefix,factory_name", CATALOGS)
+    def test_names_differing_by_enye_are_both_accepted(
+        self, request, make_company, model, prefix, factory_name
+    ):
+        company = make_company()
+
+        formset = _catalog_formset(
+            model,
+            prefix,
+            company,
+            {
+                **_management_form(prefix, total=2),
+                f"{prefix}-0-name": "Cañada",
+                f"{prefix}-0-is_active": "on",
+                f"{prefix}-1-name": "Canada",
+                f"{prefix}-1-is_active": "on",
+            },
+        )
+
+        assert formset.is_valid(), formset.errors
+        formset.save()
+        assert model.objects.filter(company=company).count() == 2
+
+    @pytest.mark.parametrize("model,prefix,factory_name", CATALOGS)
     def test_new_row_colliding_with_an_existing_one_is_rejected(
         self, request, make_company, model, prefix, factory_name
     ):

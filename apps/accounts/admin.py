@@ -20,6 +20,8 @@ from .models import (
     SetupAccessCode,
     User,
     UserProfile,
+    catalog_name_key,
+    normalize_catalog_name,
 )
 
 
@@ -94,7 +96,8 @@ class CompanyCatalogInlineFormSet(forms.BaseInlineFormSet):
     employees. Intra-formset duplicates are caught here too: Django's
     `validate_unique` only understands `unique_together`, so two new rows typed
     "Ventas"/"ventas" in one save would bypass validation and hit the DB
-    constraint as an IntegrityError 500.
+    constraint as an IntegrityError 500. `catalog_name_key` is the same fold the
+    constraint applies, so the two layers cannot disagree about what collides.
     """
 
     def clean(self):
@@ -114,10 +117,10 @@ class CompanyCatalogInlineFormSet(forms.BaseInlineFormSet):
                             "entrada. Desmarca «activa» para retirarla de la lista."
                         )
                 continue
-            name = (form.cleaned_data.get("name") or "").strip()
+            name = normalize_catalog_name(form.cleaned_data.get("name"))
             if not name:
                 continue
-            key = name.casefold()
+            key = catalog_name_key(name)
             if key in seen:
                 form.add_error("name", f"«{name}» ya está en la lista de esta empresa.")
             seen.add(key)

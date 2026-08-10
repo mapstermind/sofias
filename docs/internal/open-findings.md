@@ -39,18 +39,20 @@ and `static/` are scanned.
 
 ---
 
-## 3. Accent-sensitive catalog uniqueness is undocumented 🟢
+## 3. Accented names sort last under the database's C collation 🟢
 
-**Where:** `apps/accounts/models.py` — `UniqueConstraint(company, Lower("name"))`
-on `CompanyCatalogEntry`.
+**Where:** `CompanyCatalogEntry.Meta.ordering = ["name"]` (and every other
+`ORDER BY` on user-visible Spanish text).
 
-**What:** `Lower()` case-folds but does **not** fold accents, so `Dirección` and
-`Direccion` are two distinct áreas within the same company. Both appear in the
-activation picker, and an employee choosing between them is picking between two
-spellings of one área — which then aggregate as separate buckets.
+**What:** the database is created with `C.UTF-8` collation, i.e. byte order. A
+name starting with an accented letter sorts after every ASCII name: `Álvaro
+Obregón` lands below `Zacatecas` in the employee's localidad picker and in the
+admin inline, and `Dirección` sorts after every `Direccion…`.
 
-**Why it may be fine:** arguably correct — they are different strings, and the
-admin curates the list. But nobody has decided this on purpose.
+**Impact:** cosmetic but visible on any list an employee reads — the picker is
+not in the alphabetical order a Spanish speaker expects. It also weakens the
+admin's ability to spot a near-duplicate sitting next to its twin.
 
-**If it should change:** use `unaccent` (requires the Postgres extension) in the
-constraint. Either way, record the decision and add a test pinning it.
+**If fixed:** create the database with an ICU/`es-MX` collation, or attach a
+collation to the ordering (`Collate`) on the affected columns. The first is a
+database-level decision; the second scatters per-query detail.

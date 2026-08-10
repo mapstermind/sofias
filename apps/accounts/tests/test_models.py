@@ -27,6 +27,23 @@ class TestCompanyCatalogs:
             model.objects.create(company=company, name="ventas")
 
     @pytest.mark.parametrize("model", [CompanyArea, CompanyLocation])
+    def test_duplicate_name_differing_only_by_accents_is_rejected(
+        self, make_company, model
+    ):
+        company = make_company()
+        model.objects.create(company=company, name="Dirección")
+        with pytest.raises(IntegrityError):
+            model.objects.create(company=company, name="Direccion")
+
+    @pytest.mark.parametrize("model", [CompanyArea, CompanyLocation])
+    def test_enye_is_a_letter_not_an_accent(self, make_company, model):
+        """`ñ` distinguishes real words, so folding it would reject valid pairs."""
+        company = make_company()
+        model.objects.create(company=company, name="Cañada")
+        model.objects.create(company=company, name="Canada")
+        assert model.objects.filter(company=company).count() == 2
+
+    @pytest.mark.parametrize("model", [CompanyArea, CompanyLocation])
     def test_same_name_allowed_across_companies(self, make_company, model):
         first = make_company(name="Cliente A")
         second = make_company(name="Cliente B")
@@ -55,6 +72,12 @@ class TestCompanyCatalogs:
 
         with pytest.raises(ValidationError):
             model(company=company, name="   ").clean()
+
+    @pytest.mark.parametrize("model", [CompanyArea, CompanyLocation])
+    def test_clean_collapses_internal_whitespace(self, make_company, model):
+        entry = model(company=make_company(), name="Recursos\t Humanos")
+        entry.clean()
+        assert entry.name == "Recursos Humanos"
 
     def test_deleting_company_cascades_both_catalogs(
         self, make_company, make_area, make_location

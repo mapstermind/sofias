@@ -50,8 +50,11 @@ decision in `docs/platform/nom-035-analytics.md`.
 **Positive:**
 
 - The activation picker has a real source of options, scoped per company.
-- Case-insensitive per-company uniqueness makes duplicate áreas structurally
-  impossible, replacing normalization-by-luck with identity.
+- Per-company uniqueness makes duplicate áreas structurally impossible, replacing
+  normalization-by-luck with identity. The uniqueness key folds case, Spanish vowel
+  accents (`á é í ó ú ü`) and whitespace runs, so `Ventas`/`ventas` and
+  `Dirección`/`Direccion` collide; `ñ` is left intact as the distinct letter it is,
+  so `Cañada` and `Canada` may coexist.
 - Renaming an área propagates to every member; identically named áreas in different
   companies can no longer merge into one dashboard bucket.
 - Grouping is by pk, which is the stable key the pending área-level valuation work

@@ -16,8 +16,12 @@ Identity, authentication, authorization, and company/employee onboarding. Define
 - `User` — custom user; login is by email, not username (`username` is auto-derived, see `utils.generate_unique_username`).
 - `Company` — `reference_code` is generated in `save()` if blank; used by employees to self-activate.
 - `CompanyArea` / `CompanyLocation` — per-company catalogs (áreas, localidades) sharing
-  the abstract `CompanyCatalogEntry` base (`name`, `is_active`). Case-insensitively
-  unique per company via `UniqueConstraint(company, Lower("name"))`. Curated **only** as
+  the abstract `CompanyCatalogEntry` base (`name`, `is_active`). Unique per company via
+  `UniqueConstraint(company, FoldCatalogName("name"))`, which folds case, Spanish vowel
+  accents and whitespace runs into one key — `ñ` is left alone, being a letter rather
+  than an accent. `catalog_name_key()` is the Python mirror of that fold and is what the
+  admin inline formset dedupes on, so the two layers cannot disagree; `clean()`
+  normalizes whitespace via `normalize_catalog_name()`. Curated **only** as
   inlines on `CompanyAdmin` (no standalone `ModelAdmin`), and offered to the employee as
   pickers at activation. Retire with `is_active=False` rather than deleting. See
   `docs/adr/adr-0004-per-company-area-and-locality-catalogs.md`.

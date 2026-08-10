@@ -94,8 +94,8 @@ with `python manage.py recompute_nom035_scores`.
 - **Company isolation** — all response and valuation data traces back to a
   `SurveyAssignment` belonging to exactly one `Company`.
 - **Per-company catalogs** — `CompanyArea` and `CompanyLocation` are admin-curated
-  lists unique to each company (case-insensitively unique by name), which the
-  employee picks from during activation.
+  lists unique to each company (unique by name ignoring case, Spanish vowel accents
+  and whitespace runs), which the employee picks from during activation.
 - **Área grouping** — `UserProfile.area` (FK to `CompanyArea`) groups employees
   for `nom035.company_valuation`'s per-área breakdown; a profile with no área
   falls into a "Sin área" bucket. Grouping is by pk, so identically named áreas

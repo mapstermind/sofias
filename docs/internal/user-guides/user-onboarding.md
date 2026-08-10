@@ -23,7 +23,7 @@ The `reference_code` is generated automatically and is required during first-tim
 
 > **At least one área is required.** An employee whose company has no áreas cannot finish activation — they will see a message asking them to contact their administrator. The company list in Django Admin shows an *Áreas* count column so you can spot companies that still need one.
 
-Names are unique per company and ignore capitalization: adding both `Ventas` and `ventas` to the same company is rejected. To retire an área or localidad that is no longer used, **uncheck *activa*** instead of deleting it — that removes it from the picker while the employees already assigned to it keep their history. Deleting one that still has employees assigned is blocked.
+Names are unique per company, ignoring capitalization, accents and extra spaces: adding `Ventas` and `ventas`, or `Dirección` and `Direccion`, to the same company is rejected — they are one entry typed two ways, and letting both through would split the área into two dashboard rows that nobody can merge later. The `ñ` is treated as the letter it is, so `Cañada` and `Canada` can both exist. To retire an área or localidad that is no longer used, **uncheck *activa*** instead of deleting it — that removes it from the picker while the employees already assigned to it keep their history. Deleting one that still has employees assigned is blocked.
 
 Retiring an entry while someone has the activation page open is safe: their submission is rejected with a message asking them to review and confirm their data, never silently reassigned to a different área or localidad.
 

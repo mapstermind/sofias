@@ -6,8 +6,35 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
-from django.db.models.functions import Lower
 from django.utils import timezone
+
+# Spanish vowel accents and the diaeresis carry no lexical weight — "Direccion"
+# and "Dirección" are one área typed two ways — so catalog uniqueness folds them.
+# `ñ` is deliberately absent: it is a distinct letter, and folding it would reject
+# genuine pairs like "Cañada"/"Canada".
+_ACCENT_FOLD = str.maketrans("áéíóúü", "aeiouu")
+
+
+class FoldCatalogName(models.Func):
+    """`name` reduced to its uniqueness key: lowercased, Spanish accents folded.
+
+    `translate` is IMMUTABLE, which is what lets this sit in a unique index —
+    Postgres' own `unaccent()` is only STABLE and could not.
+    """
+
+    template = "translate(lower(%(expressions)s), 'áéíóúü', 'aeiouu')"
+    arity = 1
+    output_field = models.CharField()
+
+
+def normalize_catalog_name(name: str) -> str:
+    """Collapse surrounding and internal whitespace to single spaces."""
+    return " ".join((name or "").split())
+
+
+def catalog_name_key(name: str) -> str:
+    """The Python mirror of `FoldCatalogName`, for pre-save duplicate checks."""
+    return normalize_catalog_name(name).casefold().translate(_ACCENT_FOLD)
 
 
 def _generate_reference_code() -> str:
@@ -48,8 +75,11 @@ class CompanyCatalogEntry(models.Model):
     """Abstract base for the per-company preloaded lists (áreas, localidades).
 
     Entries are curated by an admin and are what an employee picks from when
-    activating their account. Deliberately case-insensitively unique per company:
-    "Ventas" and "ventas" must not become two separate dashboard buckets.
+    activating their account. Uniqueness per company ignores case, Spanish vowel
+    accents and whitespace runs: "Ventas", "ventas" and "Dirección"/"Direccion"
+    must not become two separate dashboard buckets. `apps/nom035` groups its
+    per-área breakdown by pk, so a near-duplicate splits one área into two rows
+    that no one can merge afterwards.
     """
 
     name = models.CharField(
@@ -72,7 +102,7 @@ class CompanyCatalogEntry(models.Model):
         constraints = [
             models.UniqueConstraint(
                 "company",
-                Lower("name"),
+                FoldCatalogName("name"),
                 name="%(app_label)s_%(class)s_unique_name_per_company",
             )
         ]
@@ -82,7 +112,7 @@ class CompanyCatalogEntry(models.Model):
 
     def clean(self):
         super().clean()
-        self.name = (self.name or "").strip()
+        self.name = normalize_catalog_name(self.name)
         if not self.name:
             raise ValidationError({"name": "El nombre no puede estar vacío."})
 
