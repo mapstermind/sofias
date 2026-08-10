@@ -1071,7 +1071,7 @@ git commit -m "Label every responses model and field in Spanish"
 **Interfaces:**
 - Consumes: `assert_explicit_labels` from `conftest.py` (Task 3); the word "envío" settled in Task 5.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `apps/nom035/tests/test_admin.py`:
 
@@ -1085,12 +1085,12 @@ def test_no_nom035_model_shows_an_auto_derived_label(assert_explicit_labels):
     assert_explicit_labels("nom035")
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/nom035/tests/test_admin.py -v`
 Expected: FAIL listing 10 auto-derived field labels plus `nom035.SubmissionScore.Meta.verbose_name` and `nom035.GroupScore.Meta.verbose_name`. The `NDR` and `GroupLevel` choice labels are already Spanish and are not flagged.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 In `apps/nom035/models.py`, keeping the `NDR` and `GroupLevel` choice classes, the `unique_together`, the indexes and both comments unchanged:
 
@@ -1146,19 +1146,19 @@ class GroupScore(models.Model):
         ]
 ```
 
-- [ ] **Step 4: Generate the migration and confirm it is a no-op**
+- [x] **Step 4: Generate the migration and confirm it is a no-op**
 
 Run: `python manage.py makemigrations nom035`
 Expected: `apps/nom035/migrations/0002_*.py` with only `AlterModelOptions` and `AlterField`. The indexes and `unique_together` must **not** appear — if they do, the `Meta` block was reordered in a way that dropped one.
 
 Run: `python manage.py migrate nom035`
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `pytest apps/nom035 apps/core -v`
 Expected: PASS. `apps/core` reads these models through `aggregates.py`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/nom035/models.py apps/nom035/migrations/ apps/nom035/tests/test_admin.py
