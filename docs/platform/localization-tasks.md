@@ -56,7 +56,7 @@ Recorded here so no task re-litigates them:
 **Interfaces:**
 - Produces: `staff_client` fixture — a `django.test.Client` already logged in as a superuser. Tasks 3–8 use it. Signature: `staff_client(client, make_user) -> Client`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `apps/core/tests/test_localization.py`:
 
@@ -152,12 +152,12 @@ def staff_client(client, make_user):
 
 Delete the local `staff_client` fixture from `apps/accounts/tests/test_admin.py` (lines 26–35) — the root one replaces it. Leave every other line of that file alone.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/core/tests/test_localization.py -v`
 Expected: 4 failures — `LANGUAGE_CODE == "en-us"`, `TIME_ZONE == "UTC"`, no `Administración SOFIA-S` in the login page, `"This field is required."` instead of the Spanish message, and `"Aug. 9, 2026"` / `"21:00"` instead of the Mexico City rendering.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 In `config/settings.py`, replace the two lines under `# Internationalization`:
 
@@ -178,17 +178,17 @@ admin.site.site_title = "SOFIA-S"
 admin.site.index_title = "Panel de administración"
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest apps/core/tests/test_localization.py -v`
 Expected: PASS (5 tests)
 
-- [ ] **Step 5: Confirm nothing else regressed**
+- [x] **Step 5: Confirm nothing else regressed**
 
 Run: `python manage.py check` — expected: `System check identified no issues`.
 Run: `pytest` — expected: the full suite passes. No test asserts on an English Django string today, so this should be clean. If `apps/accounts/tests/test_admin.py` errors with `fixture 'staff_client' not found`, the root `conftest.py` fixture was not added.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add config/settings.py config/urls.py conftest.py \
