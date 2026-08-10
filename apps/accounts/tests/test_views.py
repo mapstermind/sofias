@@ -718,12 +718,12 @@ class TestSetupProfileView:
         assert user.profile.is_activated is True
         assert user.profile.location == only
 
-    def test_posted_location_ignored_when_field_hidden(
+    def test_posted_location_never_assigned_when_field_hidden(
         self, client, make_user_with_profile, make_company, make_area, make_location
     ):
         company = make_company()
         area = make_area(company, name="Ventas")
-        only = make_location(company, name="Matriz")
+        make_location(company, name="Matriz")
         other_company = make_company(name="Cliente B")
         foreign_location = make_location(other_company, name="Ajena")
         user = make_user_with_profile(
@@ -731,13 +731,53 @@ class TestSetupProfileView:
         )
         client.force_login(user)
 
-        client.post(
+        response = client.post(
             SETUP_PROFILE_URL,
             _activation_post(company, area=area.pk, location=foreign_location.pk),
         )
 
         user.profile.refresh_from_db()
-        assert user.profile.location == only
+        assert response.status_code == 200
+        assert user.profile.is_activated is False
+        assert user.profile.location is None
+
+    def test_location_retired_mid_session_is_not_substituted(
+        self, client, make_user_with_profile, make_company, make_area, make_location
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        matriz = make_location(company, name="Matriz")
+        norte = make_location(company, name="Norte")
+        user = make_user_with_profile(
+            email="retiredloc@example.com", company=company, is_activated=False
+        )
+        client.force_login(user)
+
+        # The user loads the page with both localidades and picks "Norte"...
+        client.get(SETUP_PROFILE_URL)
+        norte.is_active = False
+        norte.save(update_fields=["is_active"])
+
+        # ...but an admin retires it before the POST lands.
+        response = client.post(
+            SETUP_PROFILE_URL,
+            _activation_post(company, area=area.pk, location=norte.pk),
+        )
+
+        user.profile.refresh_from_db()
+        assert response.status_code == 200
+        assert user.profile.is_activated is False
+        assert user.profile.location is None
+        assert response.context["form"].non_field_errors()
+
+        # Re-submitting the re-rendered form (which no longer offers a picker)
+        # activates with the surviving localidad, now knowingly.
+        assert 'name="location"' not in response.content.decode()
+        client.post(SETUP_PROFILE_URL, _activation_post(company, area=area.pk))
+
+        user.profile.refresh_from_db()
+        assert user.profile.is_activated is True
+        assert user.profile.location == matriz
 
     def test_several_locations_require_a_choice(
         self, client, make_user_with_profile, make_company, make_area, make_location

@@ -25,6 +25,8 @@ The `reference_code` is generated automatically and is required during first-tim
 
 Names are unique per company and ignore capitalization: adding both `Ventas` and `ventas` to the same company is rejected. To retire an área or localidad that is no longer used, **uncheck *activa*** instead of deleting it — that removes it from the picker while the employees already assigned to it keep their history. Deleting one that still has employees assigned is blocked.
 
+Retiring an entry while someone has the activation page open is safe: their submission is rejected with a message asking them to review and confirm their data, never silently reassigned to a different área or localidad.
+
 ## Create the User
 
 Setup access codes are generated only by the CSV importer. To create a

@@ -198,6 +198,51 @@ class TestProfileActivationFormScoping:
         assert form.fields["location"].required
         assert form.implicit_location is None
 
+    def test_location_posted_while_picker_is_gone_is_rejected(
+        self, make_company, make_area, make_location
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        make_location(company, name="Matriz")
+        retired = make_location(company, name="Norte")
+        retired.is_active = False
+        retired.save(update_fields=["is_active"])
+
+        form = ProfileActivationForm(
+            data={
+                "reference_code": company.reference_code,
+                "first_name": "Ana",
+                "last_name": "López",
+                "area": area.pk,
+                "location": retired.pk,
+            },
+            company=company,
+        )
+
+        assert not form.is_valid()
+        assert "location" not in form.fields
+        assert "localidad" in " ".join(form.non_field_errors()).lower()
+
+    def test_resubmitting_without_location_activates_normally(
+        self, make_company, make_area, make_location
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        survivor = make_location(company, name="Matriz")
+
+        form = ProfileActivationForm(
+            data={
+                "reference_code": company.reference_code,
+                "first_name": "Ana",
+                "last_name": "López",
+                "area": area.pk,
+            },
+            company=company,
+        )
+
+        assert form.is_valid(), form.errors
+        assert form.implicit_location == survivor
+
 
 class TestEmailRequestForm:
     def test_valid_email(self):

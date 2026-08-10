@@ -54,23 +54,3 @@ admin curates the list. But nobody has decided this on purpose.
 
 **If it should change:** use `unaccent` (requires the Postgres extension) in the
 constraint. Either way, record the decision and add a test pinning it.
-
----
-
-## 4. Retiring a localidad mid-activation silently substitutes another 🟢
-
-**Where:** `apps/accounts/views.py` `setup_profile` +
-`apps/accounts/forms.py` `ProfileActivationForm.implicit_location`.
-
-**What:** If a company has two localidades, a user loads the activation form and
-picks "Norte", and an admin deactivates "Norte" before the user submits, the
-localidad field is dropped on the POST and `implicit_location` assigns the one
-remaining localidad ("Matriz"). Activation succeeds with a localidad the user did
-not choose.
-
-**Why it's low priority:** requires an admin edit inside a user's form session.
-The other TOCTOU directions already behave well (a deactivated área fails as
-`invalid_choice`; a newly added second localidad makes the field required).
-
-**If fixed:** detect that the submitted set differs from the offered set and
-re-render with a "las opciones cambiaron, confirma tu selección" notice.

@@ -291,17 +291,35 @@ class ProfileActivationForm(forms.Form):
             company=company, is_active=True
         )
         self.active_locations = list(active_locations)
+        self.location_options_changed = False
         if len(self.active_locations) > 1:
             self.fields["location"].queryset = active_locations
         else:
             # 0 or 1 localidad: nothing to choose. Dropping the field means a
             # posted pk is structurally ignored rather than trusted.
             del self.fields["location"]
+            # A submitted localidad with no picker to have produced it means the
+            # catalog shrank between render and POST. Falling through would
+            # assign `implicit_location` — a localidad the user never chose — so
+            # the submission is refused and the (now picker-less) form re-rendered.
+            self.location_options_changed = bool(
+                self.data.get(self.add_prefix("location"))
+            )
 
     @property
     def implicit_location(self):
         """The single localidad to auto-assign when the picker isn't shown."""
         return self.active_locations[0] if len(self.active_locations) == 1 else None
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.location_options_changed:
+            raise forms.ValidationError(
+                "Las opciones de localidad cambiaron mientras llenabas el "
+                "formulario. Revisa tus datos y confirma tu selección.",
+                code="location_options_changed",
+            )
+        return cleaned_data
 
     def clean_reference_code(self):
         code = self.cleaned_data["reference_code"].strip().upper()
