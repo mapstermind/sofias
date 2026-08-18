@@ -265,6 +265,22 @@ function renderPending(form: HTMLFormElement): void {
   moreEl.textContent = `y ${remaining} más`;
 }
 
+/** First pending question below the middle of the viewport, wrapping to the
+ *  top when there is none — so repeated presses walk the form rather than
+ *  returning to the same question. */
+function goToNextPending(form: HTMLFormElement): void {
+  const pending = pendingCards(form);
+  const first = pending[0];
+  if (!first) return;
+
+  const cutoff = window.innerHeight / 2;
+  const ahead = pending.find(
+    (card) => card !== lastRevealed && card.getBoundingClientRect().top > cutoff
+  );
+  const wrapped = pending.find((card) => card !== lastRevealed);
+  revealCard(ahead ?? wrapped ?? first);
+}
+
 function refresh(form: HTMLFormElement): void {
   applyVisibility(form);
   updateProgress();
@@ -362,6 +378,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!form) return;
 
   refresh(form);
+
+  const nextButton = document.getElementById("pending-next");
+  if (nextButton) {
+    nextButton.addEventListener("click", () => goToNextPending(form));
+  }
 
   form.addEventListener("change", () => refresh(form));
   form.addEventListener("input", () => refresh(form));
