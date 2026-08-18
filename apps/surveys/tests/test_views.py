@@ -583,3 +583,28 @@ class TestPendingCount:
         response = client.get(f"{_survey_url(active_assignment.pk)}?saved=1")
 
         assert "Te falta 1 pregunta por responder." in response.content.decode()
+
+
+class TestPendingPanelShell:
+    """The panel's shell is server-rendered so Tailwind can see its classes;
+    only the list items are built client-side."""
+
+    def test_panel_shell_renders_hidden_and_empty(
+        self, client, active_assignment, survey_with_questions
+    ):
+        response = client.get(_survey_url(active_assignment.pk))
+        html = response.content.decode()
+
+        assert 'id="pending-panel"' in html
+        assert 'id="pending-list"' in html
+        assert 'id="pending-next"' in html
+        assert "Ir a la siguiente" in html
+
+    def test_question_text_label_is_tagged_for_the_client(
+        self, client, active_assignment, survey_with_questions
+    ):
+        """The client reads question text from this label. Choice options are
+        `<label>`s too, so the hook has to be a class, not element order."""
+        response = client.get(_survey_url(active_assignment.pk))
+
+        assert "question-label" in response.content.decode()

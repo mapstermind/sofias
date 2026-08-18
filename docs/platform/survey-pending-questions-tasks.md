@@ -230,7 +230,7 @@ In `templates/surveys/_question.html`, change the question label's opening tag o
 In `templates/surveys/survey_detail.html`, change the sticky column's opening tag to cap its height, so a tall instructions card can never push the panel out of reach:
 
 ```html
-  <div class="sticky top-6 w-full flex flex-col items-end gap-5 max-h-[calc(100vh-3rem)] overflow-y-auto">
+  <div class="sticky top-6 w-full flex flex-col items-end gap-5 max-h-[calc(100vh_-_3rem)] overflow-y-auto">
 ```
 
 The overflow sits on the sticky element itself, not an ancestor, so stickiness is unaffected.
