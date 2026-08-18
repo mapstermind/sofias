@@ -1,13 +1,25 @@
 /**
  * survey_progress.ts
  *
- * Live progress bar, conditional visibility, and on-change auto-save for
- * survey_detail.html.
+ * Live progress bar, conditional visibility, the pending-questions panel, and
+ * on-change auto-save for survey_detail.html.
  *
  * Progress elements:
  *   #progress-total   — wrapper div with data-total (initial server count)
  *   #progress-count   — span showing "answered/total"
  *   #progress-bar     — div whose inline width% is animated
+ *
+ * Pending-panel elements (shell rendered by survey_detail.html; this file fills
+ * the list and unhides the panel):
+ *   #pending-panel    — the card, `hidden` while nothing is pending
+ *   #pending-count    — span showing how many remain
+ *   #pending-list     — ul of buttons, capped at PENDING_LIMIT entries
+ *   #pending-more     — "y N más", outside the list so it survives scrolling
+ *   #pending-next     — walks to the next pending question, wrapping at the end
+ *
+ * Progress and the pending panel are two renderings of one computation — the
+ * set of question cards that are visible and unanswered — so they cannot
+ * disagree about what is left.
  *
  * Conditional visibility mirrors apps/surveys/visibility.py. Each question is
  * wrapped in `.question-card[data-question-code][data-question-name]
@@ -176,9 +188,87 @@ function updateProgress(): void {
   countEl.textContent = `${answered}/${total}`;
 }
 
+// --- Pending questions panel ------------------------------------------------
+
+const PENDING_LIMIT = 6;
+const HIGHLIGHT_MS = 1500;
+const RING_CLASSES = ["ring-2", "ring-amber-400", "ring-offset-2"];
+
+/** The card most recently jumped to, so the next-pending button advances
+ *  instead of re-selecting whatever is already under the cursor. */
+let lastRevealed: HTMLElement | null = null;
+
+/** Visible, unanswered question cards in document order. */
+function pendingCards(form: HTMLFormElement): HTMLElement[] {
+  return questionCards(form).filter((card) => {
+    if (card.hidden) return false;
+    const name = card.dataset["questionName"];
+    return name ? !isAnswered(name, form) : false;
+  });
+}
+
+/** The question's own text. Choice options are `<label>`s too, so this reads
+ *  the tagged one rather than trusting document order. */
+function questionLabel(card: HTMLElement): string {
+  const label = card.querySelector(".question-label");
+  return (label?.textContent ?? "").trim();
+}
+
+function revealCard(card: HTMLElement): void {
+  lastRevealed = card;
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+  card.classList.add(...RING_CLASSES);
+  window.setTimeout(() => card.classList.remove(...RING_CLASSES), HIGHLIGHT_MS);
+
+  // Scrolling alone leaves the tab order untouched, so a keyboard or
+  // screen-reader user would be looking at the question without being in it.
+  // `preventScroll` keeps focus from snapping past the smooth scroll.
+  const control = card.querySelector<HTMLElement>("input, textarea, select");
+  if (control) control.focus({ preventScroll: true });
+}
+
+function pendingItem(card: HTMLElement): HTMLLIElement {
+  const item = document.createElement("li");
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className =
+    "w-full text-left text-xs text-gray-700 rounded-md px-2 py-1.5 " +
+    "line-clamp-2 hover:bg-amber-50 transition-colors";
+  // textContent, never innerHTML: question text is authored data.
+  button.textContent = questionLabel(card);
+  button.addEventListener("click", () => revealCard(card));
+  item.appendChild(button);
+  return item;
+}
+
+function renderPending(form: HTMLFormElement): void {
+  const panel = document.getElementById("pending-panel");
+  const list = document.getElementById("pending-list");
+  const countEl = document.getElementById("pending-count");
+  const moreEl = document.getElementById("pending-more");
+  if (!panel || !list || !countEl || !moreEl) return;
+
+  const pending = pendingCards(form);
+  panel.hidden = pending.length === 0;
+  if (pending.length === 0) {
+    list.replaceChildren();
+    return;
+  }
+
+  countEl.textContent = String(pending.length);
+
+  const shown = pending.slice(0, PENDING_LIMIT);
+  list.replaceChildren(...shown.map(pendingItem));
+
+  const remaining = pending.length - shown.length;
+  moreEl.hidden = remaining === 0;
+  moreEl.textContent = `y ${remaining} más`;
+}
+
 function refresh(form: HTMLFormElement): void {
   applyVisibility(form);
   updateProgress();
+  renderPending(form);
 }
 
 // --- Auto-save --------------------------------------------------------------
