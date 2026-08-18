@@ -18,6 +18,11 @@
     <p class="text-sm text-gray-600 text-center">
       Tus respuestas han sido guardadas. Puedes continuar respondiendo ahora o en otro momento — tu progreso estará aquí cuando regreses.
     </p>
+    {% if pending_count %}
+    <p class="mt-3 text-sm font-medium text-amber-700 text-center">
+      {% if pending_count == 1 %}Te falta 1 pregunta por responder.{% else %}Te faltan {{ pending_count }} preguntas por responder.{% endif %}
+    </p>
+    {% endif %}
     <div class="mt-6 flex flex-col sm:flex-row gap-3">
       <button
         type="button"

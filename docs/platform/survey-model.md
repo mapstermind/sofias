@@ -81,6 +81,48 @@ per-type parser used by both POST paths. Answers persist in `apps/responses`
 JSON value typed by `question_type`). `apps/core` reads these for dashboards and
 per-employee progress.
 
+### Finding what is left to answer
+
+A respondent who skips a question and comes back to a 72-item form should not have
+to hunt for it. `static/ts/survey_progress.ts` recomputes, on load and on every
+`change`/`input`, the set of question cards that are **visible and unanswered** —
+mirroring `visibility.py`, so a card gated out by `visible_when` is never counted
+nor listed. That single set drives both the progress bar and the **Pendientes**
+panel.
+
+The panel is the last card in the sticky sidebar, below **Guardar progreso**. It
+renders only while at least one visible question is unanswered and removes itself
+once the count reaches zero. It lists the **first six** pending questions in
+document order, each a button showing the question text clamped to two lines and
+read straight out of that card's own `<label>` — the text is never duplicated into
+a data attribute or a second context variable. When more than six remain, a
+`y N más` line sits below the list and outside its scroll container, so the
+remaining count is legible without scrolling. The list carries its own
+viewport-relative height cap, which is what absorbs pressure on the sidebar's
+vertical budget: the instructions card keeps its own cap, and the panel yields
+rather than pushing the save button off-screen.
+
+Clicking an entry scrolls its card to the centre of the viewport, flashes a ring
+for 1.5 s, and moves keyboard focus to the card's first control. Focus moves
+because scrolling alone leaves the tab order untouched — a keyboard or
+screen-reader user would end up looking at the question without being in it. The
+panel carries no `aria-live`: it rebuilds on every keystroke, and announcing each
+rebuild would make it chatter continuously.
+
+**Ir a la siguiente ↓** jumps to the first pending question below the current
+scroll position, wrapping to the top when there is none, so repeated presses walk
+the form rather than returning to the same question. The alternative — always
+jumping to the first pending question — fails on the second press, which moves
+nowhere. Between the two controls nothing is unreachable: the six listed entries
+are the *earliest* pending questions, which is exactly where a skipped one lands,
+and the button covers the tail below the reader.
+
+The panel is desktop-shaped. `survey_detail.html` lays the sidebar out as a fixed
+`w-96` flex column with no breakpoint, so on a narrow viewport it overflows
+horizontally along with the rest of that sidebar. The panel's own markup avoids
+fixed pixel widths and uses viewport-relative caps, so a responsive pass can
+re-place it without rewriting it.
+
 ### Confirming a submission
 
 A `COMPLETED` submission is final — `survey_detail` redirects a respondent who
@@ -105,6 +147,14 @@ Every POST saves the answers first, then routes on those two keys:
 closes the modal, since the answers are already saved. Abandoning the page at
 this point leaves the submission `IN_PROGRESS` with everything stored, and the
 next save offers the same confirmation.
+
+`?saved=1` opens `_progress_saved_modal.html`, which names how many questions
+are still unanswered — `survey_detail` passes `pending_count` alongside the
+progress figures, and the modal states it in full (`Te falta 1 pregunta` /
+`Te faltan 3 preguntas`, since the Spanish verb inflects with the noun). Saving is
+the moment a respondent believes they are finished, so it is where the count has
+to appear; the sentence is suppressed at `pending_count == 0`, which a stale
+`?saved=1` in the URL can still produce.
 
 Both query parameters are *intents*, not state: the URL outlives the POST that
 set it, via the back button, a reload, or hand-editing. `survey_detail` therefore

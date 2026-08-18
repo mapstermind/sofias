@@ -191,6 +191,7 @@ def survey_detail(request, assignment_id):
     # Progress: count visible questions answered (using stored answers).
     answered_count, total_questions = progress_for_modules(modules, existing_answers)
     is_complete = bool(total_questions) and answered_count == total_questions
+    pending_count = total_questions - answered_count
 
     return render(
         request,
@@ -204,6 +205,7 @@ def survey_detail(request, assignment_id):
             "is_edit": existing_submission is not None,
             "total_questions": total_questions,
             "answered_count": answered_count,
+            "pending_count": pending_count,
             # Nothing answered yet = first visit, so open the instructions modal.
             "show_instructions": existing_submission is None and answered_count == 0,
             # `?confirm=1` / `?saved=1` only carry the intent of the POST that

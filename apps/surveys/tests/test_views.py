@@ -524,3 +524,62 @@ class TestCompanyScoping:
 
         assert response.status_code == 403
         assert response.json()["error"] == "forbidden"
+
+
+class TestPendingCount:
+    """`pending_count` tells a respondent how many questions they still owe.
+
+    Saving is the moment someone believes they are finished, so the saved
+    modal is where the number has to appear — the confirmation modal only
+    ever opens at zero pending.
+    """
+
+    def test_pending_count_is_the_unanswered_visible_total(
+        self, client, active_assignment, survey_with_questions
+    ):
+        first = survey_with_questions["questions"][0]
+        client.post(
+            _survey_url(active_assignment.pk),
+            {f"question_{first.id}": "Una respuesta"},
+        )
+
+        response = client.get(_survey_url(active_assignment.pk))
+
+        assert response.context["pending_count"] == 8
+
+    def test_pending_count_is_zero_once_everything_is_answered(
+        self, client, active_assignment, survey_with_questions
+    ):
+        questions = survey_with_questions["questions"]
+        client.post(_survey_url(active_assignment.pk), _answers_for(questions))
+
+        response = client.get(_survey_url(active_assignment.pk))
+
+        assert response.context["pending_count"] == 0
+
+    def test_saved_modal_states_the_plural_count(
+        self, client, active_assignment, survey_with_questions
+    ):
+        first = survey_with_questions["questions"][0]
+        client.post(
+            _survey_url(active_assignment.pk),
+            {f"question_{first.id}": "Una respuesta"},
+        )
+
+        response = client.get(f"{_survey_url(active_assignment.pk)}?saved=1")
+
+        assert "Te faltan 8 preguntas por responder." in response.content.decode()
+
+    def test_saved_modal_states_the_singular_count(
+        self, client, active_assignment, survey_with_questions
+    ):
+        """Spanish inflects the verb as well as the noun, so one pending
+        question is `Te falta 1 pregunta`, not `Te faltan 1 preguntas`."""
+        questions = survey_with_questions["questions"]
+        answers = _answers_for(questions)
+        answers.pop(f"question_{questions[-1].id}")
+        client.post(_survey_url(active_assignment.pk), answers)
+
+        response = client.get(f"{_survey_url(active_assignment.pk)}?saved=1")
+
+        assert "Te falta 1 pregunta por responder." in response.content.decode()
