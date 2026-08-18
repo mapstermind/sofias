@@ -19,6 +19,12 @@ All are `LoginRequiredMixin` class-based views that authorize via the custom per
 - `CompanyEmployeeListView` / `EmployeeDetailView` — per-employee survey progress; full answer breakdown gated behind `can_view_submissions`.
 - `EmployeeSurveyListView` — an employee's assigned surveys.
 
+`CompanyDashboardView` computes `can_take_surveys` — the permission **plus**
+membership in the company being viewed — and the "Mi respuesta" card is gated on
+it. Do not gate that card on `perms.accounts.can_take_assigned_surveys`: a
+superuser passes every `perms.*` check in a template whatever their group, which
+would show an admin a link `apps.surveys.views._respondent_company` refuses.
+
 **Convention:** each view that accepts an optional `reference_code` shows the caller's own company when it's absent, or an arbitrary company (admin-only, `can_manage_surveys`) when present. The list/detail views are heavily optimized to avoid N+1 — prefetch/annotate maps are built up front; preserve that pattern when editing.
 
 ## Template filters (`templatetags/valuation_extras.py`)

@@ -177,8 +177,22 @@ class CompanyDashboardView(LoginRequiredMixin, View):
             .order_by("-created_at")
         )
 
+        # Whether the viewer may answer *this* company's surveys, which is what
+        # the "Mi respuesta" card offers. Membership is part of the condition,
+        # not just the permission: any superuser satisfies
+        # `perms.accounts.can_take_assigned_surveys` in a template whatever their
+        # group, and the card would then lead to a page
+        # `apps.surveys.views._respondent_company` turns them away from. Admins
+        # hold no profile and answer no surveys.
+        viewer_profile = getattr(request.user, "profile", None)
+        can_take_surveys = (
+            request.user.has_perm("accounts.can_take_assigned_surveys")
+            and viewer_profile is not None
+            and viewer_profile.company_id == company.id
+        )
+
         user_completed_ids = set()
-        if request.user.has_perm("accounts.can_take_assigned_surveys"):
+        if can_take_surveys:
             user_completed_ids = set(
                 request.user.submissions.filter(
                     assignment__in=assignments,
@@ -220,6 +234,7 @@ class CompanyDashboardView(LoginRequiredMixin, View):
                 "representative_minimum": representative_minimum,
                 "representative_threshold_pct": representative_threshold_pct,
                 "assignment_data": assignment_data,
+                "can_take_surveys": can_take_surveys,
                 "is_admin_view": reference_code is not None,
                 "company_valuation": company_valuation,
             },

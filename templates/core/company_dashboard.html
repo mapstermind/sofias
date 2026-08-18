@@ -145,8 +145,8 @@
               </div>
             </div>
 
-            {# Take-survey card — 25%, only for exec users #}
-            {% if perms.accounts.can_take_assigned_surveys %}
+            {# Take-survey card — 25%, only for members of this company #}
+            {% if can_take_surveys %}
               {% if item.assignment.status == "active" and not item.user_completed %}
                 <a href="{% url 'surveys:survey_detail' item.assignment.id %}"
                    class="flex flex-col justify-between bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-5 hover:border-indigo-300 hover:shadow-md transition-all" style="flex: 1">

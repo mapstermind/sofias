@@ -226,6 +226,42 @@ class TestCompanyDashboardView:
         assert response.status_code == 200
         assert "Ver empleados".encode() not in response.content
 
+    def test_take_survey_card_hidden_from_an_admin_viewing_a_company(
+        self, client, make_user, active_assignment, bootstrap_groups
+    ):
+        """A superuser passes every `perms.*` check in a template, so gating the
+        card on the permission alone offered admins a link they cannot follow:
+        they hold no profile, and `_respondent_company` bounces them to the
+        activation flow. The card belongs to members of the company on screen.
+        """
+        admin = make_user(email="admin@example.com", is_superuser=True, is_staff=True)
+        admin.groups.add(bootstrap_groups["Admins"])
+        client.force_login(admin)
+
+        url = f"/empresas/{active_assignment.company.reference_code}/"
+        response = client.get(url)
+
+        assert response.status_code == 200
+        assert response.context["can_take_surveys"] is False
+        take_survey_url = f"/encuestas/asignados/{active_assignment.id}/"
+        assert take_survey_url.encode() not in response.content
+
+    def test_take_survey_card_shown_to_a_member_of_the_company(
+        self, client, make_user_with_profile, active_assignment, bootstrap_groups
+    ):
+        exec_user = make_user_with_profile(
+            email="exec@example.com", company=active_assignment.company
+        )
+        exec_user.groups.add(bootstrap_groups["Principal Exec"])
+        client.force_login(exec_user)
+
+        response = client.get("/tablero-empresa/")
+
+        assert response.status_code == 200
+        assert response.context["can_take_surveys"] is True
+        take_survey_url = f"/encuestas/asignados/{active_assignment.id}/"
+        assert take_survey_url.encode() in response.content
+
 
 # ── HomeView ──────────────────────────────────────────────────────────────────
 
