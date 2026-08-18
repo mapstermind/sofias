@@ -439,24 +439,29 @@ git commit -m "List the unanswered questions in the survey sidebar"
 Append below `renderPending`:
 
 ```ts
-/** First pending question below the middle of the viewport, wrapping to the
- *  top when there is none — so repeated presses walk the form rather than
- *  returning to the same question. */
+/** The first pending question that follows the last one we jumped to, in
+ *  document order, wrapping to the top when there is none. The cursor is a
+ *  document position, never a viewport position — see survey-model.md. */
 function goToNextPending(form: HTMLFormElement): void {
   const pending = pendingCards(form);
-  const first = pending[0];
-  if (!first) return;
+  if (pending.length === 0) return;
 
-  const cutoff = window.innerHeight / 2;
-  const ahead = pending.find(
-    (card) => card !== lastRevealed && card.getBoundingClientRect().top > cutoff
-  );
-  const wrapped = pending.find((card) => card !== lastRevealed);
-  revealCard(ahead ?? wrapped ?? first);
+  const cursor = lastRevealed;
+  const after = cursor
+    ? pending.find(
+        (card) =>
+          (cursor.compareDocumentPosition(card) &
+            Node.DOCUMENT_POSITION_FOLLOWING) !==
+          0
+      )
+    : undefined;
+
+  const next = after ?? pending[0];
+  if (next) revealCard(next);
 }
 ```
 
-`pending[0]` is bound to `first` and null-checked because `noUncheckedIndexedAccess` types it `HTMLElement | undefined`. The final `?? first` covers the one-pending-question case, where re-pulsing the same card is the correct answer — there is nowhere else to go.
+`next` is null-checked because `noUncheckedIndexedAccess` types an indexed read as `HTMLElement | undefined`. With one pending question left the wrap lands back on it and re-rings it, which is the correct answer — there is nowhere else to go.
 
 - [x] **Step 2: Wire the button**
 

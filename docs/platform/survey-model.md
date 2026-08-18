@@ -109,13 +109,20 @@ screen-reader user would end up looking at the question without being in it. The
 panel carries no `aria-live`: it rebuilds on every keystroke, and announcing each
 rebuild would make it chatter continuously.
 
-**Ir a la siguiente ↓** jumps to the first pending question below the current
-scroll position, wrapping to the top when there is none, so repeated presses walk
-the form rather than returning to the same question. The alternative — always
-jumping to the first pending question — fails on the second press, which moves
-nowhere. Between the two controls nothing is unreachable: the six listed entries
-are the *earliest* pending questions, which is exactly where a skipped one lands,
-and the button covers the tail below the reader.
+**Ir a la siguiente ↓** walks the pending set: it jumps to the first pending
+question that *follows the last one jumped to* in document order, wrapping to the
+top when there is none. The cursor is a document position and never a viewport
+position — once the page is scrolled to its limit `scrollIntoView` cannot move it
+further, so the final few cards hold a fixed screen position and any
+"below the fold" test picks the same one forever while stranding its neighbours.
+Comparing against the previous element rather than its index also survives the
+respondent answering the question they jumped to: it leaves the pending set, and
+the walk still resumes from where it left off.
+
+Between the two controls nothing is unreachable: the six listed entries are the
+*earliest* pending questions, which is exactly where a skipped one lands, and the
+button covers the tail below the reader. A one-line hint under the heading says
+the entries are selectable, since a hover state alone does not advertise it.
 
 The panel is desktop-shaped. `survey_detail.html` lays the sidebar out as a fixed
 `w-96` flex column with no breakpoint, so on a narrow viewport it overflows

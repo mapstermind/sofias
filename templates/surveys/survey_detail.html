@@ -45,9 +45,10 @@
     <!-- Pendientes: shell only. survey_progress.ts fills the list and unhides
          the panel whenever a visible question is still unanswered. -->
     <div id="pending-panel" class="w-full rounded-lg bg-white border border-amber-200 shadow-sm p-4" hidden>
-      <h2 class="text-sm font-semibold text-gray-900 mb-2">
+      <h2 class="text-sm font-semibold text-gray-900">
         Pendientes (<span id="pending-count">0</span>)
       </h2>
+      <p class="text-xs text-gray-500 mb-2">Selecciona una pregunta para ir a ella.</p>
       <ul id="pending-list" class="space-y-1 max-h-[30vh] overflow-y-auto"></ul>
       <p id="pending-more" class="mt-2 text-xs text-gray-500" hidden></p>
       <button type="button" id="pending-next"

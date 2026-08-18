@@ -233,7 +233,8 @@ function pendingItem(card: HTMLElement): HTMLLIElement {
   button.type = "button";
   button.className =
     "w-full text-left text-xs text-gray-700 rounded-md px-2 py-1.5 " +
-    "line-clamp-2 hover:bg-amber-50 transition-colors";
+    "line-clamp-2 cursor-pointer hover:bg-amber-50 hover:text-amber-900 " +
+    "transition-colors";
   // textContent, never innerHTML: question text is authored data.
   button.textContent = questionLabel(card);
   button.addEventListener("click", () => revealCard(card));
@@ -265,20 +266,33 @@ function renderPending(form: HTMLFormElement): void {
   moreEl.textContent = `y ${remaining} más`;
 }
 
-/** First pending question below the middle of the viewport, wrapping to the
- *  top when there is none — so repeated presses walk the form rather than
- *  returning to the same question. */
+/** The first pending question that follows the last one we jumped to, in
+ *  document order, wrapping to the top when there is none.
+ *
+ *  The cursor is a document position, never a viewport position. Once the page
+ *  is scrolled to its limit `scrollIntoView` cannot move it further, so the
+ *  last few cards stop changing screen position — any "below the fold" test
+ *  then picks the same card forever and strands the ones beside it.
+ *
+ *  Comparing against `lastRevealed` rather than its index also survives the
+ *  respondent answering the question they jumped to: the element leaves the
+ *  pending list, and the walk still resumes from where it left off. */
 function goToNextPending(form: HTMLFormElement): void {
   const pending = pendingCards(form);
-  const first = pending[0];
-  if (!first) return;
+  if (pending.length === 0) return;
 
-  const cutoff = window.innerHeight / 2;
-  const ahead = pending.find(
-    (card) => card !== lastRevealed && card.getBoundingClientRect().top > cutoff
-  );
-  const wrapped = pending.find((card) => card !== lastRevealed);
-  revealCard(ahead ?? wrapped ?? first);
+  const cursor = lastRevealed;
+  const after = cursor
+    ? pending.find(
+        (card) =>
+          (cursor.compareDocumentPosition(card) &
+            Node.DOCUMENT_POSITION_FOLLOWING) !==
+          0
+      )
+    : undefined;
+
+  const next = after ?? pending[0];
+  if (next) revealCard(next);
 }
 
 function refresh(form: HTMLFormElement): void {
