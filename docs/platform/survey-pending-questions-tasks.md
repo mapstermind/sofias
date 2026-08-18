@@ -44,7 +44,7 @@ The panel's markup is split deliberately: the **shell** (card, heading, empty `<
 - Consumes: `progress_for_modules(modules, existing_answers) -> (answered, total)`, already called in `survey_detail`.
 - Produces: template context key `pending_count: int` on `surveys/survey_detail.html`. Task 3 does **not** consume it — the client recomputes its own count from the DOM, because conditional visibility can change without a page load.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `apps/surveys/tests/test_views.py`. The `survey_with_questions` fixture creates exactly 9 questions, so answering one leaves 8 pending and answering eight leaves 1.
 
@@ -108,12 +108,12 @@ class TestPendingCount:
         assert "Te falta 1 pregunta por responder." in response.content.decode()
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `pytest apps/surveys/tests/test_views.py::TestPendingCount -v`
 Expected: FAIL — `KeyError: 'pending_count'` on the first two, and the copy assertions not found on the last two.
 
-- [ ] **Step 3: Add `pending_count` to the view context**
+- [x] **Step 3: Add `pending_count` to the view context**
 
 In `apps/surveys/views.py`, immediately after the existing `is_complete` line:
 
@@ -132,7 +132,7 @@ and add the key to the context dict, next to `answered_count`:
             "pending_count": pending_count,
 ```
 
-- [ ] **Step 4: State the count in the saved modal**
+- [x] **Step 4: State the count in the saved modal**
 
 In `templates/surveys/_progress_saved_modal.html`, directly after the existing `<p class="text-sm text-gray-600 text-center">…</p>` paragraph:
 
@@ -146,17 +146,17 @@ In `templates/surveys/_progress_saved_modal.html`, directly after the existing `
 
 The `{% if pending_count %}` guard matters: a stale `?saved=1` left in the URL by the back button can render this modal at zero pending, and the sentence must not appear then.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `pytest apps/surveys/tests/test_views.py::TestPendingCount -v`
 Expected: 4 passed.
 
-- [ ] **Step 6: Run the full survey suite for regressions**
+- [x] **Step 6: Run the full survey suite for regressions**
 
 Run: `pytest apps/surveys -q`
 Expected: all pass. `--reuse-db -x` is already in `addopts`.
 
-- [ ] **Step 7: Build CSS and commit**
+- [x] **Step 7: Build CSS and commit**
 
 `text-amber-700` is new to the project, so the stylesheet must be rebuilt or the sentence renders in the inherited colour.
 
@@ -180,7 +180,7 @@ git commit -m "Tell a respondent how many questions are left when saving progres
 - Produces, for Task 3 to query: `.question-label` (the question-text `<label>` inside every `.question-card`), `#pending-panel`, `#pending-count`, `#pending-list`, `#pending-more`, `#pending-next`.
 - The panel ships `hidden` and empty. Task 3 is what fills and unhides it, so after this task the page looks unchanged — that is the expected outcome, not a bug.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `apps/surveys/tests/test_views.py`:
 
@@ -210,12 +210,12 @@ class TestPendingPanelShell:
         assert "question-label" in response.content.decode()
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/surveys/tests/test_views.py::TestPendingPanelShell -v`
 Expected: FAIL — both assertions missing.
 
-- [ ] **Step 3: Tag the question-text label**
+- [x] **Step 3: Tag the question-text label**
 
 In `templates/surveys/_question.html`, change the question label's opening tag only (leave the choice `<label>`s alone):
 
@@ -225,7 +225,7 @@ In `templates/surveys/_question.html`, change the question label's opening tag o
   </label>
 ```
 
-- [ ] **Step 4: Add the panel shell to the sidebar**
+- [x] **Step 4: Add the panel shell to the sidebar**
 
 In `templates/surveys/survey_detail.html`, change the sticky column's opening tag to cap its height, so a tall instructions card can never push the panel out of reach:
 
@@ -255,12 +255,12 @@ Amber, not red: red is already the error state on `.question-card` and in the va
 
 `#pending-more` sits **outside** `#pending-list`, so the "y N más" line stays visible when the list scrolls.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `pytest apps/surveys/tests/test_views.py::TestPendingPanelShell -v`
 Expected: 2 passed.
 
-- [ ] **Step 6: Build CSS and commit**
+- [x] **Step 6: Build CSS and commit**
 
 ```bash
 npm run build:css
@@ -280,7 +280,7 @@ git commit -m "Add the pending-questions panel shell to the survey sidebar"
 - Consumes from the existing module: `questionCards(form): HTMLElement[]`, `isAnswered(name, form): boolean`, `refresh(form): void`. Consumes from Task 2: `#pending-panel`, `#pending-count`, `#pending-list`, `#pending-more`, `.question-label`.
 - Produces for Task 4: `pendingCards(form: HTMLFormElement): HTMLElement[]` (visible-and-unanswered cards in document order), `revealCard(card: HTMLElement): void`, and the module-level `lastRevealed: HTMLElement | null`.
 
-- [ ] **Step 1: Add the pending-set helpers**
+- [x] **Step 1: Add the pending-set helpers**
 
 Insert after `updateProgress()` and before `function refresh(`:
 
@@ -314,7 +314,7 @@ function questionLabel(card: HTMLElement): string {
 
 `card.hidden` is set by `applyVisibility`, which `refresh` runs first — so a question gated out by `visible_when` is never listed, for free.
 
-- [ ] **Step 2: Add the reveal behaviour**
+- [x] **Step 2: Add the reveal behaviour**
 
 Append directly below:
 
@@ -333,7 +333,7 @@ function revealCard(card: HTMLElement): void {
 }
 ```
 
-- [ ] **Step 3: Add the renderer**
+- [x] **Step 3: Add the renderer**
 
 Append directly below, still above `refresh`:
 
@@ -377,7 +377,7 @@ function renderPending(form: HTMLFormElement): void {
 }
 ```
 
-- [ ] **Step 4: Drive it from the existing refresh cycle**
+- [x] **Step 4: Drive it from the existing refresh cycle**
 
 Extend `refresh` so the panel recomputes wherever the progress bar already does:
 
@@ -389,18 +389,18 @@ function refresh(form: HTMLFormElement): void {
 }
 ```
 
-- [ ] **Step 5: Compile**
+- [x] **Step 5: Compile**
 
 Run: `npm run build:js`
 Expected: no output, exit 0.
 
-- [ ] **Step 6: Build CSS**
+- [x] **Step 6: Build CSS**
 
 The item and ring classes are string literals in `static/ts/survey_progress.ts`, which `main.css` lists as an `@source` — but they are new to the project and stay uncompiled until the stylesheet is rebuilt.
 
 Run: `npm run build:css`
 
-- [ ] **Step 7: Verify the classes actually compiled**
+- [x] **Step 7: Verify the classes actually compiled**
 
 Run: `grep -c "line-clamp-2\|ring-amber-400" static/css/output.css`
 Expected: a non-zero count. Zero means Tailwind did not see the source — check the `@source "../ts"` line in `static/css/main.css` before going further.
@@ -416,7 +416,7 @@ Run `python manage.py runserver`, open an assigned survey, and confirm:
 
 This is a hand-off to the human reviewer — do not install a headless browser for it.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add static/ts/survey_progress.ts static/js/ static/css/output.css
@@ -434,7 +434,7 @@ git commit -m "List the unanswered questions in the survey sidebar"
 - Consumes from Task 3: `pendingCards(form)`, `revealCard(card)`, `lastRevealed`. Consumes from Task 2: `#pending-next`.
 - Produces: `goToNextPending(form: HTMLFormElement): void`.
 
-- [ ] **Step 1: Add the next-pending walk**
+- [x] **Step 1: Add the next-pending walk**
 
 Append below `renderPending`:
 
@@ -458,7 +458,7 @@ function goToNextPending(form: HTMLFormElement): void {
 
 `pending[0]` is bound to `first` and null-checked because `noUncheckedIndexedAccess` types it `HTMLElement | undefined`. The final `?? first` covers the one-pending-question case, where re-pulsing the same card is the correct answer — there is nowhere else to go.
 
-- [ ] **Step 2: Wire the button**
+- [x] **Step 2: Wire the button**
 
 In the `DOMContentLoaded` handler at the end of the file, after the existing `refresh(form);` call:
 
@@ -469,12 +469,12 @@ In the `DOMContentLoaded` handler at the end of the file, after the existing `re
   }
 ```
 
-- [ ] **Step 3: Compile**
+- [x] **Step 3: Compile**
 
 Run: `npm run build:js`
 Expected: no output, exit 0.
 
-- [ ] **Step 4: Run the full test suite**
+- [x] **Step 4: Run the full test suite**
 
 Run: `pytest -q`
 Expected: all pass. The TypeScript has no test runner in this repo, which is why Step 5 is a human check.
@@ -487,7 +487,7 @@ With several questions unanswered — including at least one *above* the current
 3. Clicking a list entry and then pressing the button advances past the clicked one rather than re-selecting it.
 4. With exactly one question left, pressing the button re-rings that question rather than doing nothing.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add static/ts/survey_progress.ts static/js/
@@ -495,6 +495,10 @@ git commit -m "Walk to the next unanswered question from the sidebar"
 ```
 
 ---
+
+## Status
+
+All four tasks are implemented and committed on `pending-questions-panel`, and the full suite passes (377 tests). The two **Verify in the browser** steps are deliberately left unchecked — they are a hand-off to a human reviewer, since this repo has no JavaScript test runner and is not gaining one for this change.
 
 ## Out of scope
 
