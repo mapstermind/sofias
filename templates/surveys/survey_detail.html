@@ -92,6 +92,7 @@
 
 {% include "surveys/_instrucciones_modal.html" %}
 {% include "surveys/_progress_saved_modal.html" %}
+{% include "surveys/_submit_confirm_modal.html" %}
 {% include "surveys/_session_expired_modal.html" %}
 
 {% if show_instructions %}
@@ -100,9 +101,15 @@
 </script>
 {% endif %}
 
-{% if request.GET.saved %}
+{% if show_saved %}
 <script>
   document.getElementById('progress-saved-modal').style.display = 'flex';
+</script>
+{% endif %}
+
+{% if show_confirm %}
+<script>
+  document.getElementById('submit-confirm-modal').style.display = 'flex';
 </script>
 {% endif %}
 

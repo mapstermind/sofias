@@ -67,20 +67,51 @@ used by both server-side completeness logic and the client mirror in
 - `{"question": "<code>", "equals": <value>}` — single-answer gate.
 - `{"any_in_module": "<module key>", "equals": <value>}` — module aggregate.
 
-A null/empty rule means always visible. A submission is `COMPLETED` only when
-every **visible** required question is answered; hidden questions never block
-completion, and `_normalize` loosely coerces `"si"/"true"` etc. to booleans so
-rules match boolean answers.
+A null/empty rule means always visible. Completion requires every **visible**
+question to be answered; hidden questions never block it, and `_normalize`
+loosely coerces `"si"/"true"` etc. to booleans so rules match boolean answers.
 
 ## Taking a survey and storing answers
 
 `apps/surveys/views.py` renders the variant's modules and handles submission:
 `survey_detail` (form + POST), `autosave_survey` (AJAX field saves), and
-`survey_submitted` (confirmation). `_parse_value` is the shared per-type parser
-used by both POST paths. Answers persist in `apps/responses`
+`survey_submitted` (the acknowledgement page). `_parse_value` is the shared
+per-type parser used by both POST paths. Answers persist in `apps/responses`
 (`SurveySubmission` one-per-(user, assignment); `Answer` FK to `surveys.Question`,
 JSON value typed by `question_type`). `apps/core` reads these for dashboards and
 per-employee progress.
+
+### Confirming a submission
+
+A `COMPLETED` submission is final — `survey_detail` redirects a respondent who
+already has one to `core:home`, so there is no way back into the form. Locking it
+therefore takes **two independent keys**: the server finding every visible
+question answered, *and* an explicit `confirm` in the POST. Answering the last
+question does not lock anything by itself, and a `confirm` posted against a
+half-filled form only saves progress.
+
+Every POST saves the answers first, then routes on those two keys:
+
+| Every visible question answered | `confirm` posted | Result |
+| --- | --- | --- |
+| no | either | `IN_PROGRESS` → redirect `?saved=1` |
+| yes | no | `IN_PROGRESS` → redirect `?confirm=1` |
+| yes | yes | `COMPLETED` → redirect to `survey_submitted` |
+
+`?confirm=1` re-renders the form with the confirmation modal
+(`_submit_confirm_modal.html`) open, warning that submitting is irreversible. Its
+"Enviar respuestas" button is a `form="survey-form"` submit carrying
+`name="confirm"`, so accepting reposts the whole form; "Seguir editando" just
+closes the modal, since the answers are already saved. Abandoning the page at
+this point leaves the submission `IN_PROGRESS` with everything stored, and the
+next save offers the same confirmation.
+
+Both query parameters are *intents*, not state: the URL outlives the POST that
+set it, via the back button, a reload, or hand-editing. `survey_detail` therefore
+re-checks each against the stored answers before opening a modal — `show_confirm`
+requires the progress count to actually be complete, and `show_saved` requires a
+submission to exist. Neither parameter can change data; the POST body is the only
+thing that completes a submission.
 
 ### Who may answer an assignment
 

@@ -31,9 +31,15 @@ Two companions exist for callers evaluating many respondents at once (dashboards
 
 ## Views (`views.py`) — taking a survey
 
-- `survey_detail(assignment_id)` — `@login_required`; renders modules for the assignment's variant and handles POST. Reuses an in-progress `SurveySubmission` per (user, assignment); marks `COMPLETED` only when all visible questions are answered. Closed/completed assignments redirect to `core:home`. There is **no anonymous path** — surveys are always taken by a logged-in employee.
+- `survey_detail(assignment_id)` — `@login_required`; renders modules for the assignment's variant and handles POST. Reuses an in-progress `SurveySubmission` per (user, assignment). Closed/completed assignments redirect to `core:home`. There is **no anonymous path** — surveys are always taken by a logged-in employee.
 - `autosave_survey(assignment_id)` — POST-only AJAX; persists single changed fields without changing status.
-- `survey_submitted(assignment_id)` — confirmation page.
+- `survey_submitted(assignment_id)` — acknowledgement page shown after a confirmed submission. It offers no way back into the form, because there isn't one.
+
+### Completing takes two keys
+
+`COMPLETED` is a one-way door (a respondent holding one is redirected to `core:home`), so `survey_detail` marks it only when **all visible questions are answered *and* the POST carries `confirm=1`** — which only `_submit_confirm_modal.html` sends. Answering the last question alone yields a `?confirm=1` redirect that reopens the form with the confirmation modal; `confirm` on a half-filled form just saves progress. Every POST persists answers first, so backing out of the confirmation loses nothing.
+
+`?confirm=1` and `?saved=1` are intents left in the URL, and the URL outlives the POST (back button, reload, hand-editing). The view re-derives `show_confirm`/`show_saved` from the stored answers rather than trusting the query string, so a stale URL can't pop a modal that contradicts the form. Neither parameter can change data.
 
 **Every assignment lookup here is scoped by `_respondent_company(user)`** — the caller must hold `can_take_assigned_surveys` *and* have a profile linked to a company, and the assignment must belong to that company. This is the tenant boundary, not a convenience: an unscoped `get_object_or_404(SurveyAssignment, id=...)` lets any authenticated user answer any client's assignment by walking the integer id space, and that submission then feeds the other company's NOM-035 roll-up. A foreign id must 404 identically to a nonexistent one. When adding a view here, scope it the same way — `apps/nom035`'s `_area_of` guard is a second line of defence, not a substitute.
 

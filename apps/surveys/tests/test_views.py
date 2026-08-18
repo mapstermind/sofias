@@ -18,6 +18,24 @@ def _autosave_url(assignment_id):
     return f"/encuestas/asignados/{assignment_id}/autoguardar/"
 
 
+def _answers_for(questions):
+    """Minimal valid POST data answering every question in `questions`."""
+    by_type = {
+        "boolean": "true",
+        "multiple_choice": ["a"],
+        "single_choice": "a",
+        "integer": "5",
+        "decimal": "3.14",
+        "date": "2025-01-01",
+        "rating": "4",
+        "likert": "3",
+    }
+    return {
+        f"question_{q.id}": by_type.get(q.question_type, "Una respuesta")
+        for q in questions
+    }
+
+
 @pytest.fixture(autouse=True)
 def respondent(client, company, make_user_with_profile, bootstrap_groups):
     """Every test here gets a logged-in employee **of the assignment's company**.
@@ -132,6 +150,7 @@ class TestSurveyDetailView:
                 post_data[key] = "2"
             else:
                 post_data[key] = "text"
+        post_data["confirm"] = "1"
 
         response = client.post(_survey_url(active_assignment.pk), post_data)
         assert response["Location"].endswith(_submitted_url(active_assignment.pk))
@@ -161,6 +180,137 @@ class TestSurveyDetailView:
         )
         assert response.status_code == 200
         assert dec_q.id in response.context["errors"]
+
+
+class TestSubmitConfirmation:
+    """A finished survey locks only when the respondent confirms.
+
+    `COMPLETED` is a one-way door — `survey_detail` turns a completed respondent
+    away — so answering the last question must not lock the submission by
+    itself. Completing takes two independent keys: the server finding every
+    visible question answered, *and* an explicit `confirm` in the POST, which
+    only the confirmation modal sends.
+    """
+
+    def test_complete_post_without_confirm_asks_to_confirm(
+        self, client, active_assignment, survey_with_questions
+    ):
+        questions = survey_with_questions["questions"]
+
+        response = client.post(
+            _survey_url(active_assignment.pk), _answers_for(questions)
+        )
+
+        assert response["Location"] == f"{_survey_url(active_assignment.pk)}?confirm=1"
+        submission = SurveySubmission.objects.get(assignment=active_assignment)
+        assert submission.status == SurveySubmission.Status.IN_PROGRESS
+        assert submission.completed_at is None
+
+    def test_complete_post_without_confirm_still_saves_every_answer(
+        self, client, active_assignment, survey_with_questions
+    ):
+        questions = survey_with_questions["questions"]
+
+        client.post(_survey_url(active_assignment.pk), _answers_for(questions))
+
+        submission = SurveySubmission.objects.get(assignment=active_assignment)
+        assert submission.answers.count() == len(questions)
+
+    def test_confirmed_post_completes_the_submission(
+        self, client, active_assignment, survey_with_questions
+    ):
+        questions = survey_with_questions["questions"]
+        post_data = _answers_for(questions) | {"confirm": "1"}
+
+        response = client.post(_survey_url(active_assignment.pk), post_data)
+
+        assert response["Location"].endswith(_submitted_url(active_assignment.pk))
+        submission = SurveySubmission.objects.get(assignment=active_assignment)
+        assert submission.status == SurveySubmission.Status.COMPLETED
+        assert submission.completed_at is not None
+
+    def test_confirm_cannot_complete_an_unfinished_survey(
+        self, client, active_assignment, survey_with_questions
+    ):
+        """A forged `confirm` on a half-answered survey saves progress, nothing more."""
+        first = survey_with_questions["questions"][0]
+
+        response = client.post(
+            _survey_url(active_assignment.pk),
+            {f"question_{first.id}": "Una respuesta", "confirm": "1"},
+        )
+
+        assert response["Location"] == f"{_survey_url(active_assignment.pk)}?saved=1"
+        submission = SurveySubmission.objects.get(assignment=active_assignment)
+        assert submission.status == SurveySubmission.Status.IN_PROGRESS
+
+    def test_unfinished_post_saves_progress(
+        self, client, active_assignment, survey_with_questions
+    ):
+        """The half-answered path is untouched by the confirmation gate."""
+        first = survey_with_questions["questions"][0]
+
+        response = client.post(
+            _survey_url(active_assignment.pk),
+            {f"question_{first.id}": "Una respuesta"},
+        )
+
+        assert response["Location"] == f"{_survey_url(active_assignment.pk)}?saved=1"
+        submission = SurveySubmission.objects.get(assignment=active_assignment)
+        assert submission.status == SurveySubmission.Status.IN_PROGRESS
+
+
+class TestModalFlags:
+    """`?confirm=1` / `?saved=1` are re-checked against stored answers on render.
+
+    They only carry the *intent* of the POST that redirected here. A respondent
+    who confirms, backs out, clears an answer and then reloads still holds a
+    `?confirm=1` URL — the modal must not claim the survey is finished when it
+    is not.
+    """
+
+    def test_confirm_flag_ignored_when_answers_are_incomplete(
+        self, client, active_assignment, survey_with_questions
+    ):
+        first = survey_with_questions["questions"][0]
+        client.post(
+            _survey_url(active_assignment.pk),
+            {f"question_{first.id}": "Una respuesta"},
+        )
+
+        response = client.get(f"{_survey_url(active_assignment.pk)}?confirm=1")
+
+        assert response.context["show_confirm"] is False
+
+    def test_confirm_flag_opens_the_modal_once_everything_is_answered(
+        self, client, active_assignment, survey_with_questions
+    ):
+        questions = survey_with_questions["questions"]
+        client.post(_survey_url(active_assignment.pk), _answers_for(questions))
+
+        response = client.get(f"{_survey_url(active_assignment.pk)}?confirm=1")
+
+        assert response.context["show_confirm"] is True
+
+    def test_saved_flag_ignored_before_anything_is_saved(
+        self, client, active_assignment, survey_with_questions
+    ):
+        response = client.get(f"{_survey_url(active_assignment.pk)}?saved=1")
+
+        assert response.context["show_saved"] is False
+
+    def test_saved_flag_opens_the_modal_after_a_save(
+        self, client, active_assignment, survey_with_questions
+    ):
+        first = survey_with_questions["questions"][0]
+        client.post(
+            _survey_url(active_assignment.pk),
+            {f"question_{first.id}": "Una respuesta"},
+        )
+
+        response = client.get(f"{_survey_url(active_assignment.pk)}?saved=1")
+
+        assert response.context["show_saved"] is True
 
 
 @pytest.fixture
@@ -232,6 +382,7 @@ class TestVariantPresentation:
         post = {
             f"question_{q['t1'].id}": "false",
             f"question_{q['s1'].id}": "answer",
+            "confirm": "1",
         }
         response = client.post(_survey_url(a.pk), post)
         assert response["Location"].endswith(_submitted_url(a.pk))
@@ -249,6 +400,15 @@ class TestSurveySubmittedView:
         active_assignment.save()
         response = client.get(_submitted_url(active_assignment.pk))
         assert response.status_code == 200
+
+    def test_page_names_the_survey(self, client, active_assignment):
+        body = client.get(_submitted_url(active_assignment.pk)).content.decode()
+        assert active_assignment.survey.title in body
+
+    def test_page_does_not_offer_editing(self, client, active_assignment):
+        """The answers are locked, so the page must not invite an edit it can't honour."""
+        body = client.get(_submitted_url(active_assignment.pk)).content.decode()
+        assert _survey_url(active_assignment.pk) not in body
 
 
 class TestCompanyScoping:

@@ -146,11 +146,18 @@ def survey_detail(request, assignment_id):
             all_answered = all(
                 answer_values.get(qid) is not None for qid in visible_ids
             )
+            # Completing is a one-way door — a COMPLETED respondent is turned
+            # away above — so it takes two independent keys: the server finding
+            # every visible question answered, *and* an explicit confirmation.
+            # Only the confirmation modal sends `confirm`, so answering the last
+            # question never locks the submission by itself, and a forged
+            # `confirm` on a half-filled form cannot lock it either.
+            completing = all_answered and request.POST.get("confirm") == "1"
 
             now = timezone.now()
             new_status = (
                 SurveySubmission.Status.COMPLETED
-                if all_answered
+                if completing
                 else SurveySubmission.Status.IN_PROGRESS
             )
 
@@ -160,7 +167,7 @@ def survey_detail(request, assignment_id):
                 defaults={"status": new_status},
             )
             submission.status = new_status
-            submission.completed_at = now if all_answered else None
+            submission.completed_at = now if completing else None
             submission.save(update_fields=["status", "completed_at"])
 
             for question_id, val in answer_values.items():
@@ -175,12 +182,15 @@ def survey_detail(request, assignment_id):
                         defaults={"value": val},
                     )
 
-            if all_answered:
+            if completing:
                 return redirect("surveys:survey_submitted", assignment_id=assignment_id)
+            if all_answered:
+                return redirect(f"{request.path}?confirm=1")
             return redirect(f"{request.path}?saved=1")
 
     # Progress: count visible questions answered (using stored answers).
     answered_count, total_questions = progress_for_modules(modules, existing_answers)
+    is_complete = bool(total_questions) and answered_count == total_questions
 
     return render(
         request,
@@ -196,6 +206,14 @@ def survey_detail(request, assignment_id):
             "answered_count": answered_count,
             # Nothing answered yet = first visit, so open the instructions modal.
             "show_instructions": existing_submission is None and answered_count == 0,
+            # `?confirm=1` / `?saved=1` only carry the intent of the POST that
+            # redirected here, and the URL outlives it: back button, reload, or
+            # a hand-edited query string. Re-check each against what is actually
+            # stored so a modal never contradicts the form behind it.
+            "show_confirm": request.GET.get("confirm") == "1" and is_complete,
+            "show_saved": (
+                request.GET.get("saved") == "1" and existing_submission is not None
+            ),
             "container_width": "max-w-6xl",
         },
     )
