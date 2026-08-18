@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft — not implemented. Scheduled for its own session.
+Implemented.
 
 ## Overview
 
@@ -11,12 +11,12 @@ code is written in English. This document defines how those two facts coexist:
 which strings a user sees, who owns each of them, and the single rule that keeps
 English identifiers from leaking onto Spanish screens.
 
-The public app (`templates/`) is already Spanish — its copy is hand-written in
-templates and forms. The gap is the **Django admin**, which is the primary
-working surface for the platform administrator and currently renders a mix of
-English and Spanish.
+The public app (`templates/`) is Spanish — its copy is hand-written in templates
+and forms. The **Django admin** is the primary working surface for the platform
+administrator, and it reads as Spanish for the same reason: not by accident, but
+because every piece of metadata behind it is written that way.
 
-## Why we're building it
+## Why we built it
 
 The platform is intended to be handed to a **non-technical administrator** who
 manages companies, users, and survey assignments entirely through the Django
@@ -30,9 +30,9 @@ open-ended. Every string a user sees comes from exactly one of these:
 
 | Layer | Examples | Owned by | How it becomes Spanish |
 |---|---|---|---|
-| **1. Django's own strings** | "Add another", "Delete?", "This field cannot be blank.", month names, date pickers | Django | `LANGUAGE_CODE` — Django ships Spanish catalogs; free |
-| **2. Metadata we write** | `verbose_name`, `help_text`, admin column headers, inline section titles | Us | Write them in Spanish |
-| **3. Python identifiers** | `is_activated`, `reference_code`, `legal_name` | Us | Never shown to users **— but only if layer 2 is filled in** |
+| **1. Django's own strings** | "Agregar otro", "¿Está seguro?", "Este campo es obligatorio.", month names, date pickers | Django | `LANGUAGE_CODE` — Django ships Spanish catalogs; free |
+| **2. Metadata we write** | `verbose_name`, `help_text`, `TextChoices` labels, `__str__`, admin fieldset titles | Us | Written in Spanish |
+| **3. Python identifiers** | `is_activated`, `reference_code`, `legal_name` | Us | Never shown to users **— because layer 2 is filled in** |
 
 **Layer 3 is the trap.** When a field has no explicit `verbose_name`, Django
 derives the user-visible label from the Python attribute name:
@@ -42,79 +42,181 @@ automatically.
 
 So "English code, Spanish UI" is not a convention that holds on its own —
 **`verbose_name` is the bridge that makes it true.** Every user-visible field
-needs one.
+has one.
 
-### Current state, measured
+### The rule, enforced
 
-| App | Model fields | With an explicit `verbose_name` |
-|---|---|---|
-| `apps/accounts` | 28 | 4 |
-| `apps/surveys` | 33 | 0 |
-| `apps/responses` | 8 | 0 |
-| `apps/nom035` | 10 | 0 |
+Every model in `apps/accounts`, `apps/surveys`, `apps/responses` and
+`apps/nom035` carries:
 
-Effectively the whole admin displays auto-derived English labels today. The four
-exceptions are on `CompanyArea` / `CompanyLocation` / `UserProfile.area` /
-`UserProfile.location`, added with the área-localidad catalogs.
+- an explicit lowercase Spanish `verbose_name` on **every** field,
+- a Spanish `Meta.verbose_name` / `verbose_name_plural`,
+- Spanish labels on every `TextChoices`,
+- a Spanish `__str__` where one is defined.
+
+Labels are lowercase (`verbose_name = "empresa"`); Django applies `capfirst` at
+render time, so the changelist header reads *Empresa* and the app index reads
+*Empresas*.
+
+Fields inherited from `AbstractUser` (`username`, `password`, `is_staff`,
+`date_joined`, `groups`, …) are left alone: Django ships their Spanish
+translations and `LANGUAGE_CODE` picks them up.
+
+The `assert_explicit_labels` fixture in the root `conftest.py` walks an app and
+fails listing every field whose label Django derived from its English
+identifier, plus every `Meta` name the model did not declare. It checks the two
+`Meta` options through `original_attrs` — the record of what a model actually
+declared — because comparing rendered strings would call `áreas` an offender
+while missing `valoraciones`, `opciones` and `códigos temporales de acceso`,
+which are exactly the plurals worth catching.
+
+`test_every_project_app_is_covered_by_the_label_guard` runs it over
+`project_app_labels()`, so a model that forgets a `verbose_name` fails the build
+— and a **newly registered app** is picked up without anyone remembering to add
+it anywhere.
 
 ## Scope
 
-**In scope:**
+**Covered:**
 
-- Set `LANGUAGE_CODE = "es-mx"` so all of layer 1 becomes Spanish.
-- Decide and set `TIME_ZONE` (see Open questions).
-- Add Spanish `verbose_name` / `verbose_name_plural` / `help_text` to the models
-  and fields an operator sees, and Spanish `description` to admin display
-  callables and inline section headers.
-- Fix `Company.Meta.verbose_name_plural`, currently the English `"companies"`
-  (it exists only to stop Django rendering "companys").
-- Record the resulting convention in `.claude/CLAUDE.md` so it is applied to
-  every new model rather than re-litigated.
+- `LANGUAGE_CODE = "es-mx"`, so all of layer 1 is Spanish.
+- `TIME_ZONE = "America/Mexico_City"`.
+- Spanish metadata on **every model in the four apps** — including those with no
+  registered `ModelAdmin` (`EmailOTP`, `Role`, `CompanyArea`, `CompanyLocation`),
+  whose auto-generated permissions appear in the Groups permission picker.
+- Spanish `AppConfig.verbose_name` on the four apps that own models.
+- Branded admin chrome.
+- Spanish `auth_permission` names (see [Permission names](#permission-names)).
 
-**Out of scope:**
+**Not covered:**
 
-- Any behavior change. This is presentation only — no schema changes beyond
-  model `Meta`/field metadata, no view logic, no URL changes.
-- Translating the public app templates: they are already Spanish.
+- The public app templates: they are already Spanish.
 - A second language, `gettext` catalogs, `LOCALE_PATHS`, `.po` files, or a
   language switcher. There is one target language.
-- Translating Python identifiers, module names, or docstrings — code stays
-  English (see `.claude/CLAUDE.md`).
+- Python identifiers, module names, and docstrings — code stays English
+  (see `.claude/CLAUDE.md`).
+- **Authorization group names** (`Admins`, `Principal Exec`, `Secondary Exec`,
+  `Employees`). They are `auth.Group.name` values looked up by string in four
+  places and accepted as a CSV column value, so renaming them is a behavior
+  change rather than presentation. Tracked in
+  [`docs/internal/open-findings.md`](../internal/open-findings.md).
 
 ## Public behavior
 
-After this work, an administrator opening the Django admin sees:
+An administrator opening the Django admin sees:
 
 - Spanish chrome and validation from Django itself ("Agregar otro", "¿Está
-  seguro?", "Este campo no puede estar en blanco").
-- Spanish model names in the app index and breadcrumbs ("Empresas", "Áreas",
-  "Perfiles de usuario").
+  seguro?", "Este campo es obligatorio.").
+- The admin branded `Administración SOFIA-S` rather than `Administración de
+  Django`.
+- App groups named *Cuentas*, *Encuestas*, *Respuestas* and *NOM-035*.
+- Spanish model names in the index and breadcrumbs (*Empresas*, *Áreas*,
+  *Perfiles de colaborador*, *Envíos de encuesta*, *Valoraciones*).
 - Spanish column headers on every changelist and Spanish labels on every form
   field, with help text in Spanish where a field needs explanation.
-- Dates formatted per es-MX conventions (`d/m/Y`).
+- A Groups permission picker that reads *Cuentas | empresa | Puede agregar
+  empresa* end to end.
+- Timestamps in Mexico City time and dates in es-MX format.
 
-Nothing about the public employee-facing app changes.
+Nothing about the public employee-facing app changes except displayed times,
+which shift with `TIME_ZONE`.
+
+## Glossary
+
+One concept, one word. No test can catch a synonym, and two words for the same
+thing on one screen make an operator guess whether they mean the same
+population.
+
+| Concept | Term | Not |
+|---|---|---|
+| A person who answers a survey | **colaborador** | empleado, usuario |
+| The company being surveyed | **empresa** | compañía, cliente |
+| Read access, in a permission name | **ver** | consultar, visualizar |
+| One respondent's attempt at an assignment | **envío de encuesta** | respuesta, participación |
+| One answer within an attempt | **respuesta** | contestación |
+| The NOM-035 result for a submission | **valoración** | puntuación, evaluación |
+| A person's job title | **cargo** | puesto, posición |
+
+`usuario` is reserved for the `auth` sense — an account that logs in. The human
+being behind it is a *colaborador*, which is why `UserProfile` is a *perfil de
+colaborador* and `can_manage_employees` reads *Puede administrar colaboradores*
+despite its English codename.
+
+## Timezone
+
+`USE_TZ` stays `True`, so storage remains UTC and only display shifts.
+`LANGUAGE_CODE` changes date *formatting* but not the timezone, so without this
+an operator would read a 15:00 submission from a Mexican client as 21:00.
+Mexico abolished DST in 2022, so `America/Mexico_City` is a flat UTC−6.
 
 ## Data model impact
 
-No migrations that alter columns. Changing `Meta.verbose_name` does generate an
-`AlterModelOptions` migration, which is a no-op at the database level.
+No migrations alter columns. Changing `Meta.verbose_name` generates an
+`AlterModelOptions` migration and changing a field's `verbose_name`, `help_text`
+or choice labels generates an `AlterField` — both no-ops at the database level.
+The four migrations are `accounts/0005`, `surveys/0002`, `responses/0002` and
+`nom035/0002`.
 
-**One wrinkle worth planning around:** `Meta.verbose_name` feeds the
-auto-generated permission names in `auth_permission` ("Can add company" →
-"Can add empresa"). Those rows are written when a model is first migrated and
-are **not** rewritten when `verbose_name` changes later. While the platform is
-pre-production and databases are recreated freely, this costs nothing —
-recreating the database regenerates them in Spanish. It becomes a data-migration
-chore once there is data worth keeping, so doing this work *before* production is
-materially cheaper than after.
+## Permission names
 
-Verify after the change that `python manage.py bootstrap_groups` still runs
-clean, since it assigns permissions by codename (codenames are unaffected).
+`auth_permission.name` is what the Groups permission picker displays, and it does
+not follow `Meta.verbose_name` on its own. Django builds the four built-in
+permission names from a hardcoded, **untranslated** `"Can %s %s"` template
+(`django/contrib/auth/management/__init__.py`), so a Spanish `verbose_name`
+alone yields `"Can add empresa"` — English and Spanish in one string.
+
+`apps/core/permissions.py` fixes this with a `post_migrate` receiver,
+`rename_permissions_to_spanish`, connected in `CoreConfig.ready()`. It rewrites
+`Permission.name` on every `migrate` for the apps `project_app_labels()`
+returns — those under `apps.` that own models, derived from `INSTALLED_APPS`
+rather than listed — and leaves Django's own apps alone. It is display-only:
+codenames are never touched, so `bootstrap_groups` and every `has_perm` check
+are unaffected.
+
+The name comes from `str(opts.verbose_name)` under an explicit
+`translation.override(LANGUAGE_CODE)`, **not** from `verbose_name_raw`.
+`verbose_name_raw` renders the *untranslated* name, which is correct for
+Django's own purposes and wrong here: `User` inherits `AbstractUser`'s lazy
+`_("user")`, so it is the one model where the two differ, and the raw form
+yields "Puede agregar user".
+
+`apps` and `using` carry defaults, mirroring Django's own `create_permissions`.
+`post_migrate` is not sent only by `migrate` — `manage.py flush` emits it with
+no `apps` kwarg, and so does the teardown of every `transaction=True` test.
+
+It is connected without a sender because each app's permissions only exist once
+that app's own `post_migrate` has fired; `django.contrib.auth` sits earlier in
+`INSTALLED_APPS`, so `create_permissions` always runs first.
+
+### Why a receiver rather than declaring the names
+
+Declaring them is possible. Setting `Meta.default_permissions = ()` and listing
+all four actions in `Meta.permissions` with Spanish names produces identical
+codenames and passes `manage.py check`. Without the empty `default_permissions`
+it does not: the explicit codenames collide with the built-ins and every model
+raises `auth.E005`.
+
+The receiver is preferred for three reasons:
+
+- **Failure mode.** `default_permissions = ()` means a model whose `permissions`
+  block is missing or incomplete gets **no permissions at all** — nobody can be
+  granted access to it, and the breakage surfaces later as a puzzling
+  authorization bug. Forgetting the receiver's app-label list costs an English
+  label instead.
+- **Volume.** Four hardcoded strings on each of the seventeen models, versus one
+  ~45-line module.
+- **Drift.** Declared names are literals, so renaming a model's `verbose_name`
+  silently leaves four stale permission strings behind. The receiver derives the
+  name, so the two cannot disagree.
+
+One further difference: `create_permissions` reads the **historical migration
+state**, so a `verbose_name` edit does not reach `auth_permission` until its
+`AlterModelOptions` migration exists. The receiver reads the live app registry
+and is not subject to that lag.
 
 ## Key decisions
 
-- **Decision:** Hardcode Spanish strings; do not introduce `gettext_lazy`.
+- **Decision:** Hardcode Spanish strings; do not use `gettext_lazy`.
   **Reason:** There is one target language. Without `LOCALE_PATHS`, `.po` files,
   and a `compilemessages` step, `_()` is ceremony that renders identically —
   and building translation infrastructure for a second language that does not
@@ -130,61 +232,53 @@ clean, since it assigns permissions by codename (codenames are unaffected).
   **Reason:** Already the project convention; `verbose_name` is the explicit
   bridge, so the two do not conflict.
 
-## Open questions
+- **Decision:** Cover every model in the four apps, not only the operator-facing
+  ones.
+  **Reason:** Consistency, and the boundary leaks anyway — an unregistered
+  model's auto-generated permissions still surface in the Groups picker.
 
-These need an answer before implementation starts.
+- **Decision:** Spanish permission names come from a `post_migrate` receiver, not
+  from `default_permissions = ()` plus explicitly declared `Meta.permissions`.
+  **Reason:** Both produce the same codenames and names. The receiver wins on
+  failure mode — an incomplete declaration creates no permissions at all, while a
+  gap in the receiver's coverage only leaves an English label. It is also ~45
+  lines against four strings on each of seventeen models, and it derives names
+  from `verbose_name` instead of duplicating them. See
+  [Why a receiver rather than declaring the names](#why-a-receiver-rather-than-declaring-the-names).
 
-1. **How far does the sweep go?** Three candidate scopes:
-   - *Operator-facing models only* (~50 fields) — `accounts` (User, Company,
-     CompanyArea, CompanyLocation, UserProfile, SetupAccessCode) plus `surveys`
-     (Survey, Module, SurveyAssignment). Leaves developer/debug admins in
-     English: `Question`, `Choice` (seeded by `seed_nom035_survey`, not
-     hand-edited), `SurveySubmission`, `Answer`, `SubmissionScore`.
-     *Recommended* — these are the screens the administrator actually works in.
-   - *Every registered admin model* (~79 fields) — fully consistent, no English
-     anywhere, but includes screens only developers open.
-   - *`apps/accounts` only* (~28 fields) — smallest useful slice.
+- **Decision:** `User.first_name` / `last_name` are labelled `"nombre(s)"` and
+  `"apellidos"` rather than reusing Django's catalog.
+  **Reason:** Django's `es_MX` renders `last name` as the singular `"apellido"`,
+  which is wrong for Mexican usage (paterno + materno). Hardcoding also keeps
+  the no-`gettext` rule absolute.
 
-   If the "operator-facing only" split is chosen, record **why** each excluded
-   admin is a developer surface, so the boundary is not mistaken for an
-   oversight later.
-
-2. **Should `TIME_ZONE` change from `"UTC"` to `"America/Mexico_City"`?**
-   `LANGUAGE_CODE` changes date *formatting* but not the timezone, so an
-   operator would otherwise read a 3pm submission as 9pm. `USE_TZ` stays `True`,
-   so storage remains UTC and only display shifts. This affects the public app
-   too (due dates, submission timestamps, OTP expiry), which is why it is called
-   out rather than assumed. *Recommendation: change it.*
-
-3. **Does the admin index need reordering or renaming beyond model names?**
-   Django groups the admin by app label (`accounts`, `surveys`, `responses`,
-   `nom035`), which are English and not configurable via `verbose_name` alone —
-   it needs `AppConfig.verbose_name`. Cheap to add; confirm whether the app
-   groupings should read as "Cuentas", "Encuestas", etc.
-
-## Acceptance criteria
-
-- Opening any operator-facing admin changelist or change form shows no
-  auto-derived English labels.
-- Submitting an invalid admin form shows Spanish validation messages.
-- `python manage.py check` and the full test suite pass unchanged — this work
-  must not alter behavior.
-- A freshly created database plus `bootstrap_groups` yields Spanish permission
-  names in the group permission picker.
-- `.claude/CLAUDE.md` states the convention so new models follow it by default.
+- **Decision:** Accept Django's `es_MX` date formats; no `FORMAT_MODULE_PATH`.
+  **Reason:** `SHORT_DATE_FORMAT` is already `d/m/Y`, and the long form
+  (`9 de Agosto de 2026 a las 15:00`) is correct enough for admin columns. A
+  settings-level `DATE_FORMAT` is ignored when a locale formats module exists,
+  so overriding means carrying a custom module for a cosmetic gain. Note that
+  Django's `es_MX` catalog capitalizes month names, which Spanish orthography
+  does not; that is upstream, not ours.
 
 ## Test mapping
 
-Presentation-only work, so existing tests should pass untouched — that is itself
-the primary check. Worth adding:
-
-| Behavior | Suggested location |
+| Behavior | Location |
 |---|---|
-| An operator-facing admin form renders Spanish field labels | `apps/accounts/tests/test_admin.py` |
-| Django's own validation renders in Spanish | `apps/accounts/tests/test_admin.py` |
+| Language, timezone, admin chrome, app index names | `apps/core/tests/test_localization.py` |
+| Every field and `Meta` name across every project app is explicit | `test_every_project_app_is_covered_by_the_label_guard` |
+| Every permission name matches its model's Spanish label | `test_every_project_permission_name_reads_as_its_spanish_model_label` |
+| The receiver survives a `post_migrate` without `apps` | `test_receiver_survives_a_post_migrate_without_the_apps_kwarg` |
+| Choice labels and representative rendered labels | `apps/<app>/tests/test_admin.py` |
+| The label guard itself | `assert_explicit_labels` in `conftest.py` |
 
-Assert on a representative label rather than every field; the value is catching
-a `LANGUAGE_CODE` regression, not pinning every string.
+The two whole-set tests are deliberately exhaustive rather than sampled: the
+sampled version of the permission test missed `User`, the only model whose
+`verbose_name` is lazy.
+
+The permission-name tests read rows written by `post_migrate` at
+database-creation time. `addopts` carries `--reuse-db`, so run them with
+`pytest --create-db` after any change to model `verbose_name` or
+`Role.Meta.permissions` — a reused database keeps the names it was born with.
 
 ## Linked ADRs
 

@@ -50,6 +50,58 @@ def bootstrap_groups(db):
     return groups
 
 
+# ── Admin ─────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def staff_client(client, make_user):
+    """A test client logged in as a superuser, for exercising admin screens."""
+    staff = make_user(
+        email="admin-staff@example.com",
+        password="Pass12345!",
+        is_staff=True,
+        is_superuser=True,
+    )
+    client.force_login(staff)
+    return client
+
+
+@pytest.fixture
+def assert_explicit_labels():
+    """Fail listing every label Django derived instead of one we wrote.
+
+    `verbose_name` is the bridge that keeps English code from leaking onto a
+    Spanish screen, so a missing one is a UI bug, not a style nit.
+
+    The two `Meta` names are checked via `original_attrs`, which records the
+    options a model actually declared. Comparing rendered strings instead would
+    call `áreas` an offender — it happens to equal the plural Django derives —
+    while a Spanish plural that is *not* the singular plus "s" (`valoraciones`,
+    `opciones`, `códigos temporales de acceso`) is precisely the case worth
+    catching. Fields have no such record, so they are compared by value; that
+    errs toward a false positive on a label that legitimately matches its
+    identifier (`rfc`), never toward missing one.
+    """
+    from django.apps import apps as django_apps
+
+    def _assert(app_label):
+        offenders = []
+        for model in django_apps.get_app_config(app_label).get_models():
+            opts = model._meta
+            for option in ("verbose_name", "verbose_name_plural"):
+                if option not in opts.original_attrs:
+                    offenders.append(f"{opts.label}.Meta.{option}")
+            for field in opts.get_fields():
+                verbose_name = getattr(field, "verbose_name", None)
+                if verbose_name is None:
+                    continue
+                if str(verbose_name) == field.name.replace("_", " "):
+                    offenders.append(f"{opts.label}.{field.name}")
+        assert offenders == [], "Labels Django derived for us: " + ", ".join(offenders)
+
+    return _assert
+
+
 # ── User factories ────────────────────────────────────────────────────────────
 
 

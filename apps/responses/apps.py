@@ -5,3 +5,4 @@ class ResponsesConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.responses"
     label = "responses"
+    verbose_name = "Respuestas"

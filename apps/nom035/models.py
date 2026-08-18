@@ -24,29 +24,45 @@ class SubmissionScore(models.Model):
         "responses.SurveySubmission",
         on_delete=models.CASCADE,
         related_name="nom035_score",
+        verbose_name="envío",
     )
-    final_score = models.IntegerField(default=0)
-    final_ndr = models.CharField(max_length=10, choices=NDR.choices, default=NDR.NULO)
+    final_score = models.IntegerField("puntaje final", default=0)
+    final_ndr = models.CharField(
+        "nivel de riesgo final", max_length=10, choices=NDR.choices, default=NDR.NULO
+    )
     # Official Guía I clinical-referral outcome (binary); see scoring.guia1_positive.
-    guia1_positive = models.BooleanField(default=False)
-    computed_at = models.DateTimeField(auto_now=True)
+    guia1_positive = models.BooleanField("positivo en Guía I", default=False)
+    computed_at = models.DateTimeField("fecha de cálculo", auto_now=True)
+
+    class Meta:
+        verbose_name = "valoración"
+        verbose_name_plural = "valoraciones"
 
     def __str__(self):
-        return f"Score({self.submission_id}={self.final_ndr})"
+        return f"Valoración({self.submission_id}={self.final_ndr})"
 
 
 class GroupScore(models.Model):
     submission_score = models.ForeignKey(
-        SubmissionScore, on_delete=models.CASCADE, related_name="groups"
+        SubmissionScore,
+        on_delete=models.CASCADE,
+        related_name="groups",
+        verbose_name="valoración",
     )
-    level = models.CharField(max_length=12, choices=GroupLevel.choices)
-    key = models.CharField(max_length=64)
-    score = models.IntegerField(default=0)
+    level = models.CharField("nivel", max_length=12, choices=GroupLevel.choices)
+    key = models.CharField("clave", max_length=64)
+    score = models.IntegerField("puntaje", default=0)
     ndr = models.CharField(
-        max_length=10, choices=NDR.choices, default=NDR.NULO, blank=True
+        "nivel de riesgo",
+        max_length=10,
+        choices=NDR.choices,
+        default=NDR.NULO,
+        blank=True,
     )
 
     class Meta:
+        verbose_name = "puntaje por grupo"
+        verbose_name_plural = "puntajes por grupo"
         unique_together = ("submission_score", "level", "key")
         indexes = [
             models.Index(fields=["submission_score", "level"]),

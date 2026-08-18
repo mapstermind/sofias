@@ -1,8 +1,9 @@
 # core
 
-Two distinct responsibilities live here:
+Three distinct responsibilities live here:
 1. **Web home & dashboards** — the authenticated landing pages, company dashboards, and employee/answer views (`views.py`, `urls.py`). URL prefix: `/` (mounted at root; `app_name = "core"`).
 2. **NOM-035 seed** — the declarative seed command for the canonical survey instrument (`management/commands/seed_nom035_survey.py`, data in `_nom035_data.py`). Operates on `apps/surveys` models.
+3. **Spanish permission names** — `permissions.py` holds `rename_permissions_to_spanish`, a `post_migrate` receiver connected in `CoreConfig.ready()`. It derives each name from the model's rendered `verbose_name` (not `verbose_name_raw`, which returns the untranslated msgid) and rewrites `auth_permission.name` for the apps `project_app_labels()` derives from `INSTALLED_APPS`, so the Groups picker reads Spanish; Django builds the built-in names from an untranslated `"Can %s %s"` template, and `create_permissions` never renames a row once created. Display-only — codenames are untouched, so `bootstrap_groups` and every `has_perm` check are unaffected. It lives here because it spans every project app rather than belonging to any one. Declaring the names on each model is the alternative and is rejected in `docs/platform/localization.md`.
 
 `core` has **no models of its own** (`models.py` is empty). It composes data from `accounts`, `surveys`, and `responses`.
 

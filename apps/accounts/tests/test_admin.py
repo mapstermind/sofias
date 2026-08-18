@@ -23,18 +23,6 @@ CATALOGS = [
 ]
 
 
-@pytest.fixture
-def staff_client(client, make_user):
-    staff = make_user(
-        email="catalog-staff@example.com",
-        password="Pass12345!",
-        is_staff=True,
-        is_superuser=True,
-    )
-    client.force_login(staff)
-    return client
-
-
 def _catalog_formset(model, prefix, company, data):
     """Build the same formset class the Company admin inlines use."""
     FormSet = inlineformset_factory(
@@ -353,3 +341,32 @@ def test_setup_access_code_admin_does_not_show_used_code_value(client, make_user
 
     assert response.status_code == 200
     assert b"123456789" not in response.content
+
+
+class TestSpanishAdminLabels:
+    def test_company_change_form_labels_are_spanish(self, staff_client, make_company):
+        company = make_company()
+
+        response = staff_client.get(
+            reverse("admin:accounts_company_change", args=[company.pk])
+        )
+
+        body = response.content.decode()
+        assert "Razón social" in body
+        assert "Legal name" not in body
+
+    def test_userprofile_str_is_spanish(self, make_user_with_profile):
+        user = make_user_with_profile(email="etiqueta@x.mx")
+
+        assert str(user.profile) == "Perfil de etiqueta@x.mx"
+
+    def test_user_add_and_change_fieldsets_are_spanish(self, staff_client, make_user):
+        user = make_user(email="fieldset@x.mx")
+
+        for url in (
+            reverse("admin:accounts_user_add"),
+            reverse("admin:accounts_user_change", args=[user.pk]),
+        ):
+            body = staff_client.get(url).content.decode()
+            assert "Acceso SOFIA-S" in body, url
+            assert "SOFIA-S access" not in body, url

@@ -52,7 +52,7 @@ Permissions are defined on `Role.Meta.permissions`; groups that bundle them are 
 
 ## Conventions & gotchas
 
-- **User-facing strings are in Spanish**; code/comments in English.
+- **User-facing strings are in Spanish**; code, identifiers and comments in English. Every field carries an explicit Spanish `verbose_name` and every model a Spanish `Meta.verbose_name` — that metadata is the only thing standing between an English attribute name and a Spanish admin screen. `Role.Meta.permissions` labels are Spanish too; they surface in the Groups permission picker. See `docs/platform/localization.md`.
 - **Spanish-text columns carry `db_collation=SPANISH_COLLATION`** (`es-MX-x-icu`): `Company.name`/`legal_name`, `CompanyCatalogEntry.name`, and `User.first_name`/`last_name` (redeclared from `AbstractUser` for exactly this reason). The database's collation is byte order, which sorts every accented name after `Z`. Any new column holding Spanish text that gets shown as a sorted list needs it too.
 - Dev OTP bypass: when `DEBUG`, code `000000` logs in any existing user (`verify_otp`). Never rely on this in prod.
 - OTP requests are rate-limited (one per email per 30s) and require an existing `User`.
