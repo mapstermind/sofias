@@ -412,7 +412,7 @@ Run: `npm run build:css`
 Run: `grep -c "line-clamp-2\|ring-amber-400" static/css/output.css`
 Expected: a non-zero count. Zero means Tailwind did not see the source — check the `@source "../ts"` line in `static/css/main.css` before going further.
 
-- [ ] **Step 8: Verify in the browser**
+- [x] **Step 8: Verify in the browser**
 
 Run `python manage.py runserver`, open an assigned survey, and confirm:
 1. With everything unanswered, the panel lists 6 questions and `y N más` below them.
@@ -491,7 +491,7 @@ Expected: no output, exit 0.
 Run: `pytest -q`
 Expected: all pass. The TypeScript has no test runner in this repo, which is why Step 5 is a human check.
 
-- [ ] **Step 5: Verify in the browser**
+- [x] **Step 5: Verify in the browser**
 
 With several questions unanswered — including at least one *above* the current scroll position — confirm:
 1. `Ir a la siguiente ↓` advances to a different question on every press.
@@ -510,7 +510,9 @@ git commit -m "Walk to the next unanswered question from the sidebar"
 
 ## Status
 
-All four tasks are implemented and committed on `pending-questions-panel`, and the full suite passes (379 tests). The two **Verify in the browser** steps are deliberately left unchecked — they are a hand-off to a human reviewer, since this repo has no JavaScript test runner and is not gaining one for this change.
+All four tasks are implemented and committed on `pending-questions-panel`, and the full suite passes (379 tests). The two **Verify in the browser** steps were a hand-off to a human reviewer, since this repo has no JavaScript test runner and is not gaining one for this change.
+
+Both browser hand-offs have since been walked through and confirmed, including the fieldset/legend markup change and the bottom-of-page walk that originally stranded a question.
 
 A code-review pass then folded in a set of fixes on top of the four tasks:
 
