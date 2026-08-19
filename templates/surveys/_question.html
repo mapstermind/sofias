@@ -61,11 +61,11 @@
         <input type="text" name="question_{{ question.id }}"
           value="{{ ans|default_if_none:'' }}"
           class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-          placeholder="Your answer…">
+          placeholder="Tu respuesta…">
       {% else %}
         <textarea name="question_{{ question.id }}" rows="4"
           class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-          placeholder="Your answer…">{{ ans|default_if_none:'' }}</textarea>
+          placeholder="Tu respuesta…">{{ ans|default_if_none:'' }}</textarea>
       {% endif %}
 
     {% elif question.question_type == "integer" %}
@@ -115,7 +115,7 @@
       <input type="text" name="question_{{ question.id }}"
         value="{{ ans|default_if_none:'' }}"
         class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-        placeholder="Your answer…">
+        placeholder="Tu respuesta…">
     {% endif %}
   </fieldset>
 
