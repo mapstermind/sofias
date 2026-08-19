@@ -90,7 +90,11 @@ it anywhere.
 
 **Not covered:**
 
-- The public app templates: they are already Spanish.
+- The public app templates. They carry their Spanish directly as literal copy,
+  with no metadata layer between the string and the screen, so there is nothing
+  for the label guard to walk and **no automated check at all** — English left
+  in a template passes the whole suite. Copy in `templates/` is held to the same
+  standard as everything else here; it is review, not a test, that holds it.
 - A second language, `gettext` catalogs, `LOCALE_PATHS`, `.po` files, or a
   language switcher. There is one target language.
 - Python identifiers, module names, and docstrings — code stays English
