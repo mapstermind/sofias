@@ -5,111 +5,119 @@
      data-question-name="question_{{ question.id }}"
      data-visible-when="{{ question.visible_when|as_json }}">
 
-  <label class="block text-sm font-medium text-gray-800 mb-3">
-    {{ question.text }}
-  </label>
+  <!-- A fieldset/legend, not a label: most question types are a group of
+       radios or checkboxes, and without a legend a screen reader announces
+       the option a respondent lands on but never the question itself. The
+       reset classes are load-bearing — Tailwind's preflight leaves fieldset
+       and legend alone, so their UA defaults (a groove border, indents, and a
+       min-content minimum that stops the likert row shrinking) would show. -->
+  <fieldset class="m-0 p-0 border-0 min-w-0">
+    <legend class="question-label block p-0 text-sm font-medium text-gray-800 mb-3">
+      {{ question.text }}
+    </legend>
 
-  {% if question.question_type == "boolean" %}
-    <div class="flex gap-6">
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input type="radio" name="question_{{ question.id }}" value="true"
-          {% if ans == True %}checked{% endif %}
-          class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
-        <span class="text-sm text-gray-700">Sí</span>
-      </label>
-      <label class="flex items-center gap-2 cursor-pointer">
-        <input type="radio" name="question_{{ question.id }}" value="false"
-          {% if ans == False and ans is not None %}checked{% endif %}
-          class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
-        <span class="text-sm text-gray-700">No</span>
-      </label>
-    </div>
-
-  {% elif question.question_type == "single_choice" %}
-    <div class="space-y-2">
-      {% for choice in question.choices.all %}
-        <label class="flex items-center gap-3 cursor-pointer rounded-md px-3 py-2 hover:bg-gray-50 transition-colors">
-          <input type="radio" name="question_{{ question.id }}" value="{{ choice.value }}"
-            {% if ans == choice.value %}checked{% endif %}
+    {% if question.question_type == "boolean" %}
+      <div class="flex gap-6">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="question_{{ question.id }}" value="true"
+            {% if ans == True %}checked{% endif %}
             class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
-          <span class="text-sm text-gray-700">{{ choice.label }}</span>
+          <span class="text-sm text-gray-700">Sí</span>
         </label>
-      {% endfor %}
-    </div>
-
-  {% elif question.question_type == "multiple_choice" %}
-    <div class="space-y-2">
-      {% for choice in question.choices.all %}
-        <label class="flex items-center gap-3 cursor-pointer rounded-md px-3 py-2 hover:bg-gray-50 transition-colors">
-          <input type="checkbox" name="question_{{ question.id }}" value="{{ choice.value }}"
-            {% if ans and choice.value in ans %}checked{% endif %}
-            class="h-4 w-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500">
-          <span class="text-sm text-gray-700">{{ choice.label }}</span>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" name="question_{{ question.id }}" value="false"
+            {% if ans == False and ans is not None %}checked{% endif %}
+            class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+          <span class="text-sm text-gray-700">No</span>
         </label>
-      {% endfor %}
-    </div>
+      </div>
 
-  {% elif question.question_type == "text" %}
-    {% if question.config.multiline == False %}
+    {% elif question.question_type == "single_choice" %}
+      <div class="space-y-2">
+        {% for choice in question.choices.all %}
+          <label class="flex items-center gap-3 cursor-pointer rounded-md px-3 py-2 hover:bg-gray-50 transition-colors">
+            <input type="radio" name="question_{{ question.id }}" value="{{ choice.value }}"
+              {% if ans == choice.value %}checked{% endif %}
+              class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+            <span class="text-sm text-gray-700">{{ choice.label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+
+    {% elif question.question_type == "multiple_choice" %}
+      <div class="space-y-2">
+        {% for choice in question.choices.all %}
+          <label class="flex items-center gap-3 cursor-pointer rounded-md px-3 py-2 hover:bg-gray-50 transition-colors">
+            <input type="checkbox" name="question_{{ question.id }}" value="{{ choice.value }}"
+              {% if ans and choice.value in ans %}checked{% endif %}
+              class="h-4 w-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500">
+            <span class="text-sm text-gray-700">{{ choice.label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+
+    {% elif question.question_type == "text" %}
+      {% if question.config.multiline == False %}
+        <input type="text" name="question_{{ question.id }}"
+          value="{{ ans|default_if_none:'' }}"
+          class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+          placeholder="Tu respuesta…">
+      {% else %}
+        <textarea name="question_{{ question.id }}" rows="4"
+          class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+          placeholder="Tu respuesta…">{{ ans|default_if_none:'' }}</textarea>
+      {% endif %}
+
+    {% elif question.question_type == "integer" %}
+      <input type="number" step="1" name="question_{{ question.id }}"
+        value="{{ ans|default_if_none:'' }}"
+        class="w-40 rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+        placeholder="0">
+
+    {% elif question.question_type == "decimal" %}
+      <input type="number" step="any" name="question_{{ question.id }}"
+        value="{{ ans|default_if_none:'' }}"
+        class="w-40 rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
+        placeholder="0.00">
+
+    {% elif question.question_type == "date" %}
+      <input type="date" name="question_{{ question.id }}"
+        value="{{ ans|default_if_none:'' }}"
+        class="w-48 rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none">
+
+    {% elif question.question_type == "rating" %}
+      <div class="flex gap-4">
+        {% for i in "12345" %}
+          <label class="flex flex-col items-center gap-1 cursor-pointer">
+            <input type="radio" name="question_{{ question.id }}" value="{{ i }}"
+              {% if ans == i %}checked{% endif %}
+              class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+            <span class="text-sm text-gray-600">{{ i }}</span>
+          </label>
+        {% endfor %}
+      </div>
+
+    {% elif question.question_type == "likert" %}
+      {% with pairs=question|likert_pairs %}
+      <div class="flex gap-2 flex-wrap">
+        {% for value, label in pairs %}
+          <label class="flex flex-col items-center gap-1 cursor-pointer min-w-[72px] text-center">
+            <input type="radio" name="question_{{ question.id }}" value="{{ value }}"
+              {% if ans == value %}checked{% endif %}
+              class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+            <span class="text-xs text-gray-600">{{ label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+      {% endwith %}
+
+    {% else %}
       <input type="text" name="question_{{ question.id }}"
         value="{{ ans|default_if_none:'' }}"
         class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-        placeholder="Your answer…">
-    {% else %}
-      <textarea name="question_{{ question.id }}" rows="4"
-        class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-        placeholder="Your answer…">{{ ans|default_if_none:'' }}</textarea>
+        placeholder="Tu respuesta…">
     {% endif %}
-
-  {% elif question.question_type == "integer" %}
-    <input type="number" step="1" name="question_{{ question.id }}"
-      value="{{ ans|default_if_none:'' }}"
-      class="w-40 rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-      placeholder="0">
-
-  {% elif question.question_type == "decimal" %}
-    <input type="number" step="any" name="question_{{ question.id }}"
-      value="{{ ans|default_if_none:'' }}"
-      class="w-40 rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-      placeholder="0.00">
-
-  {% elif question.question_type == "date" %}
-    <input type="date" name="question_{{ question.id }}"
-      value="{{ ans|default_if_none:'' }}"
-      class="w-48 rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none">
-
-  {% elif question.question_type == "rating" %}
-    <div class="flex gap-4">
-      {% for i in "12345" %}
-        <label class="flex flex-col items-center gap-1 cursor-pointer">
-          <input type="radio" name="question_{{ question.id }}" value="{{ i }}"
-            {% if ans == i %}checked{% endif %}
-            class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
-          <span class="text-sm text-gray-600">{{ i }}</span>
-        </label>
-      {% endfor %}
-    </div>
-
-  {% elif question.question_type == "likert" %}
-    {% with pairs=question|likert_pairs %}
-    <div class="flex gap-2 flex-wrap">
-      {% for value, label in pairs %}
-        <label class="flex flex-col items-center gap-1 cursor-pointer min-w-[72px] text-center">
-          <input type="radio" name="question_{{ question.id }}" value="{{ value }}"
-            {% if ans == value %}checked{% endif %}
-            class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
-          <span class="text-xs text-gray-600">{{ label }}</span>
-        </label>
-      {% endfor %}
-    </div>
-    {% endwith %}
-
-  {% else %}
-    <input type="text" name="question_{{ question.id }}"
-      value="{{ ans|default_if_none:'' }}"
-      class="w-full rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-      placeholder="Your answer…">
-  {% endif %}
+  </fieldset>
 
   {% for err_id, err_msg in errors.items %}
     {% if err_id == question.id %}<p class="mt-2 text-xs text-red-600">{{ err_msg }}</p>{% endif %}

@@ -18,7 +18,11 @@
 
 <!-- Right sidebar: sticky instructions + progress bar -->
 <div class="flex flex-col items-end w-96 shrink-0 order-last">
-  <div class="sticky top-6 w-full flex flex-col items-end gap-5">
+  <!-- The column caps itself at the viewport and scrolls internally, so a
+       sidebar taller than the window stays reachable instead of being cut
+       off by `position: sticky`. `overflow-y` also clips the x-axis, hence the
+       padding: without it the save button's focus ring is shaved off. -->
+  <div class="sticky top-6 w-full flex flex-col items-end gap-5 max-h-[calc(100vh_-_3rem)] overflow-y-auto px-1">
     <div class="w-full rounded-lg bg-white border border-indigo-200 shadow-sm p-4">
       <h2 class="text-sm font-semibold text-gray-900 mb-2">Instrucciones</h2>
       <div class="text-sm text-gray-600 space-y-3 max-h-[45vh] overflow-y-auto">
@@ -41,6 +45,21 @@
       class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
       {% if is_edit %}Guardar cambios{% else %}Guardar progreso{% endif %}
     </button>
+
+    <!-- Pendientes: shell only. survey_progress.ts fills the list and unhides
+         the panel whenever a visible question is still unanswered. -->
+    <div id="pending-panel" class="w-full rounded-lg bg-white border border-amber-200 shadow-sm p-4" hidden>
+      <h2 class="text-sm font-semibold text-gray-900">
+        Pendientes (<span id="pending-count">0</span>)
+      </h2>
+      <p class="text-xs text-gray-500 mb-2">Selecciona una pregunta para ir a ella.</p>
+      <ul id="pending-list" class="space-y-1 max-h-[30vh] overflow-y-auto"></ul>
+      <p id="pending-more" class="mt-2 text-xs text-gray-500" hidden></p>
+      <button type="button" id="pending-next"
+        class="mt-3 w-full rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 hover:bg-amber-100 transition-colors">
+        Ir a la siguiente &darr;
+      </button>
+    </div>
   </div>
 </div>
 

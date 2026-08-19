@@ -1,7 +1,9 @@
+import re
+
 import pytest
 
 from apps.responses.models import Answer, SurveySubmission
-from apps.surveys.models import SurveyAssignment
+from apps.surveys.models import Question, SurveyAssignment
 
 pytestmark = pytest.mark.django_db
 
@@ -524,3 +526,127 @@ class TestCompanyScoping:
 
         assert response.status_code == 403
         assert response.json()["error"] == "forbidden"
+
+
+class TestPendingCount:
+    """`pending_count` tells a respondent how many questions they still owe.
+
+    Saving is the moment someone believes they are finished, so the saved
+    modal is where the number has to appear — the confirmation modal only
+    ever opens at zero pending.
+    """
+
+    def test_pending_count_is_the_unanswered_visible_total(
+        self, client, active_assignment, survey_with_questions
+    ):
+        first = survey_with_questions["questions"][0]
+        client.post(
+            _survey_url(active_assignment.pk),
+            {f"question_{first.id}": "Una respuesta"},
+        )
+
+        response = client.get(_survey_url(active_assignment.pk))
+
+        assert response.context["pending_count"] == 8
+
+    def test_pending_count_is_zero_once_everything_is_answered(
+        self, client, active_assignment, survey_with_questions
+    ):
+        questions = survey_with_questions["questions"]
+        client.post(_survey_url(active_assignment.pk), _answers_for(questions))
+
+        response = client.get(_survey_url(active_assignment.pk))
+
+        assert response.context["pending_count"] == 0
+
+    def test_saved_modal_states_the_plural_count(
+        self, client, active_assignment, survey_with_questions
+    ):
+        first = survey_with_questions["questions"][0]
+        client.post(
+            _survey_url(active_assignment.pk),
+            {f"question_{first.id}": "Una respuesta"},
+        )
+
+        response = client.get(f"{_survey_url(active_assignment.pk)}?saved=1")
+
+        assert "Te faltan 8 preguntas por responder." in response.content.decode()
+
+    def test_saved_modal_states_the_singular_count(
+        self, client, active_assignment, survey_with_questions
+    ):
+        """Spanish inflects the verb as well as the noun, so one pending
+        question is `Te falta 1 pregunta`, not `Te faltan 1 preguntas`."""
+        questions = survey_with_questions["questions"]
+        answers = _answers_for(questions)
+        answers.pop(f"question_{questions[-1].id}")
+        client.post(_survey_url(active_assignment.pk), answers)
+
+        response = client.get(f"{_survey_url(active_assignment.pk)}?saved=1")
+
+        assert "Te falta 1 pregunta por responder." in response.content.decode()
+
+    def test_saved_modal_omits_the_count_when_nothing_is_pending(
+        self, client, active_assignment, survey_with_questions
+    ):
+        """Answering the last question redirects to `?confirm=1`, but `?saved=1`
+        survives in the URL bar and the back button. The modal has to open
+        without claiming anything is left."""
+        questions = survey_with_questions["questions"]
+        client.post(_survey_url(active_assignment.pk), _answers_for(questions))
+
+        response = client.get(f"{_survey_url(active_assignment.pk)}?saved=1")
+
+        assert response.context["show_saved"] is True
+        assert response.context["pending_count"] == 0
+        assert "por responder." not in response.content.decode()
+
+    def test_pending_count_ignores_questions_gated_out_of_view(
+        self, client, variant_survey, company
+    ):
+        """A question behind an unmet `visible_when` is not owed yet, so it
+        cannot be pending — and appears the moment the gate opens."""
+        assignment = SurveyAssignment.objects.create(
+            company=company, survey=variant_survey, variant="small"
+        )
+        trigger = Question.objects.get(code="t1")
+
+        gated_out = client.get(_survey_url(assignment.pk))
+        assert gated_out.context["pending_count"] == 2  # t1 + s1, not f1
+
+        client.post(_survey_url(assignment.pk), {f"question_{trigger.id}": "true"})
+        gated_in = client.get(_survey_url(assignment.pk))
+
+        assert gated_in.context["pending_count"] == 2  # s1 + the revealed f1
+
+
+class TestPendingPanelShell:
+    """The panel's shell is server-rendered so Tailwind can see its classes;
+    only the list items are built client-side."""
+
+    def test_panel_shell_renders_hidden_and_empty(
+        self, client, active_assignment, survey_with_questions
+    ):
+        """`hidden` and the empty list are the load-time contract: the panel
+        must not flash a server-rendered list before the script decides what
+        actually belongs in it."""
+        response = client.get(_survey_url(active_assignment.pk))
+        html = response.content.decode()
+
+        assert 'id="pending-panel"' in html
+        assert 'id="pending-next"' in html
+        assert "Ir a la siguiente" in html
+        assert re.search(r'<div id="pending-panel"[^>]*\shidden>', html)
+        assert re.search(r'<ul id="pending-list"[^>]*></ul>', html)
+
+    def test_every_question_text_is_tagged_for_the_client(
+        self, client, active_assignment, survey_with_questions
+    ):
+        """The client reads question text from this legend, so every card needs
+        it. Choice options are `<label>`s too, which is why the hook is a class
+        rather than element order."""
+        response = client.get(_survey_url(active_assignment.pk))
+
+        html = response.content.decode()
+        expected = len(survey_with_questions["questions"])
+        assert html.count('class="question-label ') == expected

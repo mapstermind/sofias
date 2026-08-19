@@ -49,6 +49,7 @@ Callers that cannot use a redirect say so in their own dialect: `autosave_survey
 
 ## Other files
 
+- `static/ts/survey_progress.ts` — the client half of taking a survey: it mirrors `visibility.py` to hide gated modules/questions, drives the live progress bar, debounce-posts changed fields to `autosave_survey`, and renders the **Pendientes** panel (first six visible-and-unanswered questions, `y N más` beyond that, click to scroll + ring + focus, `Ir a la siguiente ↓` to walk the form). Each refresh collects the visible cards once and splits them into answered and pending, and every one of those readouts renders that same split — they cannot disagree. Question text comes from each card's `<legend>`, never a duplicated attribute. Classes written here **are** compiled — `static/ts` is an `@source` in `static/css/main.css`.
 - `templatetags/survey_extras.py` — `dict_get`, `as_json` (compact JSON for `data-visible-when` attributes), `likert_pairs` (config `labels` → value/label pairs; values 1–5).
 - `admin.py` — registers the flat models (`Survey`, `Module`, `Question`, `Choice`, `SurveyAssignment`) for inspection. No authoring actions.
 - `tests/` — `test_models.py`, `test_views.py`, `test_visibility.py`.
