@@ -18,7 +18,11 @@
 
 <!-- Right sidebar: sticky instructions + progress bar -->
 <div class="flex flex-col items-end w-96 shrink-0 order-last">
-  <div class="sticky top-6 w-full flex flex-col items-end gap-5 max-h-[calc(100vh_-_3rem)] overflow-y-auto">
+  <!-- The column caps itself at the viewport and scrolls internally, so a
+       sidebar taller than the window stays reachable instead of being cut
+       off by `position: sticky`. `overflow-y` also clips the x-axis, hence the
+       padding: without it the save button's focus ring is shaved off. -->
+  <div class="sticky top-6 w-full flex flex-col items-end gap-5 max-h-[calc(100vh_-_3rem)] overflow-y-auto px-1">
     <div class="w-full rounded-lg bg-white border border-indigo-200 shadow-sm p-4">
       <h2 class="text-sm font-semibold text-gray-900 mb-2">Instrucciones</h2>
       <div class="text-sm text-gray-600 space-y-3 max-h-[45vh] overflow-y-auto">

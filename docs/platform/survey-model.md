@@ -84,30 +84,46 @@ per-employee progress.
 ### Finding what is left to answer
 
 A respondent who skips a question and comes back to a 72-item form should not have
-to hunt for it. `static/ts/survey_progress.ts` recomputes, on load and on every
-`change`/`input`, the set of question cards that are **visible and unanswered** —
-mirroring `visibility.py`, so a card gated out by `visible_when` is never counted
-nor listed. That single set drives both the progress bar and the **Pendientes**
-panel.
+to hunt for it. On load and on every `change`/`input`,
+`static/ts/survey_progress.ts` collects the question cards a respondent can
+currently see and answer — mirroring `visibility.py`, so a card gated out by
+`visible_when` is in neither set — and splits that one collection into answered
+and pending. The progress bar and the **Pendientes** panel are two renderings of
+that split, not two computations of it, so they cannot report different totals.
 
 The panel is the last card in the sticky sidebar, below **Guardar progreso**. It
 renders only while at least one visible question is unanswered and removes itself
 once the count reaches zero. It lists the **first six** pending questions in
 document order, each a button showing the question text clamped to two lines and
-read straight out of that card's own `<label>` — the text is never duplicated into
-a data attribute or a second context variable. When more than six remain, a
+read straight out of that card's own `<legend>` — the text is never duplicated
+into a data attribute or a second context variable. When more than six remain, a
 `y N más` line sits below the list and outside its scroll container, so the
-remaining count is legible without scrolling. The list carries its own
-viewport-relative height cap, which is what absorbs pressure on the sidebar's
-vertical budget: the instructions card keeps its own cap, and the panel yields
-rather than pushing the save button off-screen.
+remaining count is legible without scrolling.
+
+Adding a fourth card to the sidebar puts it over the height of a laptop window,
+and a `position: sticky` column taller than the viewport simply hangs its bottom
+below the fold with no way to reach it. So the sticky column caps itself at the
+window height and scrolls internally, and each card that can grow without bound
+carries its own cap inside that budget — instructions and the pending list both.
+The column's `overflow-y` clips the x-axis too, which is why it carries a
+sliver of horizontal padding: without it the save button's focus ring is shaved
+off at the sides.
 
 Clicking an entry scrolls its card to the centre of the viewport, flashes a ring
 for 1.5 s, and moves keyboard focus to the card's first control. Focus moves
 because scrolling alone leaves the tab order untouched — a keyboard or
-screen-reader user would end up looking at the question without being in it. The
-panel carries no `aria-live`: it rebuilds on every keystroke, and announcing each
-rebuild would make it chatter continuously.
+screen-reader user would end up looking at the question without being in it. What
+they hear on arrival is why `_question.html` wraps each question in a
+`<fieldset>` with its text as the `<legend>`: most types are a group of radios,
+and the control focus lands on is named by its *option*, so without the legend a
+screen reader announces "Nunca" and never the question. Only one card wears the
+ring at a time — jumping to a card that is still ringed restarts the 1.5 s rather
+than letting the earlier timer strip it moments later.
+
+The list itself is rebuilt only when the six questions it names change, so typing
+into a text answer does not throw away its scroll position on every keystroke.
+The panel carries no `aria-live`: its count moves with every answer, and
+announcing each move would make it chatter continuously.
 
 **Ir a la siguiente ↓** walks the pending set: it jumps to the first pending
 question that *follows the last one jumped to* in document order, wrapping to the

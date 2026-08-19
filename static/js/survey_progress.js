@@ -18,9 +18,9 @@
  *   #pending-more     — "y N más", outside the list so it survives scrolling
  *   #pending-next     — walks to the next pending question, wrapping at the end
  *
- * Progress and the pending panel are two renderings of one computation — the
- * set of question cards that are visible and unanswered — so they cannot
- * disagree about what is left.
+ * Progress and the pending panel are two renderings of one computation: each
+ * refresh builds the set of visible question cards once and splits it into
+ * answered and pending, so the two cannot disagree about what is left.
  *
  * Conditional visibility mirrors apps/surveys/visibility.py. Each question is
  * wrapped in `.question-card[data-question-code][data-question-name]
@@ -138,60 +138,76 @@ function applyVisibility(form) {
         card.hidden = !ruleVisible(parseRule(card.dataset["visibleWhen"]), answers, moduleToCodes);
     }
 }
-// --- Progress ---------------------------------------------------------------
-function isAnswered(name, form) {
-    return readValue(name, form) !== null;
+// --- What is left to answer -------------------------------------------------
+const PENDING_LIMIT = 6;
+const HIGHLIGHT_MS = 1500;
+const RING_CLASSES = ["ring-2", "ring-amber-400", "ring-offset-2"];
+/** Question cards the respondent can see and answer, in document order. A card
+ *  carrying no field name is not answerable, so it belongs to neither side of
+ *  the split — counting it as a question nobody can answer would leave the
+ *  progress bar permanently short of its own total. */
+function visibleCards(form) {
+    return questionCards(form).filter((card) => !card.hidden && Boolean(card.dataset["questionName"]));
 }
-function updateProgress() {
-    const form = document.querySelector("#survey-form");
+function isAnswered(card, form) {
+    const name = card.dataset["questionName"];
+    return name ? readValue(name, form) !== null : false;
+}
+/** The unanswered half of `visible`. The progress bar and the Pendientes panel
+ *  are both derived from this one split rather than recomputing the predicate
+ *  each, so they cannot report different totals. */
+function pendingCards(visible, form) {
+    return visible.filter((card) => !isAnswered(card, form));
+}
+function updateProgress(total, answered) {
     const bar = document.getElementById("progress-bar");
     const countEl = document.getElementById("progress-count");
     const totalEl = document.getElementById("progress-total");
-    if (!form || !bar || !countEl || !totalEl)
+    if (!bar || !countEl || !totalEl)
         return;
-    const visibleCards = questionCards(form).filter((c) => !c.hidden);
-    const total = visibleCards.length;
     if (total === 0) {
         countEl.textContent = "0/0";
         bar.style.width = "0%";
         return;
     }
-    const answered = visibleCards.filter((c) => {
-        const name = c.dataset["questionName"];
-        return name ? isAnswered(name, form) : false;
-    }).length;
-    const pct = Math.round((answered / total) * 100);
-    bar.style.width = `${pct}%`;
+    bar.style.width = `${Math.round((answered / total) * 100)}%`;
     countEl.textContent = `${answered}/${total}`;
 }
 // --- Pending questions panel ------------------------------------------------
-const PENDING_LIMIT = 6;
-const HIGHLIGHT_MS = 1500;
-const RING_CLASSES = ["ring-2", "ring-amber-400", "ring-offset-2"];
 /** The card most recently jumped to, so the next-pending button advances
  *  instead of re-selecting whatever is already under the cursor. */
 let lastRevealed = null;
-/** Visible, unanswered question cards in document order. */
-function pendingCards(form) {
-    return questionCards(form).filter((card) => {
-        if (card.hidden)
-            return false;
-        const name = card.dataset["questionName"];
-        return name ? !isAnswered(name, form) : false;
-    });
-}
-/** The question's own text. Choice options are `<label>`s too, so this reads
- *  the tagged one rather than trusting document order. */
+/** The question's own text, read from the `<legend>` naming its fieldset. The
+ *  choice options are `<label>`s in the same card, so the hook has to be the
+ *  tag we control rather than document order. */
 function questionLabel(card) {
     var _a;
     const label = card.querySelector(".question-label");
     return ((_a = label === null || label === void 0 ? void 0 : label.textContent) !== null && _a !== void 0 ? _a : "").trim();
 }
+let ringTimer = null;
+let ringedCard = null;
+/** Highlight one card for HIGHLIGHT_MS. A second reveal restarts the clock
+ *  rather than letting it run: `classList.add` is idempotent, not a counter, so
+ *  a timer left over from the previous reveal would strip the ring moments
+ *  after the respondent was sent to look at it. */
+function ring(card) {
+    if (ringTimer !== null) {
+        window.clearTimeout(ringTimer);
+        ringedCard === null || ringedCard === void 0 ? void 0 : ringedCard.classList.remove(...RING_CLASSES);
+    }
+    ringedCard = card;
+    card.classList.add(...RING_CLASSES);
+    ringTimer = window.setTimeout(() => {
+        card.classList.remove(...RING_CLASSES);
+        ringTimer = null;
+        ringedCard = null;
+    }, HIGHLIGHT_MS);
+}
 function revealCard(card) {
     lastRevealed = card;
     card.scrollIntoView({ behavior: "smooth", block: "center" });
-    card.classList.add(...RING_CLASSES);
-    window.setTimeout(() => card.classList.remove(...RING_CLASSES), HIGHLIGHT_MS);
+    ring(card);
     // Scrolling alone leaves the tab order untouched, so a keyboard or
     // screen-reader user would be looking at the question without being in it.
     // `preventScroll` keeps focus from snapping past the smooth scroll.
@@ -213,22 +229,35 @@ function pendingItem(card) {
     item.appendChild(button);
     return item;
 }
-function renderPending(form) {
+/** The codes currently listed. A refresh that cannot change the list must not
+ *  rebuild it: `replaceChildren` resets the list's own scroll position, so
+ *  typing into a text answer would otherwise yank the list back to the top on
+ *  every keystroke. */
+let shownSignature = "";
+function renderPending(pending) {
     const panel = document.getElementById("pending-panel");
     const list = document.getElementById("pending-list");
     const countEl = document.getElementById("pending-count");
     const moreEl = document.getElementById("pending-more");
     if (!panel || !list || !countEl || !moreEl)
         return;
-    const pending = pendingCards(form);
     panel.hidden = pending.length === 0;
     if (pending.length === 0) {
+        // Leave nothing stale behind the `hidden`: the panel is one refresh away
+        // from being shown again with a different count.
         list.replaceChildren();
+        shownSignature = "";
+        countEl.textContent = "0";
+        moreEl.hidden = true;
         return;
     }
     countEl.textContent = String(pending.length);
     const shown = pending.slice(0, PENDING_LIMIT);
-    list.replaceChildren(...shown.map(pendingItem));
+    const signature = shown.map((c) => { var _a; return (_a = c.dataset["questionCode"]) !== null && _a !== void 0 ? _a : ""; }).join("|");
+    if (signature !== shownSignature) {
+        shownSignature = signature;
+        list.replaceChildren(...shown.map(pendingItem));
+    }
     const remaining = pending.length - shown.length;
     moreEl.hidden = remaining === 0;
     moreEl.textContent = `y ${remaining} más`;
@@ -245,7 +274,7 @@ function renderPending(form) {
  *  respondent answering the question they jumped to: the element leaves the
  *  pending list, and the walk still resumes from where it left off. */
 function goToNextPending(form) {
-    const pending = pendingCards(form);
+    const pending = pendingCards(visibleCards(form), form);
     if (pending.length === 0)
         return;
     const cursor = lastRevealed;
@@ -260,8 +289,10 @@ function goToNextPending(form) {
 }
 function refresh(form) {
     applyVisibility(form);
-    updateProgress();
-    renderPending(form);
+    const visible = visibleCards(form);
+    const pending = pendingCards(visible, form);
+    updateProgress(visible.length, visible.length - pending.length);
+    renderPending(pending);
 }
 // --- Auto-save --------------------------------------------------------------
 function buildFieldData(name, form) {

@@ -24,7 +24,7 @@
 | --- | --- |
 | `apps/surveys/views.py` | Add `pending_count` to the `survey_detail` render context. Nothing else changes. |
 | `templates/surveys/_progress_saved_modal.html` | State the pending count when saving with questions left. |
-| `templates/surveys/_question.html` | Tag the question-text `<label>` with `question-label` so the client can read it unambiguously. |
+| `templates/surveys/_question.html` | Wrap each question in a `<fieldset>` and tag its `<legend>` with `question-label`, so the client can read the text unambiguously and a screen reader names the group. |
 | `templates/surveys/survey_detail.html` | Static shell of the Pendientes panel (empty, `hidden`), plus the sticky column's height cap. |
 | `static/ts/survey_progress.ts` | Compute the pending set, render the panel, and handle click / jump-button navigation. |
 | `apps/surveys/tests/test_views.py` | Server-side coverage for `pending_count` and the modal copy. |
@@ -177,7 +177,7 @@ git commit -m "Tell a respondent how many questions are left when saving progres
 - Test: `apps/surveys/tests/test_views.py`
 
 **Interfaces:**
-- Produces, for Task 3 to query: `.question-label` (the question-text `<label>` inside every `.question-card`), `#pending-panel`, `#pending-count`, `#pending-list`, `#pending-more`, `#pending-next`.
+- Produces, for Task 3 to query: `.question-label` (the question-text `<legend>` inside every `.question-card`), `#pending-panel`, `#pending-count`, `#pending-list`, `#pending-more`, `#pending-next`.
 - The panel ships `hidden` and empty. Task 3 is what fills and unhides it, so after this task the page looks unchanged — that is the expected outcome, not a bug.
 
 - [x] **Step 1: Write the failing test**
@@ -200,14 +200,17 @@ class TestPendingPanelShell:
         assert 'id="pending-next"' in html
         assert "Ir a la siguiente" in html
 
-    def test_question_text_label_is_tagged_for_the_client(
+    def test_every_question_text_is_tagged_for_the_client(
         self, client, active_assignment, survey_with_questions
     ):
-        """The client reads question text from this label. Choice options are
-        `<label>`s too, so the hook has to be a class, not element order."""
+        """The client reads question text from this legend, so every card needs
+        it. Choice options are `<label>`s too, which is why the hook is a class
+        rather than element order."""
         response = client.get(_survey_url(active_assignment.pk))
 
-        assert "question-label" in response.content.decode()
+        html = response.content.decode()
+        expected = len(survey_with_questions["questions"])
+        assert html.count('class="question-label ') == expected
 ```
 
 - [x] **Step 2: Run the test to verify it fails**
@@ -215,14 +218,18 @@ class TestPendingPanelShell:
 Run: `pytest apps/surveys/tests/test_views.py::TestPendingPanelShell -v`
 Expected: FAIL — both assertions missing.
 
-- [x] **Step 3: Tag the question-text label**
+- [x] **Step 3: Tag the question-text legend**
 
-In `templates/surveys/_question.html`, change the question label's opening tag only (leave the choice `<label>`s alone):
+In `templates/surveys/_question.html`, wrap the question text and the per-type
+controls in a `<fieldset>` and make the text its `<legend>` (leave the choice
+`<label>`s alone). Tailwind's preflight does not reset either element, so the
+reset classes are required or every card grows a groove border:
 
 ```html
-  <label class="question-label block text-sm font-medium text-gray-800 mb-3">
-    {{ question.text }}
-  </label>
+  <fieldset class="m-0 p-0 border-0 min-w-0">
+    <legend class="question-label block p-0 text-sm font-medium text-gray-800 mb-3">
+      {{ question.text }}
+    </legend>
 ```
 
 - [x] **Step 4: Add the panel shell to the sidebar**
@@ -277,7 +284,7 @@ git commit -m "Add the pending-questions panel shell to the survey sidebar"
 - Modify: `static/ts/survey_progress.ts` (new section after `// --- Progress ---` and before `// --- Auto-save ---`; plus the `refresh` function)
 
 **Interfaces:**
-- Consumes from the existing module: `questionCards(form): HTMLElement[]`, `isAnswered(name, form): boolean`, `refresh(form): void`. Consumes from Task 2: `#pending-panel`, `#pending-count`, `#pending-list`, `#pending-more`, `.question-label`.
+- Consumes from the existing module: `questionCards(form): HTMLElement[]`, `isAnswered(card, form): boolean`, `refresh(form): void`. Consumes from Task 2: `#pending-panel`, `#pending-count`, `#pending-list`, `#pending-more`, `.question-label`.
 - Produces for Task 4: `pendingCards(form: HTMLFormElement): HTMLElement[]` (visible-and-unanswered cards in document order), `revealCard(card: HTMLElement): void`, and the module-level `lastRevealed: HTMLElement | null`.
 
 - [x] **Step 1: Add the pending-set helpers**
@@ -503,10 +510,20 @@ git commit -m "Walk to the next unanswered question from the sidebar"
 
 ## Status
 
-All four tasks are implemented and committed on `pending-questions-panel`, and the full suite passes (377 tests). The two **Verify in the browser** steps are deliberately left unchecked — they are a hand-off to a human reviewer, since this repo has no JavaScript test runner and is not gaining one for this change.
+All four tasks are implemented and committed on `pending-questions-panel`, and the full suite passes (379 tests). The two **Verify in the browser** steps are deliberately left unchecked — they are a hand-off to a human reviewer, since this repo has no JavaScript test runner and is not gaining one for this change.
+
+A code-review pass then folded in a set of fixes on top of the four tasks:
+
+- Progress and the panel now derive from **one** split of the visible cards (`visibleCards` → `pendingCards`) instead of computing the same predicate twice with fallbacks that disagreed on a card missing `data-question-name`.
+- `ring()` keeps a single timer, so re-revealing a card restarts the 1.5 s rather than being cut short by the previous timer.
+- The list rebuilds only when the six codes it names change, preserving its own scroll position while a respondent types.
+- The zero-pending path clears `#pending-count` and `#pending-more` rather than leaving stale text behind the `hidden`.
+- Questions are wrapped in `<fieldset>`/`<legend>` so the focus move announces the question and not just the option.
+- The sticky column's horizontal padding stops `overflow-y` clipping the save button's focus ring.
+- Tests added for the zero-pending modal guard and for `pending_count` under `visible_when`; the shell test now asserts `hidden` and an empty list, and the legend test asserts every card carries the hook.
 
 ## Out of scope
 
 - **Responsive / mobile layout.** `templates/surveys/survey_detail.html` lays the sidebar out as a fixed `w-96` flex column with no breakpoint, so it already overflows horizontally on a narrow viewport. The panel inherits that and is no worse than the rest of the sidebar. A partial fix here would be actively harmful: the column carries `order-last`, so simply stacking it would push the instructions, progress bar, save button *and* this panel below a 72-question form. This is deliberately left to a separate, focused responsive pass, and the panel's markup avoids fixed pixel widths so that pass can re-place it without a rewrite.
 - **A JavaScript test runner.** None exists in this repo, and adding one is not part of this change.
-- **`aria-live` on the panel.** It rebuilds on every keystroke; announcing each rebuild would make a screen reader chatter continuously. The focus move in `revealCard` is what carries the accessibility win.
+- **`aria-live` on the panel.** Its count moves with every answer; announcing each move would make a screen reader chatter continuously. The focus move in `revealCard`, landing inside a `<fieldset>` the `<legend>` names, is what carries the accessibility win.
