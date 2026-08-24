@@ -1,10 +1,14 @@
 from django import forms
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 
 from apps.accounts.models import (
+    MAX_ACTIVATION_AGE,
+    MIN_ACTIVATION_AGE,
     CompanyArea,
     CompanyLocation,
     User,
+    UserProfile,
     normalize_setup_access_code,
 )
 
@@ -207,6 +211,10 @@ _SELECT_CLASSES = (
     "block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm "
     "focus:border-indigo-500 focus:ring-indigo-500"
 )
+_DATE_SELECT_CLASSES = (
+    "block w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm "
+    "focus:border-indigo-500 focus:ring-indigo-500"
+)
 
 
 class ProfileActivationForm(forms.Form):
@@ -267,6 +275,25 @@ class ProfileActivationForm(forms.Form):
             }
         ),
     )
+    sex = forms.ChoiceField(
+        label="Sexo",
+        choices=[("", "Selecciona tu sexo"), *UserProfile.Sex.choices],
+        error_messages={
+            "required": "Selecciona tu sexo.",
+            "invalid_choice": "Selecciona una opción válida.",
+        },
+        widget=forms.Select(attrs={"class": _SELECT_CLASSES}),
+    )
+    # `required=False` with a presence check in `clean_date_of_birth`, not
+    # `required=True`: `SelectDateWidget` only renders the "Día/Mes/Año"
+    # placeholder options when the field is optional. Left required, it would
+    # pre-select the first year in the list, so skipping the question would
+    # silently record a wrong birth date instead of raising an error.
+    date_of_birth = forms.DateField(
+        label="Fecha de nacimiento",
+        required=False,
+        error_messages={"invalid": "Escribe una fecha de nacimiento válida."},
+    )
     area = forms.ModelChoiceField(
         queryset=CompanyArea.objects.none(),
         label="Área",
@@ -297,6 +324,18 @@ class ProfileActivationForm(forms.Form):
         """
         super().__init__(*args, **kwargs)
         self.company = company
+
+        # Built here rather than at import time so the offered years do not go
+        # stale in a long-running process, and so the dropdown can never offer a
+        # year `clean_date_of_birth` would reject.
+        today = timezone.localdate()
+        self.fields["date_of_birth"].widget = forms.SelectDateWidget(
+            years=range(
+                today.year - MIN_ACTIVATION_AGE, today.year - MAX_ACTIVATION_AGE - 1, -1
+            ),
+            empty_label=("Año", "Mes", "Día"),
+            attrs={"class": _DATE_SELECT_CLASSES},
+        )
 
         self.fields["area"].queryset = CompanyArea.objects.filter(
             company=company, is_active=True
@@ -342,3 +381,24 @@ class ProfileActivationForm(forms.Form):
                 "El código de referencia debe ser alfanumérico."
             )
         return code
+
+    def clean_date_of_birth(self):
+        """`UserProfile.clean()` guards the admin and the shell; this guards the
+        employee, who needs a Spanish message rather than a stack trace. The
+        form is a plain `Form`, so the model's `clean()` never runs on POST."""
+        date_of_birth = self.cleaned_data.get("date_of_birth")
+        if date_of_birth is None:
+            raise forms.ValidationError("Escribe tu fecha de nacimiento.")
+
+        today = timezone.localdate()
+        birthday_passed = (today.month, today.day) >= (
+            date_of_birth.month,
+            date_of_birth.day,
+        )
+        age = today.year - date_of_birth.year - (0 if birthday_passed else 1)
+        if not MIN_ACTIVATION_AGE <= age <= MAX_ACTIVATION_AGE:
+            raise forms.ValidationError(
+                f"La fecha de nacimiento debe corresponder a una edad entre "
+                f"{MIN_ACTIVATION_AGE} y {MAX_ACTIVATION_AGE} años."
+            )
+        return date_of_birth
