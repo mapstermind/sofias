@@ -4,6 +4,11 @@
 
 Draft | Current | Archived
 
+[Pick one, delete the rest. These three are the whole vocabulary — `Draft`
+while the doc is still being written, `Current` once the feature ships, and
+`Archived` when the doc moves to `docs/archive/`. A short clause after the word
+is fine: "Current — implemented in `apps/x`."]
+
 ## What this does
 [One paragraph. Plain language. What the user can do, what the 
 system does, what changes.]

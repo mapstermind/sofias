@@ -6,6 +6,75 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SOFIA-S is a Django 6.0 web application for survey processing and reporting. It handles survey creation, response collection, data processing, and dynamic dashboard/report generation — built around the Mexican NOM-035 psychosocial-risk questionnaire. Frontend uses Django templates with TailwindCSS. **User-facing copy and URLs are in Spanish; code, comments, and identifiers are in English.**
 
+## Triage before you start
+
+**Run this before writing any code, and before any other exploration.** Every
+request that changes the repo lands in one of three branches: decide which,
+say which, and follow it. The files in `docs/platform/` are the list of
+documented features — read the one that matches before deciding.
+
+**A · No doc needed.** Proceed normally; no feature doc is involved:
+
+- a bug fix that restores behavior the feature doc already describes
+- a typo, copy, or styling fix
+- a dependency bump, an asset rebuild (`npm run build:css` / `build:js`)
+- a test-only change, or a refactor with no behavior change
+- an edit to docs, comments, or `CLAUDE.md` itself
+- answering a question — a question is not a change, so skip triage entirely
+
+**B · Change to a documented feature.** Some `docs/platform/<feature>.md` covers
+the thing being changed. If the request did not already say so ("refactor X",
+"expand X", "change how X works"), **confirm that intent in one question before
+starting** — the user may believe they are asking for something new. Then follow
+the refactor track below.
+
+**C · New, undocumented feature.** No feature doc covers it. **Stop before writing
+any code.** Name the docs you checked and what is missing, then offer to draft
+`docs/platform/<feature>.md` from `docs/platform/feature-template.md` using
+`superpowers:brainstorming`. Implementation starts only once that doc exists and
+the user has signed off on it. **Never edit `feature-template.md`** — copy it.
+
+**B or C?** Does the change fit inside the existing doc's declared `Scope`? Yes →
+B, extend that doc. No, it would need a `Scope` section of its own → C, new doc.
+When it is genuinely ambiguous, ask one question naming the candidate doc instead
+of guessing.
+
+**Override.** "skip triage", "this is a chore", or a direct instruction to just
+make the change puts the request in branch A. Take it at face value.
+
+### The refactor track (B)
+
+1. **Change brief** → `docs/platform/wip/<feature>-change.md`: what changes, why,
+   and which parts of the live feature doc it makes wrong.
+2. **ADR check.** If the change supersedes a decision recorded in `docs/adr/`,
+   write a **new** ADR — it may describe both the old and the new behavior, which
+   is the one place that history belongs — and set the superseded ADR's `Status:`
+   line to `Superseded by ADR-000X`.
+3. **Plan** → `docs/platform/wip/<feature>-tasks.md`
+   (`superpowers:writing-plans`). **Its last task is always: rewrite
+   `docs/platform/<feature>.md` to describe the new behavior in present tense,
+   with no migration commentary, and list any new ADR under `## Linked ADRs`.**
+   That rewrite ships in the same diff and is reviewed with the code — it is not
+   a post-merge chore.
+4. **Implement, review, open the PR.**
+5. **Clean up:** leave `docs/platform/wip/` holding nothing but its README.
+
+### The new-feature track (C)
+
+The same shape, with two differences: step 1 creates the live doc
+`docs/platform/<feature>.md` from the template (there is no `-change.md`), and
+the last plan task trims that doc to its post-ship form rather than rewriting it.
+
+### Scaffolding hygiene
+
+On `main`, `docs/platform/wip/` holds nothing but its README. Check it at session
+start and again before opening a PR. If it holds files that do not belong to the
+current branch's work, say so — a plan left behind is a stale checklist
+describing steps that have already happened.
+
+The full human-side process, with the prompts for each step, is
+[`docs/internal/prompting-workflow.md`](../docs/internal/prompting-workflow.md).
+
 ## Tech Stack
 
 - **Python 3.13** (managed via Poetry)
@@ -108,9 +177,9 @@ apps/            # Django apps; each app has its own CLAUDE.md with details
 
 **When working inside an app, read that app's `CLAUDE.md` first** — it holds the model/flow details not repeated here.
 
-**Feature docs live in `docs/platform/`.** This project is documentation-driven (see `docs/internal/prompting-workflow.md`): the per-feature doc `docs/platform/<feature>.md` is the source of truth, and its derived implementation plan is `docs/platform/<feature>-tasks.md`. When a skill (brainstorming, writing-plans, etc.) produces or rewrites either artifact, write it under `docs/platform/` — never under `docs/superpowers/`, a `specs/` folder, or a scratch path.
+**Feature docs live in `docs/platform/`.** This project is documentation-driven (see `docs/internal/prompting-workflow.md`): the per-feature doc `docs/platform/<feature>.md` is the source of truth. When a skill (brainstorming, writing-plans, etc.) produces or rewrites it, write it under `docs/platform/` — never under `docs/superpowers/`, a `specs/` folder, or a scratch path.
 
-The plan is **disposable scaffolding**: delete it when its branch merges (`prompting-workflow.md` step 10). The feature doc survives and is what the next reader consults; a plan left behind is a stale checklist describing steps that have already happened.
+**Everything derived from it is disposable scaffolding and lives in `docs/platform/wip/`** — the change brief `<feature>-change.md` and the implementation plan `<feature>-tasks.md`. Both are deleted when their branch merges (`prompting-workflow.md` step 10). The feature doc survives and is what the next reader consults; scaffolding left behind is a stale checklist describing steps that have already happened.
 
 **Live documentation describes only the current implementation.** After a refactor, rewrite the affected docs as if the new implementation were always the original. Do **not** leave migration commentary behind — no "replaces the old X", "formerly Y", "superseded Z", "deprecated alias", "no longer supported", or before/after comparisons. A reader should not be able to tell from a live doc that a previous implementation ever existed.
 
@@ -120,7 +189,9 @@ This applies to everything an agent or developer reads as current truth: `docs/p
 
 **Never edit a file under `docs/adr/` without explicit approval.** When a change makes an ADR inaccurate, describe the discrepancy and the proposed wording, then wait — do not fold it into the change silently. An ADR carries the reasoning behind a decision, so an unreviewed edit can erase why an approach was rejected while looking like routine upkeep.
 
-What may be corrected once approved is the **Consequences** section, and only where a consequence describes a downstream implementation detail that has since changed. Context, Decision, and Alternatives considered are frozen: they state what was true and what was weighed at the time, and stay that way even when the code moves on. If the decision itself no longer holds, that calls for a new ADR superseding this one, not a rewrite of it.
+One edit needs no separate approval: when a new ADR supersedes an existing one, set the superseded ADR's `Status:` line to `Superseded by ADR-000X` as part of the superseding ADR's change. That line only, and only alongside the ADR that replaces it.
+
+What may otherwise be corrected once approved is the **Consequences** section, and only where a consequence describes a downstream implementation detail that has since changed. Context, Decision, and Alternatives considered are frozen: they state what was true and what was weighed at the time, and stay that way even when the code moves on. If the decision itself no longer holds, that calls for a new ADR superseding this one, not a rewrite of it.
 
 Rationale: the platform is pre-production, so there are no external consumers to warn about a transition. Migration notes in live docs are pure noise that ages badly and misleads readers into thinking a compatibility path exists.
 
