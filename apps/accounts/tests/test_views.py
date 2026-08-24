@@ -555,7 +555,7 @@ def _activation_post(company, **overrides):
     payload = {
         "reference_code": company.reference_code,
         "first_name": "Ana",
-        "last_name": "López",
+        "paternal_last_name": "López",
     }
     payload.update(overrides)
     return payload
@@ -840,7 +840,7 @@ class TestSetupProfileView:
                 company,
                 area=area.pk,
                 first_name="Ana",
-                last_name="López",
+                paternal_last_name="López",
                 position="Analista",
             ),
         )
@@ -848,7 +848,7 @@ class TestSetupProfileView:
         user.refresh_from_db()
         user.profile.refresh_from_db()
         assert user.first_name == "Ana"
-        assert user.last_name == "López"
+        assert user.paternal_last_name == "López"
         assert user.profile.position == "Analista"
 
     def test_missing_name_blocks_activation(
@@ -863,7 +863,9 @@ class TestSetupProfileView:
 
         response = client.post(
             SETUP_PROFILE_URL,
-            _activation_post(company, area=area.pk, first_name="", last_name=""),
+            _activation_post(
+                company, area=area.pk, first_name="", paternal_last_name=""
+            ),
         )
 
         user.profile.refresh_from_db()
@@ -897,8 +899,11 @@ class TestSetupProfileView:
             email="prefill@example.com", company=company, is_activated=False
         )
         user.first_name = "Ana"
-        user.last_name = "López"
-        user.save(update_fields=["first_name", "last_name"])
+        user.paternal_last_name = "López"
+        user.maternal_last_name = "Núñez"
+        user.save(
+            update_fields=["first_name", "paternal_last_name", "maternal_last_name"]
+        )
         user.profile.position = "Analista"
         user.profile.save(update_fields=["position"])
         client.force_login(user)
@@ -906,7 +911,8 @@ class TestSetupProfileView:
         form = client.get(SETUP_PROFILE_URL).context["form"]
 
         assert form.initial["first_name"] == "Ana"
-        assert form.initial["last_name"] == "López"
+        assert form.initial["paternal_last_name"] == "López"
+        assert form.initial["maternal_last_name"] == "Núñez"
         assert form.initial["position"] == "Analista"
 
     def test_name_is_not_saved_when_activation_fails(

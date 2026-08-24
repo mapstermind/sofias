@@ -60,15 +60,28 @@ class User(AbstractUser):
         help_text="Obliga a definir una contraseña nueva en el siguiente ingreso.",
     )
 
-    # Redeclared purely to carry the collation: the employee roster is ordered by
-    # these two columns, and an "Álvarez" sorting below every ASCII surname is
-    # the most visible instance of the byte-order problem.
+    # `AbstractUser` is abstract, so setting an inherited field to None removes
+    # the column outright. A Mexican name is nombre(s) + paterno + materno, and
+    # the two surnames are not interchangeable: the roster sorts by the paternal
+    # one.
+    last_name = None
+
+    # These carry the collation because the employee roster orders by them, and
+    # an "Álvarez" sorting below every ASCII surname is the most visible
+    # instance of the byte-order problem.
     first_name = models.CharField(
         "nombre(s)", max_length=150, blank=True, db_collation=SPANISH_COLLATION
     )
-    last_name = models.CharField(
-        "apellidos", max_length=150, blank=True, db_collation=SPANISH_COLLATION
+    paternal_last_name = models.CharField(
+        "apellido paterno", max_length=150, blank=True, db_collation=SPANISH_COLLATION
     )
+    maternal_last_name = models.CharField(
+        "apellido materno", max_length=150, blank=True, db_collation=SPANISH_COLLATION
+    )
+
+    def get_full_name(self):
+        parts = (self.first_name, self.paternal_last_name, self.maternal_last_name)
+        return " ".join(part for part in parts if part)
 
 
 class Company(models.Model):

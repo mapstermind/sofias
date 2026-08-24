@@ -1,5 +1,5 @@
 import pytest
-from django.core.exceptions import ValidationError
+from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.db import IntegrityError
 from django.utils import timezone
 
@@ -127,12 +127,39 @@ class TestSpanishTextOrdering:
 
     def test_employee_roster_orders_surnames_as_spanish(self, make_user):
         for i, surname in enumerate(("Zamora", "Álvarez", "Núñez", "Nogales")):
-            make_user(email=f"user{i}@example.com", last_name=surname)
+            make_user(email=f"user{i}@example.com", paternal_last_name=surname)
 
         assert [
-            u.last_name
-            for u in User.objects.exclude(last_name="").order_by("last_name")
+            u.paternal_last_name
+            for u in User.objects.exclude(paternal_last_name="").order_by(
+                "paternal_last_name"
+            )
         ] == ["Álvarez", "Nogales", "Núñez", "Zamora"]
+
+
+@pytest.mark.django_db
+class TestUserFullName:
+    def test_joins_both_surnames(self, make_user):
+        user = make_user(
+            email="full@example.com",
+            first_name="Ana María",
+            paternal_last_name="López",
+            maternal_last_name="Núñez",
+        )
+        assert user.get_full_name() == "Ana María López Núñez"
+
+    def test_omits_a_missing_maternal_surname(self, make_user):
+        user = make_user(
+            email="one@example.com", first_name="Ana", paternal_last_name="López"
+        )
+        assert user.get_full_name() == "Ana López"
+
+    def test_is_empty_when_nothing_is_recorded(self, make_user):
+        assert make_user(email="blank@example.com").get_full_name() == ""
+
+    def test_has_no_last_name_field(self):
+        with pytest.raises(FieldDoesNotExist):
+            User._meta.get_field("last_name")
 
 
 class TestUserProfileCatalogLinks:

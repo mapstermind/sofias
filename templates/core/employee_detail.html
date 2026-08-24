@@ -1,7 +1,7 @@
 {% extends "base_app.html" %}
 {% load survey_extras valuation_extras %}
 
-{% block title %}{{ employee_profile.user.first_name }} {{ employee_profile.user.last_name }} — {{ company.name }} | SOFIA-S{% endblock %}
+{% block title %}{{ employee_profile.user.get_full_name }} — {{ company.name }} | SOFIA-S{% endblock %}
 
 {% block header_nav %}
   <span class="text-gray-300 select-none">|</span>
@@ -16,8 +16,8 @@
   {% endif %}
   <span class="text-gray-300 select-none">|</span>
   <span class="font-semibold text-gray-800">
-    {% if employee_profile.user.first_name or employee_profile.user.last_name %}
-      {{ employee_profile.user.first_name }} {{ employee_profile.user.last_name }}
+    {% if employee_profile.user.get_full_name %}
+      {{ employee_profile.user.get_full_name }}
     {% else %}
       {{ employee_profile.user.email }}
     {% endif %}
@@ -34,16 +34,16 @@
   <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5" style="flex: 2">
     <div class="flex items-center gap-4">
       <div class="shrink-0 flex size-12 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold uppercase text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
-        {% if emp.first_name or emp.last_name %}
-          {{ emp.first_name|slice:":1" }}{{ emp.last_name|slice:":1" }}
+        {% if emp.first_name or emp.paternal_last_name %}
+          {{ emp.first_name|slice:":1" }}{{ emp.paternal_last_name|slice:":1" }}
         {% else %}
           {{ emp.email|slice:":2" }}
         {% endif %}
       </div>
       <div class="min-w-0">
         <h1 class="text-xl font-bold text-gray-900 truncate">
-          {% if emp.first_name or emp.last_name %}
-            {{ emp.first_name }} {{ emp.last_name }}
+          {% if emp.get_full_name %}
+            {{ emp.get_full_name }}
           {% else %}
             <span class="text-gray-400 font-normal italic">Sin nombre</span>
           {% endif %}

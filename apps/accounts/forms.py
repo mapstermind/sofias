@@ -233,12 +233,26 @@ class ProfileActivationForm(forms.Form):
             attrs={"autocomplete": "given-name", "class": _TEXT_CLASSES}
         ),
     )
-    last_name = forms.CharField(
-        label="Apellidos",
+    paternal_last_name = forms.CharField(
+        label="Apellido paterno",
         max_length=150,
-        error_messages={"required": "Escribe tus apellidos."},
+        error_messages={"required": "Escribe tu apellido paterno."},
         widget=forms.TextInput(
             attrs={"autocomplete": "family-name", "class": _TEXT_CLASSES}
+        ),
+    )
+    # Optional: not everyone has two surnames, and requiring it would block a
+    # foreign-national employee at the activation gate for no analytical gain.
+    maternal_last_name = forms.CharField(
+        label="Apellido materno",
+        max_length=150,
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "additional-name",
+                "placeholder": "Opcional",
+                "class": _TEXT_CLASSES,
+            }
         ),
     )
     position = forms.CharField(

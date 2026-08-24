@@ -51,7 +51,7 @@ class TestProfileActivationFormCleanReferenceCode:
             data={
                 "reference_code": code,
                 "first_name": "Ana",
-                "last_name": "López",
+                "paternal_last_name": "López",
                 "area": area.pk,
             },
             company=company,
@@ -94,7 +94,7 @@ class TestProfileActivationFormIdentityFields:
         data = {
             "reference_code": company.reference_code,
             "first_name": "Ana",
-            "last_name": "López",
+            "paternal_last_name": "López",
             "area": area.pk,
         }
         data.update(overrides)
@@ -103,12 +103,18 @@ class TestProfileActivationFormIdentityFields:
     def test_name_is_required(self, company_with_area):
         company, area = company_with_area
         form = ProfileActivationForm(
-            data=self._data(company, area, first_name="", last_name=""),
+            data=self._data(company, area, first_name="", paternal_last_name=""),
             company=company,
         )
         assert not form.is_valid()
         assert "first_name" in form.errors
-        assert "last_name" in form.errors
+        assert "paternal_last_name" in form.errors
+
+    def test_maternal_surname_is_optional(self, company_with_area):
+        company, area = company_with_area
+        form = ProfileActivationForm(data=self._data(company, area), company=company)
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["maternal_last_name"] == ""
 
     def test_cargo_is_optional_and_defaults_to_blank(self, company_with_area):
         company, area = company_with_area
@@ -123,14 +129,14 @@ class TestProfileActivationFormIdentityFields:
                 company,
                 area,
                 first_name="  Ana  ",
-                last_name="  López  ",
+                paternal_last_name="  López  ",
                 position="  Analista  ",
             ),
             company=company,
         )
         assert form.is_valid(), form.errors
         assert form.cleaned_data["first_name"] == "Ana"
-        assert form.cleaned_data["last_name"] == "López"
+        assert form.cleaned_data["paternal_last_name"] == "López"
         assert form.cleaned_data["position"] == "Analista"
 
 
@@ -158,7 +164,7 @@ class TestProfileActivationFormScoping:
             data={
                 "reference_code": company.reference_code,
                 "first_name": "Ana",
-                "last_name": "López",
+                "paternal_last_name": "López",
                 "area": foreign.pk,
             },
             company=company,
@@ -212,7 +218,7 @@ class TestProfileActivationFormScoping:
             data={
                 "reference_code": company.reference_code,
                 "first_name": "Ana",
-                "last_name": "López",
+                "paternal_last_name": "López",
                 "area": area.pk,
                 "location": retired.pk,
             },
@@ -234,7 +240,7 @@ class TestProfileActivationFormScoping:
             data={
                 "reference_code": company.reference_code,
                 "first_name": "Ana",
-                "last_name": "López",
+                "paternal_last_name": "López",
                 "area": area.pk,
             },
             company=company,

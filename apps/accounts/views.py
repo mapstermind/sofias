@@ -294,7 +294,8 @@ def setup_profile(request):
         # isn't made to retype them.
         initial = {
             "first_name": request.user.first_name,
-            "last_name": request.user.last_name,
+            "paternal_last_name": request.user.paternal_last_name,
+            "maternal_last_name": request.user.maternal_last_name,
             "position": profile.position,
         }
         return render(
@@ -320,8 +321,11 @@ def setup_profile(request):
     with transaction.atomic():
         user = request.user
         user.first_name = form.cleaned_data["first_name"]
-        user.last_name = form.cleaned_data["last_name"]
-        user.save(update_fields=["first_name", "last_name"])
+        user.paternal_last_name = form.cleaned_data["paternal_last_name"]
+        user.maternal_last_name = form.cleaned_data["maternal_last_name"]
+        user.save(
+            update_fields=["first_name", "paternal_last_name", "maternal_last_name"]
+        )
 
         profile.position = form.cleaned_data["position"]
         profile.area = form.cleaned_data["area"]
