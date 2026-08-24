@@ -65,6 +65,17 @@ The same shape, with two differences: step 1 creates the live doc
 `docs/platform/<feature>.md` from the template (there is no `-change.md`), and
 the last plan task trims that doc to its post-ship form rather than rewriting it.
 
+### Gates, and running between them
+
+Four things stop you mid-request. Nothing else should:
+
+1. **The documentation gate** — branch C above: no code for an undocumented feature.
+2. **The intent question** — branch B above, when the user did not already say "refactor" or "expand".
+3. **An unresolved decision** — implementation hits something the feature doc or change brief does not settle. Describe the options and your recommendation, then wait. Do not decide unilaterally.
+4. **Opening a PR**, pushing, or committing to `main` — prepare it, then wait for confirmation.
+
+Between those, run. Write the plan and start working it; verify and carry straight into review; act on the findings you judge genuine. Announce what you did at each boundary and keep moving — the user reads your reply and interrupts, rather than being asked for permission to proceed. Do not stop to ask whether to continue, and do not park finished work waiting for a review round-trip nobody requested.
+
 ### Scaffolding hygiene
 
 On `main`, `docs/platform/wip/` holds nothing but its README. Check it at session
@@ -72,7 +83,7 @@ start and again before opening a PR. If it holds files that do not belong to the
 current branch's work, say so — a plan left behind is a stale checklist
 describing steps that have already happened.
 
-The full human-side process, with the prompts for each step, is
+The full human-side process — three phases, one prompt each — is
 [`docs/internal/prompting-workflow.md`](../docs/internal/prompting-workflow.md).
 
 ## Tech Stack
