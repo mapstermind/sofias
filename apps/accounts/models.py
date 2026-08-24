@@ -15,6 +15,12 @@ from django.utils import timezone
 # deterministic, so equality and uniqueness are unaffected.
 SPANISH_COLLATION = "es-MX-x-icu"
 
+# The plausible working-age window an employee's date of birth must fall in. 15
+# is Mexico's legal minimum working age; the upper bound only exists to catch a
+# mistyped year.
+MIN_ACTIVATION_AGE = 15
+MAX_ACTIVATION_AGE = 99
+
 # Spanish vowel accents and the diaeresis carry no lexical weight — "Direccion"
 # and "Dirección" are one área typed two ways — so catalog uniqueness folds them.
 # `ñ` is deliberately absent: it is a distinct letter, and folding it would reject
@@ -187,10 +193,19 @@ class CompanyLocation(CompanyCatalogEntry):
 
 
 class UserProfile(models.Model):
+    class Sex(models.TextChoices):
+        MALE = "male", "Masculino"
+        FEMALE = "female", "Femenino"
+
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="profile", verbose_name="usuario"
     )
     position = models.CharField("cargo", max_length=255, blank=True)
+    # Blank/null here and required in `ProfileActivationForm`: the CSV importer
+    # creates this row before the employee has answered anything. This is the
+    # same split `area` uses.
+    sex = models.CharField("sexo", max_length=6, choices=Sex, blank=True)
+    date_of_birth = models.DateField("fecha de nacimiento", null=True, blank=True)
     is_activated = models.BooleanField(
         "cuenta activada",
         default=False,
@@ -231,6 +246,22 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"Perfil de {self.user.email}"
 
+    @property
+    def age(self):
+        """Completed years as of today in `America/Mexico_City`, or None.
+
+        Derived rather than stored so it cannot go stale. A submission's age is
+        therefore read live, matching how `apps/nom035` already reads área.
+        """
+        if self.date_of_birth is None:
+            return None
+        today = timezone.localdate()
+        birthday_passed = (today.month, today.day) >= (
+            self.date_of_birth.month,
+            self.date_of_birth.day,
+        )
+        return today.year - self.date_of_birth.year - (0 if birthday_passed else 1)
+
     def clean(self):
         super().clean()
         errors = {}
@@ -238,6 +269,14 @@ class UserProfile(models.Model):
             entry = getattr(self, field, None)
             if entry is not None and entry.company_id != self.company_id:
                 errors[field] = "Debe pertenecer a la misma empresa que el colaborador."
+        # A future date lands below the minimum, so one bound covers both.
+        if self.date_of_birth is not None and not (
+            MIN_ACTIVATION_AGE <= self.age <= MAX_ACTIVATION_AGE
+        ):
+            errors["date_of_birth"] = (
+                f"La fecha de nacimiento debe corresponder a una edad entre "
+                f"{MIN_ACTIVATION_AGE} y {MAX_ACTIVATION_AGE} años."
+            )
         if errors:
             raise ValidationError(errors)
 
