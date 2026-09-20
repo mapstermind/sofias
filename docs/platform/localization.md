@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented.
+Current
 
 ## Overview
 
@@ -250,11 +250,21 @@ and is not subject to that lag.
   from `verbose_name` instead of duplicating them. See
   [Why a receiver rather than declaring the names](#why-a-receiver-rather-than-declaring-the-names).
 
-- **Decision:** `User.first_name` / `last_name` are labelled `"nombre(s)"` and
-  `"apellidos"` rather than reusing Django's catalog.
-  **Reason:** Django's `es_MX` renders `last name` as the singular `"apellido"`,
-  which is wrong for Mexican usage (paterno + materno). Hardcoding also keeps
-  the no-`gettext` rule absolute.
+- **Decision:** A name is carried as `User.first_name` /
+  `paternal_last_name` / `maternal_last_name`, labelled `"nombre(s)"`,
+  `"apellido paterno"` and `"apellido materno"` rather than reusing Django's
+  catalog.
+  **Reason:** Django's `es_MX` renders `last name` as the singular
+  `"apellido"`, which is wrong for Mexican usage: the two surnames are separate
+  and not interchangeable, and the roster sorts on the paternal one. Hardcoding
+  the three labels also keeps the no-`gettext` rule absolute.
+
+- **Decision:** `UserProfile.Sex` stores `male` / `female` and labels them
+  `"Masculino"` / `"Femenino"`.
+  **Reason:** The same split every other identifier follows — English value,
+  Spanish label — and `TextChoices` labels are the one piece of model metadata
+  `conftest.py`'s `assert_explicit_labels` does not walk, so the label is
+  asserted by a test of its own.
 
 - **Decision:** Accept Django's `es_MX` date formats; no `FORMAT_MODULE_PATH`.
   **Reason:** `SHORT_DATE_FORMAT` is already `d/m/Y`, and the long form
@@ -273,6 +283,7 @@ and is not subject to that lag.
 | Every permission name matches its model's Spanish label | `test_every_project_permission_name_reads_as_its_spanish_model_label` |
 | The receiver survives a `post_migrate` without `apps` | `test_receiver_survives_a_post_migrate_without_the_apps_kwarg` |
 | Choice labels and representative rendered labels | `apps/<app>/tests/test_admin.py` |
+| `UserProfile.Sex` labels are Spanish and its values English | `TestUserProfileDemographics` in `apps/accounts/tests/test_models.py` |
 | The label guard itself | `assert_explicit_labels` in `conftest.py` |
 
 The two whole-set tests are deliberately exhaustive rather than sampled: the

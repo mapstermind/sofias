@@ -82,7 +82,7 @@ For OTP users:
 
 1. Tell the company contact that users can log in at `/cuentas/ingresar/`.
 2. Share the company `reference_code` through the correct company contact.
-3. Users enter their email, receive an OTP, and then complete activation: the company reference code, their nombre and apellidos, an optional cargo, their área, and their localidad when the company has more than one.
+3. Users enter their email, receive an OTP, and then complete activation: the company reference code, their nombre(s) and apellido paterno, an optional apellido materno, an optional cargo, their sexo, their fecha de nacimiento, their área, and their localidad when the company has more than one.
 
 Until a user activates, the roster shows them as *Sin nombre* — that is expected, not a failed import.
 

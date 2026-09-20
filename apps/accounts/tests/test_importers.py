@@ -67,7 +67,8 @@ class TestImportUsersFromCSV:
         user = User.objects.get(email="blank@example.com")
         profile = UserProfile.objects.get(user=user)
         assert user.first_name == ""
-        assert user.last_name == ""
+        assert user.paternal_last_name == ""
+        assert user.maternal_last_name == ""
         assert profile.position == ""
         assert profile.area is None
         assert profile.location is None

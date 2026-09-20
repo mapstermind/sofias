@@ -1,4 +1,5 @@
 import pytest
+from django.utils import timezone
 
 from apps.accounts.forms import (
     EmailRequestForm,
@@ -6,6 +7,7 @@ from apps.accounts.forms import (
     ProfileActivationForm,
     SetupAccessCodeLoginForm,
 )
+from apps.accounts.models import MAX_ACTIVATION_AGE, MIN_ACTIVATION_AGE
 
 # Most forms are pure Python and need no database. ProfileActivationForm is the
 # exception — its área/localidad pickers are company-scoped querysets.
@@ -51,7 +53,11 @@ class TestProfileActivationFormCleanReferenceCode:
             data={
                 "reference_code": code,
                 "first_name": "Ana",
-                "last_name": "López",
+                "paternal_last_name": "López",
+                "sex": "female",
+                "date_of_birth_day": "15",
+                "date_of_birth_month": "6",
+                "date_of_birth_year": str(timezone.localdate().year - 30),
                 "area": area.pk,
             },
             company=company,
@@ -94,7 +100,11 @@ class TestProfileActivationFormIdentityFields:
         data = {
             "reference_code": company.reference_code,
             "first_name": "Ana",
-            "last_name": "López",
+            "paternal_last_name": "López",
+            "sex": "female",
+            "date_of_birth_day": "15",
+            "date_of_birth_month": "6",
+            "date_of_birth_year": str(timezone.localdate().year - 30),
             "area": area.pk,
         }
         data.update(overrides)
@@ -103,12 +113,18 @@ class TestProfileActivationFormIdentityFields:
     def test_name_is_required(self, company_with_area):
         company, area = company_with_area
         form = ProfileActivationForm(
-            data=self._data(company, area, first_name="", last_name=""),
+            data=self._data(company, area, first_name="", paternal_last_name=""),
             company=company,
         )
         assert not form.is_valid()
         assert "first_name" in form.errors
-        assert "last_name" in form.errors
+        assert "paternal_last_name" in form.errors
+
+    def test_maternal_surname_is_optional(self, company_with_area):
+        company, area = company_with_area
+        form = ProfileActivationForm(data=self._data(company, area), company=company)
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["maternal_last_name"] == ""
 
     def test_cargo_is_optional_and_defaults_to_blank(self, company_with_area):
         company, area = company_with_area
@@ -123,15 +139,120 @@ class TestProfileActivationFormIdentityFields:
                 company,
                 area,
                 first_name="  Ana  ",
-                last_name="  López  ",
+                paternal_last_name="  López  ",
+                maternal_last_name="  Núñez  ",
                 position="  Analista  ",
             ),
             company=company,
         )
         assert form.is_valid(), form.errors
         assert form.cleaned_data["first_name"] == "Ana"
-        assert form.cleaned_data["last_name"] == "López"
+        assert form.cleaned_data["paternal_last_name"] == "López"
+        assert form.cleaned_data["maternal_last_name"] == "Núñez"
         assert form.cleaned_data["position"] == "Analista"
+
+
+@pytest.mark.django_db
+class TestProfileActivationFormDemographics:
+    @pytest.fixture
+    def company_with_area(self, make_company, make_area):
+        company = make_company()
+        return company, make_area(company, name="Ventas")
+
+    def _data(self, company, area, **overrides):
+        today = timezone.localdate()
+        data = {
+            "reference_code": company.reference_code,
+            "first_name": "Ana",
+            "paternal_last_name": "López",
+            "sex": "female",
+            "date_of_birth_day": "15",
+            "date_of_birth_month": "6",
+            "date_of_birth_year": str(today.year - 30),
+            "area": area.pk,
+        }
+        data.update(overrides)
+        return data
+
+    def test_valid_submission_passes(self, company_with_area):
+        company, area = company_with_area
+        form = ProfileActivationForm(data=self._data(company, area), company=company)
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["sex"] == "female"
+        assert form.cleaned_data["date_of_birth"].year == timezone.localdate().year - 30
+
+    def test_sex_is_required(self, company_with_area):
+        company, area = company_with_area
+        form = ProfileActivationForm(
+            data=self._data(company, area, sex=""), company=company
+        )
+        assert not form.is_valid()
+        assert "sex" in form.errors
+
+    def test_sex_rejects_a_value_outside_the_choices(self, company_with_area):
+        company, area = company_with_area
+        form = ProfileActivationForm(
+            data=self._data(company, area, sex="other"), company=company
+        )
+        assert not form.is_valid()
+        assert "sex" in form.errors
+
+    def test_date_of_birth_is_required(self, company_with_area):
+        company, area = company_with_area
+        form = ProfileActivationForm(
+            data=self._data(
+                company,
+                area,
+                date_of_birth_day="",
+                date_of_birth_month="",
+                date_of_birth_year="",
+            ),
+            company=company,
+        )
+        assert not form.is_valid()
+        assert "date_of_birth" in form.errors
+
+    def test_date_of_birth_rejects_an_age_below_the_minimum(self, company_with_area):
+        company, area = company_with_area
+        today = timezone.localdate()
+        form = ProfileActivationForm(
+            data=self._data(company, area, date_of_birth_year=str(today.year - 5)),
+            company=company,
+        )
+        assert not form.is_valid()
+        assert "date_of_birth" in form.errors
+
+    def test_date_of_birth_rejects_an_implausible_age(self, company_with_area):
+        company, area = company_with_area
+        today = timezone.localdate()
+        form = ProfileActivationForm(
+            data=self._data(company, area, date_of_birth_year=str(today.year - 120)),
+            company=company,
+        )
+        assert not form.is_valid()
+        assert "date_of_birth" in form.errors
+
+    def test_date_of_birth_rejects_a_future_birth_date(self, company_with_area):
+        """A future date can't be selected from the widget's year list, so it
+        is posted directly via the raw `date_of_birth_year` field value."""
+        company, area = company_with_area
+        today = timezone.localdate()
+        form = ProfileActivationForm(
+            data=self._data(company, area, date_of_birth_year=str(today.year + 1)),
+            company=company,
+        )
+        assert not form.is_valid()
+        assert "date_of_birth" in form.errors
+
+    def test_date_of_birth_dropdown_bounds_the_offered_years(self, company_with_area):
+        """The widget offers only the plausible working-age years; it does not
+        by itself guarantee every date built from them passes validation."""
+        company, _ = company_with_area
+        form = ProfileActivationForm(company=company)
+        years = form.fields["date_of_birth"].widget.years
+        today = timezone.localdate()
+        assert max(years) == today.year - MIN_ACTIVATION_AGE
+        assert min(years) == today.year - MAX_ACTIVATION_AGE
 
 
 @pytest.mark.django_db
@@ -158,7 +279,7 @@ class TestProfileActivationFormScoping:
             data={
                 "reference_code": company.reference_code,
                 "first_name": "Ana",
-                "last_name": "López",
+                "paternal_last_name": "López",
                 "area": foreign.pk,
             },
             company=company,
@@ -212,7 +333,7 @@ class TestProfileActivationFormScoping:
             data={
                 "reference_code": company.reference_code,
                 "first_name": "Ana",
-                "last_name": "López",
+                "paternal_last_name": "López",
                 "area": area.pk,
                 "location": retired.pk,
             },
@@ -234,7 +355,11 @@ class TestProfileActivationFormScoping:
             data={
                 "reference_code": company.reference_code,
                 "first_name": "Ana",
-                "last_name": "López",
+                "paternal_last_name": "López",
+                "sex": "female",
+                "date_of_birth_day": "15",
+                "date_of_birth_month": "6",
+                "date_of_birth_year": str(timezone.localdate().year - 30),
                 "area": area.pk,
             },
             company=company,

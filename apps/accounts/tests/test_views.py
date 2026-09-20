@@ -1,3 +1,4 @@
+from datetime import date
 from smtplib import SMTPException
 from unittest.mock import patch
 
@@ -551,11 +552,17 @@ SETUP_PROFILE_URL = "/cuentas/completar-perfil/"
 
 
 def _activation_post(company, **overrides):
-    """A complete activation body. Name is required, so every POST carries it."""
+    """A complete activation body. Every field but the maternal surname is
+    required, so every POST carries them."""
+    today = timezone.localdate()
     payload = {
         "reference_code": company.reference_code,
         "first_name": "Ana",
-        "last_name": "López",
+        "paternal_last_name": "López",
+        "sex": "female",
+        "date_of_birth_day": "15",
+        "date_of_birth_month": "6",
+        "date_of_birth_year": str(today.year - 30),
     }
     payload.update(overrides)
     return payload
@@ -840,7 +847,8 @@ class TestSetupProfileView:
                 company,
                 area=area.pk,
                 first_name="Ana",
-                last_name="López",
+                paternal_last_name="López",
+                maternal_last_name="Núñez",
                 position="Analista",
             ),
         )
@@ -848,7 +856,8 @@ class TestSetupProfileView:
         user.refresh_from_db()
         user.profile.refresh_from_db()
         assert user.first_name == "Ana"
-        assert user.last_name == "López"
+        assert user.paternal_last_name == "López"
+        assert user.maternal_last_name == "Núñez"
         assert user.profile.position == "Analista"
 
     def test_missing_name_blocks_activation(
@@ -863,7 +872,9 @@ class TestSetupProfileView:
 
         response = client.post(
             SETUP_PROFILE_URL,
-            _activation_post(company, area=area.pk, first_name="", last_name=""),
+            _activation_post(
+                company, area=area.pk, first_name="", paternal_last_name=""
+            ),
         )
 
         user.profile.refresh_from_db()
@@ -897,8 +908,11 @@ class TestSetupProfileView:
             email="prefill@example.com", company=company, is_activated=False
         )
         user.first_name = "Ana"
-        user.last_name = "López"
-        user.save(update_fields=["first_name", "last_name"])
+        user.paternal_last_name = "López"
+        user.maternal_last_name = "Núñez"
+        user.save(
+            update_fields=["first_name", "paternal_last_name", "maternal_last_name"]
+        )
         user.profile.position = "Analista"
         user.profile.save(update_fields=["position"])
         client.force_login(user)
@@ -906,7 +920,8 @@ class TestSetupProfileView:
         form = client.get(SETUP_PROFILE_URL).context["form"]
 
         assert form.initial["first_name"] == "Ana"
-        assert form.initial["last_name"] == "López"
+        assert form.initial["paternal_last_name"] == "López"
+        assert form.initial["maternal_last_name"] == "Núñez"
         assert form.initial["position"] == "Analista"
 
     def test_name_is_not_saved_when_activation_fails(
@@ -954,6 +969,82 @@ class TestSetupProfileView:
 
         assert response.status_code == 200
         assert response.context["no_company"] is True
+
+    def test_activation_saves_demographics(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        user = make_user_with_profile(
+            email="demog@example.com", company=company, is_activated=False
+        )
+        client.force_login(user)
+
+        client.post(SETUP_PROFILE_URL, _activation_post(company, area=area.pk))
+
+        user.profile.refresh_from_db()
+        assert user.profile.is_activated is True
+        assert user.profile.sex == "female"
+        # The stored date, not the derived age: a June birthday reads as 29 for
+        # half the year, which would make this test pass only after June 15.
+        assert user.profile.date_of_birth == date(timezone.localdate().year - 30, 6, 15)
+
+    def test_missing_sex_blocks_activation(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company()
+        area = make_area(company, name="Ventas")
+        user = make_user_with_profile(
+            email="nosex@example.com", company=company, is_activated=False
+        )
+        client.force_login(user)
+
+        response = client.post(
+            SETUP_PROFILE_URL, _activation_post(company, area=area.pk, sex="")
+        )
+
+        user.profile.refresh_from_db()
+        assert user.profile.is_activated is False
+        assert "sex" in response.context["form"].errors
+
+    def test_form_prefills_demographics_already_on_record(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        company = make_company()
+        make_area(company, name="Ventas")
+        user = make_user_with_profile(
+            email="prefilldemog@example.com", company=company, is_activated=False
+        )
+        user.profile.sex = "male"
+        user.profile.date_of_birth = date(1990, 6, 15)
+        user.profile.save(update_fields=["sex", "date_of_birth"])
+        client.force_login(user)
+
+        form = client.get(SETUP_PROFILE_URL).context["form"]
+
+        assert form.initial["sex"] == "male"
+        assert form.initial["date_of_birth"] == date(1990, 6, 15)
+
+    def test_activation_page_renders_the_demographic_inputs(
+        self, client, make_user_with_profile, make_company, make_area
+    ):
+        """There is no JS test runner, so the rendered element names are the only
+        automated check that the template and the form still agree."""
+        company = make_company()
+        make_area(company, name="Ventas")
+        user = make_user_with_profile(
+            email="render@example.com", company=company, is_activated=False
+        )
+        client.force_login(user)
+
+        html = client.get(SETUP_PROFILE_URL).content.decode()
+
+        assert 'name="sex"' in html
+        assert 'name="date_of_birth_day"' in html
+        assert 'name="date_of_birth_month"' in html
+        assert 'name="date_of_birth_year"' in html
+        assert 'name="paternal_last_name"' in html
+        assert 'name="maternal_last_name"' in html
 
 
 # ── RequireProfileActivationMiddleware ────────────────────────────────────────

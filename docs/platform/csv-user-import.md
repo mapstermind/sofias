@@ -105,7 +105,7 @@ For every created row:
   - `company`: company matched by `company_reference_code`
   - `is_activated=False`
 
-`User.first_name`, `User.last_name`, `UserProfile.position`, `UserProfile.area`, and `UserProfile.location` are left at their blank/null defaults. The employee fills them in at activation, and until they do the roster renders them as *Sin nombre* / *Sin cargo*.
+`User.first_name`, `User.paternal_last_name`, `User.maternal_last_name`, `UserProfile.position`, `UserProfile.sex`, `UserProfile.date_of_birth`, `UserProfile.area`, and `UserProfile.location` are left at their blank/null defaults. The employee fills them in at activation, and until they do the roster renders them as *Sin nombre* / *Sin cargo*.
 
 For `auth_method=otp`:
 

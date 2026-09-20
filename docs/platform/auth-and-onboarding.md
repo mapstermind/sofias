@@ -114,14 +114,15 @@ Activation behavior:
 - A user whose profile has no company sees the profile activation page with the same generic account-not-linked error.
 - A user whose profile is already activated is redirected to the app home route.
 - A user whose company has **no active áreas** sees a blocked-activation notice telling them to contact their administrator; activation is not possible until an admin loads at least one área.
-- A user with an inactive profile and linked company sees the activation form: company reference code, nombre(s), apellidos, cargo, área picker, and — only when the company has more than one active localidad — a localidad picker.
-- Activation is where a user supplies everything only they know about themselves. Nombre(s) and apellidos are required; cargo is optional and saved as an empty string when blank. All three are prefilled from any values already on the `User`/`UserProfile`, so a user an admin filled in by hand is not made to retype them.
+- A user with an inactive profile and linked company sees the activation form: company reference code, nombre(s), apellido paterno, apellido materno, cargo, sexo, fecha de nacimiento, área picker, and — only when the company has more than one active localidad — a localidad picker.
+- Activation is where a user supplies everything only they know about themselves. Nombre(s), apellido paterno, sexo and fecha de nacimiento are required; apellido materno and cargo are optional and saved as empty when blank. Every one of them is prefilled from any value already on the `User`/`UserProfile`, so a user an admin filled in by hand is not made to retype them.
+- Fecha de nacimiento is entered as three dropdowns (Día, Mes, Año) and must fall in a 15-to-99-year working-age window. The Año list is only bounded to that plausible range — a year alone can't settle whether the birthday has passed — so `ProfileActivationForm` is a plain form rather than a `ModelForm` and checks the exact window itself, answering the employee in Spanish; `UserProfile.clean()` applies the same bound to the admin and the shell. A date in the future sits below the minimum, so the one bound covers it too.
 - The submitted reference code is stripped, uppercased, must be exactly 5 characters, and must be alphanumeric.
 - The área and localidad choices are restricted to the **active entries of the user's own company**. A submitted primary key belonging to another company (or to an inactive entry) is rejected as an invalid choice and the profile remains inactive.
 - Área is always required. Localidad is required only when the company has more than one active localidad; when it has exactly one, that localidad is auto-assigned and the field is not rendered; when it has none, `location` stays null.
 - A submission that carries a `location` when the picker is not rendered is refused with a form-level notice asking the user to review and confirm, and the profile stays inactive. Only a picker the user was shown could have produced that value, so its presence means the localidad catalog shrank to one entry (or to none) while the form was open: auto-assigning the survivor would record a localidad the user never chose. The re-rendered form no longer offers a picker, so confirming it activates normally.
 - If the code does not match the linked company's `reference_code`, the form is re-rendered and the profile remains inactive.
-- If everything validates, `User.first_name`/`User.last_name` and `UserProfile.position`/`area`/`location`/`is_activated` are saved in a single transaction, and the user is redirected to the app home route. The two rows commit together or not at all — a profile that passed the `is_activated` gate with no área would have nothing to aggregate on.
+- If everything validates, `User.first_name`/`paternal_last_name`/`maternal_last_name` and `UserProfile.position`/`sex`/`date_of_birth`/`area`/`location`/`is_activated` are saved in a single transaction, and the user is redirected to the app home route. The two rows commit together or not at all — a profile that passed the `is_activated` gate with no área would have nothing to aggregate on.
 
 ### Logout
 
@@ -145,7 +146,8 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Password fallback email and password.
 - New password and confirmation.
 - Company reference code.
-- Nombre(s), apellidos, and optional cargo.
+- Nombre(s), apellido paterno, optional apellido materno, and optional cargo.
+- Sexo and fecha de nacimiento.
 - Área selection (and localidad selection when the company has more than one).
 - Session value `otp_email`.
 - Environment-backed settings for email delivery, OTP expiry, session lifetime, and debug mode.
@@ -157,8 +159,8 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Created and updated `EmailOTP` records.
 - Created and updated `SetupAccessCode` records.
 - Updated Django session authentication state.
-- Updated `User.password`, `User.must_change_password`, `User.first_name`, and `User.last_name`.
-- Updated `UserProfile.is_activated`, `UserProfile.position`, `UserProfile.area`, and `UserProfile.location`.
+- Updated `User.password`, `User.must_change_password`, `User.first_name`, `User.paternal_last_name`, and `User.maternal_last_name`.
+- Updated `UserProfile.is_activated`, `UserProfile.position`, `UserProfile.sex`, `UserProfile.date_of_birth`, `UserProfile.area`, and `UserProfile.location`.
 - OTP email sent through Django's configured email backend.
 
 ## API / routes / commands
@@ -176,7 +178,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | `/cuentas/cambiar-contrasena/` | GET | authenticated user | Password-change form or redirect | Requires login. Users without `must_change_password` are rerouted through post-login routing. |
 | `/cuentas/cambiar-contrasena/` | POST | `new_password1`, `new_password2` | Redirect or form errors | Uses Django password validators. |
 | `/cuentas/completar-perfil/` | GET | authenticated user | Activation form, account-linked error, no-áreas notice, or redirect | Requires login. Admins skip activation. Localidad picker rendered only when the company has >1. |
-| `/cuentas/completar-perfil/` | POST | `reference_code`, `first_name`, `last_name`, optional `position`, `area`, optional `location` | Activate profile and redirect or form errors | Admins skip activation even on POST. Área/localidad pks are validated against the user's own company. User and profile rows are written in one transaction. |
+| `/cuentas/completar-perfil/` | POST | `reference_code`, `first_name`, `paternal_last_name`, optional `maternal_last_name`, optional `position`, `sex`, `date_of_birth`, `area`, optional `location` | Activate profile and redirect or form errors | Admins skip activation even on POST. Área/localidad pks are validated against the user's own company. User and profile rows are written in one transaction. |
 | `/cuentas/cerrar-sesion/` | POST | authenticated or anonymous session | Logout and redirect | GET and other methods return 405. |
 | `python manage.py bootstrap_groups` | command | none | Creates or syncs auth groups | Idempotently assigns custom `accounts.Role` permissions. |
 
@@ -192,9 +194,12 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Fields:
   - `User.email`: unique email used by both login flows.
   - `User.must_change_password`: forces setup-code/password-fallback users through password creation/change.
+  - `User.first_name`, `User.paternal_last_name`, `User.maternal_last_name`: the three parts of a Mexican name, each under the Spanish collation because the roster sorts on them. `get_full_name()` joins whichever are set; `get_initials()` takes the first letter of the nombre and of the apellido paterno for the employee-detail avatar.
   - `Company.reference_code`: unique 5-character company activation code, generated on save when blank.
   - `UserProfile.company`: company assignment for non-admin users.
   - `UserProfile.is_activated`: first-login activation state.
+  - `UserProfile.sex`: `male` or `female`, labelled Masculino and Femenino.
+  - `UserProfile.date_of_birth`: the employee's birth date. `UserProfile.age` derives completed years from it against today's date in `America/Mexico_City`, so no age is stored.
   - `EmailOTP.email`, `code`, `expires_at`, `is_used`.
   - `SetupAccessCode.user`, `code`, `created_at`, `used_at`.
 - Constraints:
@@ -204,7 +209,8 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
   - Only one unused `SetupAccessCode` may exist per user.
   - Unused setup access code values are globally unique.
 - Migrations:
-  - No migration is part of this spec. This documents current behavior.
+  - `accounts.0007` declares `User.paternal_last_name` and `User.maternal_last_name`.
+  - `accounts.0008` declares `UserProfile.sex` and `UserProfile.date_of_birth`, and clears `UserProfile.is_activated` so every profile passes through the activation form that collects them.
 
 ## Side effects
 
@@ -284,6 +290,9 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Users with `must_change_password=True` must change their password before using normal non-admin, non-static app routes.
 - `must_change_password` must be cleared only after a valid password change.
 - Non-admin users must not complete first-login activation unless their entered reference code matches their linked company.
+- Activation must not complete without nombre(s), apellido paterno, sexo and fecha de nacimiento; apellido materno and cargo may stay blank.
+- A stored `date_of_birth` must correspond to between 15 and 99 completed years, at the form layer for an employee and in `UserProfile.clean()` everywhere else.
+- Age is always derived from `date_of_birth` and never stored, so it cannot go stale.
 - Activation must only accept área/localidad entries that are active and belong to the user's own company.
 - The company reference code is an activation check, not a password or authentication secret.
 - Logout must not be possible by GET.
@@ -303,6 +312,10 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Given a setup-code user submits a valid new password twice, when the password-change form is posted, then the password changes, `must_change_password` is cleared, and the user is routed onward.
 - Given a non-admin user with an inactive profile and linked company, when they submit the matching company reference code, then their profile is activated and they are routed onward.
 - Given a non-admin user submits the wrong company reference code, when the activation form is posted, then the profile remains inactive.
+- Given a non-admin user with an inactive profile, when they post a complete activation form, then nombre(s), apellido paterno, apellido materno, cargo, sexo and fecha de nacimiento are written to the `User` and `UserProfile` rows in one transaction.
+- Given an activation form posted without sexo or without fecha de nacimiento, when it is submitted, then the field shows a Spanish error and the profile remains inactive.
+- Given a fecha de nacimiento outside the 15-to-99-year window, when the activation form is posted, then it is rejected and the profile remains inactive.
+- Given a profile that already carries a name, sexo or fecha de nacimiento, when the activation form is rendered, then those values are prefilled.
 - Given an admin-group user, when post-login routing or activation is reached, then they skip profile activation.
 - Given any user requests logout by GET, then the response is HTTP 405.
 - Given any user posts to logout, then the session is logged out and redirected to the OTP login page.
@@ -350,7 +363,10 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | Localidad retired while the form is open | `apps/accounts/tests/test_views.py`, `apps/accounts/tests/test_forms.py` | `TestSetupProfileView::test_location_retired_mid_session_is_not_substituted`, `TestProfileActivationFormScoping::test_location_posted_while_picker_is_gone_is_rejected` |
 | Name and cargo saved at activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_activation_saves_name_and_cargo`, `test_activation_without_cargo_leaves_it_blank` |
 | Name is required to activate | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_missing_name_blocks_activation` |
-| Existing details are prefilled | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_form_prefills_details_already_on_record` |
+| Sexo and fecha de nacimiento saved at activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_activation_saves_demographics` |
+| Sexo is required to activate | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_missing_sex_blocks_activation` |
+| Activation page renders the demographic inputs | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_activation_page_renders_the_demographic_inputs` |
+| Existing details are prefilled | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_form_prefills_details_already_on_record`, `test_form_prefills_demographics_already_on_record` |
 | Activation is enforced on every request | `apps/accounts/tests/test_views.py` | `TestRequireProfileActivationMiddleware::*` |
 | Failed activation writes nothing | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_name_is_not_saved_when_activation_fails` |
 | Logout is POST-only and clears session | `apps/accounts/tests/test_views.py` | `TestLogoutView::test_get_returns_405`, `test_post_logs_out_and_redirects` |
@@ -358,6 +374,16 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | Reference code normalization and validation | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormCleanReferenceCode::*` |
 | Activation picker scoping | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormScoping::*` |
 | Name/cargo field rules | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormIdentityFields::*` |
+| Sexo and fecha de nacimiento field rules | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormDemographics::*` |
+| Full name joins the three parts | `apps/accounts/tests/test_models.py` | `TestUserFullName::*` |
+| Initials come from the nombre and the apellido paterno | `apps/accounts/tests/test_models.py` | `TestUserGetInitials::*` |
+| Sexo labels are Spanish and values English | `apps/accounts/tests/test_models.py` | `TestUserProfileDemographics::test_sex_labels_are_spanish`, `test_sex_values_are_english` |
+| Age counts completed years | `apps/accounts/tests/test_models.py` | `TestUserProfileDemographics::test_age_is_none_without_a_birth_date`, `test_age_counts_completed_years`, `test_age_does_not_count_a_birthday_still_to_come` |
+| Working-age window enforced on the model | `apps/accounts/tests/test_models.py` | `TestUserProfileDemographics::test_clean_rejects_a_future_birth_date`, `test_clean_rejects_an_implausible_age`, `test_clean_accepts_a_working_age` |
+| Surnames sort under the Spanish collation | `apps/accounts/tests/test_models.py` | `TestSpanishTextOrdering::test_employee_roster_orders_surnames_as_spanish` |
+| Roster is ordered by apellido paterno | `apps/core/tests/test_views.py` | `TestCompanyEmployeeListView::test_roster_is_ordered_by_paternal_surname` |
+| Profile admin exposes the demographics | `apps/accounts/tests/test_admin.py` | `test_userprofile_admin_lists_demographics` |
+| Hand-built admin field lists stay valid | `apps/accounts/tests/test_admin_checks.py` | `test_django_system_checks_pass` |
 | OTP validity rules | `apps/accounts/tests/test_models.py` | `TestEmailOTPIsValid::*` |
 | Setup access code rules | `apps/accounts/tests/test_models.py` | `TestSetupAccessCode::*` |
 | Company reference code generation | `apps/accounts/tests/test_models.py` | `TestCompanyReferenceCode::*` |
@@ -371,6 +397,17 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Missing profile and missing company remain intentionally indistinguishable to the user; both show the generic account-not-linked message.
 - Password and setup-code fallback paths have no application-level rate limit for now. Revisit if either becomes a common or higher-risk path.
 - Admin activation bypass remains coupled to the canonical `Admins` group name for now.
+
+## Linked ADRs
+
+- [ADR-0005 — two-surname names and profile demographics](../adr/adr-0005-two-surname-names-and-profile-demographics.md)
+  — why the surnames sit on `User` while sexo and fecha de nacimiento sit on
+  `UserProfile`, and why age is derived rather than stored.
+- [ADR-0004 — per-company área/localidad catalogs](../adr/adr-0004-per-company-area-and-locality-catalogs.md)
+  — why activation makes the employee pick an área from a curated per-company
+  catalog.
+- [ADR-0001 — setup access codes for blocked email login](../adr/adr-0001-setup-access-codes-for-blocked-email-login.md)
+  — why a one-time setup code backs up the OTP path.
 
 ## Open questions
 

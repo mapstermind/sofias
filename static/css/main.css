@@ -16,6 +16,7 @@
 @source "../../apps/core/templatetags/valuation_extras.py";
 @source "../ts";
 
-/* Widths a view can pass as `container_width` (see templates/base_app.html).
-   They are chosen in Python by name, so no scan can see them. */
+/* Widths a view can pass as `container_width` (see templates/base_app.html and
+   templates/base_centered.html). They are chosen in Python by name, so no scan
+   can see them. */
 @source inline("max-w-5xl max-w-6xl");

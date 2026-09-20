@@ -455,6 +455,35 @@ class TestCompanyEmployeeListView:
         profile.save()
         return User.objects.get(pk=user.pk)
 
+    def test_roster_is_ordered_by_paternal_surname(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        """A Mexican roster files under the apellido paterno, and the Spanish
+        collation is what keeps "Álvarez" above "Barrios" instead of after "Z"."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        for email, first, paternal in (
+            ("z@example.com", "Ana", "Zamora"),
+            ("a@example.com", "Bruno", "Álvarez"),
+            ("n@example.com", "Carla", "Núñez"),
+        ):
+            make_user_with_profile(
+                email=email,
+                company=company,
+                first_name=first,
+                paternal_last_name=paternal,
+            )
+
+        client.force_login(viewer)
+        members = client.get(self.URL).context["members"]
+
+        surnames = [
+            item["profile"].user.paternal_last_name
+            for item in members
+            if item["profile"].user.paternal_last_name
+        ]
+        assert surnames == ["Álvarez", "Núñez", "Zamora"]
+
     def test_activation_status_labels_render(
         self, client, make_user, make_company, make_user_with_profile
     ):

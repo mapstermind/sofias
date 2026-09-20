@@ -28,8 +28,51 @@ from .models import (
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     change_list_template = "admin/accounts/user/change_list.html"
-    list_display = UserAdmin.list_display + ("must_change_password",)
-    fieldsets = UserAdmin.fieldsets + (
+
+    # Declared in full rather than composed from UserAdmin's defaults: those name
+    # `last_name`, which this project's User does not have.
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "paternal_last_name",
+        "maternal_last_name",
+        "is_staff",
+        "must_change_password",
+    )
+    search_fields = (
+        "username",
+        "first_name",
+        "paternal_last_name",
+        "maternal_last_name",
+        "email",
+    )
+    fieldsets = (
+        (None, {"fields": ("username", "password")}),
+        (
+            "Información personal",
+            {
+                "fields": (
+                    "first_name",
+                    "paternal_last_name",
+                    "maternal_last_name",
+                    "email",
+                )
+            },
+        ),
+        (
+            "Permisos",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
+        ("Fechas importantes", {"fields": ("last_login", "date_joined")}),
         ("Acceso SOFIA-S", {"fields": ("must_change_password",)}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
@@ -188,10 +231,19 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "position", "area", "location", "company", "is_activated")
+    list_display = (
+        "user",
+        "position",
+        "sex",
+        "date_of_birth",
+        "area",
+        "location",
+        "company",
+        "is_activated",
+    )
     # No `area` filter: CompanyArea has no registered admin, so the sidebar would
     # enumerate every client's área names. Filter by company, search by area__name.
-    list_filter = ("is_activated", "company")
+    list_filter = ("is_activated", "sex", "company")
     search_fields = (
         "user__username",
         "user__email",

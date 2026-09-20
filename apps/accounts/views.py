@@ -294,8 +294,11 @@ def setup_profile(request):
         # isn't made to retype them.
         initial = {
             "first_name": request.user.first_name,
-            "last_name": request.user.last_name,
+            "paternal_last_name": request.user.paternal_last_name,
+            "maternal_last_name": request.user.maternal_last_name,
             "position": profile.position,
+            "sex": profile.sex,
+            "date_of_birth": profile.date_of_birth,
         }
         return render(
             request,
@@ -320,14 +323,28 @@ def setup_profile(request):
     with transaction.atomic():
         user = request.user
         user.first_name = form.cleaned_data["first_name"]
-        user.last_name = form.cleaned_data["last_name"]
-        user.save(update_fields=["first_name", "last_name"])
+        user.paternal_last_name = form.cleaned_data["paternal_last_name"]
+        user.maternal_last_name = form.cleaned_data["maternal_last_name"]
+        user.save(
+            update_fields=["first_name", "paternal_last_name", "maternal_last_name"]
+        )
 
         profile.position = form.cleaned_data["position"]
+        profile.sex = form.cleaned_data["sex"]
+        profile.date_of_birth = form.cleaned_data["date_of_birth"]
         profile.area = form.cleaned_data["area"]
         profile.location = form.cleaned_data.get("location") or form.implicit_location
         profile.is_activated = True
-        profile.save(update_fields=["position", "area", "location", "is_activated"])
+        profile.save(
+            update_fields=[
+                "position",
+                "sex",
+                "date_of_birth",
+                "area",
+                "location",
+                "is_activated",
+            ]
+        )
 
     return redirect(settings.LOGIN_REDIRECT_URL)
 

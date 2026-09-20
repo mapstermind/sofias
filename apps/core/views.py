@@ -300,8 +300,11 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 "status"
             ]
 
+        # Paternal surname first: that is how a Mexican roster reads.
         profiles = company.members.select_related("user", "area", "location").order_by(
-            "user__first_name", "user__last_name"
+            "user__paternal_last_name",
+            "user__maternal_last_name",
+            "user__first_name",
         )
 
         members_data = []

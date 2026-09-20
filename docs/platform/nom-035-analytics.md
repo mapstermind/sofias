@@ -2,8 +2,7 @@
 
 ## Status
 
-Shipped (MVP). Implemented in `apps/nom035`; results render in the `core`
-dashboards.
+Current — implemented in `apps/nom035`; results render in the `core` dashboards.
 
 ## What this does
 

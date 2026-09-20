@@ -1,11 +1,19 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% comment %}
+A page may widen its card by overriding the `container_width` block, or by
+passing a `container_width` context value from the view. Most auth pages ask for
+one or two fields and keep the narrow default. A width passed from a view has to
+be listed in `@source inline(...)` in static/css/main.css; one written into the
+block here is scanned like any other template class.
+{% endcomment %}
+
 {% block body_class %}min-h-screen bg-gray-100{% endblock %}
 
 {% block body %}
 <div class="flex-1 flex items-center justify-center px-4 py-12">
-<div class="w-full max-w-sm">
+<div class="w-full {% block container_width %}{{ container_width|default:"max-w-sm" }}{% endblock %}">
 
   <div class="mb-8 flex flex-col items-center text-center">
     <img src="{% static 'img/logo.svg' %}" alt="Logo SOFIA-S" class="mb-6 h-8 w-auto">

@@ -50,7 +50,7 @@ Extends Django's `AbstractUser`. Inherits all standard auth fields (`username`, 
 |---|---|---|
 | `email` | EmailField | Unique; used by OTP, setup-code, and password fallback login |
 | `must_change_password` | BooleanField | Forces setup-code/password-fallback users through the password-change flow |
-| `first_name` / `last_name` | CharField(150) | Redeclared from `AbstractUser` solely to carry the Spanish collation — the employee roster orders by them |
+| `first_name` / `paternal_last_name` / `maternal_last_name` | CharField(150) | The three parts of a Mexican name, declared on this model to carry the Spanish collation — the employee roster orders by them. `get_full_name()` joins whichever are set |
 
 #### `UserProfile`
 Extends `User` with business context. Created separately from the auth user.
@@ -60,12 +60,14 @@ Extends `User` with business context. Created separately from the auth user.
 | `id` | BigAutoField | PK |
 | `user` | OneToOneField → `User` | Cascades on user delete |
 | `position` | CharField(255) | Job title, optional |
+| `sex` | CharField(6) | `male` / `female`, labelled Masculino / Femenino; supplied by the employee at activation |
+| `date_of_birth` | DateField | Nullable; supplied at activation. The `age` property derives completed years from it against today's date in `America/Mexico_City`, so no age is stored |
 | `is_activated` | BooleanField | First-login activation flag, default `False` |
 | `company` | ForeignKey → `Company` | SET NULL on company delete; nullable |
 | `area` | ForeignKey → `CompanyArea` | SET NULL; nullable. Chosen by the employee at activation; groups the per-área NOM-035 breakdown |
 | `location` | ForeignKey → `CompanyLocation` | SET NULL; nullable. Chosen at activation only when the company has >1; auto-assigned when it has exactly 1 |
 
-`clean()` rejects an `area`/`location` belonging to a different company than `company`.
+`clean()` rejects an `area`/`location` belonging to a different company than `company`, and a `date_of_birth` that does not correspond to between `MIN_ACTIVATION_AGE` (15) and `MAX_ACTIVATION_AGE` (99) completed years. A future date falls below the minimum, so the one bound covers it.
 
 #### `Role`
 Sentinel model used only to define project permissions. It is `managed = False`, so Django does not create a database table for it.
@@ -357,4 +359,4 @@ Completion counts only questions visible under the current answers (see `apps/su
 
 **Company-scoped catalogs, unique under a normalizing fold.** Áreas and localidades are per-company child tables rather than free text or a shared enum, because the employee picks from them at activation and the per-área NOM-035 breakdown groups by their pk. `UniqueConstraint(company, FoldCatalogName(name))` makes duplicate spellings impossible within a company — case, Spanish vowel accents and whitespace runs all collapse to one key — while leaving names free across companies. That matters because the breakdown groups by pk: a second spelling of one área is an unmergeable split into two dashboard rows. Entries are retired with `is_active=False`, not deleted — the FKs are `SET_NULL` (so deleting a `Company` stays possible) and the admin inline blocks deleting an entry that still has members. See `docs/adr/adr-0004-per-company-area-and-locality-catalogs.md`.
 
-**Spanish text sorts under an explicit column collation.** Every column holding Spanish text that a user reads as a sorted list — `Company.name`/`legal_name`, `CompanyCatalogEntry.name`, and `User.first_name`/`last_name` — declares `db_collation = SPANISH_COLLATION` (`es-MX-x-icu`, defined in `apps/accounts/models.py`). The database's own collation is byte order, under which every accented name sorts after `Z`: "Álvaro Obregón" below "Zacatecas", "Cañada" below "Cazador". Putting the collation on the column rather than on the database means it lives in the schema, so migrations carry it to every environment including the test database, which is built from the cluster template rather than from the application database. The collation is deterministic, so equality and uniqueness — including the `FoldCatalogName` unique index — are unaffected. This requires a PostgreSQL built with ICU, which the standard packages are.
+**Spanish text sorts under an explicit column collation.** Every column holding Spanish text that a user reads as a sorted list — `Company.name`/`legal_name`, `CompanyCatalogEntry.name`, and `User.first_name`/`paternal_last_name`/`maternal_last_name` — declares `db_collation = SPANISH_COLLATION` (`es-MX-x-icu`, defined in `apps/accounts/models.py`). The database's own collation is byte order, under which every accented name sorts after `Z`: "Álvaro Obregón" below "Zacatecas", "Cañada" below "Cazador". Putting the collation on the column rather than on the database means it lives in the schema, so migrations carry it to every environment including the test database, which is built from the cluster template rather than from the application database. The collation is deterministic, so equality and uniqueness — including the `FoldCatalogName` unique index — are unaffected. This requires a PostgreSQL built with ICU, which the standard packages are.

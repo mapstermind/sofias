@@ -1,5 +1,7 @@
+from datetime import timedelta
+
 import pytest
-from django.core.exceptions import ValidationError
+from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.db import IntegrityError
 from django.utils import timezone
 
@@ -10,6 +12,7 @@ from apps.accounts.models import (
     EmailOTP,
     SetupAccessCode,
     User,
+    UserProfile,
 )
 from apps.accounts.utils import generate_unique_username
 
@@ -127,12 +130,73 @@ class TestSpanishTextOrdering:
 
     def test_employee_roster_orders_surnames_as_spanish(self, make_user):
         for i, surname in enumerate(("Zamora", "Álvarez", "Núñez", "Nogales")):
-            make_user(email=f"user{i}@example.com", last_name=surname)
+            make_user(email=f"user{i}@example.com", paternal_last_name=surname)
 
         assert [
-            u.last_name
-            for u in User.objects.exclude(last_name="").order_by("last_name")
+            u.paternal_last_name
+            for u in User.objects.exclude(paternal_last_name="").order_by(
+                "paternal_last_name"
+            )
         ] == ["Álvarez", "Nogales", "Núñez", "Zamora"]
+
+
+@pytest.mark.django_db
+class TestUserFullName:
+    def test_joins_both_surnames(self, make_user):
+        user = make_user(
+            email="full@example.com",
+            first_name="Ana María",
+            paternal_last_name="López",
+            maternal_last_name="Núñez",
+        )
+        assert user.get_full_name() == "Ana María López Núñez"
+
+    def test_omits_a_missing_maternal_surname(self, make_user):
+        user = make_user(
+            email="one@example.com", first_name="Ana", paternal_last_name="López"
+        )
+        assert user.get_full_name() == "Ana López"
+
+    def test_is_empty_when_nothing_is_recorded(self, make_user):
+        assert make_user(email="blank@example.com").get_full_name() == ""
+
+    def test_has_no_last_name_field(self):
+        with pytest.raises(FieldDoesNotExist):
+            User._meta.get_field("last_name")
+
+
+@pytest.mark.django_db
+class TestUserGetInitials:
+    def test_both_surnames_use_nombre_and_apellido_paterno(self, make_user):
+        user = make_user(
+            email="both@example.com",
+            first_name="Ana",
+            paternal_last_name="López",
+            maternal_last_name="Núñez",
+        )
+        assert user.get_initials() == "AL"
+
+    def test_maternal_surname_only_falls_back_to_it(self, make_user):
+        user = make_user(
+            email="maternal@example.com",
+            first_name="",
+            paternal_last_name="",
+            maternal_last_name="Núñez",
+        )
+        assert user.get_initials() == "N"
+
+    def test_first_name_only(self, make_user):
+        user = make_user(
+            email="firstonly@example.com",
+            first_name="Ana",
+            paternal_last_name="",
+            maternal_last_name="",
+        )
+        assert user.get_initials() == "A"
+
+    def test_nothing_recorded_is_empty(self, make_user):
+        user = make_user(email="noname@example.com")
+        assert user.get_initials() == ""
 
 
 class TestUserProfileCatalogLinks:
@@ -289,3 +353,63 @@ class TestGenerateUniqueUsername:
         make_user(email="b@example.com", username="bob1")
         result = generate_unique_username("bob@other.com")
         assert result == "bob2"
+
+
+def _years_ago(reference, years):
+    """`reference` shifted back `years`.
+
+    Feb 29 falls back to Feb 28 — earlier in the year, so a birthday built this
+    way has always already passed. Without this the tests raise ValueError one
+    day every four years.
+    """
+    try:
+        return reference.replace(year=reference.year - years)
+    except ValueError:
+        return reference.replace(year=reference.year - years, month=2, day=28)
+
+
+@pytest.mark.django_db
+class TestUserProfileDemographics:
+    def test_sex_labels_are_spanish(self):
+        assert UserProfile.Sex.MALE.label == "Masculino"
+        assert UserProfile.Sex.FEMALE.label == "Femenino"
+
+    def test_sex_values_are_english(self):
+        assert UserProfile.Sex.MALE.value == "male"
+        assert UserProfile.Sex.FEMALE.value == "female"
+
+    def test_age_is_none_without_a_birth_date(self, make_user_with_profile):
+        user = make_user_with_profile(email="nodob@example.com")
+        assert user.profile.age is None
+
+    def test_age_counts_completed_years(self, make_user_with_profile):
+        user = make_user_with_profile(email="age@example.com")
+        user.profile.date_of_birth = _years_ago(timezone.localdate(), 30)
+        assert user.profile.age == 30
+
+    def test_age_does_not_count_a_birthday_still_to_come(self, make_user_with_profile):
+        """A birthday one day away is still a year off, so the count is 29."""
+        user = make_user_with_profile(email="tomorrow@example.com")
+        user.profile.date_of_birth = _years_ago(timezone.localdate(), 30) + timedelta(
+            days=1
+        )
+        assert user.profile.age == 29
+
+    def test_clean_rejects_a_future_birth_date(self, make_user_with_profile):
+        user = make_user_with_profile(email="future@example.com")
+        user.profile.date_of_birth = timezone.localdate() + timedelta(days=1)
+        with pytest.raises(ValidationError) as excinfo:
+            user.profile.clean()
+        assert "date_of_birth" in excinfo.value.error_dict
+
+    def test_clean_rejects_an_implausible_age(self, make_user_with_profile):
+        user = make_user_with_profile(email="old@example.com")
+        user.profile.date_of_birth = _years_ago(timezone.localdate(), 120)
+        with pytest.raises(ValidationError) as excinfo:
+            user.profile.clean()
+        assert "date_of_birth" in excinfo.value.error_dict
+
+    def test_clean_accepts_a_working_age(self, make_user_with_profile):
+        user = make_user_with_profile(email="ok@example.com")
+        user.profile.date_of_birth = _years_ago(timezone.localdate(), 40)
+        user.profile.clean()  # does not raise
