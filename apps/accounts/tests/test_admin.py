@@ -370,3 +370,15 @@ class TestSpanishAdminLabels:
             body = staff_client.get(url).content.decode()
             assert "Acceso SOFIA-S" in body, url
             assert "SOFIA-S access" not in body, url
+
+
+@pytest.mark.django_db
+def test_userprofile_admin_lists_demographics():
+    from django.contrib import admin as django_admin
+
+    from apps.accounts.models import UserProfile
+
+    model_admin = django_admin.site._registry[UserProfile]
+    assert "sex" in model_admin.list_display
+    assert "date_of_birth" in model_admin.list_display
+    assert "sex" in model_admin.list_filter

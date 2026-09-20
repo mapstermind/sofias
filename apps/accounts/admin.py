@@ -231,10 +231,19 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "position", "area", "location", "company", "is_activated")
+    list_display = (
+        "user",
+        "position",
+        "sex",
+        "date_of_birth",
+        "area",
+        "location",
+        "company",
+        "is_activated",
+    )
     # No `area` filter: CompanyArea has no registered admin, so the sidebar would
     # enumerate every client's área names. Filter by company, search by area__name.
-    list_filter = ("is_activated", "company")
+    list_filter = ("is_activated", "sex", "company")
     search_fields = (
         "user__username",
         "user__email",
