@@ -1,0 +1,52 @@
+"""The canonical four authorization groups and their Spanish labels."""
+
+from apps.accounts import roles
+
+
+class TestRoleDefinitions:
+    def test_declares_the_four_groups_in_display_order(self):
+        assert roles.ROLE_NAMES == (
+            "Admins",
+            "Principal Exec",
+            "Secondary Exec",
+            "Employees",
+        )
+
+    def test_labels_are_spanish_and_singular(self):
+        assert [r.label for r in roles.ROLES] == [
+            "Administrador",
+            "Ejecutivo principal",
+            "Ejecutivo secundario",
+            "Empleado",
+        ]
+
+    def test_employees_is_empleado_not_colaborador(self):
+        """`colaborador` is the word for a person on the roster, whatever their
+        role, so it cannot also name one of the four roles."""
+        assert roles.label_for_name("Employees") == "Empleado"
+
+    def test_slugs_are_url_safe_spanish(self):
+        assert [r.slug for r in roles.ROLES] == [
+            "administrador",
+            "ejecutivo-principal",
+            "ejecutivo-secundario",
+            "empleado",
+        ]
+
+    def test_role_for_slug_finds_a_role(self):
+        assert roles.role_for_slug("ejecutivo-principal").name == "Principal Exec"
+
+    def test_role_for_slug_returns_none_for_an_unknown_slug(self):
+        assert roles.role_for_slug("gerente") is None
+        assert roles.role_for_slug("") is None
+
+    def test_label_for_name_returns_none_for_an_unknown_group(self):
+        """A group created by hand in the admin has no label to show."""
+        assert roles.label_for_name("Auditores") is None
+
+    def test_labels_for_names_uses_declared_order_not_argument_order(self):
+        labels = roles.labels_for_names(["Employees", "Admins"])
+        assert labels == ["Administrador", "Empleado"]
+
+    def test_labels_for_names_drops_unknown_groups(self):
+        assert roles.labels_for_names(["Auditores", "Employees"]) == ["Empleado"]
