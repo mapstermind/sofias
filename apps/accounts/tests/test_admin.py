@@ -3,7 +3,7 @@ from django.forms.models import inlineformset_factory
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.accounts.admin import CompanyCatalogInlineFormSet
+from apps.accounts.admin import CompanyCatalogInlineFormSet, CustomUserAdmin
 from apps.accounts.models import (
     Company,
     CompanyArea,
@@ -389,34 +389,24 @@ class TestUserAdminRoleColumn:
     """The Usuarios changelist shows each account's authorization role in Spanish."""
 
     def test_column_is_declared(self):
-        from apps.accounts.admin import CustomUserAdmin
-
         assert "role_labels" in CustomUserAdmin.list_display
 
     def test_filter_by_group_is_declared(self):
-        from apps.accounts.admin import CustomUserAdmin
-
         assert "groups" in CustomUserAdmin.list_filter
 
     def test_shows_the_spanish_label(self, make_user, bootstrap_groups):
-        from apps.accounts.admin import CustomUserAdmin
-
         user = make_user(email="exec@example.com")
         user.groups.add(bootstrap_groups["Principal Exec"])
 
         assert CustomUserAdmin.role_labels(None, user) == "Ejecutivo principal"
 
     def test_joins_several_roles_in_declared_order(self, make_user, bootstrap_groups):
-        from apps.accounts.admin import CustomUserAdmin
-
         user = make_user(email="both@example.com")
         user.groups.add(bootstrap_groups["Employees"], bootstrap_groups["Admins"])
 
         assert CustomUserAdmin.role_labels(None, user) == "Administrador, Empleado"
 
     def test_shows_a_dash_when_the_account_has_no_role(self, make_user):
-        from apps.accounts.admin import CustomUserAdmin
-
         user = make_user(email="orphan@example.com")
 
         assert CustomUserAdmin.role_labels(None, user) == "—"
@@ -431,3 +421,9 @@ class TestUserAdminRoleColumn:
 
         assert response.status_code == 200
         assert "Ejecutivo principal".encode() in response.content
+
+    def test_list_filter_keeps_the_defaults_it_replaces(self):
+        """An explicit list_filter replaces UserAdmin's default rather than
+        extending it, so every filter the admin had must stay named."""
+        for expected in ("is_staff", "is_superuser", "is_active", "groups"):
+            assert expected in CustomUserAdmin.list_filter

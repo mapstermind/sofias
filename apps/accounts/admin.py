@@ -42,7 +42,9 @@ class CustomUserAdmin(UserAdmin):
         "is_staff",
         "must_change_password",
     )
-    list_filter = ("groups", "is_staff", "is_active")
+    # Declared in full, like list_display above: an explicit tuple REPLACES
+    # UserAdmin's default, so every filter the admin had must be named here.
+    list_filter = ("groups", "is_staff", "is_superuser", "is_active")
     search_fields = (
         "username",
         "first_name",
