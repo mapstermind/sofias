@@ -1,5 +1,13 @@
-"""Parsing the roster's query string. No database: parsing is pure."""
+"""Parsing and applying the roster's query string.
 
+Parsing (`TestDefaults` through `TestOrder` below) needs no database. The
+`TestNarrowProfiles` and `TestSortMembers` classes that follow apply a parsed
+query to the database and to assembled rows, respectively.
+"""
+
+import pytest
+
+from apps.accounts.models import UserProfile
 from apps.core import roster
 
 
@@ -104,3 +112,141 @@ class TestOrder:
     def test_ordering_alone_does_not_count_as_narrowing(self):
         """`Limpiar filtros` is about what is hidden, not about sequence."""
         assert parse({"orden": roster.ORDER_PROGRESS}).is_narrowed is False
+
+
+@pytest.mark.django_db
+class TestNarrowProfiles:
+    @pytest.fixture
+    def roster_company(
+        self,
+        make_company,
+        make_area,
+        make_location,
+        make_user_with_profile,
+        bootstrap_groups,
+    ):
+        company = make_company()
+        produccion = make_area(company, name="Producción")
+        sistemas = make_area(company, name="Sistemas")
+        matriz = make_location(company, name="Matriz")
+        norte = make_location(company, name="Norte")
+
+        ana = make_user_with_profile(
+            email="ana@example.com",
+            company=company,
+            area=produccion,
+            location=matriz,
+            first_name="Ana",
+            paternal_last_name="Álvarez",
+        )
+        ana.profile.sex = UserProfile.Sex.FEMALE
+        ana.profile.save()
+        ana.groups.add(bootstrap_groups["Employees"])
+
+        beto = make_user_with_profile(
+            email="beto@example.com",
+            company=company,
+            area=sistemas,
+            location=norte,
+            first_name="Beto",
+            paternal_last_name="Ruiz",
+            is_activated=False,
+        )
+        beto.profile.sex = UserProfile.Sex.MALE
+        beto.profile.save()
+        beto.groups.add(bootstrap_groups["Principal Exec"])
+
+        return {
+            "company": company,
+            "ana": ana,
+            "beto": beto,
+            "produccion": produccion,
+            "matriz": matriz,
+        }
+
+    def _emails(self, roster_company, **params):
+        query = roster.parse_roster_query(
+            params,
+            area_ids={roster_company["produccion"].id},
+            location_ids={roster_company["matriz"].id},
+        )
+        qs = roster.narrow_profiles(
+            UserProfile.objects.filter(company=roster_company["company"]), query
+        )
+        return sorted(p.user.email for p in qs)
+
+    def test_no_query_returns_everyone(self, roster_company):
+        assert self._emails(roster_company) == ["ana@example.com", "beto@example.com"]
+
+    def test_search_matches_a_first_name(self, roster_company):
+        assert self._emails(roster_company, q="ana") == ["ana@example.com"]
+
+    def test_search_ignores_accents(self, roster_company):
+        """An operator types `alvarez`; the record says `Álvarez`."""
+        assert self._emails(roster_company, q="alvarez") == ["ana@example.com"]
+
+    def test_search_matches_an_email(self, roster_company):
+        assert self._emails(roster_company, q="beto@") == ["beto@example.com"]
+
+    def test_every_term_must_match_something(self, roster_company):
+        assert self._emails(roster_company, q="ana alvarez") == ["ana@example.com"]
+        assert self._emails(roster_company, q="ana ruiz") == []
+
+    def test_filters_by_sex(self, roster_company):
+        assert self._emails(roster_company, sexo="femenino") == ["ana@example.com"]
+
+    def test_filters_by_area(self, roster_company):
+        area_id = str(roster_company["produccion"].id)
+        assert self._emails(roster_company, area=area_id) == ["ana@example.com"]
+
+    def test_filters_by_location(self, roster_company):
+        location_id = str(roster_company["matriz"].id)
+        assert self._emails(roster_company, localidad=location_id) == [
+            "ana@example.com"
+        ]
+
+    def test_filters_by_role(self, roster_company):
+        assert self._emails(roster_company, rol="ejecutivo-principal") == [
+            "beto@example.com"
+        ]
+
+    def test_filters_combine_with_and(self, roster_company):
+        assert self._emails(roster_company, q="ana", rol="ejecutivo-principal") == []
+
+    def test_a_person_in_two_groups_is_not_duplicated(
+        self, roster_company, bootstrap_groups
+    ):
+        roster_company["ana"].groups.add(bootstrap_groups["Admins"])
+
+        assert self._emails(roster_company, rol="empleado") == ["ana@example.com"]
+
+
+class TestSortMembers:
+    def _members(self):
+        return [
+            {"email": "a", "is_self": False, "survey_progress": [{"percent": 80}]},
+            {"email": "b", "is_self": False, "survey_progress": [{"percent": 10}]},
+            {"email": "c", "is_self": True, "survey_progress": [{"percent": 50}]},
+            {"email": "d", "is_self": False, "survey_progress": []},
+        ]
+
+    def test_progress_order_puts_the_least_advanced_first(self):
+        ordered = roster.sort_members(self._members(), roster.ORDER_PROGRESS)
+
+        assert [m["email"] for m in ordered] == ["c", "b", "a", "d"]
+
+    def test_a_person_with_no_assignment_sorts_last(self):
+        ordered = roster.sort_members(self._members(), roster.ORDER_PROGRESS)
+
+        assert ordered[-1]["email"] == "d"
+
+    def test_the_viewer_stays_first_under_every_order(self):
+        for order in roster.ORDERS:
+            ordered = roster.sort_members(self._members(), order)
+
+            assert ordered[0]["email"] == "c"
+
+    def test_name_order_leaves_the_queryset_order_alone(self):
+        ordered = roster.sort_members(self._members(), roster.ORDER_NAME)
+
+        assert [m["email"] for m in ordered] == ["c", "a", "b", "d"]
