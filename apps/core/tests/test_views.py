@@ -214,7 +214,7 @@ class TestCompanyDashboardView:
         response = client.get(self.URL)
 
         assert response.status_code == 200
-        assert "Ver empleados".encode() in response.content
+        assert "Ver colaboradores".encode() in response.content
 
     def test_summary_strip_hides_employee_action_without_permission(
         self, client, make_user, make_company
@@ -224,7 +224,7 @@ class TestCompanyDashboardView:
         response = self._login_with_company(client, make_user, company)
 
         assert response.status_code == 200
-        assert "Ver empleados".encode() not in response.content
+        assert "Ver colaboradores".encode() not in response.content
 
     def test_take_survey_card_hidden_from_an_admin_viewing_a_company(
         self, client, make_user, active_assignment, bootstrap_groups
@@ -444,8 +444,33 @@ class TestEmployeeSurveyListView:
 # ── CompanyEmployeeListView ──────────────────────────────────────────────────
 
 
+class TestRosterUrls:
+    def test_the_roster_lives_under_colaboradores(self):
+        from django.urls import reverse
+
+        assert (
+            reverse("core:company_employee_list") == "/tablero-empresa/colaboradores/"
+        )
+        assert (
+            reverse("core:company_employee_list_for", args=["AB12X"])
+            == "/empresas/AB12X/colaboradores/"
+        )
+
+    def test_the_detail_page_does_too(self):
+        from django.urls import reverse
+
+        assert (
+            reverse("core:company_employee_detail", args=[7])
+            == "/tablero-empresa/colaboradores/7/"
+        )
+        assert (
+            reverse("core:company_employee_detail_for", args=["AB12X", 7])
+            == "/empresas/AB12X/colaboradores/7/"
+        )
+
+
 class TestCompanyEmployeeListView:
-    URL = "/tablero-empresa/empleados/"
+    URL = "/tablero-empresa/colaboradores/"
 
     def _make_viewer(self, make_user, company):
         user = _give_perm(make_user(email="viewer@example.com"), "can_manage_employees")
@@ -767,10 +792,10 @@ class TestCompanyEmployeeListView:
 
 class TestEmployeeDetailView:
     def _url(self, employee_id):
-        return f"/tablero-empresa/empleados/{employee_id}/"
+        return f"/tablero-empresa/colaboradores/{employee_id}/"
 
     def _url_admin(self, reference_code, employee_id):
-        return f"/empresas/{reference_code}/empleados/{employee_id}/"
+        return f"/empresas/{reference_code}/colaboradores/{employee_id}/"
 
     def _make_viewer(self, make_user, company, *extra_perms):
         """User with can_manage_employees linked to company."""
