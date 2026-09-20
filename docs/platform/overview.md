@@ -14,7 +14,7 @@ folder; for the reasoning behind a structural choice see the ADRs in `docs/adr/`
 
 | App | Role | Registered |
 |---|---|---|
-| `accounts` | Custom user (email + OTP login), companies and their área/localidad catalogs, roles/permissions, CSV import, employee position/área/localidad metadata | ✅ |
+| `accounts` | Custom user (email + OTP login, three-part Mexican name), companies and their área/localidad catalogs, roles/permissions, CSV import, employee position/área/localidad metadata and demographics | ✅ |
 | `surveys` | The **instrument authoring/structure base**: `Survey → Module → Question → Choice`, assignments, and survey-taking | ✅ |
 | `responses` | Response storage: `SurveySubmission` + `Answer` | ✅ |
 | `nom035` | The **NOM-035 valuation engine**: answers → scores → Nivel de Riesgo (NDR) + Guía I referral flag | ✅ |
@@ -100,6 +100,14 @@ with `python manage.py recompute_nom035_scores`.
   for `nom035.company_valuation`'s per-área breakdown; a profile with no área
   falls into a "Sin área" bucket. Grouping is by pk, so identically named áreas
   in different companies never merge.
+- **Employee demographics** — `UserProfile.sex` and `UserProfile.date_of_birth`
+  are collected at activation, and `UserProfile.age` derives completed years
+  against today's date in `America/Mexico_City`, so no age is stored. They sit
+  on the profile rather than on `User` because operators and admins deliberately
+  have no profile; a name, which every account has, stays on `User`. No
+  aggregate reads them yet — they are groundwork for segmenting results by age
+  range and sex. See
+  [ADR-0005](../adr/adr-0005-two-surname-names-and-profile-demographics.md).
 
 ## Where to read next
 
