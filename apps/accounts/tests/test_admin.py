@@ -382,3 +382,52 @@ def test_userprofile_admin_lists_demographics():
     assert "sex" in model_admin.list_display
     assert "date_of_birth" in model_admin.list_display
     assert "sex" in model_admin.list_filter
+
+
+@pytest.mark.django_db
+class TestUserAdminRoleColumn:
+    """The Usuarios changelist shows each account's authorization role in Spanish."""
+
+    def test_column_is_declared(self):
+        from apps.accounts.admin import CustomUserAdmin
+
+        assert "role_labels" in CustomUserAdmin.list_display
+
+    def test_filter_by_group_is_declared(self):
+        from apps.accounts.admin import CustomUserAdmin
+
+        assert "groups" in CustomUserAdmin.list_filter
+
+    def test_shows_the_spanish_label(self, make_user, bootstrap_groups):
+        from apps.accounts.admin import CustomUserAdmin
+
+        user = make_user(email="exec@example.com")
+        user.groups.add(bootstrap_groups["Principal Exec"])
+
+        assert CustomUserAdmin.role_labels(None, user) == "Ejecutivo principal"
+
+    def test_joins_several_roles_in_declared_order(self, make_user, bootstrap_groups):
+        from apps.accounts.admin import CustomUserAdmin
+
+        user = make_user(email="both@example.com")
+        user.groups.add(bootstrap_groups["Employees"], bootstrap_groups["Admins"])
+
+        assert CustomUserAdmin.role_labels(None, user) == "Administrador, Empleado"
+
+    def test_shows_a_dash_when_the_account_has_no_role(self, make_user):
+        from apps.accounts.admin import CustomUserAdmin
+
+        user = make_user(email="orphan@example.com")
+
+        assert CustomUserAdmin.role_labels(None, user) == "—"
+
+    def test_changelist_renders_the_label(
+        self, staff_client, make_user, bootstrap_groups
+    ):
+        user = make_user(email="exec2@example.com")
+        user.groups.add(bootstrap_groups["Principal Exec"])
+
+        response = staff_client.get("/admin/accounts/user/")
+
+        assert response.status_code == 200
+        assert "Ejecutivo principal".encode() in response.content
