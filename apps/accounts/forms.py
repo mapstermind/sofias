@@ -257,7 +257,7 @@ class ProfileActivationForm(forms.Form):
         required=False,
         widget=forms.TextInput(
             attrs={
-                "autocomplete": "additional-name",
+                "autocomplete": "off",
                 "placeholder": "Opcional",
                 "class": _TEXT_CLASSES,
             }

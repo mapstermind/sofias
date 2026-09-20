@@ -17,7 +17,8 @@ Identity, authentication, authorization, and company/employee onboarding. Define
   `utils.generate_unique_username`). A name is three fields —
   `first_name`/`paternal_last_name`/`maternal_last_name` — because the two surnames of a
   Mexican name are not interchangeable and the roster sorts on the paternal one.
-  `get_full_name()` joins whichever are set. See
+  `get_full_name()` joins whichever are set, and `get_initials()` takes the first letter
+  of the nombre and of the apellido paterno, so an avatar and a heading cannot disagree. See
   `docs/adr/adr-0005-two-surname-names-and-profile-demographics.md`.
 - `Company` — `reference_code` is generated in `save()` if blank; used by employees to self-activate.
 - `CompanyArea` / `CompanyLocation` — per-company catalogs (áreas, localidades) sharing

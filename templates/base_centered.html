@@ -3,9 +3,10 @@
 
 {% comment %}
 A page may widen its card by overriding the `container_width` block, or by
-passing a `container_width` context value — the same two ways `base_app.html`
-widens a page. Most auth pages ask for one or two fields and keep the narrow
-default.
+passing a `container_width` context value from the view. Most auth pages ask for
+one or two fields and keep the narrow default. A width passed from a view has to
+be listed in `@source inline(...)` in static/css/main.css; one written into the
+block here is scanned like any other template class.
 {% endcomment %}
 
 {% block body_class %}min-h-screen bg-gray-100{% endblock %}

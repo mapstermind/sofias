@@ -194,7 +194,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Fields:
   - `User.email`: unique email used by both login flows.
   - `User.must_change_password`: forces setup-code/password-fallback users through password creation/change.
-  - `User.first_name`, `User.paternal_last_name`, `User.maternal_last_name`: the three parts of a Mexican name, each under the Spanish collation because the roster sorts on them. `get_full_name()` joins whichever are set.
+  - `User.first_name`, `User.paternal_last_name`, `User.maternal_last_name`: the three parts of a Mexican name, each under the Spanish collation because the roster sorts on them. `get_full_name()` joins whichever are set; `get_initials()` takes the first letter of the nombre and of the apellido paterno for the employee-detail avatar.
   - `Company.reference_code`: unique 5-character company activation code, generated on save when blank.
   - `UserProfile.company`: company assignment for non-admin users.
   - `UserProfile.is_activated`: first-login activation state.
@@ -376,6 +376,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | Name/cargo field rules | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormIdentityFields::*` |
 | Sexo and fecha de nacimiento field rules | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormDemographics::*` |
 | Full name joins the three parts | `apps/accounts/tests/test_models.py` | `TestUserFullName::*` |
+| Initials come from the nombre and the apellido paterno | `apps/accounts/tests/test_models.py` | `TestUserGetInitials::*` |
 | Sexo labels are Spanish and values English | `apps/accounts/tests/test_models.py` | `TestUserProfileDemographics::test_sex_labels_are_spanish`, `test_sex_values_are_english` |
 | Age counts completed years | `apps/accounts/tests/test_models.py` | `TestUserProfileDemographics::test_age_is_none_without_a_birth_date`, `test_age_counts_completed_years`, `test_age_does_not_count_a_birthday_still_to_come` |
 | Working-age window enforced on the model | `apps/accounts/tests/test_models.py` | `TestUserProfileDemographics::test_clean_rejects_a_future_birth_date`, `test_clean_rejects_an_implausible_age`, `test_clean_accepts_a_working_age` |

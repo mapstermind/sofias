@@ -98,10 +98,10 @@
       </div>
 
       <div class="mb-6">
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label id="id_date_of_birth_label" class="block text-sm font-medium text-gray-700 mb-1">
           Fecha de nacimiento
         </label>
-        <div class="grid grid-cols-3 gap-3">
+        <div role="group" aria-labelledby="id_date_of_birth_label" class="grid grid-cols-3 gap-3">
           {{ form.date_of_birth }}
         </div>
         {% if form.date_of_birth.errors %}

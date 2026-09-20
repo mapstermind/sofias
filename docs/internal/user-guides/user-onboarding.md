@@ -46,7 +46,7 @@ The manual procedure below is for OTP-only users:
 6. Save the user.
 7. Open the saved user record and complete these fields:
    - **Correo electrónico**: the employee’s institutional email. This must be exact because login starts from this email.
-   - **Nombre(s)** and **Apellidos**: optional. The employee is asked for these at activation, and anything you enter here is prefilled for them to confirm.
+   - **Nombre(s)**, **Apellido paterno** and **Apellido materno**: optional. The employee is asked for these at activation, and anything you enter here is prefilled for them to confirm.
    - **Activo**: enabled.
    - **Grupos**: assign the correct role group, for example `Employees`, `Principal Exec`, `Secondary Exec`, or `Admins`.
 8. Save again.
@@ -60,7 +60,7 @@ Each non-admin user needs a `UserProfile`.
 3. Set:
    - **Usuario**: the user created above.
    - **Empresa**: the company where the user works. This is the only field you have to set.
-   - **Cargo**, **Área**, **Localidad**: optional here — the employee supplies these during activation, and anything you enter is prefilled for them. The dropdowns only offer entries belonging to the profile’s company.
+   - **Cargo**, **Área**, **Localidad**, **Sexo**, **Fecha de nacimiento**: optional here — the employee supplies these during activation, and anything you enter is prefilled for them. The **Área** and **Localidad** dropdowns only offer entries belonging to the profile’s company.
    - **Cuenta activada**: leave disabled for first-time users.
 4. Save the profile.
 
