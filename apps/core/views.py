@@ -7,6 +7,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from apps.accounts.models import Company, UserProfile
+from apps.accounts.roles import ROLES, labels_for_names
+from apps.core import roster
 from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import Module, SurveyAssignment
 from apps.surveys.visibility import progress_for_modules
@@ -300,11 +302,33 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 "status"
             ]
 
-        # Paternal surname first: that is how a Mexican roster reads.
-        profiles = company.members.select_related("user", "area", "location").order_by(
-            "user__paternal_last_name",
-            "user__maternal_last_name",
-            "user__first_name",
+        # Options offer only what an operator may still assign; validation
+        # accepts every entry the company owns. A retired área keeps the
+        # colaboradores already assigned to it, so a URL naming one has to keep
+        # working even though it is no longer offered.
+        areas = list(company.areas.filter(is_active=True).order_by("name"))
+        locations = list(company.locations.filter(is_active=True).order_by("name"))
+
+        # The validation query only needs to run when the corresponding filter
+        # is actually named in the URL — most page loads carry neither, and a
+        # roster of any size shouldn't pay for a query nothing will use.
+        area_ids = (
+            set(company.areas.values_list("id", flat=True))
+            if "area" in request.GET
+            else set()
+        )
+        location_ids = (
+            set(company.locations.values_list("id", flat=True))
+            if "localidad" in request.GET
+            else set()
+        )
+        query = roster.parse_roster_query(
+            request.GET, area_ids=area_ids, location_ids=location_ids
+        )
+
+        all_profiles = company.members.select_related("user", "area", "location")
+        profiles = roster.narrow_profiles(all_profiles, query).prefetch_related(
+            "user__groups"
         )
 
         members_data = []
@@ -324,11 +348,12 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 {
                     "profile": profile,
                     "is_self": profile.user_id == request.user.id,
+                    "role_labels": labels_for_names(g.name for g in user.groups.all()),
                     "survey_progress": survey_progress,
                 }
             )
 
-        members_data.sort(key=lambda m: (not m["is_self"],))
+        members_data = roster.sort_members(members_data, query.order)
 
         return render(
             request,
@@ -337,6 +362,15 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 "company": company,
                 "is_admin_view": reference_code is not None,
                 "members": members_data,
+                "roster_query": query,
+                "roster_querystring": request.GET.urlencode(),
+                "role_options": [(role.slug, role.label) for role in ROLES],
+                "sex_options": list(roster.SEX_SLUGS_TO_LABELS.items()),
+                "area_options": areas,
+                "location_options": locations,
+                "show_location_filter": len(locations) > 1,
+                "shown_count": len(members_data),
+                "total_count": company.members.count(),
             },
         )
 

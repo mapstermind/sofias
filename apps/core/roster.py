@@ -25,6 +25,11 @@ ORDERS = (ORDER_NAME, ORDER_PROGRESS, ORDER_ACTIVATION)
 # The URL speaks Spanish; these map onto `UserProfile.Sex` values.
 SEX_SLUGS = {"masculino": "male", "femenino": "female"}
 
+# What each sexo slug is called on screen. `UserProfile.Sex` holds the same two
+# labels against the stored values; these are keyed by slug because that is what
+# the toolbar's <option> values are.
+SEX_SLUGS_TO_LABELS = {"masculino": "Masculino", "femenino": "Femenino"}
+
 # A search is a convenience, not a query language. More terms than this is a
 # paste accident, and each one costs four LIKEs.
 MAX_SEARCH_TERMS = 5

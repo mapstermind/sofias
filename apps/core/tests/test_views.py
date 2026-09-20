@@ -563,6 +563,172 @@ class TestCompanyEmployeeListView:
         add_members(8)
         assert query_count() == baseline
 
+    def test_context_carries_the_filter_options(
+        self, client, make_user, make_company, make_area, bootstrap_groups
+    ):
+        company = make_company()
+        make_area(company, name="Producción")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert response.status_code == 200
+        assert [label for _, label in response.context["role_options"]] == [
+            "Administrador",
+            "Ejecutivo principal",
+            "Ejecutivo secundario",
+            "Empleado",
+        ]
+        assert [a.name for a in response.context["area_options"]] == ["Producción"]
+
+    def test_location_filter_is_hidden_when_the_company_has_one_localidad(
+        self, client, make_user, make_company, make_location
+    ):
+        company = make_company()
+        make_location(company, name="Matriz")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert response.context["show_location_filter"] is False
+
+    def test_location_filter_appears_with_two_localidades(
+        self, client, make_user, make_company, make_location
+    ):
+        company = make_company()
+        make_location(company, name="Matriz")
+        make_location(company, name="Norte")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert response.context["show_location_filter"] is True
+
+    def test_search_narrows_the_roster(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        make_user_with_profile(
+            email="ana@example.com",
+            company=company,
+            first_name="Ana",
+            paternal_last_name="Álvarez",
+        )
+        make_user_with_profile(
+            email="beto@example.com",
+            company=company,
+            first_name="Beto",
+            paternal_last_name="Ruiz",
+        )
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "alvarez"})
+
+        emails = [m["profile"].user.email for m in response.context["members"]]
+        assert emails == ["ana@example.com"]
+        assert response.context["shown_count"] == 1
+        assert response.context["total_count"] == 3
+
+    def test_an_unknown_parameter_value_is_ignored(
+        self, client, make_user, make_company
+    ):
+        """A stale or hand-edited URL renders the roster, not an error."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(
+            self.URL, {"sexo": "otro", "area": "999", "rol": "gerente", "orden": "x"}
+        )
+
+        assert response.status_code == 200
+        assert response.context["roster_query"].is_narrowed is False
+
+    def test_a_retired_area_can_still_be_filtered_by(
+        self, client, make_user, make_company, make_area, make_user_with_profile
+    ):
+        """A retired área keeps its colaboradores, so a URL naming one must work
+        even though the dropdown no longer offers it."""
+        company = make_company()
+        retired = make_area(company, name="Almacén", is_active=False)
+        make_user_with_profile(email="ana@example.com", company=company, area=retired)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"area": str(retired.id)})
+
+        assert response.context["roster_query"].area_id == retired.id
+        assert response.context["shown_count"] == 1
+        assert [a.name for a in response.context["area_options"]] == []
+
+    def test_role_labels_are_on_each_member(
+        self, client, make_user, make_company, make_user_with_profile, bootstrap_groups
+    ):
+        company = make_company()
+        ana = make_user_with_profile(email="ana@example.com", company=company)
+        ana.groups.add(bootstrap_groups["Employees"])
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "ana@"})
+
+        assert response.context["members"][0]["role_labels"] == ["Empleado"]
+
+    def test_a_member_with_no_group_has_no_labels(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "ana@"})
+
+        assert response.context["members"][0]["role_labels"] == []
+
+    def test_querystring_is_available_for_the_back_link(
+        self, client, make_user, make_company
+    ):
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "ana", "orden": "progreso"})
+
+        assert "q=ana" in response.context["roster_querystring"]
+        assert "orden=progreso" in response.context["roster_querystring"]
+
+    def test_roster_does_not_run_a_query_per_member(
+        self,
+        client,
+        make_user,
+        make_company,
+        make_user_with_profile,
+        bootstrap_groups,
+        django_assert_max_num_queries,
+    ):
+        """The prefetch pattern is what makes this page survive a real company."""
+        company = make_company()
+        for i in range(12):
+            member = make_user_with_profile(
+                email=f"m{i}@example.com",
+                company=company,
+                first_name=f"M{i}",
+                paternal_last_name="Pérez",
+            )
+            member.groups.add(bootstrap_groups["Employees"])
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        with django_assert_max_num_queries(15):
+            response = client.get(self.URL)
+
+        assert response.status_code == 200
+
 
 # ── EmployeeDetailView ────────────────────────────────────────────────────────
 
