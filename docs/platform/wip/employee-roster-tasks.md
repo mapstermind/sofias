@@ -915,7 +915,7 @@ git commit -m "feat(core): narrow and order the roster from a parsed query"
 - Consumes: `parse_roster_query`, `narrow_profiles`, `sort_members` from Tasks 4–5; `labels_for_names` from Task 1.
 - Produces: template context keys `roster_query`, `role_options`, `sex_options`, `area_options`, `location_options`, `show_location_filter`, `total_count`, `shown_count`, `roster_querystring`; and `role_labels` on each member row.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `TestCompanyEmployeeListView` in `apps/core/tests/test_views.py`:
 
@@ -1056,12 +1056,12 @@ Append to `TestCompanyEmployeeListView` in `apps/core/tests/test_views.py`:
         assert "orden=progreso" in response.context["roster_querystring"]
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `pytest apps/core/tests/test_views.py::TestCompanyEmployeeListView -v`
 Expected: FAIL — `KeyError: 'role_options'` and friends.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 In `apps/core/views.py`, add the imports:
 
@@ -1146,12 +1146,12 @@ SEX_SLUGS_TO_LABELS = {"masculino": "Masculino", "femenino": "Femenino"}
 
 Confirm the related names `company.areas` and `company.locations` match `CompanyArea`/`CompanyLocation`'s `related_name`, and the `is_active` field exists on both; adjust the two list comprehensions if they differ.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest apps/core/tests/test_views.py -v`
 Expected: PASS, including the pre-existing ordering and permission tests.
 
-- [ ] **Step 5: Guard the query count**
+- [x] **Step 5: Guard the query count**
 
 Add to `TestCompanyEmployeeListView`:
 
@@ -1180,7 +1180,7 @@ Add to `TestCompanyEmployeeListView`:
 Run: `pytest apps/core/tests/test_views.py::TestCompanyEmployeeListView::test_roster_does_not_run_a_query_per_member -v`
 Expected: PASS. If it fails, a `prefetch_related` was dropped — fix that rather than raising the ceiling.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -1201,7 +1201,7 @@ git commit -m "feat(core): search, filter and sort the colaborador roster"
 - Consumes: nothing.
 - Produces: the four roster/detail URLs under `/colaboradores/`. The URL *names* (`company_employee_list`, `company_employee_detail`, and their `_for` variants) do not change, so no `{% url %}` tag needs editing.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `apps/core/tests/test_views.py`, above `TestCompanyEmployeeListView`:
 
@@ -1229,20 +1229,20 @@ class TestRosterUrls:
         )
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/core/tests/test_views.py::TestRosterUrls -v`
 Expected: FAIL — the reversed paths still read `/empleados/`.
 
-- [ ] **Step 3: Rename the URLs**
+- [x] **Step 3: Rename the URLs**
 
 In `apps/core/urls.py`, change `empleados` to `colaboradores` in all four paths. Leave the `name=` arguments alone.
 
-- [ ] **Step 4: Update the tests that hardcode the old paths**
+- [x] **Step 4: Update the tests that hardcode the old paths**
 
 In `apps/core/tests/test_views.py`: `TestCompanyEmployeeListView.URL` becomes `"/tablero-empresa/colaboradores/"`, and the two detail-URL helpers near line 572 become `f"/tablero-empresa/colaboradores/{employee_id}/"` and `f"/empresas/{reference_code}/colaboradores/{employee_id}/"`. Search the file for `empleados` and leave nothing behind.
 
-- [ ] **Step 5: Sweep the copy**
+- [x] **Step 5: Sweep the copy**
 
 Replace the generic uses. *Colaborador* is the person; *empleado* survives only where the `Employees` role is meant, which is nowhere in these templates:
 
@@ -1260,12 +1260,12 @@ Replace the generic uses. *Colaborador* is the person; *empleado* survives only 
 
 Then update the two assertions in `apps/core/tests/test_views.py` near lines 217 and 227 that assert on `"Ver empleados"`, changing them to `"Ver colaboradores"`.
 
-- [ ] **Step 6: Run the whole suite**
+- [x] **Step 6: Run the whole suite**
 
 Run: `pytest`
 Expected: PASS. Then `grep -rn "empleado" templates/` should return only `employee_list.html`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 ruff format . && ruff check .
