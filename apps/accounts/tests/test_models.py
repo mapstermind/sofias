@@ -165,6 +165,40 @@ class TestUserFullName:
             User._meta.get_field("last_name")
 
 
+@pytest.mark.django_db
+class TestUserGetInitials:
+    def test_both_surnames_use_nombre_and_apellido_paterno(self, make_user):
+        user = make_user(
+            email="both@example.com",
+            first_name="Ana",
+            paternal_last_name="López",
+            maternal_last_name="Núñez",
+        )
+        assert user.get_initials() == "AL"
+
+    def test_maternal_surname_only_falls_back_to_it(self, make_user):
+        user = make_user(
+            email="maternal@example.com",
+            first_name="",
+            paternal_last_name="",
+            maternal_last_name="Núñez",
+        )
+        assert user.get_initials() == "N"
+
+    def test_first_name_only(self, make_user):
+        user = make_user(
+            email="firstonly@example.com",
+            first_name="Ana",
+            paternal_last_name="",
+            maternal_last_name="",
+        )
+        assert user.get_initials() == "A"
+
+    def test_nothing_recorded_is_empty(self, make_user):
+        user = make_user(email="noname@example.com")
+        assert user.get_initials() == ""
+
+
 class TestUserProfileCatalogLinks:
     def test_deleting_area_nulls_the_profile_but_keeps_it(
         self, make_company, make_area, make_user_with_profile

@@ -34,8 +34,8 @@
   <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5" style="flex: 2">
     <div class="flex items-center gap-4">
       <div class="shrink-0 flex size-12 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold uppercase text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
-        {% if emp.first_name or emp.paternal_last_name %}
-          {{ emp.first_name|slice:":1" }}{{ emp.paternal_last_name|slice:":1" }}
+        {% if emp.get_initials %}
+          {{ emp.get_initials }}
         {% else %}
           {{ emp.email|slice:":2" }}
         {% endif %}

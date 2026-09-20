@@ -326,8 +326,10 @@ class ProfileActivationForm(forms.Form):
         self.company = company
 
         # Built here rather than at import time so the offered years do not go
-        # stale in a long-running process, and so the dropdown can never offer a
-        # year `clean_date_of_birth` would reject.
+        # stale in a long-running process. The range only bounds the plausible
+        # working-age years; a year alone can't settle whether the birthday has
+        # already passed, so `clean_date_of_birth` still decides the exact
+        # boundary.
         today = timezone.localdate()
         self.fields["date_of_birth"].widget = forms.SelectDateWidget(
             years=range(
@@ -390,12 +392,8 @@ class ProfileActivationForm(forms.Form):
         if date_of_birth is None:
             raise forms.ValidationError("Escribe tu fecha de nacimiento.")
 
-        today = timezone.localdate()
-        birthday_passed = (today.month, today.day) >= (
-            date_of_birth.month,
-            date_of_birth.day,
-        )
-        age = today.year - date_of_birth.year - (0 if birthday_passed else 1)
+        # An unsaved instance is fine here: `age` only reads `date_of_birth`.
+        age = UserProfile(date_of_birth=date_of_birth).age
         if not MIN_ACTIVATION_AGE <= age <= MAX_ACTIVATION_AGE:
             raise forms.ValidationError(
                 f"La fecha de nacimiento debe corresponder a una edad entre "

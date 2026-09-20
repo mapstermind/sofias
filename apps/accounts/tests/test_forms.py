@@ -140,6 +140,7 @@ class TestProfileActivationFormIdentityFields:
                 area,
                 first_name="  Ana  ",
                 paternal_last_name="  López  ",
+                maternal_last_name="  Núñez  ",
                 position="  Analista  ",
             ),
             company=company,
@@ -147,6 +148,7 @@ class TestProfileActivationFormIdentityFields:
         assert form.is_valid(), form.errors
         assert form.cleaned_data["first_name"] == "Ana"
         assert form.cleaned_data["paternal_last_name"] == "López"
+        assert form.cleaned_data["maternal_last_name"] == "Núñez"
         assert form.cleaned_data["position"] == "Analista"
 
 
@@ -220,8 +222,31 @@ class TestProfileActivationFormDemographics:
         assert not form.is_valid()
         assert "date_of_birth" in form.errors
 
-    def test_date_of_birth_dropdowns_offer_only_working_ages(self, company_with_area):
-        """The widget must not offer a year the validator would reject."""
+    def test_date_of_birth_rejects_an_implausible_age(self, company_with_area):
+        company, area = company_with_area
+        today = timezone.localdate()
+        form = ProfileActivationForm(
+            data=self._data(company, area, date_of_birth_year=str(today.year - 120)),
+            company=company,
+        )
+        assert not form.is_valid()
+        assert "date_of_birth" in form.errors
+
+    def test_date_of_birth_rejects_a_future_birth_date(self, company_with_area):
+        """A future date can't be selected from the widget's year list, so it
+        is posted directly via the raw `date_of_birth_year` field value."""
+        company, area = company_with_area
+        today = timezone.localdate()
+        form = ProfileActivationForm(
+            data=self._data(company, area, date_of_birth_year=str(today.year + 1)),
+            company=company,
+        )
+        assert not form.is_valid()
+        assert "date_of_birth" in form.errors
+
+    def test_date_of_birth_dropdown_bounds_the_offered_years(self, company_with_area):
+        """The widget offers only the plausible working-age years; it does not
+        by itself guarantee every date built from them passes validation."""
         company, _ = company_with_area
         form = ProfileActivationForm(company=company)
         years = form.fields["date_of_birth"].widget.years

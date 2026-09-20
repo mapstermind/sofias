@@ -89,6 +89,17 @@ class User(AbstractUser):
         parts = (self.first_name, self.paternal_last_name, self.maternal_last_name)
         return " ".join(part for part in parts if part)
 
+    def get_initials(self):
+        """Up to two initials, preferring nombre + apellido paterno.
+
+        Falls back to whatever name parts are actually recorded (e.g. only an
+        apellido materno) so an avatar always matches what `get_full_name`
+        would show, rather than falling through to something else (an email)
+        while a name part is on file.
+        """
+        parts = (self.first_name, self.paternal_last_name, self.maternal_last_name)
+        return "".join(part[0] for part in parts if part)[:2]
+
 
 class Company(models.Model):
     name = models.CharField(

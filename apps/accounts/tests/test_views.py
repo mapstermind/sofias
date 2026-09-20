@@ -848,6 +848,7 @@ class TestSetupProfileView:
                 area=area.pk,
                 first_name="Ana",
                 paternal_last_name="López",
+                maternal_last_name="Núñez",
                 position="Analista",
             ),
         )
@@ -856,6 +857,7 @@ class TestSetupProfileView:
         user.profile.refresh_from_db()
         assert user.first_name == "Ana"
         assert user.paternal_last_name == "López"
+        assert user.maternal_last_name == "Núñez"
         assert user.profile.position == "Analista"
 
     def test_missing_name_blocks_activation(

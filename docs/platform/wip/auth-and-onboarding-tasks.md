@@ -1298,7 +1298,7 @@ and `/tablero-empresa/empleados/`:
 1. The activation form shows Apellido paterno and Apellido materno as separate
    inputs, with "Opcional" in the materno placeholder.
 2. Fecha de nacimiento renders as three dropdowns side by side — not stacked —
-   starting on "Año / Mes / Día" rather than pre-selecting a year.
+   starting on "Día / Mes / Año" rather than pre-selecting a year.
 3. Month names are Spanish (enero, febrero, …).
 4. The year dropdown's newest option is 15 years ago and its oldest is 99.
 5. Sexo offers Masculino and Femenino, starting on "Selecciona tu sexo".
