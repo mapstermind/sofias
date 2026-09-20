@@ -78,8 +78,9 @@ Use this path when the user can receive emails from SOFIA-S.
 6. The user enters the code at `/cuentas/verificar/`.
 7. After successful verification, SOFIA-S logs the user in.
 8. If this is the user’s first login, they are redirected to `/cuentas/completar-perfil/`.
-9. The user enters the company `reference_code`, their **nombre(s)** and **apellidos** (both required) and an optional **cargo**, then selects their **área** from the company’s list. If the company has more than one localidad, they also select their **localidad**; with exactly one localidad it is assigned automatically and not shown.
-10. If the code matches the company linked to their profile, **Cuenta activada** becomes enabled, the name, cargo, área and localidad are saved, and the user proceeds into the app. Until this happens the employee roster shows them as *Sin nombre*.
+9. The user enters the company `reference_code`, their **nombre(s)** and **apellido paterno**, their **sexo** and their **fecha de nacimiento** (all required), plus an optional **apellido materno** and an optional **cargo**, then selects their **área** from the company’s list. If the company has more than one localidad, they also select their **localidad**; with exactly one localidad it is assigned automatically and not shown.
+10. **Fecha de nacimiento** is three dropdowns — Año, Mes, Día. The Año list only offers years that put the user between 15 and 99, so an out-of-range birth year cannot be chosen.
+11. If the code matches the company linked to their profile, **Cuenta activada** becomes enabled, the name, cargo, sexo, fecha de nacimiento, área and localidad are saved, and the user proceeds into the app. Until this happens the employee roster shows them as *Sin nombre*.
 
 ## Path B: Setup Access Code Fallback
 
