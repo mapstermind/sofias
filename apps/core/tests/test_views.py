@@ -702,30 +702,62 @@ class TestCompanyEmployeeListView:
         assert "q=ana" in response.context["roster_querystring"]
         assert "orden=progreso" in response.context["roster_querystring"]
 
-    def test_roster_does_not_run_a_query_per_member(
+    def test_roster_query_count_does_not_grow_with_the_roster(
         self,
         client,
         make_user,
         make_company,
         make_user_with_profile,
         bootstrap_groups,
-        django_assert_max_num_queries,
     ):
-        """The prefetch pattern is what makes this page survive a real company."""
+        """The company-wide prefetches are what make this page survive a real
+        company: three colaboradores and thirty must cost the same queries."""
         company = make_company()
-        for i in range(12):
-            member = make_user_with_profile(
-                email=f"m{i}@example.com",
-                company=company,
-                first_name=f"M{i}",
-                paternal_last_name="Pérez",
-            )
-            member.groups.add(bootstrap_groups["Employees"])
         viewer = self._make_viewer(make_user, company)
         client.force_login(viewer)
 
-        with django_assert_max_num_queries(15):
-            response = client.get(self.URL)
+        def load_with(member_count, start):
+            for i in range(start, start + member_count):
+                member = make_user_with_profile(
+                    email=f"m{i}@example.com",
+                    company=company,
+                    first_name=f"M{i}",
+                    paternal_last_name="Pérez",
+                )
+                member.groups.add(bootstrap_groups["Employees"])
+            # Warm any per-process caches before counting.
+            client.get(self.URL)
+            with CaptureQueriesContext(connection) as ctx:
+                response = client.get(self.URL)
+            assert response.status_code == 200
+            return len(ctx)
+
+        small = load_with(3, 0)
+        large = load_with(27, 3)
+
+        assert large == small, (
+            f"query count grew from {small} to {large} when the roster grew "
+            f"from 3 to 30 colaboradores — a prefetch was dropped"
+        )
+
+    def test_a_retired_localidad_can_still_be_filtered_by(
+        self, client, make_user, make_company, make_location, make_user_with_profile
+    ):
+        """A retired localidad keeps its colaboradores, so a URL naming one must
+        work even though the dropdown no longer offers it."""
+        company = make_company()
+        retired = make_location(company, name="Bodega", is_active=False)
+        make_user_with_profile(
+            email="ana@example.com", company=company, location=retired
+        )
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"localidad": str(retired.id)})
+
+        assert response.context["roster_query"].location_id == retired.id
+        assert response.context["shown_count"] == 1
+        assert [loc.name for loc in response.context["location_options"]] == []
 
         assert response.status_code == 200
 
