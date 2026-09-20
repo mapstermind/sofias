@@ -6,84 +6,121 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SOFIA-S is a Django 6.0 web application for survey processing and reporting. It handles survey creation, response collection, data processing, and dynamic dashboard/report generation — built around the Mexican NOM-035 psychosocial-risk questionnaire. Frontend uses Django templates with TailwindCSS. **User-facing copy and URLs are in Spanish; code, comments, and identifiers are in English.**
 
-## Triage before you start
+## Route before you start
 
-**Run this before writing any code, and before any other exploration.** Every
-request that changes the repo lands in one of three branches: decide which,
-say which, and follow it. The files in `docs/platform/` are the list of
-documented features — read the one that matches before deciding.
+**Do this before writing any code, and before any other exploration.** Every
+request that changes the repo gets a route: how much documentation it needs, and
+where it lands. Decide it, post it, and wait for confirmation before working.
 
-**A · No doc needed.** Proceed normally; no feature doc is involved:
+```
+Route
+  Change   <one line: what is actually being changed>
+  Doc      none | docs/platform/<feature>.md — extend | docs/platform/<feature>.md — new
+  Path     direct to main | branch feat/<name> → PR
+  Plan     none | docs/platform/wip/<feature>-tasks.md
+  Why      <one or two lines justifying the Doc and Path calls>
+```
+
+Keep it short — a typo fix gets four terse lines, not a paragraph. Answering a
+question is not a change: skip the route entirely and just answer.
+
+**Override.** "skip the process", "just make the change", "this is a chore", or a
+direct instruction to go ahead puts the request on the shortest route — `Doc:
+none`. Take it at face value. The route is still posted; it just has nothing in
+it to argue with.
+
+### Doc — none, extend, or new
+
+The files in `docs/platform/` are the list of documented features. Read the one
+that matches before deciding.
+
+**none.** No feature doc is involved:
 
 - a bug fix that restores behavior the feature doc already describes
 - a typo, copy, or styling fix
 - a dependency bump, an asset rebuild (`npm run build:css` / `build:js`)
 - a test-only change, or a refactor with no behavior change
 - an edit to docs, comments, or `CLAUDE.md` itself
-- answering a question — a question is not a change, so skip triage entirely
 
-**B · Change to a documented feature.** Some `docs/platform/<feature>.md` covers
-the thing being changed. If the request did not already say so ("refactor X",
-"expand X", "change how X works"), **confirm that intent in one question before
-starting** — the user may believe they are asking for something new. Then follow
-the refactor track below.
+**extend.** Some `docs/platform/<feature>.md` covers the thing being changed and
+the change fits inside its declared `Scope`. Write the change brief as the
+`## What changes` header of `docs/platform/wip/<feature>-tasks.md`: what changes,
+why, which sections of the live doc it makes wrong, and whether it touches a
+decision recorded in `docs/adr/`. **Do not edit the live feature doc yet** — it
+describes current behavior until the new behavior ships. If the user never said
+"refactor X", "expand X" or "change how X works", say so plainly in the `Why`
+line: they may believe they are asking for something new, and confirming the
+route is where that gets caught.
 
-**C · New, undocumented feature.** No feature doc covers it. **Stop before writing
-any code.** Name the docs you checked and what is missing, then offer to draft
-`docs/platform/<feature>.md` from `docs/platform/feature-template.md` using
-`superpowers:brainstorming`. Implementation starts only once that doc exists and
-the user has signed off on it. **Never edit `feature-template.md`** — copy it.
+**new.** No feature doc covers it, and it would need a `Scope` section of its
+own. **Stop before writing any code.** Name the docs you checked and what is
+missing, then offer to draft `docs/platform/<feature>.md` from
+`docs/platform/feature-template.md` using `superpowers:brainstorming`.
+Implementation starts only once that doc exists and the user has signed off on
+it. **Never edit `feature-template.md`** — copy it.
 
-**B or C?** Does the change fit inside the existing doc's declared `Scope`? Yes →
-B, extend that doc. No, it would need a `Scope` section of its own → C, new doc.
-When it is genuinely ambiguous, ask one question naming the candidate doc instead
-of guessing.
+When extend-or-new is genuinely ambiguous, ask one question naming the candidate
+doc instead of guessing.
 
-**Override.** "skip triage", "this is a chore", or a direct instruction to just
-make the change puts the request in branch A. Take it at face value.
+### Path — direct to main, or a branch and a PR
 
-### The refactor track (B)
+**Direct to main** only when *all* of these hold: no feature doc is written or
+rewritten, no migration, no new dependency, no change to authorization or the
+`apps/nom035` scoring constants, and the work is one commit's worth with the
+suite green afterwards.
 
-1. **Change brief** → `docs/platform/wip/<feature>-change.md`: what changes, why,
-   and which parts of the live feature doc it makes wrong.
-2. **ADR check.** If the change supersedes a decision recorded in `docs/adr/`,
+**Branch `feat/<name>` → PR** when *any* of these hold:
+
+- a feature doc is created or rewritten
+- there is a migration
+- it touches authorization (permissions, groups, roles) or the NOM-035 scoring constants
+- it adds or bumps a dependency
+- the plan runs to more than a couple of tasks
+- the user asked for a PR, or would plainly want to read it before it lands
+
+`Doc: none` does not imply `Path: direct to main` — a large behavior-preserving
+refactor needs no doc and still belongs on a branch. When the call is close,
+propose the branch and let the user wave it off.
+
+### The work, once the route is confirmed
+
+1. **Document** (extend or new only) — `superpowers:brainstorming`.
+2. **Plan** (whenever there is a branch) → `docs/platform/wip/<feature>-tasks.md`
+   (`superpowers:writing-plans`), an ordered `- [ ]` checklist structured for TDD.
+   Check ADRs first: if the change supersedes a decision recorded in `docs/adr/`,
    write a **new** ADR — it may describe both the old and the new behavior, which
    is the one place that history belongs — and set the superseded ADR's `Status:`
-   line to `Superseded by ADR-000X`.
-3. **Plan** → `docs/platform/wip/<feature>-tasks.md`
-   (`superpowers:writing-plans`). **Its last task is always: rewrite
-   `docs/platform/<feature>.md` to describe the new behavior in present tense,
-   with no migration commentary, and list any new ADR under `## Linked ADRs`.**
-   That rewrite ships in the same diff and is reviewed with the code — it is not
-   a post-merge chore.
-4. **Implement, review, open the PR.**
-5. **Clean up:** leave `docs/platform/wip/` holding nothing but its README.
-
-### The new-feature track (C)
-
-The same shape, with two differences: step 1 creates the live doc
-`docs/platform/<feature>.md` from the template (there is no `-change.md`), and
-the last plan task trims that doc to its post-ship form rather than rewriting it.
+   line to `Superseded by ADR-000X`. **The plan's last task is always the
+   documentation task:** rewrite `docs/platform/<feature>.md` to describe the new
+   behavior in present tense, with no migration commentary, listing any new ADR
+   under `## Linked ADRs` — or, for a new feature, trim that doc to its post-ship
+   form. That rewrite ships in the same diff and is reviewed with the code; it is
+   not a post-merge chore.
+3. **Branch** (if the route said so) — `git switch -c`, carrying the uncommitted
+   docs along. Nothing left behind on `main`.
+4. **Implement**, review, and prepare the PR or the commit.
+5. **Clean up** after a branch merges: leave `docs/platform/wip/` holding nothing
+   but its README.
 
 ### Gates, and running between them
 
 Four things stop you mid-request. Nothing else should:
 
-1. **The documentation gate** — branch C above: no code for an undocumented feature.
-2. **The intent question** — branch B above, when the user did not already say "refactor" or "expand".
+1. **The route** — posted and confirmed before any work, on every request that changes the repo.
+2. **The documentation gate** — `Doc: new` above: no code for an undocumented feature.
 3. **An unresolved decision** — implementation hits something the feature doc or change brief does not settle. Describe the options and your recommendation, then wait. Do not decide unilaterally.
-4. **Opening a PR**, pushing, or committing to `main` — prepare it, then wait for confirmation.
+4. **Shipping** — opening a PR, pushing, or committing to `main`. Prepare it, then wait for confirmation.
 
 Between those, run. Write the plan and start working it; verify and carry straight into review; act on the findings you judge genuine. Announce what you did at each boundary and keep moving — the user reads your reply and interrupts, rather than being asked for permission to proceed. Do not stop to ask whether to continue, and do not park finished work waiting for a review round-trip nobody requested.
 
 ### Scaffolding hygiene
 
 On `main`, `docs/platform/wip/` holds nothing but its README. Check it at session
-start and again before opening a PR. If it holds files that do not belong to the
+start and again before shipping. If it holds files that do not belong to the
 current branch's work, say so — a plan left behind is a stale checklist
 describing steps that have already happened.
 
-The full human-side process — three phases, one prompt each — is
+The full human-side process — eight steps, two prompts — is
 [`docs/internal/prompting-workflow.md`](../docs/internal/prompting-workflow.md).
 
 ## Tech Stack
@@ -190,7 +227,7 @@ apps/            # Django apps; each app has its own CLAUDE.md with details
 
 **Feature docs live in `docs/platform/`.** This project is documentation-driven (see `docs/internal/prompting-workflow.md`): the per-feature doc `docs/platform/<feature>.md` is the source of truth. When a skill (brainstorming, writing-plans, etc.) produces or rewrites it, write it under `docs/platform/` — never under `docs/superpowers/`, a `specs/` folder, or a scratch path.
 
-**Everything derived from it is disposable scaffolding and lives in `docs/platform/wip/`** — the change brief `<feature>-change.md` and the implementation plan `<feature>-tasks.md`. Both are deleted when their branch merges (`prompting-workflow.md` step 10). The feature doc survives and is what the next reader consults; scaffolding left behind is a stale checklist describing steps that have already happened.
+**Everything derived from it is disposable scaffolding and lives in `docs/platform/wip/`** — one file per feature, `<feature>-tasks.md`, holding the change brief under `## What changes` and the implementation plan below it. It is deleted when its branch merges (`prompting-workflow.md` step 7). The feature doc survives and is what the next reader consults; scaffolding left behind is a stale checklist describing steps that have already happened.
 
 **Live documentation describes only the current implementation.** After a refactor, rewrite the affected docs as if the new implementation were always the original. Do **not** leave migration commentary behind — no "replaces the old X", "formerly Y", "superseded Z", "deprecated alias", "no longer supported", or before/after comparisons. A reader should not be able to tell from a live doc that a previous implementation ever existed.
 

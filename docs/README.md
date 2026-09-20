@@ -68,13 +68,13 @@ Copy `feature-template.md` when starting a new feature doc. Never edit the templ
 
 ### `docs/platform/wip/` — Disposable scaffolding
 
-Working artifacts for one branch: the change brief `<feature>-change.md` and the implementation plan `<feature>-tasks.md`. Nothing here is a source of truth, and the folder is emptied when the branch merges. On `main` it holds only its README.
+One working artifact per branch: `<feature>-tasks.md`, holding the change brief under `## What changes` and the implementation plan below it. Nothing here is a source of truth, and the folder is emptied when the branch merges. On `main` it holds only its README.
 
 ### `docs/internal/` — The human side of the process
 
 Guides, meeting notes, roadmap context, and workflows for the team. The agent does not read most of this in a normal session, but it is not off-limits: `CLAUDE.md` points here for the full development workflow, and `Guias de Referencia.md` is the authoritative NOM-035 scoring reference it must consult.
 
-- `prompting-workflow.md` is the master guide for how to develop a feature end-to-end.
+- `prompting-workflow.md` is the master guide: how a request is routed, and the eight steps from there to merged.
 - `open-findings.md` tracks issues found during development that were out of scope for the change that found them.
 - `user-guides/` contains operator procedures (CSV import, user onboarding).
 - `meetings/` contains background context. `Guias de Referencia.md` is the single
@@ -91,7 +91,7 @@ Docs moved here when the feature they describe is retired or superseded. Include
 | Document | What it covers |
 |----------|---------------|
 | `platform/overview.md` | **Start here** — system map: the apps, the shared-base + per-instrument-engine shape, and end-to-end data flow |
-| `internal/prompting-workflow.md` | End-to-end feature development workflow, starting with how a request is triaged |
+| `internal/prompting-workflow.md` | End-to-end development workflow, starting with how a request is routed — which docs it needs, and whether it takes a branch or goes straight to `main` |
 | `platform/survey-model.md` | The survey authoring base (Survey→Module→Question), variants, `visible_when` branching |
 | `platform/database.md` | Full database schema reference |
 | `platform/nom-035-analytics.md` | NOM-035 valuation engine (scores → NDR) + Insights panels |
