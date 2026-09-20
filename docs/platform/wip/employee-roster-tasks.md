@@ -49,7 +49,7 @@ superseded.
 
 The module is named `roles.py` and its dataclass `RoleDefinition` deliberately: `accounts.models.Role` already exists as the unmanaged sentinel that hosts the custom permissions, and the two must not be confused. `Role` is where permissions live; `roles.py` is where the four groups that bundle them are named.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/accounts/tests/test_roles.py
@@ -107,12 +107,12 @@ class TestRoleDefinitions:
         assert roles.labels_for_names(["Auditores", "Employees"]) == ["Empleado"]
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/accounts/tests/test_roles.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'apps.accounts.roles'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # apps/accounts/roles.py
@@ -175,12 +175,12 @@ def labels_for_names(names) -> list[str]:
     return [role.label for role in ROLES if role.name in wanted]
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `pytest apps/accounts/tests/test_roles.py -v`
-Expected: PASS, 8 tests.
+Expected: PASS, 9 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -203,7 +203,7 @@ git commit -m "feat(accounts): name the four authorization groups in one place"
 
 The fixture currently retypes the whole permission map. Importing it removes the third place a permission has to be added, which is the point of Task 1 — the canonical list exists once.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `apps/accounts/tests/test_roles.py`:
 
@@ -222,12 +222,12 @@ class TestCanonicalNamesAreUsedEverywhere:
         assert set(bootstrap_groups) == set(roles.ROLE_NAMES)
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/accounts/tests/test_roles.py::TestCanonicalNamesAreUsedEverywhere -v`
 Expected: FAIL — `GROUP_PERMISSIONS` is a plain dict literal whose key order is not asserted against `ROLE_NAMES`; the first test fails only if the order or set differs, so confirm it fails by temporarily reordering. If it passes as written, still complete Steps 3–4: the value is that the two can no longer drift.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 In `bootstrap_groups.py`, replace the dict literal's bare string keys with the canonical constants:
 
@@ -293,12 +293,12 @@ def bootstrap_groups(db):
     return groups
 ```
 
-- [ ] **Step 4: Run the whole suite**
+- [x] **Step 4: Run the whole suite**
 
 Run: `pytest`
 Expected: PASS. The fixture feeds many tests, so a regression here surfaces immediately.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -318,7 +318,7 @@ git commit -m "refactor(accounts): source group names and permissions from one m
 - Consumes: `labels_for_names` from Task 1.
 - Produces: `CustomUserAdmin.role_labels(obj) -> str`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create or extend `apps/accounts/tests/test_admin.py`:
 
@@ -365,12 +365,12 @@ class TestUserAdminRoleColumn:
         assert "Ejecutivo principal".encode() in response.content
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/accounts/tests/test_admin.py -v`
 Expected: FAIL — `role_labels` is not an attribute of `CustomUserAdmin`.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 In `apps/accounts/admin.py`, add the import and the column. `list_display` is declared in full already — add `role_labels` to it, and add a `list_filter`:
 
@@ -389,7 +389,9 @@ from .roles import labels_for_names
         "is_staff",
         "must_change_password",
     )
-    list_filter = ("groups", "is_staff", "is_active")
+    # Declared in full, like list_display above: an explicit tuple REPLACES
+    # UserAdmin's default, so every filter the admin had must be named here.
+    list_filter = ("groups", "is_staff", "is_superuser", "is_active")
 
     def get_queryset(self, request):
         # The Rol column reads every account's groups; without this the
@@ -405,12 +407,12 @@ from .roles import labels_for_names
 
 `@admin.display(description="rol")` is what keeps the column header Spanish; without it Django derives *Role labels* from the method name.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest apps/accounts/tests/test_admin.py -v && python manage.py check`
 Expected: PASS, and `check` reports no issues.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -432,7 +434,7 @@ git commit -m "feat(accounts): show each account's rol on the Usuarios changelis
 
 `parse_roster_query` touches no database: it is handed the sets of valid área and localidad pks. That is what lets every parsing rule be tested without fixtures, and it is what enforces the spec's rule that a catalog entry from another company is ignored.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
 # apps/core/tests/test_roster.py
@@ -540,12 +542,12 @@ class TestOrder:
         assert parse({"orden": roster.ORDER_PROGRESS}).is_narrowed is False
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/core/tests/test_roster.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'apps.core.roster'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 ```python
 # apps/core/roster.py
@@ -646,12 +648,12 @@ def parse_roster_query(params, *, area_ids: set[int], location_ids: set[int]):
 
 Delete the unused `field` import if ruff flags it.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest apps/core/tests/test_roster.py -v`
 Expected: PASS, 19 tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -673,7 +675,7 @@ git commit -m "feat(core): parse the roster's search, filter and sort parameters
 
 Accent-insensitive search reuses `FoldCatalogName` from `apps/accounts/models.py` — the expression the área and localidad catalogs already use for uniqueness. Postgres' own `unaccent()` is only STABLE and would add an extension for a rule this project has already written once.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `apps/core/tests/test_roster.py`:
 
@@ -798,12 +800,12 @@ class TestSortMembers:
         assert [m["email"] for m in ordered] == ["c", "a", "b", "d"]
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/core/tests/test_roster.py -v`
 Expected: FAIL — `AttributeError: module 'apps.core.roster' has no attribute 'narrow_profiles'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Add to `apps/core/roster.py`:
 
@@ -888,12 +890,12 @@ def sort_members(members: list, order: str) -> list:
 
 Both `sort` calls are stable, so the second preserves the first's order among everyone who is not the viewer.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest apps/core/tests/test_roster.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
