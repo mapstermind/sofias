@@ -10,40 +10,18 @@ def bootstrap_groups(db):
     Create the four authorization groups with their permissions.
     Required by verify_otp, which calls Group.objects.get(name="Employees").
     Declare this fixture explicitly on any test that exercises that flow.
+
+    The permission map is imported rather than retyped, so a new permission is
+    declared in two places (`Role.Meta.permissions` and `GROUP_PERMISSIONS`)
+    and the fixture follows automatically.
     """
-    codenames = [
-        "can_manage_surveys",
-        "can_view_dashboard",
-        "can_view_insights",
-        "can_take_assigned_surveys",
-        "can_manage_employees",
-        "can_view_submissions",
-    ]
+    from apps.accounts.management.commands.bootstrap_groups import GROUP_PERMISSIONS
+
+    codenames = [c for names in GROUP_PERMISSIONS.values() for c in names]
     perms = {p.codename: p for p in Permission.objects.filter(codename__in=codenames)}
 
-    group_perms = {
-        "Admins": [
-            "can_manage_surveys",
-            "can_view_dashboard",
-            "can_view_insights",
-            "can_manage_employees",
-            "can_view_submissions",
-        ],
-        "Principal Exec": [
-            "can_view_dashboard",
-            "can_view_insights",
-            "can_manage_employees",
-            "can_take_assigned_surveys",
-        ],
-        "Secondary Exec": [
-            "can_view_dashboard",
-            "can_manage_employees",
-            "can_take_assigned_surveys",
-        ],
-        "Employees": ["can_take_assigned_surveys"],
-    }
     groups = {}
-    for name, cnames in group_perms.items():
+    for name, cnames in GROUP_PERMISSIONS.items():
         g, _ = Group.objects.get_or_create(name=name)
         g.permissions.set([perms[c] for c in cnames if c in perms])
         groups[name] = g

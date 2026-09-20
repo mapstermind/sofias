@@ -50,3 +50,17 @@ class TestRoleDefinitions:
 
     def test_labels_for_names_drops_unknown_groups(self):
         assert roles.labels_for_names(["Auditores", "Employees"]) == ["Empleado"]
+
+
+class TestCanonicalNamesAreUsedEverywhere:
+    def test_bootstrap_groups_is_keyed_by_the_canonical_names(self):
+        """The command must not retype the names it creates."""
+        from apps.accounts.management.commands.bootstrap_groups import (
+            GROUP_PERMISSIONS,
+        )
+
+        assert tuple(GROUP_PERMISSIONS) == roles.ROLE_NAMES
+
+    def test_the_test_fixture_creates_exactly_those_groups(self, bootstrap_groups):
+        """A fixture that drifts from the command tests a system nobody runs."""
+        assert set(bootstrap_groups) == set(roles.ROLE_NAMES)
