@@ -23,6 +23,7 @@ from .models import (
     catalog_name_key,
     normalize_catalog_name,
 )
+from .roles import labels_for_names
 
 
 @admin.register(User)
@@ -37,9 +38,13 @@ class CustomUserAdmin(UserAdmin):
         "first_name",
         "paternal_last_name",
         "maternal_last_name",
+        "role_labels",
         "is_staff",
         "must_change_password",
     )
+    # Declared in full, like list_display above: an explicit tuple REPLACES
+    # UserAdmin's default, so every filter the admin had must be named here.
+    list_filter = ("groups", "is_staff", "is_superuser", "is_active")
     search_fields = (
         "username",
         "first_name",
@@ -78,6 +83,17 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = UserAdmin.add_fieldsets + (
         ("Acceso SOFIA-S", {"fields": ("must_change_password",)}),
     )
+
+    def get_queryset(self, request):
+        # The Rol column reads every account's groups; without this the
+        # changelist runs one query per row.
+        return super().get_queryset(request).prefetch_related("groups")
+
+    @admin.display(description="rol")
+    def role_labels(self, obj):
+        """The Spanish labels of the groups this account belongs to."""
+        labels = labels_for_names(g.name for g in obj.groups.all())
+        return ", ".join(labels) if labels else "—"
 
     def get_urls(self):
         urls = super().get_urls()

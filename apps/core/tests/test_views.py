@@ -1,4 +1,6 @@
 import math
+import re
+from html.parser import HTMLParser
 
 import pytest
 from django.contrib.auth.models import Permission
@@ -12,6 +14,86 @@ from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import SurveyAssignment
 
 pytestmark = pytest.mark.django_db
+
+
+def _dialog(html):
+    """The filter modal's markup, so a pill assertion cannot match the page."""
+    inside = html.split('<dialog id="roster-filter-modal"', 1)[1]
+    return inside.split("</dialog>", 1)[0]
+
+
+def _inputs(html):
+    """Every `<input>` in `html` as {type, name, value, checked}."""
+    found = []
+    for tag in re.findall(r"<input\b[^>]*>", html):
+        attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', tag))
+        found.append(
+            {
+                "type": attrs.get("type", ""),
+                "name": attrs.get("name", ""),
+                "value": attrs.get("value", ""),
+                "checked": re.search(r"\bchecked\b", tag) is not None,
+            }
+        )
+    return found
+
+
+def _avatar(html):
+    """The shared avatar element, whitespace-normalized for comparison."""
+    match = re.search(r"<div data-avatar\b.*?</div>", html, re.S)
+    assert match, "no element carrying data-avatar was rendered"
+    return " ".join(match.group(0).split())
+
+
+_VOID_ELEMENTS = {
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+}
+
+
+class _PillSiblingCounter(HTMLParser):
+    """Tracks, for every element in the tree, how many `<input class="peer
+    ...">` pills it holds as *direct* children, and remembers the worst
+    offender across the whole document."""
+
+    def __init__(self):
+        super().__init__()
+        self._stack = [0]  # pill count of the currently-open element, per depth
+        self.max_pills_sharing_a_parent = 0
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "input":
+            if "peer" in attrs.get("class", "").split():
+                self._stack[-1] += 1
+                self.max_pills_sharing_a_parent = max(
+                    self.max_pills_sharing_a_parent, self._stack[-1]
+                )
+            return
+        if tag not in _VOID_ELEMENTS:
+            self._stack.append(0)
+
+    def handle_endtag(self, tag):
+        if tag not in _VOID_ELEMENTS and len(self._stack) > 1:
+            self._stack.pop()
+
+
+def _max_pills_sharing_a_parent(html):
+    parser = _PillSiblingCounter()
+    parser.feed(html)
+    return parser.max_pills_sharing_a_parent
 
 
 def _give_perm(user, codename):
@@ -214,7 +296,7 @@ class TestCompanyDashboardView:
         response = client.get(self.URL)
 
         assert response.status_code == 200
-        assert "Ver empleados".encode() in response.content
+        assert "Ver colaboradores".encode() in response.content
 
     def test_summary_strip_hides_employee_action_without_permission(
         self, client, make_user, make_company
@@ -224,7 +306,7 @@ class TestCompanyDashboardView:
         response = self._login_with_company(client, make_user, company)
 
         assert response.status_code == 200
-        assert "Ver empleados".encode() not in response.content
+        assert "Ver colaboradores".encode() not in response.content
 
     def test_take_survey_card_hidden_from_an_admin_viewing_a_company(
         self, client, make_user, active_assignment, bootstrap_groups
@@ -444,8 +526,33 @@ class TestEmployeeSurveyListView:
 # ── CompanyEmployeeListView ──────────────────────────────────────────────────
 
 
+class TestRosterUrls:
+    def test_the_roster_lives_under_colaboradores(self):
+        from django.urls import reverse
+
+        assert (
+            reverse("core:company_employee_list") == "/tablero-empresa/colaboradores/"
+        )
+        assert (
+            reverse("core:company_employee_list_for", args=["AB12X"])
+            == "/empresas/AB12X/colaboradores/"
+        )
+
+    def test_the_detail_page_does_too(self):
+        from django.urls import reverse
+
+        assert (
+            reverse("core:company_employee_detail", args=[7])
+            == "/tablero-empresa/colaboradores/7/"
+        )
+        assert (
+            reverse("core:company_employee_detail_for", args=["AB12X", 7])
+            == "/empresas/AB12X/colaboradores/7/"
+        )
+
+
 class TestCompanyEmployeeListView:
-    URL = "/tablero-empresa/empleados/"
+    URL = "/tablero-empresa/colaboradores/"
 
     def _make_viewer(self, make_user, company):
         user = _give_perm(make_user(email="viewer@example.com"), "can_manage_employees")
@@ -484,7 +591,52 @@ class TestCompanyEmployeeListView:
         ]
         assert surnames == ["Álvarez", "Núñez", "Zamora"]
 
-    def test_activation_status_labels_render(
+    def test_orden_progreso_puts_the_least_advanced_first(
+        self,
+        client,
+        make_user,
+        make_user_with_profile,
+        active_assignment,
+        survey_with_questions,
+    ):
+        company = active_assignment.company
+        questions = survey_with_questions["questions"]
+        viewer = self._make_viewer(make_user, company)
+
+        behind = make_user_with_profile(email="behind@example.com", company=company)
+        ahead = make_user_with_profile(email="ahead@example.com", company=company)
+
+        behind_submission = SurveySubmission.objects.create(
+            assignment=active_assignment,
+            user=behind,
+            status=SurveySubmission.Status.IN_PROGRESS,
+        )
+        Answer.objects.create(
+            submission=behind_submission, question=questions[0], value="x"
+        )
+
+        ahead_submission = SurveySubmission.objects.create(
+            assignment=active_assignment,
+            user=ahead,
+            status=SurveySubmission.Status.IN_PROGRESS,
+        )
+        for q in questions[:8]:
+            Answer.objects.create(submission=ahead_submission, question=q, value="x")
+
+        client.force_login(viewer)
+        response = client.get(self.URL, {"orden": "progreso"})
+
+        emails = [m["profile"].user.email for m in response.context["members"]]
+        # The viewer is pinned first regardless of order; behind/ahead are the
+        # part this test is actually about, and a code path that sorted
+        # descending (or not at all) would return them the other way round.
+        assert emails == [
+            "viewer@example.com",
+            "behind@example.com",
+            "ahead@example.com",
+        ]
+
+    def test_every_member_of_the_company_is_listed(
         self, client, make_user, make_company, make_user_with_profile
     ):
         company = make_company()
@@ -502,8 +654,6 @@ class TestCompanyEmployeeListView:
         assert response.status_code == 200
         assert active_user.email.encode() in response.content
         assert inactive_user.email.encode() in response.content
-        assert "Activado".encode() in response.content
-        assert "No activado".encode() in response.content
 
     def test_completed_gated_survey_reads_100_percent(
         self, client, make_user, make_company, make_user_with_profile, gated_survey
@@ -563,16 +713,684 @@ class TestCompanyEmployeeListView:
         add_members(8)
         assert query_count() == baseline
 
+    def test_search_narrows_the_roster(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        make_user_with_profile(
+            email="ana@example.com",
+            company=company,
+            first_name="Ana",
+            paternal_last_name="Álvarez",
+        )
+        make_user_with_profile(
+            email="beto@example.com",
+            company=company,
+            first_name="Beto",
+            paternal_last_name="Ruiz",
+        )
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "alvarez"})
+
+        emails = [m["profile"].user.email for m in response.context["members"]]
+        assert emails == ["ana@example.com"]
+        assert response.context["shown_count"] == 1
+        assert response.context["total_count"] == 3
+
+    def test_an_unknown_parameter_value_is_ignored(
+        self, client, make_user, make_company
+    ):
+        """A stale or hand-edited URL renders the roster, not an error."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(
+            self.URL, {"sexo": "otro", "area": "999", "rol": "gerente", "orden": "x"}
+        )
+
+        assert response.status_code == 200
+        assert response.context["roster_query"].is_narrowed is False
+
+    def test_a_retired_area_can_still_be_filtered_by(
+        self, client, make_user, make_company, make_area, make_user_with_profile
+    ):
+        """A retired área keeps its colaboradores, so a URL naming one must work
+        even though the modal no longer offers it."""
+        company = make_company()
+        retired = make_area(company, name="Almacén", is_active=False)
+        make_user_with_profile(email="ana@example.com", company=company, area=retired)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"area": str(retired.id)})
+
+        assert response.context["roster_query"].area_ids == (retired.id,)
+        assert response.context["shown_count"] == 1
+        groups = {g["key"]: g for g in response.context["filter_groups"]}
+        assert groups["area"]["options"] == []
+
+    def test_role_labels_are_on_each_member(
+        self, client, make_user, make_company, make_user_with_profile, bootstrap_groups
+    ):
+        company = make_company()
+        ana = make_user_with_profile(email="ana@example.com", company=company)
+        ana.groups.add(bootstrap_groups["Employees"])
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "ana@"})
+
+        assert response.context["members"][0]["role_labels"] == ["Empleado"]
+
+    def test_a_member_with_no_group_has_no_labels(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "ana@"})
+
+        assert response.context["members"][0]["role_labels"] == []
+
+    def test_querystring_is_available_for_the_back_link(
+        self, client, make_user, make_company
+    ):
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "ana", "orden": "progreso"})
+
+        assert "q=ana" in response.context["roster_querystring"]
+        assert "orden=progreso" in response.context["roster_querystring"]
+
+    def test_roster_query_count_does_not_grow_with_the_roster(
+        self,
+        client,
+        make_user,
+        make_company,
+        make_user_with_profile,
+        bootstrap_groups,
+    ):
+        """The company-wide prefetches are what make this page survive a real
+        company: three colaboradores and thirty must cost the same queries."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        def load_with(member_count, start):
+            for i in range(start, start + member_count):
+                member = make_user_with_profile(
+                    email=f"m{i}@example.com",
+                    company=company,
+                    first_name=f"M{i}",
+                    paternal_last_name="Pérez",
+                )
+                member.groups.add(bootstrap_groups["Employees"])
+            # Warm any per-process caches before counting.
+            client.get(self.URL)
+            with CaptureQueriesContext(connection) as ctx:
+                response = client.get(self.URL)
+            assert response.status_code == 200
+            return len(ctx)
+
+        small = load_with(3, 0)
+        large = load_with(27, 3)
+
+        assert large == small, (
+            f"query count grew from {small} to {large} when the roster grew "
+            f"from 3 to 30 colaboradores — a prefetch was dropped"
+        )
+
+    def test_roster_query_count_does_not_grow_with_a_role_filter_applied(
+        self,
+        client,
+        make_user,
+        make_company,
+        make_user_with_profile,
+        bootstrap_groups,
+    ):
+        """The role filter's `.distinct()` sits on top of the same prefetches;
+        it must not add a query or change the plan as the roster grows."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        def load_with(member_count, start):
+            for i in range(start, start + member_count):
+                member = make_user_with_profile(
+                    email=f"m{i}@example.com",
+                    company=company,
+                    first_name=f"M{i}",
+                    paternal_last_name="Pérez",
+                )
+                member.groups.add(bootstrap_groups["Employees"])
+            # Warm any per-process caches before counting.
+            client.get(self.URL, {"rol": "empleado"})
+            with CaptureQueriesContext(connection) as ctx:
+                response = client.get(self.URL, {"rol": "empleado"})
+            assert response.status_code == 200
+            return len(ctx)
+
+        small = load_with(3, 0)
+        large = load_with(27, 3)
+
+        assert large == small, (
+            f"query count grew from {small} to {large} when the roster grew "
+            f"from 3 to 30 colaboradores with rol=empleado applied — "
+            f"distinct() changed the query plan"
+        )
+
+    def test_a_retired_localidad_can_still_be_filtered_by(
+        self, client, make_user, make_company, make_location, make_user_with_profile
+    ):
+        """A retired localidad keeps its colaboradores, so a URL naming one must
+        work even though the modal no longer offers it. The company also has a
+        second active localidad, so the dimension does render — and the retired
+        one must still be missing from its options while the active one is
+        offered: options list only what may still be assigned."""
+        company = make_company()
+        retired = make_location(company, name="Bodega", is_active=False)
+        make_location(company, name="Matriz")
+        make_location(company, name="Norte")
+        make_user_with_profile(
+            email="ana@example.com", company=company, location=retired
+        )
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"localidad": str(retired.id)})
+
+        assert response.context["roster_query"].location_ids == (retired.id,)
+        assert response.context["shown_count"] == 1
+        groups = {g["key"]: g for g in response.context["filter_groups"]}
+        labels = [o["label"] for o in groups["localidad"]["options"]]
+        assert "Bodega" not in labels
+        assert "Matriz" in labels
+
+    def test_filter_groups_expose_every_dimension(
+        self, client, make_user, make_company, make_area, make_location
+    ):
+        """Sexo, rol and área always; localidad only when there are two."""
+        company = make_company()
+        make_area(company, name="Producción")
+        make_location(company, name="Matriz")
+        make_location(company, name="Norte")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        groups = {g["key"]: g for g in response.context["filter_groups"]}
+        assert list(groups.keys()) == ["sexo", "rol", "area", "localidad"]
+
+        assert groups["sexo"]["label"] == "Sexo"
+        assert groups["sexo"]["multiple"] is False
+        assert [o["value"] for o in groups["sexo"]["options"]] == [
+            "masculino",
+            "femenino",
+        ]
+        assert [o["label"] for o in groups["sexo"]["options"]] == [
+            "Masculino",
+            "Femenino",
+        ]
+
+        assert groups["rol"]["label"] == "Rol"
+        assert groups["rol"]["multiple"] is True
+        assert [o["value"] for o in groups["rol"]["options"]] == [
+            "administrador",
+            "ejecutivo-principal",
+            "ejecutivo-secundario",
+            "empleado",
+        ]
+        assert [o["label"] for o in groups["rol"]["options"]] == [
+            "Administrador",
+            "Ejecutivo principal",
+            "Ejecutivo secundario",
+            "Empleado",
+        ]
+
+        assert groups["area"]["label"] == "Área"
+        assert groups["area"]["multiple"] is True
+        assert [o["label"] for o in groups["area"]["options"]] == ["Producción"]
+
+        assert groups["localidad"]["label"] == "Localidad"
+        assert groups["localidad"]["multiple"] is True
+        assert [o["label"] for o in groups["localidad"]["options"]] == [
+            "Matriz",
+            "Norte",
+        ]
+
+    def test_selected_options_are_marked(
+        self, client, make_user, make_company, make_area
+    ):
+        """GET ?area=<pk> marks that option's selected True, others False."""
+        company = make_company()
+        producción = make_area(company, name="Producción")
+        ventas = make_area(company, name="Ventas")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"area": str(producción.id)})
+
+        groups = {g["key"]: g for g in response.context["filter_groups"]}
+        selected_by_value = {
+            o["value"]: o["selected"] for o in groups["area"]["options"]
+        }
+        assert selected_by_value[str(producción.id)] is True
+        assert selected_by_value[str(ventas.id)] is False
+
+    def test_active_filter_count_counts_dimensions_not_values(
+        self, client, make_user, make_company, make_area, bootstrap_groups
+    ):
+        """?area=<a>&area=<b>&rol=empleado -> 2, not 3."""
+        company = make_company()
+        first = make_area(company, name="Producción")
+        second = make_area(company, name="Ventas")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(
+            self.URL,
+            {"area": [str(first.id), str(second.id)], "rol": "empleado"},
+        )
+
+        assert response.context["active_filter_count"] == 2
+
+    def test_search_does_not_count_as_a_filter(self, client, make_user, make_company):
+        """?q=ana -> active_filter_count == 0; the search box is visible anyway."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "ana"})
+
+        assert response.context["active_filter_count"] == 0
+
+    def test_localidad_group_absent_with_one_localidad(
+        self, client, make_user, make_company, make_location
+    ):
+        company = make_company()
+        make_location(company, name="Matriz")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        keys = [g["key"] for g in response.context["filter_groups"]]
+        assert "localidad" not in keys
+
+    # ── the rendered page ─────────────────────────────────────────────────────
+
+    def test_toolbar_is_a_get_form(self, client, make_user, make_company):
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+        html = response.content.decode()
+
+        assert 'id="roster-filters"' in html
+        assert 'method="get"' in html
+        # A GET form must not carry a CSRF token — it would end up in the URL.
+        assert "csrfmiddlewaretoken" not in html.split('id="roster-filters"')[1][:2000]
+
+    def test_the_filter_modal_is_a_dialog_inside_the_toolbar_form(
+        self, client, make_user, make_company
+    ):
+        """Aplicar filtros is a plain submit, so the pills have to be fields of
+        the toolbar's own GET form rather than a dialog parked beside it."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL).content.decode()
+
+        after_form_opens = html.split('id="roster-filters"', 1)[1]
+        before_dialog = after_form_opens.split('<dialog id="roster-filter-modal"', 1)
+        assert len(before_dialog) == 2, "no <dialog id=roster-filter-modal> rendered"
+        assert "</form>" not in before_dialog[0]
+
+    def test_filter_options_are_pills_not_dropdowns(
+        self, client, make_user, make_company, make_area
+    ):
+        """Multi-select dimensions are checkboxes, sexo is radios, and nothing
+        on the page is a <select> any more."""
+        company = make_company()
+        area = make_area(company, name="Producción")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL).content.decode()
+        fields = _inputs(_dialog(html))
+
+        sexo = [f for f in fields if f["name"] == "sexo"]
+        assert [(f["type"], f["value"]) for f in sexo] == [
+            ("radio", "masculino"),
+            ("radio", "femenino"),
+        ]
+
+        rol = [f for f in fields if f["name"] == "rol"]
+        assert [(f["type"], f["value"]) for f in rol] == [
+            ("checkbox", "administrador"),
+            ("checkbox", "ejecutivo-principal"),
+            ("checkbox", "ejecutivo-secundario"),
+            ("checkbox", "empleado"),
+        ]
+
+        areas = [f for f in fields if f["name"] == "area"]
+        assert [(f["type"], f["value"]) for f in areas] == [("checkbox", str(area.id))]
+
+        assert "<select" not in html
+
+    def test_no_two_filter_pills_share_a_parent(
+        self, client, make_user, make_company, make_area
+    ):
+        """Tailwind's peer-checked: compiles to a general sibling selector, so
+        two pill inputs sharing a parent make checking the first one style
+        every pill after it. Each pair gets its own wrapper to confine the
+        match."""
+        company = make_company()
+        make_area(company, name="Producción")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL).content.decode()
+
+        assert _max_pills_sharing_a_parent(_dialog(html)) <= 1
+
+    def test_a_chosen_pill_comes_back_checked(
+        self, client, make_user, make_company, make_area
+    ):
+        """The URL is the whole filter state, so a reload has to re-check the
+        pills it names and leave every other one alone."""
+        company = make_company()
+        produccion = make_area(company, name="Producción")
+        ventas = make_area(company, name="Ventas")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(
+            self.URL, {"area": str(produccion.id), "sexo": "femenino"}
+        )
+        fields = _inputs(_dialog(response.content.decode()))
+        checked = {(f["name"], f["value"]) for f in fields if f["checked"]}
+
+        assert checked == {("area", str(produccion.id)), ("sexo", "femenino")}
+        assert ("area", str(ventas.id)) not in checked
+
+    def test_the_filtros_button_carries_the_active_count(
+        self, client, make_user, make_company, make_area, bootstrap_groups
+    ):
+        company = make_company()
+        area = make_area(company, name="Producción")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(
+            self.URL, {"area": str(area.id), "rol": "empleado"}
+        ).content.decode()
+
+        badge = re.search(r'id="roster-filter-count"[^>]*>\s*([^<\s]+)', html)
+        assert badge and badge.group(1) == "2"
+
+    def test_the_filtros_button_carries_no_count_when_nothing_is_filtered(
+        self, client, make_user, make_company
+    ):
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL, {"q": "ana"}).content.decode()
+
+        assert 'id="roster-filter-open"' in html
+        assert 'id="roster-filter-count"' not in html
+
+    def test_limpiar_filtros_joins_the_bar_only_once_narrowed(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        """One copy always lives in the modal footer; the second sits beside
+        Filtros so a narrowed roster can be cleared without opening it."""
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        wide = client.get(self.URL).content.decode()
+        assert wide.count("Limpiar filtros") == 1
+
+        narrowed = client.get(self.URL, {"q": "ana"}).content.decode()
+        assert narrowed.count("Limpiar filtros") == 2
+
+    def test_limpiar_filtros_keeps_the_sort(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        """Ordering is not narrowing, so clearing the filters must not throw
+        the operator's chosen order away with them."""
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL, {"q": "ana", "orden": "progreso"}).content.decode()
+
+        assert f'href="{self.URL}?orden=progreso"' in html
+
+    def test_the_sort_control_stays_in_the_bar(self, client, make_user, make_company):
+        """Three submit buttons, so sorting works with no JavaScript at all."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL, {"orden": "progreso"}).content.decode()
+
+        buttons = re.findall(r'<button\b[^>]*name="orden"[^>]*>', html)
+        values = [re.search(r'value="([^"]*)"', b).group(1) for b in buttons]
+        assert {"nombre", "progreso", "activacion"} <= set(values)
+        pressed = [b for b in buttons if 'aria-pressed="true"' in b]
+        assert len(pressed) == 1 and 'value="progreso"' in pressed[0]
+
+    def test_the_search_button_is_the_forms_first_submit(
+        self, client, make_user, make_company
+    ):
+        """Enter in a text field submits a form through its FIRST submit button.
+        The search button has to stay ahead of the sort buttons, and has to name
+        the order it submits under, or typing a name and pressing Enter would
+        quietly re-sort the roster instead of searching it."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL, {"orden": "progreso"}).content.decode()
+        form = html.split('id="roster-filters"', 1)[1].split("</form>", 1)[0]
+
+        submits = re.findall(r'<button\b[^>]*type="submit"[^>]*>', form)
+        assert submits, "the toolbar submits nothing"
+        assert 'aria-label="Buscar"' in submits[0], (
+            "a submit button now comes before the search button; Enter in the "
+            "search box would fire that one instead"
+        )
+        assert 'name="orden"' in submits[0]
+        assert 'value="progreso"' in submits[0]
+
+    def test_each_colaborador_is_a_discrete_card(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        make_user_with_profile(email="beto@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL).content.decode()
+
+        assert html.count("<article") == 3
+
+    def test_the_avatar_is_one_component_on_both_pages(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        """The roster and the detail page render the same include, so the
+        circle cannot drift apart between them."""
+        company = make_company()
+        ana = make_user_with_profile(
+            email="ana@example.com",
+            company=company,
+            first_name="Ana",
+            paternal_last_name="Álvarez",
+        )
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        roster = client.get(self.URL, {"q": "ana@"}).content.decode()
+        detail = client.get(
+            f"/tablero-empresa/colaboradores/{ana.id}/"
+        ).content.decode()
+
+        assert _avatar(roster) == _avatar(detail)
+
+    def test_the_filter_script_is_loaded(self, client, make_user, make_company):
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL).content.decode()
+
+        assert "js/roster_filters.js" in html
+
+    def test_card_shows_the_role_label(
+        self,
+        client,
+        make_user,
+        make_company,
+        make_user_with_profile,
+        bootstrap_groups,
+    ):
+        company = make_company()
+        ana = make_user_with_profile(
+            email="ana@example.com",
+            company=company,
+            position="Analista",
+        )
+        ana.groups.add(bootstrap_groups["Principal Exec"])
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert "Ejecutivo principal".encode() in response.content
+
+    def test_a_member_with_no_group_reads_sin_rol(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "ana@"})
+
+        assert "Sin rol".encode() in response.content
+
+    def test_activated_members_carry_no_badge(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        """Activation is the normal state; a badge on every card says nothing."""
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert "Activado".encode() not in response.content
+
+    def test_unactivated_members_are_flagged(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        make_user_with_profile(
+            email="beto@example.com", company=company, is_activated=False
+        )
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert "Sin activar".encode() in response.content
+
+    def test_progress_bar_reports_its_value(
+        self,
+        client,
+        make_user,
+        make_company,
+        make_user_with_profile,
+        active_assignment,
+    ):
+        company = active_assignment.company
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert 'role="progressbar"'.encode() in response.content
+        assert 'aria-valuenow="0"'.encode() in response.content
+
+    def test_a_search_matching_nobody_says_the_search_is_empty(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        """One of the two empty states: the company has people, the search
+        found none of them, so the way out is to clear the filters."""
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "nadie"})
+
+        assert response.context["shown_count"] == 0
+        assert response.context["total_count"] == 2
+        assert "Ningún colaborador coincide con la búsqueda".encode() in (
+            response.content
+        )
+        assert "Aún no hay colaboradores vinculados".encode() not in response.content
+        # The way out points at the roster with every parameter dropped.
+        assert f'href="{self.URL}"'.encode() in response.content
+
+    def test_a_company_with_nobody_in_it_says_so_instead(
+        self, client, make_user, make_company
+    ):
+        """The other empty state: nothing is being hidden, the company is empty.
+        Offering to clear filters here would answer a question nobody asked."""
+        empty = make_company(name="Vacía")
+        viewer = self._make_viewer(make_user, make_company())
+        viewer = _give_perm(viewer, "can_manage_surveys")
+        client.force_login(viewer)
+
+        response = client.get(f"/empresas/{empty.reference_code}/colaboradores/")
+
+        assert response.context["total_count"] == 0
+        assert response.context["roster_query"].is_narrowed is False
+        assert "Aún no hay colaboradores vinculados a Vacía.".encode() in (
+            response.content
+        )
+        assert "Ningún colaborador coincide".encode() not in response.content
+
 
 # ── EmployeeDetailView ────────────────────────────────────────────────────────
 
 
 class TestEmployeeDetailView:
     def _url(self, employee_id):
-        return f"/tablero-empresa/empleados/{employee_id}/"
+        return f"/tablero-empresa/colaboradores/{employee_id}/"
 
     def _url_admin(self, reference_code, employee_id):
-        return f"/empresas/{reference_code}/empleados/{employee_id}/"
+        return f"/empresas/{reference_code}/colaboradores/{employee_id}/"
 
     def _make_viewer(self, make_user, company, *extra_perms):
         """User with can_manage_employees linked to company."""
@@ -868,3 +1686,19 @@ class TestEmployeeDetailView:
         # The dominio row is itself the disclosure that reveals its dimensiones.
         assert "<details" in body
         assert "Trabajos peligrosos" in body
+
+    # ── back link ─────────────────────────────────────────────────────────────
+
+    def test_back_link_preserves_the_roster_filters(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        """Opening a person and going back should not discard the search."""
+        company = make_company()
+        ana = self._make_employee(make_user_with_profile, company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self._url(ana.id), {"q": "ana", "orden": "progreso"})
+
+        html = response.content.decode()
+        assert "/tablero-empresa/colaboradores/?q=ana&amp;orden=progreso" in html

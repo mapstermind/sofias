@@ -48,10 +48,15 @@ Identity, authentication, authorization, and company/employee onboarding. Define
 
 ## Authorization model
 
-Permissions are defined on `Role.Meta.permissions`; groups that bundle them are created by `python manage.py bootstrap_groups` (idempotent). The four groups: **Admins, Principal Exec, Secondary Exec, Employees**. Tests get the same setup via the `bootstrap_groups` fixture in `conftest.py`. When adding a permission, update **both** `Role.Meta.permissions` and `bootstrap_groups.GROUP_PERMISSIONS`, then the `conftest.py` fixture.
+Permissions are defined on `Role.Meta.permissions`; groups that bundle them are created by `python manage.py bootstrap_groups` (idempotent). The four groups: **Admins, Principal Exec, Secondary Exec, Employees**.
+
+`roles.py` is where those four live — each one's `auth.Group.name` (the stored lookup key, English), its Spanish display label (*Administrador*, *Ejecutivo principal*, *Ejecutivo secundario*, *Empleado*), its URL slug (`administrador`, `ejecutivo-principal`, `ejecutivo-secundario`, `empleado`) and their display order, most authority first. Import `ROLES`, `ROLE_NAMES`, `label_for_name()` or `labels_for_names()` from there rather than retyping a name; anything a user reads goes through a label, never through the stored name. Renaming the stored names is open finding #1.
+
+When adding a permission, update **both** `Role.Meta.permissions` and `bootstrap_groups.GROUP_PERMISSIONS` — two places, not three: the `bootstrap_groups` fixture in `conftest.py` imports `GROUP_PERMISSIONS` rather than restating it, so tests follow automatically.
 
 ## Key files
 
+- `roles.py` — the four authorization groups declared once: stored name, Spanish label, URL slug, display order.
 - `backends.py` — `EmailOTPBackend`: a near-empty backend; OTP validation happens in the view, the backend exists only so `login()` can record it. `ModelBackend` stays first in `AUTHENTICATION_BACKENDS` to keep admin password login working.
 - `middleware.py` — two gates, applied in this order:
   - `RequirePasswordChangeMiddleware`: traps users with `must_change_password=True` on the change-password flow (admin/static/logout exempted).

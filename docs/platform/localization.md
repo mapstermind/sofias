@@ -87,6 +87,16 @@ it anywhere.
 - Spanish `AppConfig.verbose_name` on the four apps that own models.
 - Branded admin chrome.
 - Spanish `auth_permission` names (see [Permission names](#permission-names)).
+- **Authorization role labels.** The four groups keep their English
+  `auth.Group.name` (`Admins`, `Principal Exec`, `Secondary Exec`, `Employees`)
+  — the stored lookup key, matched by string and accepted as a value of the CSV
+  importer's `group` column — and are displayed through the Spanish labels
+  declared in `apps/accounts/roles.py`: *Administrador*, *Ejecutivo principal*,
+  *Ejecutivo secundario*, *Empleado*. Everything a user reads reaches the screen
+  through those labels; the stored name is a key, in the same way
+  `UserProfile.Sex` stores `male` and shows *Masculino*. Renaming the stored
+  values is tracked in
+  [`docs/internal/open-findings.md`](../internal/open-findings.md).
 
 **Not covered:**
 
@@ -99,11 +109,6 @@ it anywhere.
   language switcher. There is one target language.
 - Python identifiers, module names, and docstrings — code stays English
   (see `.claude/CLAUDE.md`).
-- **Authorization group names** (`Admins`, `Principal Exec`, `Secondary Exec`,
-  `Employees`). They are `auth.Group.name` values looked up by string in four
-  places and accepted as a CSV column value, so renaming them is a behavior
-  change rather than presentation. Tracked in
-  [`docs/internal/open-findings.md`](../internal/open-findings.md).
 
 ## Public behavior
 
@@ -120,6 +125,9 @@ An administrator opening the Django admin sees:
   field, with help text in Spanish where a field needs explanation.
 - A Groups permission picker that reads *Cuentas | empresa | Puede agregar
   empresa* end to end.
+- A *Rol* column on the Usuarios changelist, reading the Spanish label of each
+  account's groups — *Administrador*, *Ejecutivo principal*, *Ejecutivo
+  secundario*, *Empleado* — and an em dash for an account in none.
 - Timestamps in Mexico City time and dates in es-MX format.
 
 Nothing about the public employee-facing app changes except displayed times,
@@ -133,13 +141,20 @@ population.
 
 | Concept | Term | Not |
 |---|---|---|
-| A person who answers a survey | **colaborador** | empleado, usuario |
+| A person linked to a company, whatever their role | **colaborador** | empleado, usuario |
 | The company being surveyed | **empresa** | compañía, cliente |
 | Read access, in a permission name | **ver** | consultar, visualizar |
 | One respondent's attempt at an assignment | **envío de encuesta** | respuesta, participación |
 | One answer within an attempt | **respuesta** | contestación |
 | The NOM-035 result for a submission | **valoración** | puntuación, evaluación |
 | A person's job title | **cargo** | puesto, posición |
+| The `Employees` role specifically | **empleado** | colaborador, operativo |
+
+*Colaborador* and *empleado* are not interchangeable. Every person on a company
+roster is a *colaborador* — the list holds administradores and ejecutivos
+alongside empleados — while *empleado* names one of the four authorization roles
+and nothing else. See
+[`employee-roster.md`](employee-roster.md).
 
 `usuario` is reserved for the `auth` sense — an account that logs in. The human
 being behind it is a *colaborador*, which is why `UserProfile` is a *perfil de

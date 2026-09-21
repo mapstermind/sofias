@@ -7,6 +7,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from apps.accounts.models import Company, UserProfile
+from apps.accounts.roles import ROLES, labels_for_names
+from apps.core import roster
 from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import Module, SurveyAssignment
 from apps.surveys.visibility import progress_for_modules
@@ -300,11 +302,34 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 "status"
             ]
 
-        # Paternal surname first: that is how a Mexican roster reads.
-        profiles = company.members.select_related("user", "area", "location").order_by(
-            "user__paternal_last_name",
-            "user__maternal_last_name",
-            "user__first_name",
+        # Options offer only what an operator may still assign; validation
+        # accepts every entry the company owns. A retired área keeps the
+        # colaboradores already assigned to it, so a URL naming one has to keep
+        # working even though it is no longer offered.
+        areas = list(company.areas.filter(is_active=True).order_by("name"))
+        locations = list(company.locations.filter(is_active=True).order_by("name"))
+
+        # The validation query is deferred to the requests that name the
+        # corresponding filter. An unchecked pill submits nothing, so `area`
+        # and `localidad` reach us only once one of theirs has been chosen, and
+        # a roster nobody has narrowed pays for neither.
+        area_ids = (
+            set(company.areas.values_list("id", flat=True))
+            if "area" in request.GET
+            else set()
+        )
+        location_ids = (
+            set(company.locations.values_list("id", flat=True))
+            if "localidad" in request.GET
+            else set()
+        )
+        query = roster.parse_roster_query(
+            request.GET, area_ids=area_ids, location_ids=location_ids
+        )
+
+        all_profiles = company.members.select_related("user", "area", "location")
+        profiles = roster.narrow_profiles(all_profiles, query).prefetch_related(
+            "user__groups"
         )
 
         members_data = []
@@ -324,11 +349,86 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 {
                     "profile": profile,
                     "is_self": profile.user_id == request.user.id,
+                    "role_labels": labels_for_names(g.name for g in user.groups.all()),
                     "survey_progress": survey_progress,
                 }
             )
 
-        members_data.sort(key=lambda m: (not m["is_self"],))
+        members_data = roster.sort_members(members_data, query.order)
+
+        # A list the template walks blindly: adding a filter dimension later is
+        # a view change, not a template change. `options` reuses the `areas`/
+        # `locations` lists already fetched above, so this adds no query.
+        filter_groups = [
+            {
+                "key": "sexo",
+                "label": "Sexo",
+                "multiple": False,
+                "options": [
+                    {
+                        "value": slug,
+                        "label": label,
+                        "selected": slug == query.sex_slug,
+                    }
+                    for slug, label in roster.SEX_SLUGS_TO_LABELS.items()
+                ],
+            },
+            {
+                "key": "rol",
+                "label": "Rol",
+                "multiple": True,
+                "options": [
+                    {
+                        "value": role.slug,
+                        "label": role.label,
+                        "selected": role.slug in query.role_slugs,
+                    }
+                    for role in ROLES
+                ],
+            },
+            {
+                "key": "area",
+                "label": "Área",
+                "multiple": True,
+                "options": [
+                    {
+                        "value": str(area.id),
+                        "label": area.name,
+                        "selected": area.id in query.area_ids,
+                    }
+                    for area in areas
+                ],
+            },
+        ]
+        # A single localidad offers nothing to narrow by, so the dimension is
+        # left out rather than rendered as one pill that changes nothing.
+        if len(locations) > 1:
+            filter_groups.append(
+                {
+                    "key": "localidad",
+                    "label": "Localidad",
+                    "multiple": True,
+                    "options": [
+                        {
+                            "value": str(location.id),
+                            "label": location.name,
+                            "selected": location.id in query.location_ids,
+                        }
+                        for location in locations
+                    ],
+                }
+            )
+
+        # Dimensions in use, not values chosen: three áreas picked is one
+        # filter. Search has its own visible box and is not counted here.
+        active_filter_count = sum(
+            (
+                bool(query.sex_slug),
+                bool(query.role_slugs),
+                bool(query.area_ids),
+                bool(query.location_ids),
+            )
+        )
 
         return render(
             request,
@@ -337,6 +437,12 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 "company": company,
                 "is_admin_view": reference_code is not None,
                 "members": members_data,
+                "roster_query": query,
+                "roster_querystring": request.GET.urlencode(),
+                "filter_groups": filter_groups,
+                "active_filter_count": active_filter_count,
+                "shown_count": len(members_data),
+                "total_count": company.members.count(),
             },
         )
 
@@ -447,6 +553,7 @@ class EmployeeDetailView(LoginRequiredMixin, View):
             {
                 "company": company,
                 "is_admin_view": reference_code is not None,
+                "roster_querystring": request.GET.urlencode(),
                 "employee_profile": employee_profile,
                 "survey_progress": survey_progress,
                 "submissions_data": submissions_data,

@@ -120,7 +120,7 @@ Activation behavior:
 - The submitted reference code is stripped, uppercased, must be exactly 5 characters, and must be alphanumeric.
 - The área and localidad choices are restricted to the **active entries of the user's own company**. A submitted primary key belonging to another company (or to an inactive entry) is rejected as an invalid choice and the profile remains inactive.
 - Área is always required. Localidad is required only when the company has more than one active localidad; when it has exactly one, that localidad is auto-assigned and the field is not rendered; when it has none, `location` stays null.
-- A submission that carries a `location` when the picker is not rendered is refused with a form-level notice asking the user to review and confirm, and the profile stays inactive. Only a picker the user was shown could have produced that value, so its presence means the localidad catalog shrank to one entry (or to none) while the form was open: auto-assigning the survivor would record a localidad the user never chose. The re-rendered form no longer offers a picker, so confirming it activates normally.
+- A submission that carries a `location` when the picker is not rendered is refused with a form-level notice asking the user to review and confirm, and the profile stays inactive. Only a picker the user was shown could have produced that value, so its presence means the localidad catalog shrank to one entry (or to none) while the form was open: auto-assigning the survivor would record a localidad the user never chose. The re-rendered form offers no picker, so confirming it activates normally.
 - If the code does not match the linked company's `reference_code`, the form is re-rendered and the profile remains inactive.
 - If everything validates, `User.first_name`/`paternal_last_name`/`maternal_last_name` and `UserProfile.position`/`sex`/`date_of_birth`/`area`/`location`/`is_activated` are saved in a single transaction, and the user is redirected to the app home route. The two rows commit together or not at all — a profile that passed the `is_activated` gate with no área would have nothing to aggregate on.
 
@@ -244,12 +244,12 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
   - Password change.
   - Profile activation.
 - Admin-group behavior:
-  - Users in the `Admins` group skip profile activation. This is intentionally group-name based in the current system because the bootstrap command owns that canonical group contract.
+  - Users in the `Admins` group skip profile activation. This is intentionally group-name based: `apps/accounts/roles.py` holds the canonical group contract — the four `auth.Group.name` values, their Spanish display labels and their URL slugs — and `bootstrap_groups` reads its group names from there.
 - Middleware behavior:
   - Authenticated users with `must_change_password=True` are redirected to password change except on password-change, logout, static, and admin paths.
 - Custom permissions:
   - `accounts.Role` defines project permissions used elsewhere in the app.
-  - `bootstrap_groups` creates/syncs `Admins`, `Principal Exec`, `Secondary Exec`, and `Employees`.
+  - `bootstrap_groups` creates/syncs the four groups it reads from `apps/accounts/roles.py`: `Admins`, `Principal Exec`, `Secondary Exec`, and `Employees`.
 
 ## Error behavior
 

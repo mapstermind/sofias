@@ -4,16 +4,17 @@
    can actually appear is listed below instead; a class used anywhere else is
    never compiled, so add the location here rather than expecting detection.
 
-   The Python entries are individual files, not a directory-wide glob: scanning
-   every module would sweep up comments, docstrings and tests, which is how
-   words like "filter" and "table" end up compiled as CSS. */
+   The Python entries name the two kinds of module that hold classes rather than
+   every module: a directory-wide scan would sweep up comments, docstrings and
+   tests, which is how words like "filter" and "table" end up compiled as CSS. */
 @import "tailwindcss" source(none);
 
 @source "../../templates";
 /* Form widgets carry their classes in `attrs={"class": ...}`. */
-@source "../../apps/accounts/forms.py";
-/* NDR badge and bar palettes, keyed by risk level. */
-@source "../../apps/core/templatetags/valuation_extras.py";
+@source "../../apps/**/forms.py";
+/* Template tags assemble class names by hand — the NDR badge and bar palettes,
+   keyed by risk level. */
+@source "../../apps/**/templatetags/*.py";
 @source "../ts";
 
 /* Widths a view can pass as `container_width` (see templates/base_app.html and

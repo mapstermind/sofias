@@ -9,22 +9,28 @@ team decides it is not worth fixing (say which, and why).
 
 ---
 
-## 1. Authorization group names are in English 🟡
+## 1. `auth.Group.name` is stored in English 🟡
 
-**Where:** `apps/accounts/management/commands/bootstrap_groups.py`
-(`GROUP_PERMISSIONS`), `apps/accounts/importers.py`, `apps/accounts/views.py`
-(`_redirect_after_login`), `conftest.py` (`bootstrap_groups` fixture).
+**Where:** `apps/accounts/roles.py` (the canonical four names),
+`apps/accounts/management/commands/bootstrap_groups.py` (`GROUP_PERMISSIONS`),
+`apps/accounts/importers.py`, `apps/accounts/views.py`
+(`_redirect_after_login`), `apps/core/views.py`, `conftest.py`
+(`bootstrap_groups` fixture).
 
-**What:** The four groups — `Admins`, `Principal Exec`, `Secondary Exec`,
-`Employees` — appear in English in the admin's Groups list and in the CSV
-importer's `group` column, on an otherwise Spanish operator surface.
+**What:** The four stored group names — `Admins`, `Principal Exec`,
+`Secondary Exec`, `Employees` — are English. They are shown in Spanish
+everywhere a user reads a role, through the labels in `apps/accounts/roles.py`;
+what is still English is the stored value itself, which surfaces on the admin's
+Grupos page and is the accepted value of the CSV importer's `group` column.
 
-**Why it was left alone:** `auth.Group.name` is looked up **by string** in four
-places, and the CSV import contract accepts it as a column value. Renaming is a
-behavior change with an input-format consequence, not the presentation-only
-sweep that [`docs/platform/localization.md`](../platform/localization.md)
-covers. Doing it properly means picking Spanish names, updating all four call
-sites, and deciding whether the importer keeps accepting the English spellings.
+**Why it was left alone:** `auth.Group.name` is matched **by string** at several
+call sites and the CSV import contract accepts it as a column value, so renaming
+it is a behavior change with an input-format consequence rather than the
+presentation-only work
+[`docs/platform/localization.md`](../platform/localization.md) covers. Doing it
+properly means picking Spanish names, updating `roles.py` and every string
+match, migrating the existing rows, and deciding whether the importer keeps
+accepting the English spellings.
 
 ---
 
@@ -92,16 +98,7 @@ before it is written and signed off.
 
 ---
 
-## 5. The employee roster is a flat list, not grouped by localidad → área 🟡
-
-**Where:** `apps/core/views.py` (the roster queryset) and
-`templates/core/employee_list.html`.
-
-**What:** The roster is one flat list ordered by apellido paterno, materno, then
-nombre. Grouping it by localidad and then by área was discussed alongside the
-demographics work and split out.
-
-**Why it was left alone:** it is an undocumented feature in its own right, not an
-extension of activation, so it needs `docs/platform/employee-roster.md` written
-first. It depends on the paternal-surname ordering that now exists, so nothing
-blocks it.
+*Finding 5 — grouping the employee roster by localidad → área — is **resolved**,
+by a different design than it sketched: the roster is narrowed with a search
+box, four filters and a sort control rather than split into sections. See
+[`docs/platform/employee-roster.md`](../platform/employee-roster.md).*

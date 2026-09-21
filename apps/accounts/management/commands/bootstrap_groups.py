@@ -10,27 +10,30 @@ Usage:
 from django.contrib.auth.models import Group, Permission
 from django.core.management.base import BaseCommand
 
-# Maps each group name to the permission codenames it should hold.
+from apps.accounts.roles import ROLES
+
+# Maps each group name to the permission codenames it should hold. The names
+# come from `apps.accounts.roles` so this command and the app agree on them.
 GROUP_PERMISSIONS: dict[str, list[str]] = {
-    "Admins": [
+    ROLES[0].name: [  # Administrador
         "can_manage_surveys",
         "can_view_dashboard",
         "can_view_insights",
         "can_manage_employees",
         "can_view_submissions",
     ],
-    "Principal Exec": [
+    ROLES[1].name: [  # Ejecutivo principal
         "can_view_dashboard",
         "can_view_insights",
         "can_manage_employees",
         "can_take_assigned_surveys",
     ],
-    "Secondary Exec": [
+    ROLES[2].name: [  # Ejecutivo secundario
         "can_view_dashboard",
         "can_manage_employees",
         "can_take_assigned_surveys",
     ],
-    "Employees": [
+    ROLES[3].name: [  # Empleado
         "can_take_assigned_surveys",
     ],
 }

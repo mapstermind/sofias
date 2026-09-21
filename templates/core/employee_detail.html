@@ -6,12 +6,12 @@
 {% block header_nav %}
   <span class="text-gray-300 select-none">|</span>
   {% if is_admin_view %}
-    <a href="{% url 'core:company_employee_list_for' company.reference_code %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
-      &larr; Empleados
+    <a href="{% url 'core:company_employee_list_for' company.reference_code %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+      &larr; Colaboradores
     </a>
   {% else %}
-    <a href="{% url 'core:company_employee_list' %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
-      &larr; Empleados
+    <a href="{% url 'core:company_employee_list' %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+      &larr; Colaboradores
     </a>
   {% endif %}
   <span class="text-gray-300 select-none">|</span>
@@ -33,13 +33,7 @@
   {# Identity #}
   <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5" style="flex: 2">
     <div class="flex items-center gap-4">
-      <div class="shrink-0 flex size-12 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold uppercase text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
-        {% if emp.get_initials %}
-          {{ emp.get_initials }}
-        {% else %}
-          {{ emp.email|slice:":2" }}
-        {% endif %}
-      </div>
+      {% include "core/_avatar.html" with person=emp %}
       <div class="min-w-0">
         <h1 class="text-xl font-bold text-gray-900 truncate">
           {% if emp.get_full_name %}
@@ -269,7 +263,7 @@
 
           {% if not item.submission %}
             <div class="px-6 py-8 text-center">
-              <p class="text-sm text-gray-400 italic">Este empleado aún no ha iniciado esta encuesta.</p>
+              <p class="text-sm text-gray-400 italic">Este colaborador aún no ha iniciado esta encuesta.</p>
             </div>
           {% else %}
             <div class="px-6 py-5 space-y-6">
