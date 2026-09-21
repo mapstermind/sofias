@@ -745,12 +745,24 @@ On the **survey page**:
    question and rings it.
 9. **Guardar progreso** saves and the confirmation modal fits the screen.
 
+On the **header**, on every signed-in page (added after the first walkthrough
+found it overflowing):
+10. No sideways scroll from the header at 360px: logo only, no **SOFIA-S**
+    wordmark, no back link, and **Cerrar sesión** as plain text on the right.
+11. Tapping **Cerrar sesión** signs out; nothing else in the header is tappable,
+    so there is no circle to tap by mistake.
+12. Above `sm:` the wordmark and back link return, the right-hand side is the
+    initials circle, and hovering it swaps to **Cerrar sesión** without the
+    header shifting sideways.
+13. Each page's title reads once, in the content, not twice — the company
+    dashboard now shows the company name as its heading.
+
 On **the rest**:
-10. Login, OTP verification and the activation form each fit with no sideways
+14. Login, OTP verification and the activation form each fit with no sideways
     scroll; the date-of-birth selects are stacked.
-11. The roster's filter bar does not occupy more than roughly a third of the
+15. The roster's filter bar does not occupy more than roughly a third of the
     screen, and search still submits.
-12. A company dashboard and an employee detail page read without sideways
+16. A company dashboard and an employee detail page read without sideways
     scroll.
 
 - [ ] **Step 4: Record the outcome**
@@ -760,7 +772,255 @@ the affected items only. Do not proceed to Task 6 with an open rejection.
 
 ---
 
-### Task 6: Documentation
+### Task 6: The app header
+
+The header is one `flex items-center justify-between` row with no wrapping and
+no breakpoints: logo, a nav whose width is unbounded user data, and a `w-28`
+logout control. Every width in it is harmless alone, which is why the guard
+cannot see it and the 360px walkthrough could.
+
+The page label leaves the header entirely. Four of the five templates already
+render it in content, so this mostly deletes duplicates.
+
+**Files:**
+- Move: `templates/core/_avatar.html` → `templates/_avatar.html`
+- Modify: `templates/core/employee_list.html` (include path, header_nav),
+  `templates/core/employee_detail.html` (include path, header_nav),
+  `templates/base_app.html`, `templates/surveys/survey_detail.html`,
+  `templates/surveys/survey_submitted.html`,
+  `templates/core/company_dashboard.html`
+- Modify: `apps/core/tests/test_views.py` (the `_avatar` helper)
+- Create: `apps/core/tests/test_app_header.py`
+
+**Interfaces:**
+- Produces: `templates/_avatar.html`, taking `person` (a `User`) plus optional
+  `size` (default `size-12`) and `text` (default `text-sm`) Tailwind utilities.
+
+- [ ] **Step 1: Stop the avatar helper from resolving to the header**
+
+`apps/core/tests/test_views.py:41` takes the first `data-avatar` in the
+document. The header is about to render one on every page, outside `<main>`, so
+both sides of `test_the_avatar_is_one_component_on_both_pages` would resolve to
+the same header element and the test would pass while asserting nothing.
+
+Scope the helper to the content region:
+
+```python
+def _avatar(html):
+    """The shared avatar element from the page content, whitespace-normalized.
+
+    Scoped to `<main>` on purpose: the app header renders its own, smaller
+    avatar outside it, and an unscoped search would match that one on every
+    page — leaving this comparison true and meaningless.
+    """
+    content = html[html.index("<main") :]
+    match = re.search(r"<span data-avatar\b.*?</span>", content, re.S)
+    assert match, "no element carrying data-avatar was rendered in <main>"
+    return " ".join(match.group(0).split())
+```
+
+- [ ] **Step 2: Move the avatar and make it sizeable**
+
+```bash
+git mv templates/core/_avatar.html templates/_avatar.html
+```
+
+Rewrite it. The root element becomes a `<span>` so it is valid phrasing content
+inside the header's `<button>`; as a flex item its `inline-flex` is blockified,
+so the roster and detail page render exactly as before:
+
+```html
+{% comment %}
+The initials circle. Takes `person`, a User, and optionally `size` and `text`
+(Tailwind utilities, defaulting to the 48px roster circle). Included by the app
+header, the roster card and the colaborador detail page so none can drift away
+from the others.
+
+`aspect-square` beside the size is not redundant: the circle is a flex item in
+its callers, and a long name beside it would squash the width below the height
+and hand back an ellipse. `leading-none` seats the initials optically in the
+middle — the default line box sits the glyphs low. A `<span>` rather than a
+`<div>` so the header can nest it inside a button. The initials repeat the name
+printed next to them, so they are decorative to a screen reader.
+{% endcomment %}
+<span data-avatar aria-hidden="true"
+      class="inline-flex aspect-square {{ size|default:"size-12" }} shrink-0 select-none items-center justify-center rounded-full bg-indigo-50 {{ text|default:"text-sm" }} font-semibold uppercase leading-none text-indigo-700 ring-1 ring-inset ring-indigo-600/20">{% if person.get_initials %}{{ person.get_initials }}{% else %}{{ person.email|slice:":2" }}{% endif %}</span>
+```
+
+Update both existing callers to the new path, leaving their size at the default:
+
+- `templates/core/employee_list.html:190` → `{% include "_avatar.html" with person=user %}`
+- `templates/core/employee_detail.html:36` → `{% include "_avatar.html" with person=emp %}`
+
+- [ ] **Step 3: Rebuild the header**
+
+In `templates/base_app.html`, replace the header's inner row:
+
+```html
+  <div class="mx-auto {{ container_width|default:"max-w-5xl" }} px-4 py-4 flex items-center justify-between gap-3">
+    <div class="flex min-w-0 items-center gap-3">
+      <a href="{% url 'core:home' %}" class="flex shrink-0 items-center gap-2">
+        <img src="{% static 'img/logo.svg' %}" alt="Logo SOFIA-S" class="h-8 mt-2 mb-3 w-auto">
+        <span class="hidden text-xl font-semibold text-gray-900 sm:inline">SOFIA-S</span>
+      </a>
+      {% comment %}
+      The back link is desktop-only. A phone goes back by swiping, and the logo
+      is a link home for anyone who arrived from an emailed link with no history
+      behind them. Hiding it here rather than in each template keeps the five
+      header_nav blocks free of breakpoints.
+      {% endcomment %}
+      <div class="hidden min-w-0 items-center gap-3 sm:flex">
+        {% block header_nav %}{% endblock %}
+      </div>
+    </div>
+    <form method="post" action="{% url 'accounts:logout' %}" class="shrink-0">
+      {% csrf_token %}
+      {% comment %}
+      `w-28` holds the width steady while the avatar and the label swap, so the
+      header does not shift under the cursor. Below `sm:` there is no hover to
+      reveal anything, and a bare circle would invite a tap that silently logs
+      the visitor out — so the action names itself instead.
+      {% endcomment %}
+      <button type="submit"
+              class="group flex w-28 items-center justify-end text-sm text-gray-500 transition-colors hover:text-gray-700">
+        <span class="sm:hidden">Cerrar sesión</span>
+        <span class="hidden sm:inline sm:group-hover:hidden">
+          {% include "_avatar.html" with person=request.user size="size-8" text="text-xs" only %}
+        </span>
+        <span class="hidden sm:group-hover:inline">Cerrar sesión</span>
+      </button>
+    </form>
+  </div>
+```
+
+- [ ] **Step 4: Drop the page label from all five header_nav blocks**
+
+In each, delete the trailing separator `<span>` and the label `<span>`, keeping
+the leading separator and the back link exactly as they are.
+
+- `templates/surveys/survey_detail.html` — delete the second `|` and
+  `<span class="font-semibold text-gray-800">{{ survey.title }}</span>`. The
+  title already renders at `:99` as the content `<h1>`.
+- `templates/surveys/survey_submitted.html` — same two lines. The title already
+  appears in the sentence at `:26` beneath the `¡Gracias!` heading.
+- `templates/core/employee_list.html` — delete the third `|` and
+  `<span …>Colaboradores</span>`. Already the content `<h1>` at `:43`.
+- `templates/core/employee_detail.html` — delete the second `|` and the whole
+  `<span class="font-semibold text-gray-800">…{% endif %}</span>` label. The
+  content `<h1>` at `:38` already shows the name, with a better fallback
+  (`Sin nombre`) than the header's email.
+- `templates/core/company_dashboard.html` — delete the second `|` and
+  `<span …>{{ company.name }}</span>`. A non-admin then renders an empty
+  `header_nav`, which is already the case for `company_list.html` and
+  `employee_survey_list.html`.
+
+- [ ] **Step 5: Give the company dashboard the title it never had**
+
+It is the only one of the five with no heading in content — `{% block content %}`
+opens straight into the stat grid. Insert above `{# Summary strip #}`:
+
+```html
+  <div class="mb-5">
+    <h1 class="text-2xl font-bold text-gray-900">{{ company.name }}</h1>
+  </div>
+```
+
+- [ ] **Step 6: Write the header tests**
+
+Create `apps/core/tests/test_app_header.py`:
+
+```python
+"""The application header, which every signed-in page renders.
+
+The header holds the only logout control in the product, so these assert that
+it survives — a header regression is otherwise invisible to a suite with no
+browser.
+"""
+
+import pytest
+
+pytestmark = pytest.mark.django_db
+
+DASHBOARD_URL = "/tablero-empresa/"
+
+
+@pytest.fixture
+def dashboard(client, make_company, make_user_with_profile, bootstrap_groups):
+    """The company dashboard as its principal executive sees it."""
+    company = make_company(name="Acme México")
+    viewer = make_user_with_profile(
+        email="exec@acme.mx",
+        company=company,
+        first_name="Laura",
+        paternal_last_name="Torres",
+    )
+    viewer.groups.add(bootstrap_groups["Principal Exec"])
+    client.force_login(viewer)
+
+    response = client.get(DASHBOARD_URL)
+    assert response.status_code == 200, f"got {response.status_code}"
+    return response.content.decode()
+
+
+def test_the_header_renders_the_viewers_initials(dashboard):
+    """The circle stands in for the name the header used to print."""
+    header = dashboard[: dashboard.index("<main")]
+
+    assert "data-avatar" in header
+    assert ">LT<" in header.replace(" ", "").replace("\n", "")
+
+
+def test_the_header_always_offers_a_way_to_sign_out(dashboard):
+    """Below `sm:` the label is the control; above it, hover reveals the label.
+
+    Either way the words are in the markup — a header that renders only a
+    circle would log a phone visitor out on a curious tap.
+    """
+    header = dashboard[: dashboard.index("<main")]
+
+    assert header.count("Cerrar sesión") == 2
+
+
+def test_the_company_name_is_the_page_title_not_a_header_crumb(dashboard):
+    """The label moved out of the header and into the content as an <h1>."""
+    header, content = dashboard.split("<main", 1)
+
+    assert "Acme México" not in header
+    assert "<h1" in content
+    assert "Acme México" in content
+```
+
+- [ ] **Step 7: Run the tests**
+
+Run: `pytest apps/core/tests/test_app_header.py -v`
+Expected: PASS, all three.
+
+Run: `pytest`
+Expected: PASS. Watch `test_the_avatar_is_one_component_on_both_pages`
+specifically — it exercises the moved include on both pages, so a stale
+`core/_avatar.html` path would raise `TemplateDoesNotExist` there first.
+
+If `DASHBOARD_URL` is wrong, read `apps/core/urls.py` and correct it.
+
+- [ ] **Step 8: Rebuild CSS and commit**
+
+Confirm the new utilities compiled — Tailwind escapes `:` in its selectors, so
+grep the escaped form:
+
+```bash
+npm run build:css
+grep -c 'sm\\:group-hover\\:inline' static/css/output.css   # expect 1
+grep -c 'size-8' static/css/output.css                      # expect >= 1
+```
+
+```bash
+git add -A
+git commit -m "feat: rebuild the app header around the initials avatar"
+```
+
+---
+
+### Task 7: Documentation
 
 The last task, always. Both docs ship in this diff and are reviewed with the
 code.
@@ -779,9 +1039,21 @@ In `docs/platform/responsive-layout.md`:
 - Under `## Scope`, delete the bullet beginning "Bringing the existing templates
   into conformance". It describes a transition, and a live doc must read as
   though the current implementation were always the original.
-- Under `## Enforcement`, name the two test modules by path:
-  `apps/core/tests/test_responsive.py` for the width guard and
-  `apps/surveys/tests/test_survey_page_contract.py` for the DOM contract.
+- Under `## Enforcement`, name the test modules by path:
+  `apps/core/tests/test_responsive.py` for the width guard,
+  `apps/surveys/tests/test_survey_page_contract.py` for the DOM contract, and
+  `apps/core/tests/test_app_header.py` for the header.
+- Under `## Scope`, the out-of-scope touch-target bullet claims the header's
+  logout control "keeps the sizes they have", which Task 6 makes false. The
+  boundary still holds — nothing outside the survey form was enlarged for a
+  thumb — so restate it without the false claim:
+
+```markdown
+- **Touch-target sizing outside the survey form.** The roster filter bar, the
+  header controls and the dashboard cards are sized for reading rather than for
+  a thumb. An administrator meets them rarely; a respondent meets an answer
+  control 87 times.
+```
 - Re-read the whole file for any remaining before/after phrasing. There must be
   no "formerly", "no longer", "replaces" or "used to".
 

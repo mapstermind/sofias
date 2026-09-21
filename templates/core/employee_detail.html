@@ -14,14 +14,6 @@
       &larr; Colaboradores
     </a>
   {% endif %}
-  <span class="text-gray-300 select-none">|</span>
-  <span class="font-semibold text-gray-800">
-    {% if employee_profile.user.get_full_name %}
-      {{ employee_profile.user.get_full_name }}
-    {% else %}
-      {{ employee_profile.user.email }}
-    {% endif %}
-  </span>
 {% endblock %}
 
 {% block content %}
@@ -33,7 +25,7 @@
   {# Identity #}
   <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5" style="flex: 2">
     <div class="flex items-center gap-4">
-      {% include "core/_avatar.html" with person=emp %}
+      {% include "_avatar.html" with person=emp only %}
       <div class="min-w-0">
         <h1 class="text-xl font-bold text-gray-900 truncate">
           {% if emp.get_full_name %}

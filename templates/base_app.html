@@ -9,19 +9,37 @@ Any width a view passes must be safelisted in static/css/main.css — Tailwind o
 scans templates/, so a class named in Python is never compiled otherwise.
 {% endcomment %}
 <header class="bg-white border-b border-gray-200">
-  <div class="mx-auto {{ container_width|default:"max-w-5xl" }} px-4 py-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <a href="{% url 'core:home' %}" class="flex items-center gap-2">
+  <div class="mx-auto {{ container_width|default:"max-w-5xl" }} px-4 py-4 flex items-center justify-between gap-3">
+    <div class="flex min-w-0 items-center gap-3">
+      <a href="{% url 'core:home' %}" class="flex shrink-0 items-center gap-2">
         <img src="{% static 'img/logo.svg' %}" alt="Logo SOFIA-S" class="h-8 mt-2 mb-3 w-auto">
-        <span class="text-xl font-semibold text-gray-900">SOFIA-S</span>
+        <span class="hidden text-xl font-semibold text-gray-900 sm:inline">SOFIA-S</span>
       </a>
-      {% block header_nav %}{% endblock %}
+      {% comment %}
+      The back link is desktop-only. A phone goes back by swiping, and the logo
+      is a link home for anyone who arrived from an emailed link with no history
+      behind them. Hiding it here rather than in each template keeps the five
+      header_nav blocks free of breakpoints.
+      {% endcomment %}
+      <div class="hidden min-w-0 items-center gap-3 sm:flex">
+        {% block header_nav %}{% endblock %}
+      </div>
     </div>
-    <form method="post" action="{% url 'accounts:logout' %}">
+    <form method="post" action="{% url 'accounts:logout' %}" class="shrink-0">
       {% csrf_token %}
-      <button type="submit" class="text-sm text-gray-500 hover:text-gray-700 transition-colors group w-28 text-right">
-        <span class="group-hover:hidden">{{ request.user.username }}</span>
-        <span class="hidden group-hover:inline">Cerrar sesión</span>
+      {% comment %}
+      `w-28` holds the width steady while the avatar and the label swap, so the
+      header does not shift under the cursor. Below `sm:` there is no hover to
+      reveal anything, and a bare circle would invite a tap that silently logs
+      the visitor out — so the action names itself instead.
+      {% endcomment %}
+      <button type="submit"
+              class="group flex w-28 items-center justify-end text-sm text-gray-500 transition-colors hover:text-gray-700">
+        <span class="sm:hidden">Cerrar sesión</span>
+        <span class="hidden sm:inline sm:group-hover:hidden">
+          {% include "_avatar.html" with person=request.user size="size-8" text="text-xs" only %}
+        </span>
+        <span class="hidden sm:group-hover:inline">Cerrar sesión</span>
       </button>
     </form>
   </div>

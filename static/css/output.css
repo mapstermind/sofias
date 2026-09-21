@@ -457,6 +457,10 @@
     width: calc(var(--spacing) * 5);
     height: calc(var(--spacing) * 5);
   }
+  .size-8 {
+    width: calc(var(--spacing) * 8);
+    height: calc(var(--spacing) * 8);
+  }
   .size-12 {
     width: calc(var(--spacing) * 12);
     height: calc(var(--spacing) * 12);
@@ -1339,20 +1343,6 @@
       rotate: 90deg;
     }
   }
-  .group-hover\:hidden {
-    &:is(:where(.group):hover *) {
-      @media (hover: hover) {
-        display: none;
-      }
-    }
-  }
-  .group-hover\:inline {
-    &:is(:where(.group):hover *) {
-      @media (hover: hover) {
-        display: inline;
-      }
-    }
-  }
   .group-hover\:border-gray-400 {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
@@ -1643,6 +1633,21 @@
       left: calc(1 / 2 * 100%);
     }
   }
+  .sm\:flex {
+    @media (width >= 40rem) {
+      display: flex;
+    }
+  }
+  .sm\:hidden {
+    @media (width >= 40rem) {
+      display: none;
+    }
+  }
+  .sm\:inline {
+    @media (width >= 40rem) {
+      display: inline;
+    }
+  }
   .sm\:w-\[42rem\] {
     @media (width >= 40rem) {
       width: 42rem;
@@ -1707,6 +1712,24 @@
   .sm\:p-5 {
     @media (width >= 40rem) {
       padding: calc(var(--spacing) * 5);
+    }
+  }
+  .sm\:group-hover\:hidden {
+    @media (width >= 40rem) {
+      &:is(:where(.group):hover *) {
+        @media (hover: hover) {
+          display: none;
+        }
+      }
+    }
+  }
+  .sm\:group-hover\:inline {
+    @media (width >= 40rem) {
+      &:is(:where(.group):hover *) {
+        @media (hover: hover) {
+          display: inline;
+        }
+      }
     }
   }
   .md\:grid-cols-2 {

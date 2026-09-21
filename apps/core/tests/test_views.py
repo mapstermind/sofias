@@ -39,9 +39,15 @@ def _inputs(html):
 
 
 def _avatar(html):
-    """The shared avatar element, whitespace-normalized for comparison."""
-    match = re.search(r"<div data-avatar\b.*?</div>", html, re.S)
-    assert match, "no element carrying data-avatar was rendered"
+    """The shared avatar element from the page content, whitespace-normalized.
+
+    Scoped to `<main>` on purpose: the app header renders its own, smaller
+    avatar outside it, and an unscoped search would match that one on every
+    page — leaving this comparison true and meaningless.
+    """
+    content = html[html.index("<main") :]
+    match = re.search(r"<span data-avatar\b.*?</span>", content, re.S)
+    assert match, "no element carrying data-avatar was rendered in <main>"
     return " ".join(match.group(0).split())
 
 
