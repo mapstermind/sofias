@@ -309,9 +309,11 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
         areas = list(company.areas.filter(is_active=True).order_by("name"))
         locations = list(company.locations.filter(is_active=True).order_by("name"))
 
-        # The validation query only needs to run when the corresponding filter
-        # is actually named in the URL — most page loads carry neither, and a
-        # roster of any size shouldn't pay for a query nothing will use.
+        # The validation query is deferred to the requests that name the
+        # corresponding filter. The toolbar always renders the área select, so
+        # every *Aplicar* submits `area=` and pays for that query; localidad
+        # only does when `show_location_filter` puts its select on the page. A
+        # bare first visit carries neither, so it pays for none of this.
         area_ids = (
             set(company.areas.values_list("id", flat=True))
             if "area" in request.GET

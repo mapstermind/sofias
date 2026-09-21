@@ -509,6 +509,51 @@ class TestCompanyEmployeeListView:
         ]
         assert surnames == ["Álvarez", "Núñez", "Zamora"]
 
+    def test_orden_progreso_puts_the_least_advanced_first(
+        self,
+        client,
+        make_user,
+        make_user_with_profile,
+        active_assignment,
+        survey_with_questions,
+    ):
+        company = active_assignment.company
+        questions = survey_with_questions["questions"]
+        viewer = self._make_viewer(make_user, company)
+
+        behind = make_user_with_profile(email="behind@example.com", company=company)
+        ahead = make_user_with_profile(email="ahead@example.com", company=company)
+
+        behind_submission = SurveySubmission.objects.create(
+            assignment=active_assignment,
+            user=behind,
+            status=SurveySubmission.Status.IN_PROGRESS,
+        )
+        Answer.objects.create(
+            submission=behind_submission, question=questions[0], value="x"
+        )
+
+        ahead_submission = SurveySubmission.objects.create(
+            assignment=active_assignment,
+            user=ahead,
+            status=SurveySubmission.Status.IN_PROGRESS,
+        )
+        for q in questions[:8]:
+            Answer.objects.create(submission=ahead_submission, question=q, value="x")
+
+        client.force_login(viewer)
+        response = client.get(self.URL, {"orden": "progreso"})
+
+        emails = [m["profile"].user.email for m in response.context["members"]]
+        # The viewer is pinned first regardless of order; behind/ahead are the
+        # part this test is actually about, and a code path that sorted
+        # descending (or not at all) would return them the other way round.
+        assert emails == [
+            "viewer@example.com",
+            "behind@example.com",
+            "ahead@example.com",
+        ]
+
     def test_every_member_of_the_company_is_listed(
         self, client, make_user, make_company, make_user_with_profile
     ):

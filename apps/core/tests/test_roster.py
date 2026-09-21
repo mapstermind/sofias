@@ -175,6 +175,23 @@ class TestNarrowProfiles:
         )
         return sorted(p.user.email for p in qs)
 
+    def _emails_in_order(self, roster_company, **params):
+        """Like `_emails`, but preserves the queryset's own sequence.
+
+        `_emails` sorts its result, which is right for the filtering tests but
+        would hide an ordering bug entirely — this is for the tests that must
+        observe what the database actually returned first.
+        """
+        query = roster.parse_roster_query(
+            params,
+            area_ids={roster_company["produccion"].id},
+            location_ids={roster_company["matriz"].id},
+        )
+        qs = roster.narrow_profiles(
+            UserProfile.objects.filter(company=roster_company["company"]), query
+        )
+        return [p.user.email for p in qs]
+
     def test_no_query_returns_everyone(self, roster_company):
         assert self._emails(roster_company) == ["ana@example.com", "beto@example.com"]
 
@@ -220,6 +237,23 @@ class TestNarrowProfiles:
 
         assert self._emails(roster_company, rol="empleado") == ["ana@example.com"]
 
+    def test_orden_activacion_puts_the_unactivated_person_first(self, roster_company):
+        """Ana (Álvarez) has activated; Beto (Ruiz) has not. Name order would
+        put Ana first, so this only passes if activation, not name, decided
+        the sequence — a flipped `is_activated` sort would return the reverse."""
+        assert self._emails_in_order(roster_company, orden=roster.ORDER_ACTIVATION) == [
+            "beto@example.com",
+            "ana@example.com",
+        ]
+
+    def test_orden_nombre_orders_by_paternal_surname(self, roster_company):
+        """The same two people, in apellido-paterno order: Álvarez before Ruiz —
+        the reverse of the activation order above."""
+        assert self._emails_in_order(roster_company, orden=roster.ORDER_NAME) == [
+            "ana@example.com",
+            "beto@example.com",
+        ]
+
 
 class TestSortMembers:
     def _members(self):
@@ -240,11 +274,17 @@ class TestSortMembers:
 
         assert ordered[-1]["email"] == "d"
 
-    def test_the_viewer_stays_first_under_every_order(self):
-        for order in roster.ORDERS:
-            ordered = roster.sort_members(self._members(), order)
+    def test_the_viewer_stays_first_even_after_the_progress_resort(self):
+        """`sort_members` only branches on progreso; nombre and activación are
+        both plain pass-throughs here (activación's own ordering happens in the
+        database query, not in this function), so looping over all three
+        `ORDERS` would assert the identical fact three times. Progreso is the
+        one case where the pin has to win against a resort that already ran,
+        and `test_name_order_leaves_the_queryset_order_alone` below already
+        pins down the pass-through branch by asserting the full sequence."""
+        ordered = roster.sort_members(self._members(), roster.ORDER_PROGRESS)
 
-            assert ordered[0]["email"] == "c"
+        assert ordered[0]["email"] == "c"
 
     def test_name_order_leaves_the_queryset_order_alone(self):
         ordered = roster.sort_members(self._members(), roster.ORDER_NAME)
