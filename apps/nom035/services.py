@@ -14,6 +14,7 @@ def materialize(submission) -> SubmissionScore:
             "final_score": result.final_score,
             "final_ndr": result.final_ndr,
             "guia1_positive": result.guia1_positive,
+            "guia1_event": result.guia1_event,
         },
     )
     score.groups.all().delete()

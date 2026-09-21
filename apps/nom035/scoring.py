@@ -43,6 +43,7 @@ class ScoreResult:
     final_ndr: str
     groups: list[GroupResult]
     guia1_positive: bool
+    guia1_event: bool
 
 
 def score_submission(submission) -> ScoreResult:
@@ -99,4 +100,5 @@ def score_submission(submission) -> ScoreResult:
         final_ndr=final_ndr,
         groups=groups,
         guia1_positive=positive,
+        guia1_event=event,
     )
