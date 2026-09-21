@@ -1,4 +1,5 @@
 {% extends "base_app.html" %}
+{% load static %}
 
 {% block title %}Colaboradores — {{ company.name }} | SOFIA-S{% endblock %}
 
@@ -20,13 +21,22 @@
 
 {% block content %}
   {% comment %}
-  `roster_url` is this page without any query string: what *Limpiar filtros*
-  points at, in both the executive and the administrator reading of the roster.
+  `roster_url` is this page without any query string, in both the executive and
+  the administrator reading of the roster. `clear_url` is what every *Limpiar
+  filtros* points at: the same page with nothing narrowing it. Sorting is not
+  narrowing, so a roster read in a chosen sequence keeps it across the clear;
+  on the default sequence the URL says nothing, which is what the plain address
+  already means.
   {% endcomment %}
   {% if is_admin_view %}
     {% url 'core:company_employee_list_for' company.reference_code as roster_url %}
   {% else %}
     {% url 'core:company_employee_list' as roster_url %}
+  {% endif %}
+  {% if roster_query.order == "nombre" %}
+    {% firstof roster_url as clear_url %}
+  {% else %}
+    {% firstof roster_url|add:"?orden="|add:roster_query.order as clear_url %}
   {% endif %}
 
   <div class="mb-5">
@@ -34,78 +44,131 @@
     <p class="mt-1 text-sm text-gray-500">{{ company.name }}</p>
   </div>
 
-  {# ── Toolbar ─────────────────────────────────────────────────────────────── #}
+  {# ── Bar ─────────────────────────────────────────────────────────────────── #}
   {% comment %}
-  The rail sits on an opaque strip the width of the page shell so the roster
-  scrolls out of sight beneath it. It starts below the header and only reaches
-  the top of the viewport once the header has scrolled away, so it never covers
+  The bar sits on an opaque strip the width of the page shell so the roster
+  scrolls out of sight beneath it. It starts below the page header and only
+  reaches the top of the screen once that header has gone, so it never covers
   it. A GET form carries no CSRF token: it would be written into the URL.
+
+  Every submit names the sequence it submits under, so reading the roster by
+  progreso and then searching, or applying filters, does not quietly reorder it
+  back to nombre.
   {% endcomment %}
   <div class="sticky top-0 z-20 -mx-4 bg-gray-100 px-4 pt-1 pb-3">
     <form method="get" id="roster-filters" class="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
-      <div class="flex flex-col gap-2 sm:flex-row">
-        <label for="roster-q" class="sr-only">Buscar por nombre o correo</label>
-        <input type="search" name="q" id="roster-q" value="{{ roster_query.raw_q }}"
-               placeholder="Buscar por nombre o correo"
-               class="min-w-0 flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500">
-        <button type="submit"
-                class="shrink-0 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
-          Aplicar
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="relative min-w-48 flex-1">
+          <label for="roster-q" class="sr-only">Buscar por nombre o correo</label>
+          <input type="search" name="q" id="roster-q" value="{{ roster_query.raw_q }}"
+                 placeholder="Buscar por nombre o correo"
+                 class="w-full rounded-lg border border-gray-300 py-2 pl-4 pr-11 text-sm placeholder:text-gray-400 focus:border-indigo-500 focus:ring-indigo-500">
+          <button type="submit" name="orden" value="{{ roster_query.order }}" aria-label="Buscar"
+                  class="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-gray-400 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-colors">
+            <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="9" cy="9" r="6"></circle>
+              <path d="M13.5 13.5 18 18" stroke-linecap="round"></path>
+            </svg>
+          </button>
+        </div>
+
+        <button type="button" id="roster-filter-open"
+                aria-haspopup="dialog" aria-controls="roster-filter-modal"
+                class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
+          <svg class="size-4 text-gray-400" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M3 5h14M5.5 10h9M8.5 15h3"></path>
+          </svg>
+          Filtros
+          {% if active_filter_count %}
+            <span id="roster-filter-count" class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">{{ active_filter_count }}</span>
+          {% endif %}
         </button>
-      </div>
 
-      <div class="mt-2 flex flex-wrap items-center gap-2">
-        <label for="roster-sexo" class="sr-only">Sexo</label>
-        <select name="sexo" id="roster-sexo"
-                class="min-w-0 max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
-          <option value="">Todos los sexos</option>
-          {% for slug, label in sex_options %}
-            <option value="{{ slug }}"{% if roster_query.sex_slug == slug %} selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-
-        <label for="roster-area" class="sr-only">Área</label>
-        <select name="area" id="roster-area"
-                class="min-w-0 max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
-          <option value="">Todas las áreas</option>
-          {% for area in area_options %}
-            <option value="{{ area.id }}"{% if area.id in roster_query.area_ids %} selected{% endif %}>{{ area.name }}</option>
-          {% endfor %}
-        </select>
-
-        {% if show_location_filter %}
-          <label for="roster-localidad" class="sr-only">Localidad</label>
-          <select name="localidad" id="roster-localidad"
-                  class="min-w-0 max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
-            <option value="">Todas las localidades</option>
-            {% for location in location_options %}
-              <option value="{{ location.id }}"{% if location.id in roster_query.location_ids %} selected{% endif %}>{{ location.name }}</option>
-            {% endfor %}
-          </select>
+        {% if roster_query.is_narrowed %}
+          <a href="{{ clear_url }}"
+             class="shrink-0 rounded-lg px-2 py-2 text-sm font-medium text-gray-500 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
+            Limpiar filtros
+          </a>
         {% endif %}
-
-        <label for="roster-rol" class="sr-only">Rol</label>
-        <select name="rol" id="roster-rol"
-                class="min-w-0 max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
-          <option value="">Todos los roles</option>
-          {% for slug, label in role_options %}
-            <option value="{{ slug }}"{% if slug in roster_query.role_slugs %} selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-
-        <label for="roster-orden" class="sr-only">Ordenar por</label>
-        <select name="orden" id="roster-orden"
-                class="min-w-0 max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
-          <option value="nombre"{% if roster_query.order == "nombre" %} selected{% endif %}>Ordenar por nombre</option>
-          <option value="progreso"{% if roster_query.order == "progreso" %} selected{% endif %}>Ordenar por progreso</option>
-          <option value="activacion"{% if roster_query.order == "activacion" %} selected{% endif %}>Ordenar por activación</option>
-        </select>
-
-        <a href="{{ roster_url }}"
-           class="ml-auto rounded-lg px-2 py-2 text-sm font-medium text-gray-500 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
-          Limpiar filtros
-        </a>
       </div>
+
+      <div class="mt-3 flex items-center gap-2">
+        <span id="roster-orden-label" class="shrink-0 text-xs font-medium text-gray-500">Ordenar por</span>
+        <div role="group" aria-labelledby="roster-orden-label" class="inline-flex min-w-0 rounded-lg bg-gray-100 p-0.5">
+          <button type="submit" name="orden" value="nombre" aria-pressed="{% if roster_query.order == 'nombre' %}true{% else %}false{% endif %}"
+                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 {% if roster_query.order == 'nombre' %}bg-white text-gray-900 shadow-sm{% else %}text-gray-500 hover:text-gray-900{% endif %}">
+            Nombre
+          </button>
+          <button type="submit" name="orden" value="progreso" aria-pressed="{% if roster_query.order == 'progreso' %}true{% else %}false{% endif %}"
+                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 {% if roster_query.order == 'progreso' %}bg-white text-gray-900 shadow-sm{% else %}text-gray-500 hover:text-gray-900{% endif %}">
+            Progreso
+          </button>
+          <button type="submit" name="orden" value="activacion" aria-pressed="{% if roster_query.order == 'activacion' %}true{% else %}false{% endif %}"
+                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 {% if roster_query.order == 'activacion' %}bg-white text-gray-900 shadow-sm{% else %}text-gray-500 hover:text-gray-900{% endif %}">
+            Activación
+          </button>
+        </div>
+      </div>
+
+      {# ── Filtros ───────────────────────────────────────────────────────────── #}
+      {% comment %}
+      A native dialog, and a child of the same form as the search box: *Aplicar
+      filtros* is then an ordinary submit and the whole narrowing lives in the
+      URL. Each choice is a real checkbox or radio worn as a pill, so picking
+      one needs no script and the keyboard reaches it by default. A dialog the
+      browser is not showing still submits the fields inside it, which is what
+      lets the chosen pills survive a reload.
+
+      Walk `filter_groups` blindly: a dimension added later is a change to the
+      view, not to this page.
+      {% endcomment %}
+      <dialog id="roster-filter-modal" aria-labelledby="roster-filter-title"
+              class="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border-0 bg-white p-0 text-gray-900 shadow-2xl backdrop:bg-gray-900/40">
+        <div class="flex max-h-[85vh] flex-col">
+          <div class="flex items-start justify-between gap-4 px-5 pt-5">
+            <h2 id="roster-filter-title" class="text-lg font-bold text-gray-900">Filtros</h2>
+            <button type="button" id="roster-filter-close" aria-label="Cerrar"
+                    class="-mr-1 -mt-1 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-colors">
+              <svg class="size-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <path d="m5 5 10 10M15 5 5 15"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+            {% for group in filter_groups %}
+              {# Preflight leaves fieldset and legend with their browser defaults. #}
+              <fieldset class="m-0 min-w-0 border-0 p-0">
+                <legend class="m-0 p-0 text-sm font-semibold text-gray-700">{{ group.label }}</legend>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  {% for option in group.options %}
+                    {% with field_id="roster-pill-"|add:group.key|add:"-"|add:option.value %}
+                      <input class="peer sr-only" id="{{ field_id }}"
+                             type="{% if group.multiple %}checkbox{% else %}radio{% endif %}"
+                             name="{{ group.key }}" value="{{ option.value }}"{% if option.selected %} checked{% endif %}>
+                      <label for="{{ field_id }}"
+                             class="cursor-pointer select-none rounded-full border border-gray-300 bg-white px-3.5 py-1.5 text-sm text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50 peer-checked:border-indigo-600 peer-checked:bg-indigo-600 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-600 peer-focus-visible:ring-offset-2">
+                        {{ option.label }}
+                      </label>
+                    {% endwith %}
+                  {% endfor %}
+                </div>
+              </fieldset>
+            {% endfor %}
+          </div>
+
+          <div class="flex items-center justify-between gap-3 border-t border-gray-100 px-5 py-4">
+            <a href="{{ clear_url }}"
+               class="rounded-lg px-2 py-2 text-sm font-medium text-gray-500 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
+              Limpiar filtros
+            </a>
+            <button type="submit" id="roster-filter-apply" name="orden" value="{{ roster_query.order }}"
+                    class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
+              Aplicar filtros
+            </button>
+          </div>
+        </div>
+      </dialog>
     </form>
   </div>
 
@@ -117,79 +180,76 @@
       <p class="mb-3 text-sm text-gray-400 italic">No hay encuestas asignadas a esta empresa.</p>
     {% endif %}
 
-    <div class="divide-y divide-gray-200 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <div class="space-y-3">
       {% for item in members %}
         {% with profile=item.profile user=item.profile.user %}
-          <article class="flex gap-4 px-5 py-4{% if not profile.is_activated %} bg-gray-50{% endif %}">
-            <div class="shrink-0 flex size-10 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold uppercase text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
-              {% if user.get_initials %}
-                {{ user.get_initials }}
-              {% else %}
-                {{ user.email|slice:":2" }}
-              {% endif %}
-            </div>
+          <article class="rounded-2xl border border-gray-200 {% if profile.is_activated %}bg-white{% else %}bg-gray-50{% endif %} p-4 shadow-sm sm:p-5">
+            <div class="flex gap-4">
+              {% include "core/_avatar.html" with person=user %}
 
-            <div class="min-w-0 flex-1">
-              <div class="flex items-start justify-between gap-3">
-                <div class="min-w-0">
-                  <h2 class="truncate font-semibold text-gray-900">
-                    <a href="{% if is_admin_view %}{% url 'core:company_employee_detail_for' company.reference_code user.id %}{% else %}{% url 'core:company_employee_detail' user.id %}{% endif %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}"
-                       class="rounded-sm hover:text-indigo-700 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
-                      {{ user.get_full_name|default:user.email }}
-                    </a>
-                  </h2>
-                  {% if user.get_full_name %}
-                    <p class="truncate text-sm text-gray-500">{{ user.email }}</p>
-                  {% endif %}
-                  {% comment %}
-                  The line always opens with the rol, so every other part may
-                  carry its separator unconditionally and still never lead with
-                  one.
-                  {% endcomment %}
-                  <p class="mt-1 truncate text-sm text-gray-500">
-                    {% if item.role_labels %}{{ item.role_labels|join:", " }}{% else %}Sin rol{% endif %}{% if profile.position %} <span aria-hidden="true">·</span> {{ profile.position }}{% endif %}{% if profile.area %} <span aria-hidden="true">·</span> {{ profile.area.name }}{% endif %}{% if profile.location %} <span aria-hidden="true">·</span> {{ profile.location.name }}{% endif %}
-                  </p>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                  <div class="min-w-0">
+                    <h2 class="truncate font-semibold text-gray-900">
+                      <a href="{% if is_admin_view %}{% url 'core:company_employee_detail_for' company.reference_code user.id %}{% else %}{% url 'core:company_employee_detail' user.id %}{% endif %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}"
+                         class="rounded-sm hover:text-indigo-700 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
+                        {{ user.get_full_name|default:user.email }}
+                      </a>
+                    </h2>
+                    {% if user.get_full_name %}
+                      <p class="truncate text-sm text-gray-500">{{ user.email }}</p>
+                    {% endif %}
+                  </div>
+
+                  <div class="flex shrink-0 items-center gap-2">
+                    {% if item.is_self %}
+                      <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">Tú</span>
+                    {% endif %}
+                    {% if not profile.is_activated %}
+                      <span class="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-600/20">Sin activar</span>
+                    {% endif %}
+                  </div>
                 </div>
 
-                <div class="shrink-0 flex items-center gap-2">
-                  {% if item.is_self %}
-                    <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">Tú</span>
-                  {% endif %}
-                  {% if not profile.is_activated %}
-                    <span class="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-600/20">Sin activar</span>
-                  {% endif %}
-                </div>
+                {% comment %}
+                The line always opens with the rol, so every other part may
+                carry its separator unconditionally and still never lead with
+                one.
+                {% endcomment %}
+                <p class="mt-1 truncate text-sm text-gray-500">
+                  {% if item.role_labels %}{{ item.role_labels|join:", " }}{% else %}Sin rol{% endif %}{% if profile.position %} <span aria-hidden="true">·</span> {{ profile.position }}{% endif %}{% if profile.area %} <span aria-hidden="true">·</span> {{ profile.area.name }}{% endif %}{% if profile.location %} <span aria-hidden="true">·</span> {{ profile.location.name }}{% endif %}
+                </p>
               </div>
-
-              {% if item.survey_progress %}
-                <div class="mt-3 space-y-2">
-                  {% for prog in item.survey_progress %}
-                    <div>
-                      <div class="mb-1 flex items-baseline justify-between gap-3">
-                        <span class="min-w-0 truncate text-xs text-gray-500">
-                          {{ prog.assignment.survey.title }}
-                          <span class="text-gray-400">({{ prog.assignment.get_variant_display }})</span>
-                        </span>
-                        <span class="shrink-0 text-xs text-gray-500 tabular-nums">
-                          <span class="font-semibold text-gray-900">{{ prog.percent }}%</span>
-                          <span aria-hidden="true">·</span>
-                          {{ prog.answered }}/{{ prog.total }}
-                        </span>
-                      </div>
-                      <div role="progressbar"
-                           aria-valuenow="{{ prog.percent }}"
-                           aria-valuemin="0"
-                           aria-valuemax="100"
-                           aria-label="{{ prog.assignment.survey.title }} — {{ user.get_full_name|default:user.email }}"
-                           class="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
-                        <div class="h-full rounded-full {% if prog.percent == 100 %}bg-emerald-500{% else %}bg-indigo-500{% endif %}"
-                             style="width: {{ prog.percent }}%"></div>
-                      </div>
-                    </div>
-                  {% endfor %}
-                </div>
-              {% endif %}
             </div>
+
+            {% if item.survey_progress %}
+              <div class="mt-4 space-y-2.5">
+                {% for prog in item.survey_progress %}
+                  <div>
+                    <div class="mb-1 flex items-baseline justify-between gap-3">
+                      <span class="min-w-0 truncate text-xs text-gray-500">
+                        {{ prog.assignment.survey.title }}
+                        <span class="text-gray-400">({{ prog.assignment.get_variant_display }})</span>
+                      </span>
+                      <span class="shrink-0 text-xs text-gray-500 tabular-nums">
+                        <span class="font-semibold text-gray-900">{{ prog.percent }}%</span>
+                        <span aria-hidden="true">·</span>
+                        {{ prog.answered }}/{{ prog.total }}
+                      </span>
+                    </div>
+                    <div role="progressbar"
+                         aria-valuenow="{{ prog.percent }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100"
+                         aria-label="{{ prog.assignment.survey.title }} — {{ user.get_full_name|default:user.email }}"
+                         class="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+                      <div class="h-full rounded-full {% if prog.percent == 100 %}bg-emerald-500{% else %}bg-indigo-500{% endif %}"
+                           style="width: {{ prog.percent }}%"></div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% endif %}
           </article>
         {% endwith %}
       {% endfor %}
@@ -198,7 +258,7 @@
     <div class="rounded-2xl border border-dashed border-gray-300 bg-white px-8 py-16 text-center">
       {% if roster_query.is_narrowed %}
         <p class="text-sm text-gray-600">Ningún colaborador coincide con la búsqueda.</p>
-        <a href="{{ roster_url }}" class="mt-3 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 rounded-sm">
+        <a href="{{ clear_url }}" class="mt-3 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 rounded-sm">
           Limpiar filtros
         </a>
       {% else %}
@@ -206,4 +266,6 @@
       {% endif %}
     </div>
   {% endif %}
+
+  <script src="{% static 'js/roster_filters.js' %}"></script>
 {% endblock %}

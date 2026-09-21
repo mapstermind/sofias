@@ -310,10 +310,9 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
         locations = list(company.locations.filter(is_active=True).order_by("name"))
 
         # The validation query is deferred to the requests that name the
-        # corresponding filter. The toolbar always renders the área select, so
-        # every *Aplicar* submits `area=` and pays for that query; localidad
-        # only does when `show_location_filter` puts its select on the page. A
-        # bare first visit carries neither, so it pays for none of this.
+        # corresponding filter. An unchecked pill submits nothing, so `area`
+        # and `localidad` reach us only once one of theirs has been chosen, and
+        # a roster nobody has narrowed pays for neither.
         area_ids = (
             set(company.areas.values_list("id", flat=True))
             if "area" in request.GET
@@ -401,8 +400,8 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 ],
             },
         ]
-        # Same rule as `show_location_filter`: a single localidad offers
-        # nothing to narrow by.
+        # A single localidad offers nothing to narrow by, so the dimension is
+        # left out rather than rendered as one pill that changes nothing.
         if len(locations) > 1:
             filter_groups.append(
                 {
@@ -440,11 +439,6 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 "members": members_data,
                 "roster_query": query,
                 "roster_querystring": request.GET.urlencode(),
-                "role_options": [(role.slug, role.label) for role in ROLES],
-                "sex_options": list(roster.SEX_SLUGS_TO_LABELS.items()),
-                "area_options": areas,
-                "location_options": locations,
-                "show_location_filter": len(locations) > 1,
                 "filter_groups": filter_groups,
                 "active_filter_count": active_filter_count,
                 "shown_count": len(members_data),

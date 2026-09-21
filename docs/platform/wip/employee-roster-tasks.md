@@ -67,7 +67,7 @@ frequent act; burying it behind two clicks would make it expensive.
 
 **THE CORRECTNESS POINT.** With a single-value `rol` filter, `filter(user__groups__name=...)` cannot duplicate a row, and a test asserts that. With `__in` over several roles, a person in two selected groups matches **twice** and would appear twice on the roster. The role filter therefore needs `.distinct()`, and a test must add a second group and select both.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `apps/core/tests/test_roster.py`. Keep the existing pure/DB split — parsing tests stay DB-free.
 
@@ -151,12 +151,12 @@ And the DB-backed tests, in the existing `TestNarrowProfiles` (which has the `ro
 
 `_emails`/`_emails_in_order` currently build params as a plain dict. Extend the helper so a list value becomes a repeated parameter (build a `QueryDict` via `QueryDict(urlencode(params, doseq=True))`), and keep existing call sites working.
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `pytest apps/core/tests/test_roster.py -v`
 Expected: FAIL — `RosterQuery` has no `area_ids`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `apps/core/roster.py`:
 
@@ -222,16 +222,16 @@ In `narrow_profiles`:
         ).distinct()
 ```
 
-- [ ] **Step 4: Run tests until green, then the full suite**
+- [x] **Step 4: Run tests until green, then the full suite**
 
 Run: `pytest apps/core/tests/test_roster.py -v` then `pytest`
 Expected: PASS. Tests elsewhere referencing `area_id`/`role_name` will fail — update them to the tuple fields; that is expected churn, not a regression.
 
-- [ ] **Step 5: Prove the distinct() guard bites**
+- [x] **Step 5: Prove the distinct() guard bites**
 
 Temporarily delete `.distinct()`, run `test_a_person_in_two_selected_roles_appears_once`, confirm it FAILS, restore. Put the output in your report. Without this evidence the test is unproven.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 ruff format . && ruff check .
@@ -264,7 +264,7 @@ Each option is `{"value": <str>, "label": <str>, "selected": <bool>}`. The local
 
 `active_filter_count` counts **dimensions in use**, not values chosen: picking three áreas is one filter, and the button reads *Filtros (1)*. Search is not counted — it has its own visible box.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
     def test_filter_groups_expose_every_dimension(self, ...):
@@ -284,10 +284,10 @@ Each option is `{"value": <str>, "label": <str>, "selected": <bool>}`. The local
     def test_roster_query_count_does_not_grow_with_the_roster(...)  # already exists
 ```
 
-- [ ] **Step 2: Run to verify they fail**
-- [ ] **Step 3: Implement**, replacing the four `*_options` keys. Keep `roster_query`, `roster_querystring`, `show_location_filter`, `shown_count`, `total_count`.
-- [ ] **Step 4: Full suite green** — the existing template still references the old keys, so update the template minimally here or accept red until Task 3; prefer keeping the suite green by landing Task 2 and Task 3 in one commit if the template cannot survive the rename.
-- [ ] **Step 5: Commit**
+- [x] **Step 2: Run to verify they fail**
+- [x] **Step 3: Implement**, replacing the four `*_options` keys. Keep `roster_query`, `roster_querystring`, `show_location_filter`, `shown_count`, `total_count`.
+- [x] **Step 4: Full suite green** — the existing template still references the old keys, so update the template minimally here or accept red until Task 3; prefer keeping the suite green by landing Task 2 and Task 3 in one commit if the template cannot survive the rename.
+- [x] **Step 5: Commit**
 
 ```bash
 git commit -m "feat(core): hand the roster's filter state to the template as groups"
@@ -322,18 +322,18 @@ Use the `frontend-design` skill. The constraints below come from the user and ar
 
 **Without JavaScript** the page must still work: the dialog is not reachable, but the search box, the sort control and any filters already in the URL all function. Do not put filter state in JS.
 
-- [ ] **Step 1: Write the failing tests** — the server-rendered contract only: the pill inputs exist with the right `name`/`value`/`checked` state, the modal element exists, `Filtros` shows the count, `Limpiar filtros` appears only when narrowed, the card is an `<article>`, the two empty states still branch, and the avatar markup is shared.
-- [ ] **Step 2: Run to verify they fail**
-- [ ] **Step 3: Build the template and the TS**
-- [ ] **Step 4: Tests green, then the full suite**
-- [ ] **Step 5: Build both assets**
+- [x] **Step 1: Write the failing tests** — the server-rendered contract only: the pill inputs exist with the right `name`/`value`/`checked` state, the modal element exists, `Filtros` shows the count, `Limpiar filtros` appears only when narrowed, the card is an `<article>`, the two empty states still branch, and the avatar markup is shared.
+- [x] **Step 2: Run to verify they fail**
+- [x] **Step 3: Build the template and the TS**
+- [x] **Step 4: Tests green, then the full suite**
+- [x] **Step 5: Build both assets**
 
 ```bash
 npm run build:css && npm run build:js
 ```
 Confirm a distinctive new class appears in `static/css/output.css` and that `static/js/roster_filters.js` exists. Commit both generated files.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git commit -m "feat(core): give the roster cards again and a filter modal"
