@@ -1198,3 +1198,19 @@ class TestEmployeeDetailView:
         # The dominio row is itself the disclosure that reveals its dimensiones.
         assert "<details" in body
         assert "Trabajos peligrosos" in body
+
+    # ── back link ─────────────────────────────────────────────────────────────
+
+    def test_back_link_preserves_the_roster_filters(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        """Opening a person and going back should not discard the search."""
+        company = make_company()
+        ana = self._make_employee(make_user_with_profile, company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self._url(ana.id), {"q": "ana", "orden": "progreso"})
+
+        html = response.content.decode()
+        assert "/tablero-empresa/colaboradores/?q=ana&amp;orden=progreso" in html

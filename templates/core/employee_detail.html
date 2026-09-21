@@ -6,11 +6,11 @@
 {% block header_nav %}
   <span class="text-gray-300 select-none">|</span>
   {% if is_admin_view %}
-    <a href="{% url 'core:company_employee_list_for' company.reference_code %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+    <a href="{% url 'core:company_employee_list_for' company.reference_code %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
       &larr; Colaboradores
     </a>
   {% else %}
-    <a href="{% url 'core:company_employee_list' %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+    <a href="{% url 'core:company_employee_list' %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
       &larr; Colaboradores
     </a>
   {% endif %}

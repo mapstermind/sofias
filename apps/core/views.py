@@ -481,6 +481,7 @@ class EmployeeDetailView(LoginRequiredMixin, View):
             {
                 "company": company,
                 "is_admin_view": reference_code is not None,
+                "roster_querystring": request.GET.urlencode(),
                 "employee_profile": employee_profile,
                 "survey_progress": survey_progress,
                 "submissions_data": submissions_data,
