@@ -8,6 +8,9 @@ lists below are transcribed from survey_progress.ts and must be kept in step
 with it.
 """
 
+from collections import Counter
+from html.parser import HTMLParser
+
 import pytest
 
 pytestmark = pytest.mark.django_db
@@ -15,6 +18,30 @@ pytestmark = pytest.mark.django_db
 
 def _survey_url(assignment_id):
     return f"/encuestas/asignados/{assignment_id}/"
+
+
+class _IdCounter(HTMLParser):
+    """Counts `id` attributes on real elements.
+
+    Counting substrings instead would also count an HTML comment that quotes an
+    id — and `<!-- -->` is not a Django comment, so developer notes in a
+    template are served to the browser and land in the response body.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.ids = Counter()
+
+    def handle_starttag(self, tag, attrs):
+        element_id = dict(attrs).get("id")
+        if element_id:
+            self.ids[element_id] += 1
+
+
+def _rendered_ids(html):
+    counter = _IdCounter()
+    counter.feed(html)
+    return counter.ids
 
 
 # Every element survey_progress.ts resolves by id.
@@ -74,7 +101,8 @@ def survey_page(
 
 
 def test_every_id_the_progress_script_resolves_is_rendered(survey_page):
-    missing = [i for i in REQUIRED_IDS if f'id="{i}"' not in survey_page]
+    rendered = _rendered_ids(survey_page)
+    missing = [i for i in REQUIRED_IDS if i not in rendered]
     assert missing == [], (
         "survey_progress.ts resolves these by id and would fail silently: "
         + ", ".join(missing)
@@ -95,7 +123,6 @@ def test_progress_and_save_share_one_node_so_ids_stay_unique(survey_page):
     Two copies would render `id="progress-bar"` twice; `getElementById` returns
     the first, so the visible one would freeze while the hidden one updated.
     """
-    for element_id in REQUIRED_IDS:
-        assert survey_page.count(f'id="{element_id}"') == 1, (
-            f'id="{element_id}" is rendered more than once'
-        )
+    rendered = _rendered_ids(survey_page)
+    duplicated = {i: rendered[i] for i in REQUIRED_IDS if rendered[i] > 1}
+    assert duplicated == {}, f"rendered more than once: {duplicated}"

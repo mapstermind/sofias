@@ -14,37 +14,65 @@
 
 {% block content %}
 
-<div class="flex gap-6">
+<div class="flex flex-col lg:flex-row gap-6">
 
-<!-- Right sidebar: sticky instructions + progress bar -->
+{% comment %}
+Sidebar: the sticky right column on a wide screen. Below `lg:` the wrapper
+stacks and `order-last` drops this after the form, so the pendientes panel is
+what a respondent meets on reaching the end of the questions.
+{% endcomment %}
 <div class="flex flex-col items-end order-last w-full lg:w-96 lg:shrink-0">
-  <!-- The column caps itself at the viewport and scrolls internally, so a
-       sidebar taller than the window stays reachable instead of being cut
-       off by `position: sticky`. `overflow-y` also clips the x-axis, hence the
-       padding: without it the save button's focus ring is shaved off. -->
-  <div class="sticky top-6 w-full flex flex-col items-end gap-5 max-h-[calc(100vh_-_3rem)] overflow-y-auto px-1">
-    <div class="w-full rounded-lg bg-white border border-indigo-200 shadow-sm p-4">
+  {% comment %}
+  The column caps itself at the viewport and scrolls internally, so a sidebar
+  taller than the window stays reachable instead of being cut off by
+  `position: sticky`. `overflow-y` also clips the x-axis, hence the padding:
+  without it the save button's focus ring is shaved off. None of that applies
+  on a phone, where the column is in the normal flow.
+  {% endcomment %}
+  <div class="w-full flex flex-col items-end gap-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh_-_3rem)] lg:overflow-y-auto lg:px-1">
+    <!-- Below `lg:` the instructions live in the modal this page already
+         carries, reached from the action bar. -->
+    <div class="hidden w-full rounded-lg bg-white border border-indigo-200 shadow-sm p-4 lg:block">
       <h2 class="text-sm font-semibold text-gray-900 mb-2">Instrucciones</h2>
       <div class="text-sm text-gray-600 space-y-3 max-h-[45vh] overflow-y-auto">
         {% include "surveys/_instrucciones_content.html" %}
       </div>
     </div>
-    {% if total_questions %}
-    <div class="w-full" id="progress-total" data-total="{{ total_questions }}">
-      <div class="flex justify-between text-xs text-gray-500 mb-1">
-        <span>Progreso</span>
-        <span id="progress-count">{{ answered_count }}/{{ total_questions }}</span>
+
+    {% comment %}
+    Progress and the save button are one element, not two: below `lg:` it is a
+    bar pinned to the bottom of the screen, at `lg:` it sits in the sidebar. A
+    second copy would render the progress ids twice, and `getElementById`
+    returns the first — so the visible bar would freeze while the hidden one
+    updated. apps/surveys/tests/test_survey_page_contract.py holds that line.
+    {% endcomment %}
+    <div id="survey-actions"
+         class="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-2 border-t border-gray-200 bg-white px-4 py-3 shadow-[0_-1px_3px_rgba(0,0,0,0.06)]
+                lg:static lg:z-auto lg:w-full lg:gap-5 lg:border-0 lg:bg-transparent lg:px-1 lg:py-0 lg:shadow-none">
+      {% if total_questions %}
+      <div class="w-full" id="progress-total" data-total="{{ total_questions }}">
+        <div class="flex justify-between text-xs text-gray-500 mb-1">
+          <span>Progreso</span>
+          <span id="progress-count">{{ answered_count }}/{{ total_questions }}</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div id="progress-bar" class="bg-indigo-500 h-2 rounded-full transition-all"
+               style="width: {% widthratio answered_count total_questions 100 %}%"></div>
+        </div>
       </div>
-      <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-        <div id="progress-bar" class="bg-indigo-500 h-2 rounded-full transition-all"
-             style="width: {% widthratio answered_count total_questions 100 %}%"></div>
+      {% endif %}
+      <div class="flex gap-2 lg:flex-col">
+        <button type="button"
+          onclick="document.getElementById('instrucciones-modal').style.display='flex'"
+          class="shrink-0 rounded-lg border border-indigo-200 px-4 py-2.5 text-sm font-semibold text-indigo-700 transition-colors hover:bg-indigo-50 lg:hidden">
+          Instrucciones
+        </button>
+        <button type="submit" form="survey-form"
+          class="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors lg:w-full">
+          {% if is_edit %}Guardar cambios{% else %}Guardar progreso{% endif %}
+        </button>
       </div>
     </div>
-    {% endif %}
-    <button type="submit" form="survey-form"
-      class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 transition-colors">
-      {% if is_edit %}Guardar cambios{% else %}Guardar progreso{% endif %}
-    </button>
 
     <!-- Pendientes: shell only. survey_progress.ts fills the list and unhides
          the panel whenever a visible question is still unanswered. -->
@@ -63,7 +91,9 @@
   </div>
 </div>
 
-<div class="max-w-2xl w-full mx-auto min-w-0">
+<!-- `pb-40` clears the action bar, which floats over the page below `lg:`;
+     without it the bar covers the last question. -->
+<div class="max-w-2xl w-full mx-auto min-w-0 pb-40 lg:pb-0">
 
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900">{{ survey.title }}</h1>
