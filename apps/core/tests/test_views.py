@@ -808,6 +808,45 @@ class TestCompanyEmployeeListView:
             f"from 3 to 30 colaboradores — a prefetch was dropped"
         )
 
+    def test_roster_query_count_does_not_grow_with_a_role_filter_applied(
+        self,
+        client,
+        make_user,
+        make_company,
+        make_user_with_profile,
+        bootstrap_groups,
+    ):
+        """The role filter's `.distinct()` sits on top of the same prefetches;
+        it must not add a query or change the plan as the roster grows."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        def load_with(member_count, start):
+            for i in range(start, start + member_count):
+                member = make_user_with_profile(
+                    email=f"m{i}@example.com",
+                    company=company,
+                    first_name=f"M{i}",
+                    paternal_last_name="Pérez",
+                )
+                member.groups.add(bootstrap_groups["Employees"])
+            # Warm any per-process caches before counting.
+            client.get(self.URL, {"rol": "empleado"})
+            with CaptureQueriesContext(connection) as ctx:
+                response = client.get(self.URL, {"rol": "empleado"})
+            assert response.status_code == 200
+            return len(ctx)
+
+        small = load_with(3, 0)
+        large = load_with(27, 3)
+
+        assert large == small, (
+            f"query count grew from {small} to {large} when the roster grew "
+            f"from 3 to 30 colaboradores with rol=empleado applied — "
+            f"distinct() changed the query plan"
+        )
+
     def test_a_retired_localidad_can_still_be_filtered_by(
         self, client, make_user, make_company, make_location, make_user_with_profile
     ):

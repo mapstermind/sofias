@@ -104,15 +104,16 @@ def parse_roster_query(params, *, area_ids: set[int], location_ids: set[int]):
     raw_q = (params.get("q") or "").strip()
     terms = tuple(catalog_name_key(term) for term in raw_q.split()[:MAX_SEARCH_TERMS])
 
-    # `sexo` is single-choice — two values selected would mean nothing beyond
-    # what zero values already mean — so a repeated parameter keeps only the
-    # first recognized value, regardless of `QueryDict.get`'s own last-value
-    # convention.
-    sexo_values = _values(params, "sexo")
-    sex_slug = (sexo_values[0] if sexo_values else "").strip()
-    sex = SEX_SLUGS.get(sex_slug, "")
-    if not sex:
-        sex_slug = ""
+    # A repeated parameter keeps the first value that names a sex we know.
+    # `QueryDict.get()` would return the LAST value, and an unrecognized one
+    # must not shadow a valid one that follows it — the same rule the pk
+    # filters follow.
+    sex, sex_slug = "", ""
+    for candidate in _values(params, "sexo"):
+        stored = SEX_SLUGS.get(candidate.strip())
+        if stored:
+            sex, sex_slug = stored, candidate.strip()
+            break
 
     role_slugs = {slug for slug in _values(params, "rol")}
     selected_roles = [role for role in ROLES if role.slug in role_slugs]

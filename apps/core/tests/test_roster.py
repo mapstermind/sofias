@@ -137,6 +137,13 @@ class TestMultiValueParsing:
         query = roster.parse_roster_query(params, area_ids=set(), location_ids=set())
         assert query.sex == "female"
 
+    def test_an_unrecognized_sexo_does_not_shadow_a_valid_one(self):
+        """?sexo=otro&sexo=femenino must filter by femenino, the same way a bad
+        área pk is dropped without discarding the good ones beside it."""
+        params = QueryDict("sexo=otro&sexo=femenino")
+        query = roster.parse_roster_query(params, area_ids=set(), location_ids=set())
+        assert query.sex == "female"
+
     def test_a_plain_dict_still_works(self):
         """The view passes a QueryDict; unit tests pass dicts. Both must parse."""
         query = roster.parse_roster_query(
