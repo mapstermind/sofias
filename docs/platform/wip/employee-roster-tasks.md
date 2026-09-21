@@ -1493,32 +1493,32 @@ git commit -m "feat(core): keep the roster's filters when returning from a colab
 
 **Files:** none modified unless a check fails.
 
-- [ ] **Step 1: Run the full suite**
+- [x] **Step 1: Run the full suite**
 
 Run: `pytest`
 Expected: PASS, no skips introduced by this branch.
 
-- [ ] **Step 2: Confirm no migration was provoked**
+- [x] **Step 2: Confirm no migration was provoked**
 
 Run: `python manage.py makemigrations --check --dry-run`
 Expected: "No changes detected".
 
-- [ ] **Step 3: Confirm the admin is still valid**
+- [x] **Step 3: Confirm the admin is still valid**
 
 Run: `python manage.py check`
 Expected: "System check identified no issues".
 
-- [ ] **Step 4: Confirm the vocabulary sweep is complete**
+- [x] **Step 4: Confirm the vocabulary sweep is complete**
 
 Run: `grep -rn "empleado" templates/ apps/core/urls.py`
 Expected: no matches.
 
-- [ ] **Step 5: Confirm the CSS is current**
+- [x] **Step 5: Confirm the CSS is current**
 
 Run: `npm run build:css && git diff --stat static/css/output.css`
 Expected: no diff. A diff here means Step 5 of Task 8 was skipped or a later template edit was not rebuilt — commit the regenerated file.
 
-- [ ] **Step 6: Hand the reviewer a browser checklist**
+- [x] **Step 6: Hand the reviewer a browser checklist**
 
 There is no JavaScript test runner in this project, and the Python suite asserts only the server-rendered contract — it cannot see an uncompiled Tailwind class or a sticky bar that overlaps the header. Ask the reviewer to open a company roster and confirm:
 
@@ -1548,34 +1548,34 @@ implementation existed.
 - Modify: `apps/core/CLAUDE.md`
 - Modify: `.claude/CLAUDE.md`
 
-- [ ] **Step 1: Trim the feature doc to its post-ship form**
+- [x] **Step 1: Trim the feature doc to its post-ship form**
 
 In `docs/platform/employee-roster.md`: set `## Status` to `Current — implemented in `apps/core` and `apps/accounts``, and delete the `## Documentation impact` section, which describes this change rather than the feature. Everything else is already written in present tense.
 
-- [ ] **Step 2: Correct `docs/platform/localization.md`**
+- [x] **Step 2: Correct `docs/platform/localization.md`**
 
 Replace the `**Authorization group names**` bullet under **Not covered** with a **Covered** bullet: the four groups keep their English `auth.Group.name`, which is the lookup key and a CSV import value, and are shown through the Spanish labels declared in `apps/accounts/roles.py`. Add a glossary row: the `Employees` role is **empleado**, while a person on a roster is a **colaborador** whatever their role. Add the Rol column to the admin list under **Public behavior**.
 
-- [ ] **Step 3: Correct `docs/platform/auth-and-onboarding.md`**
+- [x] **Step 3: Correct `docs/platform/auth-and-onboarding.md`**
 
 Line 247's parenthetical and line 252's bullet: the canonical group-name contract lives in `apps/accounts/roles.py`, which `bootstrap_groups` reads.
 
-- [ ] **Step 4: Correct `docs/internal/open-findings.md`**
+- [x] **Step 4: Correct `docs/internal/open-findings.md`**
 
 Finding #1 keeps only the rename: the names are now shown in Spanish everywhere a user reads them, and what remains open is `auth.Group.name` itself, still matched by string and still a CSV column value. Delete finding #5 with a line saying the roster is narrowed by search, filters and sorting rather than grouped, and pointing at `docs/platform/employee-roster.md`.
 
-- [ ] **Step 5: Correct the three CLAUDE.md files**
+- [x] **Step 5: Correct the three CLAUDE.md files**
 
 - `apps/accounts/CLAUDE.md:51` — the four names live in `apps/accounts/roles.py` with their Spanish labels and URL slugs; a new permission is added to `Role.Meta.permissions` and `GROUP_PERMISSIONS`, and the `conftest.py` fixture follows from the latter.
 - `apps/core/CLAUDE.md` — `CompanyEmployeeListView` takes `q`, `sexo`, `area`, `localidad`, `rol` and `orden`, parsed and applied by `apps/core/roster.py`; add to the N+1 gotcha that narrowing happens before the per-member loop and that `user__groups` is prefetched for the Rol line.
 - `.claude/CLAUDE.md` — in the Authorization bullet, name `apps/accounts/roles.py` as where the four group names and their Spanish labels live.
 
-- [ ] **Step 6: Verify the docs describe only the current state**
+- [x] **Step 6: Verify the docs describe only the current state**
 
 Run: `grep -rniE "formerly|previously|no longer|used to|replaces the old|deprecated" docs/platform/employee-roster.md docs/platform/localization.md docs/platform/auth-and-onboarding.md`
 Expected: no matches.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add docs/ apps/accounts/CLAUDE.md apps/core/CLAUDE.md .claude/CLAUDE.md

@@ -2,7 +2,7 @@
 
 ## Status
 
-Draft
+Current — implemented in `apps/core` and `apps/accounts`
 
 ## What this does
 
@@ -35,17 +35,17 @@ not started*, *who are the ejecutivos*, *who is still not activated* — and eac
 of them is a search, a filter or a sort away, provided the roster offers all
 three.
 
-Rol is the piece that was missing entirely: the authorization group decides what
-a person can do in SOFIA-S, and until now it was visible nowhere outside the
-Django admin's Grupos page.
+Rol carries its own weight in that list: the authorization group decides what a
+person can do in SOFIA-S, and the roster is where an operator reads it without
+opening the Django admin.
 
 ## Scope
 
 **In scope:**
 
-- The roster page (`CompanyEmployeeListView`) for both audiences it already
-  serves: a company executive viewing their own company, and an administrator
-  viewing any company by `reference_code`.
+- The roster page (`CompanyEmployeeListView`) for both audiences it serves: a
+  company executive viewing their own company, and an administrator viewing any
+  company by `reference_code`.
 - A search box, four filters (sexo, localidad, área, rol) and three sorts
   (nombre, progreso, activación), as optional GET parameters on that page.
 - `apps/accounts/roles.py` — the canonical four group names, their Spanish
@@ -91,7 +91,7 @@ Both roster URLs accept the same optional query parameters:
 
 | Parameter | Values |
 |---|---|
-| `q` | Free text, split on whitespace; every term must match nombre, apellido paterno, apellido materno or correo, case- and accent-insensitively |
+| `q` | Free text, split on whitespace, first five terms honoured; every term must match nombre, apellido paterno, apellido materno or correo, case- and accent-insensitively |
 | `sexo` | `masculino`, `femenino` |
 | `localidad` | The pk of a `CompanyLocation` belonging to the company being viewed |
 | `area` | The pk of a `CompanyArea` belonging to the company being viewed |
@@ -101,7 +101,8 @@ Both roster URLs accept the same optional query parameters:
 `q` is split so that *ana ruiz* finds Ana Ruiz, whose nombre and apellido live
 in different columns; each term may match a different one. Accents are folded
 the way the área and localidad catalogs already fold them, so *ruiz* finds
-*Ruíz*.
+*Ruíz*. A search is a convenience rather than a query language, so only the
+first five terms are honoured — each one costs four comparisons.
 
 Every parameter a human reads carries a Spanish value. `area` and `localidad`
 are numeric pks because they identify a row rather than name a concept.
@@ -116,8 +117,9 @@ it had not been given. A filtered roster never raises.
 Above the list: the search box, the four selects, the sort select, an *Aplicar*
 button and a *Limpiar filtros* link, followed by
 `Mostrando X de Y colaboradores`. Every control shows its current value, so the
-toolbar reflects the URL after a reload or a back button. The toolbar stays
-fixed to the top of the viewport while the roster scrolls beneath it.
+toolbar reflects the URL after a reload or a back button. The toolbar sticks to
+the top of the viewport once the page header has scrolled past it, so the roster
+scrolls beneath it and the controls stay reachable.
 
 The localidad select renders only when the company has more than one localidad —
 the same rule the activation form already applies to its own localidad picker.
@@ -129,8 +131,11 @@ it stops being offered.
 The rol select lists all four roles in their declared order regardless of who is
 present, so an empty result is a readable answer rather than a missing option.
 
-When no one matches, the list is replaced by an empty state naming the fact and
-offering *Limpiar filtros*.
+An empty list is replaced by one of two empty states, because *nobody matches
+this search* and *this company has nobody* are different answers: a narrowed
+roster with no match reads *Ningún colaborador coincide con la búsqueda* and
+offers *Limpiar filtros*, while an unnarrowed one reads *Aún no hay
+colaboradores vinculados a* the company and offers nothing to clear.
 
 ### Sorting
 
@@ -141,16 +146,20 @@ offering *Limpiar filtros*.
   who have not started come first. A person with no assignment sorts last.
 - **activacion** — people who have not activated first.
 
-Under every sort the viewer's own card stays at the top of the list, as it does
-today — unless the search or filters exclude them, in which case it is absent
-like any other non-matching card.
+Under every sort the viewer's own card stays at the top of the list — unless the
+search or filters exclude them, in which case it is absent like any other
+non-matching card.
 
 ### The card
 
 One card per person:
 
-- An avatar of the person's initials, the same one the detail page renders.
+- An avatar of the person's initials, the same one the detail page renders,
+  falling back to the first letters of the correo for someone who has not yet
+  recorded a name.
 - Name, with a *Tú* badge on the viewer's own card, and the correo below it.
+  Someone with no name recorded is listed by correo alone, which is then not
+  repeated underneath.
 - One metadata line: *Rol · Cargo · Área · Localidad*, with separators between
   whichever of the four are recorded. A value that is absent is omitted rather
   than printed as *Sin cargo*.
@@ -160,6 +169,10 @@ One card per person:
 A person who has not activated gets a muted card and a single *Sin activar*
 badge. Activation is the normal state and carries no badge and no colour of its
 own.
+
+A company with no survey assigned is said once above the list — *No hay
+encuestas asignadas a esta empresa* — rather than repeated as an empty progress
+area on every card.
 
 Opening a person and returning through the detail page's *Colaboradores* link
 lands back on the same search, filters and sort, because that link carries the
@@ -185,9 +198,9 @@ without relying on the bar's width.
 
 ### The admin
 
-The Usuarios changelist gains a *Rol* column showing the same Spanish labels, and
-a filter by group. The Grupos page is untouched and keeps showing the English
-names, because those are the stored values.
+The Usuarios changelist carries a *Rol* column showing the same Spanish labels,
+and a filter by group. The Grupos page shows the English names, because those
+are the stored values.
 
 ## Terminology
 
@@ -196,9 +209,9 @@ holds administradores and ejecutivos alongside empleados. **Empleado** names one
 of the four roles and nothing else.
 
 `docs/platform/localization.md` owns the vocabulary and carries this rule in its
-glossary. The copy sweep that makes the rest of the app agree with it —
-`company_dashboard.html`, `company_list.html`, `employee_detail.html`,
-`about.html` and the `/colaboradores/` URLs — ships with this change, because a
+glossary. The word is used consistently across the surfaces that name this
+population — `company_dashboard.html`, `company_list.html`,
+`employee_detail.html`, `about.html` and the `/colaboradores/` URLs — because a
 vocabulary applied to one page while its neighbours use the other word is the
 two-words-for-one-population problem the glossary exists to prevent.
 
@@ -213,29 +226,9 @@ None. No migration. Every filter reads a column that already exists —
 
 ## Permissions and authorization
 
-Unchanged. The roster is gated on `can_manage_employees`, and an administrator
-reaching another company by `reference_code` additionally needs
-`can_manage_surveys`, exactly as today. Search and filters narrow what is
-displayed and never widen who may display it.
-
-## Documentation impact
-
-This feature makes a statement in six other documents wrong. Each is a factual
-correction, not a rewrite:
-
-| Document | Correction |
-|---|---|
-| `docs/platform/localization.md` | Its Scope excludes authorization group names; they are now covered as display labels. Its glossary gains the empleado-is-a-role rule. Its admin behavior list gains the Rol column. |
-| `docs/platform/auth-and-onboarding.md` | The canonical group-name contract moves from the bootstrap command to `apps/accounts/roles.py`. |
-| `docs/internal/open-findings.md` | #1 narrows to the rename alone, the display half being done. #5 is resolved by search, filters and sorting rather than the grouping it proposed, and is deleted with that note. |
-| `apps/accounts/CLAUDE.md` | `roles.py` is where the four names live, and a new permission is declared in two places rather than three — the test fixture reads the same map the command does. |
-| `apps/core/CLAUDE.md` | `CompanyEmployeeListView` gains its parameters, and the N+1 note gains the rule that filtering happens before the per-member loop. |
-| `.claude/CLAUDE.md` | One clause naming where the group names and their Spanish labels live. |
-
-`docs/platform/csv-user-import.md` is unaffected: the `group` column still takes
-the English names, and one group per row is still its contract.
-
-No ADR is superseded, so none is written.
+The roster is gated on `can_manage_employees`, and an administrator reaching
+another company by `reference_code` additionally needs `can_manage_surveys`.
+Search and filters narrow what is displayed and never widen who may display it.
 
 ## Key decisions
 
@@ -282,8 +275,7 @@ No ADR is superseded, so none is written.
 
 - Decision: the roster stays one flat list.
   Reason: sections fragment the count an operator is reading and duplicate what
-  the sort control already does; this supersedes the grouping sketched in open
-  finding #5.
+  the sort control already does.
 
 - Decision: the viewer's own card keeps its place at the top under every sort.
   Reason: it is existing behavior and an operator looking for themselves is the
