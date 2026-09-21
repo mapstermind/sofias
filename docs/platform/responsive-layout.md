@@ -2,7 +2,8 @@
 
 ## Status
 
-Draft
+Current — implemented across `templates/`, guarded by
+`apps/core/tests/test_responsive.py`.
 
 ## What this does
 
@@ -36,10 +37,10 @@ no second chance at a first impression, and no tolerance for friction that a
 daily user would learn to absorb. A page that overflows horizontally is, for
 them, the product. So is a 16px radio button they have to hit 87 times.
 
-The administrators on the other side of the platform work mostly on a laptop,
-which is why the dashboards were built card-first and read acceptably on a phone
-already. The respondent-facing survey page was not, and it is the one page that
-mattered most.
+The administrators on the other side of the platform work mostly on a laptop.
+Their dashboards are card-first and read comfortably at any width. The survey
+form is where the constraint actually bites, and it is the page this contract is
+written for.
 
 ## Scope
 
@@ -57,16 +58,13 @@ mattered most.
   44px tall, with the whole row clickable. This applies to `likert`, `boolean`,
   `rating`, `single_choice` and `multiple_choice` alike, so a question type added
   later inherits one pattern rather than inventing a sixth.
-- Bringing the existing templates into conformance — chiefly
-  `templates/surveys/survey_detail.html`, whose sidebar is the one page that
-  breaks the contract outright.
 
 **Out of scope:**
 
 - **Touch-target sizing outside the survey form.** The roster filter bar, the
-  header's logout control and the dashboard cards keep the sizes they have. An
-  administrator reads those on a laptop and meets them rarely; a respondent meets
-  an answer control 87 times.
+  header controls and the dashboard cards are sized for reading rather than for a
+  thumb. An administrator reads those on a laptop and meets them rarely; a
+  respondent meets an answer control 87 times.
 - **Tablet-specific layouts.** There are two cases — phone and desktop — and the
   breakpoint between them is chosen per page. Nothing is designed for the middle.
 - **Per-page layout prescriptions.** This doc does not say when to use a bottom
@@ -85,6 +83,15 @@ No test can see a rendered page. The suite has no browser and no JavaScript
 runner, so a page that overflows at 360px passes every check in the repository —
 the same blind spot [`localization.md`](./localization.md) names for English copy
 left in a template. What follows is a floor, not a guarantee.
+
+Three modules hold what can be held:
+[`apps/core/tests/test_responsive.py`](../../apps/core/tests/test_responsive.py)
+is the width guard below;
+[`apps/surveys/tests/test_survey_page_contract.py`](../../apps/surveys/tests/test_survey_page_contract.py)
+pins the element ids and data attributes `static/ts/survey_progress.ts` resolves,
+which a layout change would otherwise break in silence; and
+[`apps/core/tests/test_app_header.py`](../../apps/core/tests/test_app_header.py)
+holds the header, which carries the product's only logout control.
 
 **The automated part.** A pytest check scans `templates/` and fails on a width
 class that is both unprefixed and at least as wide as the phone content box
@@ -124,11 +131,11 @@ its pull request what to open and what to click.
   be tapped accurately has met the letter of the contract and failed its purpose.
   Neither rule prescribes a page's design beyond that.
 
-- Decision: answer options become stacked full-width rows on a phone, accepting a
+- Decision: answer options are stacked full-width rows on a phone, accepting a
   much longer page.
-  Reason: the likert scale's five options currently wrap mid-scale at phone
-  width, which both misreads as two scales and leaves five 72px targets. Stacking
-  turns 64 likert questions into roughly five 44px rows each, so the form gets
+  Reason: laid out horizontally, a five-point scale wraps mid-scale at phone
+  width — it misreads as two scales and leaves five 72px targets. Stacking
+  turns 64 likert questions into roughly five 44px rows each, so the form runs
   substantially taller — the sticky bottom bar, the progress count and the
   pendientes panel are what keep that navigable, which is why they are collapsed
   rather than dropped. Height costs scrolling; a mis-tap costs a wrong answer in
@@ -137,8 +144,8 @@ its pull request what to open and what to click.
 - Decision: stacked likert rows carry their labels and drop the horizontal scale
   reading.
   Reason: a five-point Siempre→Nunca scale conveys its order through sequence and
-  through the words themselves. A vertical list keeps both; the wrapped
-  two-line row it replaces keeps neither.
+  through the words themselves. A vertical list keeps both. Laid out
+  horizontally at phone width the row wraps onto two lines, which keeps neither.
 
 - Decision: 360px is the floor, not 390px or 320px.
   Reason: 360px is the narrowest width in common use among current Android
