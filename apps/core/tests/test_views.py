@@ -509,7 +509,7 @@ class TestCompanyEmployeeListView:
         ]
         assert surnames == ["Álvarez", "Núñez", "Zamora"]
 
-    def test_activation_status_labels_render(
+    def test_every_member_of_the_company_is_listed(
         self, client, make_user, make_company, make_user_with_profile
     ):
         company = make_company()
@@ -527,8 +527,6 @@ class TestCompanyEmployeeListView:
         assert response.status_code == 200
         assert active_user.email.encode() in response.content
         assert inactive_user.email.encode() in response.content
-        assert "Activado".encode() in response.content
-        assert "No activado".encode() in response.content
 
     def test_completed_gated_survey_reads_100_percent(
         self, client, make_user, make_company, make_user_with_profile, gated_survey
@@ -785,6 +783,115 @@ class TestCompanyEmployeeListView:
         assert [loc.name for loc in response.context["location_options"]] == []
 
         assert response.status_code == 200
+
+    # ── the rendered page ─────────────────────────────────────────────────────
+
+    def test_toolbar_is_a_get_form(self, client, make_user, make_company):
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+        html = response.content.decode()
+
+        assert 'id="roster-filters"' in html
+        assert 'method="get"' in html
+        # A GET form must not carry a CSRF token — it would end up in the URL.
+        assert "csrfmiddlewaretoken" not in html.split('id="roster-filters"')[1][:2000]
+
+    def test_card_shows_the_role_label(
+        self,
+        client,
+        make_user,
+        make_company,
+        make_user_with_profile,
+        bootstrap_groups,
+    ):
+        company = make_company()
+        ana = make_user_with_profile(
+            email="ana@example.com",
+            company=company,
+            position="Analista",
+        )
+        ana.groups.add(bootstrap_groups["Principal Exec"])
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert "Ejecutivo principal".encode() in response.content
+
+    def test_a_member_with_no_group_reads_sin_rol(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "ana@"})
+
+        assert "Sin rol".encode() in response.content
+
+    def test_activated_members_carry_no_badge(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        """Activation is the normal state; a badge on every card says nothing."""
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert "Activado".encode() not in response.content
+
+    def test_unactivated_members_are_flagged(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        make_user_with_profile(
+            email="beto@example.com", company=company, is_activated=False
+        )
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert "Sin activar".encode() in response.content
+
+    def test_progress_bar_reports_its_value(
+        self,
+        client,
+        make_user,
+        make_company,
+        make_user_with_profile,
+        active_assignment,
+    ):
+        company = active_assignment.company
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        assert 'role="progressbar"'.encode() in response.content
+        assert 'aria-valuenow="0"'.encode() in response.content
+
+    def test_empty_result_offers_to_clear_the_filters(
+        self, client, make_user, make_company, make_user_with_profile
+    ):
+        company = make_company()
+        make_user_with_profile(email="ana@example.com", company=company)
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "nadie"})
+
+        assert "Limpiar filtros".encode() in response.content
+        assert response.context["shown_count"] == 0
+        # The link drops every parameter: it points at the bare roster URL.
+        assert f'href="{self.URL}"'.encode() in response.content
 
 
 # ── EmployeeDetailView ────────────────────────────────────────────────────────
