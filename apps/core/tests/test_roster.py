@@ -5,7 +5,10 @@ Parsing (`TestDefaults` through `TestOrder` below) needs no database. The
 query to the database and to assembled rows, respectively.
 """
 
+from urllib.parse import urlencode
+
 import pytest
+from django.http import QueryDict
 
 from apps.accounts.models import UserProfile
 from apps.core import roster
@@ -23,9 +26,9 @@ class TestDefaults:
 
         assert query.terms == ()
         assert query.sex == ""
-        assert query.area_id is None
-        assert query.location_id is None
-        assert query.role_name == ""
+        assert query.area_ids == ()
+        assert query.location_ids == ()
+        assert query.role_names == ()
         assert query.order == roster.ORDER_NAME
         assert query.is_narrowed is False
 
@@ -71,30 +74,81 @@ class TestSex:
 
 class TestCatalogs:
     def test_accepts_a_pk_belonging_to_the_company(self):
-        assert parse({"area": "3"}, area_ids=[3, 7]).area_id == 3
+        assert parse({"area": "3"}, area_ids=[3, 7]).area_ids == (3,)
 
     def test_ignores_a_pk_belonging_to_another_company(self):
-        assert parse({"area": "9"}, area_ids=[3, 7]).area_id is None
+        assert parse({"area": "9"}, area_ids=[3, 7]).area_ids == ()
 
     def test_ignores_a_non_numeric_pk(self):
-        assert parse({"area": "produccion"}, area_ids=[3]).area_id is None
+        assert parse({"area": "produccion"}, area_ids=[3]).area_ids == ()
 
     def test_accepts_a_localidad_the_same_way(self):
-        assert parse({"localidad": "7"}, location_ids=[7]).location_id == 7
+        assert parse({"localidad": "7"}, location_ids=[7]).location_ids == (7,)
 
 
 class TestRole:
     def test_maps_the_slug_to_the_group_name(self):
         query = parse({"rol": "ejecutivo-principal"})
 
-        assert query.role_name == "Principal Exec"
-        assert query.role_slug == "ejecutivo-principal"
+        assert query.role_names == ("Principal Exec",)
+        assert query.role_slugs == ("ejecutivo-principal",)
 
     def test_ignores_the_group_name_itself(self):
-        assert parse({"rol": "Principal Exec"}).role_name == ""
+        assert parse({"rol": "Principal Exec"}).role_names == ()
 
     def test_ignores_an_unknown_role(self):
-        assert parse({"rol": "gerente"}).role_name == ""
+        assert parse({"rol": "gerente"}).role_names == ()
+
+
+class TestMultiValueParsing:
+    def test_repeated_area_collects_every_valid_pk(self):
+        params = QueryDict("area=3&area=7")
+        query = roster.parse_roster_query(params, area_ids={3, 7}, location_ids=set())
+        assert query.area_ids == (3, 7)
+
+    def test_invalid_values_are_dropped_individually(self):
+        """One bad value must not discard its good neighbours."""
+        params = QueryDict("area=3&area=nonsense&area=999")
+        query = roster.parse_roster_query(params, area_ids={3, 7}, location_ids=set())
+        assert query.area_ids == (3,)
+
+    def test_duplicate_values_collapse(self):
+        params = QueryDict("area=3&area=3")
+        query = roster.parse_roster_query(params, area_ids={3}, location_ids=set())
+        assert query.area_ids == (3,)
+
+    def test_repeated_rol_collects_group_names(self):
+        params = QueryDict("rol=empleado&rol=administrador")
+        query = roster.parse_roster_query(params, area_ids=set(), location_ids=set())
+        assert query.role_names == ("Admins", "Employees")
+        assert query.role_slugs == ("administrador", "empleado")
+
+    def test_role_order_is_declared_order_not_url_order(self):
+        """The modal lists roles in declared order; echoing URL order would make
+        the same selection read differently depending on click sequence."""
+        params = QueryDict("rol=empleado&rol=administrador")
+        query = roster.parse_roster_query(params, area_ids=set(), location_ids=set())
+        assert query.role_names == ("Admins", "Employees")
+
+    def test_sexo_stays_single_valued(self):
+        """Two values means selecting both equals selecting neither, so sexo is
+        single-choice; a repeated parameter keeps the first recognized value."""
+        params = QueryDict("sexo=femenino&sexo=masculino")
+        query = roster.parse_roster_query(params, area_ids=set(), location_ids=set())
+        assert query.sex == "female"
+
+    def test_a_plain_dict_still_works(self):
+        """The view passes a QueryDict; unit tests pass dicts. Both must parse."""
+        query = roster.parse_roster_query(
+            {"area": "3"}, area_ids={3}, location_ids=set()
+        )
+        assert query.area_ids == (3,)
+
+    def test_no_filters_means_empty_tuples_not_none(self):
+        query = roster.parse_roster_query({}, area_ids=set(), location_ids=set())
+        assert query.area_ids == ()
+        assert query.role_names == ()
+        assert query.is_narrowed is False
 
 
 class TestOrder:
@@ -161,14 +215,23 @@ class TestNarrowProfiles:
             "ana": ana,
             "beto": beto,
             "produccion": produccion,
+            "sistemas": sistemas,
             "matriz": matriz,
+            "norte": norte,
         }
+
+    def _query_dict(self, params):
+        """Turn a plain dict (whose values may be lists) into a `QueryDict`,
+        the same shape the view hands `parse_roster_query`. A list value
+        becomes a repeated parameter, matching several `<option>`s selected
+        in one dimension."""
+        return QueryDict(urlencode(params, doseq=True))
 
     def _emails(self, roster_company, **params):
         query = roster.parse_roster_query(
-            params,
-            area_ids={roster_company["produccion"].id},
-            location_ids={roster_company["matriz"].id},
+            self._query_dict(params),
+            area_ids={roster_company["produccion"].id, roster_company["sistemas"].id},
+            location_ids={roster_company["matriz"].id, roster_company["norte"].id},
         )
         qs = roster.narrow_profiles(
             UserProfile.objects.filter(company=roster_company["company"]), query
@@ -183,9 +246,9 @@ class TestNarrowProfiles:
         observe what the database actually returned first.
         """
         query = roster.parse_roster_query(
-            params,
-            area_ids={roster_company["produccion"].id},
-            location_ids={roster_company["matriz"].id},
+            self._query_dict(params),
+            area_ids={roster_company["produccion"].id, roster_company["sistemas"].id},
+            location_ids={roster_company["matriz"].id, roster_company["norte"].id},
         )
         qs = roster.narrow_profiles(
             UserProfile.objects.filter(company=roster_company["company"]), query
@@ -230,12 +293,42 @@ class TestNarrowProfiles:
     def test_filters_combine_with_and(self, roster_company):
         assert self._emails(roster_company, q="ana", rol="ejecutivo-principal") == []
 
+    def test_two_areas_are_or_ed_within_the_dimension(self, roster_company):
+        area_ids = [
+            str(roster_company["produccion"].id),
+            str(roster_company["sistemas"].id),
+        ]
+        assert self._emails(roster_company, area=area_ids) == [
+            "ana@example.com",
+            "beto@example.com",
+        ]
+
+    def test_dimensions_are_and_ed(self, roster_company):
+        """área in (Producción, Sistemas) AND rol=empleado narrows to Ana."""
+        area_ids = [
+            str(roster_company["produccion"].id),
+            str(roster_company["sistemas"].id),
+        ]
+        assert self._emails(roster_company, area=area_ids, rol="empleado") == [
+            "ana@example.com"
+        ]
+
     def test_a_person_in_two_groups_is_not_duplicated(
         self, roster_company, bootstrap_groups
     ):
         roster_company["ana"].groups.add(bootstrap_groups["Admins"])
 
         assert self._emails(roster_company, rol="empleado") == ["ana@example.com"]
+
+    def test_a_person_in_two_selected_roles_appears_once(
+        self, roster_company, bootstrap_groups
+    ):
+        """`__in` over an M2M duplicates rows without `.distinct()`; a
+        colaborador must never appear twice on a roster."""
+        roster_company["ana"].groups.add(bootstrap_groups["Admins"])
+        emails = self._emails(roster_company, rol=["empleado", "administrador"])
+        assert emails == ["ana@example.com"]
+        assert len(emails) == len(set(emails))
 
     def test_orden_activacion_puts_the_unactivated_person_first(self, roster_company):
         """Ana (Álvarez) has activated; Beto (Ruiz) has not. Name order would

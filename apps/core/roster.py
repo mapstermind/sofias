@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from django.db.models import Q
 
 from apps.accounts.models import FoldCatalogName, catalog_name_key
-from apps.accounts.roles import role_for_slug
+from apps.accounts.roles import ROLES
 
 ORDER_NAME = "nombre"
 ORDER_PROGRESS = "progreso"
@@ -43,10 +43,10 @@ class RosterQuery:
     terms: tuple[str, ...] = ()
     sex: str = ""
     sex_slug: str = ""
-    area_id: int | None = None
-    location_id: int | None = None
-    role_name: str = ""
-    role_slug: str = ""
+    area_ids: tuple[int, ...] = ()
+    location_ids: tuple[int, ...] = ()
+    role_names: tuple[str, ...] = ()
+    role_slugs: tuple[str, ...] = ()
     order: str = ORDER_NAME
 
     @property
@@ -55,10 +55,25 @@ class RosterQuery:
         return bool(
             self.terms
             or self.sex
-            or self.area_id is not None
-            or self.location_id is not None
-            or self.role_name
+            or self.area_ids
+            or self.location_ids
+            or self.role_names
         )
+
+
+def _values(params, key) -> list[str]:
+    """Every value given for `key`, whether params is a QueryDict or a dict.
+
+    The view hands us `request.GET`, which may repeat a parameter; unit tests
+    hand us a plain dict. `getlist` exists only on the former.
+    """
+    getlist = getattr(params, "getlist", None)
+    if getlist is not None:
+        return getlist(key)
+    value = params.get(key)
+    if value is None:
+        return []
+    return list(value) if isinstance(value, (list, tuple)) else [value]
 
 
 def _valid_pk(raw: str, valid_ids: set[int]) -> int | None:
@@ -69,17 +84,38 @@ def _valid_pk(raw: str, valid_ids: set[int]) -> int | None:
     return pk if pk in valid_ids else None
 
 
+def _valid_pks(raw_values, valid_ids: set[int]) -> tuple[int, ...]:
+    """Every value that names an entry the company owns, deduplicated.
+
+    A bad value is dropped on its own rather than discarding its neighbours:
+    a stale bookmark listing four áreas, one of them since deleted, should
+    still filter by the other three.
+    """
+    seen = []
+    for raw in raw_values:
+        pk = _valid_pk(raw, valid_ids)
+        if pk is not None and pk not in seen:
+            seen.append(pk)
+    return tuple(seen)
+
+
 def parse_roster_query(params, *, area_ids: set[int], location_ids: set[int]):
     """Turn a request's GET parameters into a validated `RosterQuery`."""
     raw_q = (params.get("q") or "").strip()
     terms = tuple(catalog_name_key(term) for term in raw_q.split()[:MAX_SEARCH_TERMS])
 
-    sex_slug = (params.get("sexo") or "").strip()
+    # `sexo` is single-choice — two values selected would mean nothing beyond
+    # what zero values already mean — so a repeated parameter keeps only the
+    # first recognized value, regardless of `QueryDict.get`'s own last-value
+    # convention.
+    sexo_values = _values(params, "sexo")
+    sex_slug = (sexo_values[0] if sexo_values else "").strip()
     sex = SEX_SLUGS.get(sex_slug, "")
     if not sex:
         sex_slug = ""
 
-    role = role_for_slug((params.get("rol") or "").strip())
+    role_slugs = {slug for slug in _values(params, "rol")}
+    selected_roles = [role for role in ROLES if role.slug in role_slugs]
 
     order = (params.get("orden") or "").strip()
     if order not in ORDERS:
@@ -90,10 +126,10 @@ def parse_roster_query(params, *, area_ids: set[int], location_ids: set[int]):
         terms=terms,
         sex=sex,
         sex_slug=sex_slug,
-        area_id=_valid_pk(params.get("area"), area_ids),
-        location_id=_valid_pk(params.get("localidad"), location_ids),
-        role_name=role.name if role else "",
-        role_slug=role.slug if role else "",
+        area_ids=_valid_pks(_values(params, "area"), area_ids),
+        location_ids=_valid_pks(_values(params, "localidad"), location_ids),
+        role_names=tuple(role.name for role in selected_roles),
+        role_slugs=tuple(role.slug for role in selected_roles),
         order=order,
     )
 
@@ -128,13 +164,14 @@ def narrow_profiles(queryset, query: RosterQuery):
 
     if query.sex:
         queryset = queryset.filter(sex=query.sex)
-    if query.area_id is not None:
-        queryset = queryset.filter(area_id=query.area_id)
-    if query.location_id is not None:
-        queryset = queryset.filter(location_id=query.location_id)
-    if query.role_name:
-        # At most one group matches a given name, so this cannot duplicate a row.
-        queryset = queryset.filter(user__groups__name=query.role_name)
+    if query.area_ids:
+        queryset = queryset.filter(area_id__in=query.area_ids)
+    if query.location_ids:
+        queryset = queryset.filter(location_id__in=query.location_ids)
+    if query.role_names:
+        # `__in` across the groups M2M returns one row per matching group, so a
+        # colaborador holding two of the selected roles would be listed twice.
+        queryset = queryset.filter(user__groups__name__in=query.role_names).distinct()
 
     # Paternal surname first: that is how a Mexican roster reads, and it is the
     # tie-breaker under every other order.

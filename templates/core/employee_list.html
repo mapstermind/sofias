@@ -69,7 +69,7 @@
                 class="min-w-0 max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
           <option value="">Todas las áreas</option>
           {% for area in area_options %}
-            <option value="{{ area.id }}"{% if roster_query.area_id == area.id %} selected{% endif %}>{{ area.name }}</option>
+            <option value="{{ area.id }}"{% if area.id in roster_query.area_ids %} selected{% endif %}>{{ area.name }}</option>
           {% endfor %}
         </select>
 
@@ -79,7 +79,7 @@
                   class="min-w-0 max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
             <option value="">Todas las localidades</option>
             {% for location in location_options %}
-              <option value="{{ location.id }}"{% if roster_query.location_id == location.id %} selected{% endif %}>{{ location.name }}</option>
+              <option value="{{ location.id }}"{% if location.id in roster_query.location_ids %} selected{% endif %}>{{ location.name }}</option>
             {% endfor %}
           </select>
         {% endif %}
@@ -89,7 +89,7 @@
                 class="min-w-0 max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:ring-indigo-500">
           <option value="">Todos los roles</option>
           {% for slug, label in role_options %}
-            <option value="{{ slug }}"{% if roster_query.role_slug == slug %} selected{% endif %}>{{ label }}</option>
+            <option value="{{ slug }}"{% if slug in roster_query.role_slugs %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
 

@@ -729,7 +729,7 @@ class TestCompanyEmployeeListView:
 
         response = client.get(self.URL, {"area": str(retired.id)})
 
-        assert response.context["roster_query"].area_id == retired.id
+        assert response.context["roster_query"].area_ids == (retired.id,)
         assert response.context["shown_count"] == 1
         assert [a.name for a in response.context["area_options"]] == []
 
@@ -823,7 +823,7 @@ class TestCompanyEmployeeListView:
 
         response = client.get(self.URL, {"localidad": str(retired.id)})
 
-        assert response.context["roster_query"].location_id == retired.id
+        assert response.context["roster_query"].location_ids == (retired.id,)
         assert response.context["shown_count"] == 1
         assert [loc.name for loc in response.context["location_options"]] == []
 
