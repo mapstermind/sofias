@@ -101,7 +101,9 @@
         <label id="id_date_of_birth_label" class="block text-sm font-medium text-gray-700 mb-1">
           Fecha de nacimiento
         </label>
-        <div role="group" aria-labelledby="id_date_of_birth_label" class="grid grid-cols-3 gap-3">
+        {# Three selects across a 328px phone leave ~100px each, which truncates
+           the month name. They sit side by side once there is room. #}
+        <div role="group" aria-labelledby="id_date_of_birth_label" class="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {{ form.date_of_birth }}
         </div>
         {% if form.date_of_birth.errors %}

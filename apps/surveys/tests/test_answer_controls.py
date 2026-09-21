@@ -62,9 +62,7 @@ def _question_of_type(survey_with_questions, question_type):
     "question_type",
     ["boolean", "single_choice", "multiple_choice", "rating", "likert"],
 )
-def test_every_option_is_wrapped_in_its_own_label(
-    question_type, survey_with_questions
-):
+def test_every_option_is_wrapped_in_its_own_label(question_type, survey_with_questions):
     """An input outside a label makes the 16px control the only hit target."""
     question = _question_of_type(survey_with_questions, question_type)
 
