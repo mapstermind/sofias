@@ -364,6 +364,7 @@ class Role(models.Model):
             ("can_take_assigned_surveys", "Puede contestar las encuestas asignadas"),
             ("can_manage_employees", "Puede administrar colaboradores"),
             ("can_view_submissions", "Puede ver los envíos"),
+            ("can_view_small_groups", "Puede ver resultados de grupos pequeños"),
         ]
 
 
