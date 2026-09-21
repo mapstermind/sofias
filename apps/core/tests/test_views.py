@@ -838,9 +838,14 @@ class TestCompanyEmployeeListView:
         self, client, make_user, make_company, make_location, make_user_with_profile
     ):
         """A retired localidad keeps its colaboradores, so a URL naming one must
-        work even though the modal no longer offers it."""
+        work even though the modal no longer offers it. The company also has a
+        second active localidad, so the dimension does render — and the retired
+        one must still be missing from its options while the active one is
+        offered: options list only what may still be assigned."""
         company = make_company()
         retired = make_location(company, name="Bodega", is_active=False)
+        make_location(company, name="Matriz")
+        make_location(company, name="Norte")
         make_user_with_profile(
             email="ana@example.com", company=company, location=retired
         )
@@ -851,10 +856,10 @@ class TestCompanyEmployeeListView:
 
         assert response.context["roster_query"].location_ids == (retired.id,)
         assert response.context["shown_count"] == 1
-        keys = [g["key"] for g in response.context["filter_groups"]]
-        assert "localidad" not in keys
-
-        assert response.status_code == 200
+        groups = {g["key"]: g for g in response.context["filter_groups"]}
+        labels = [o["label"] for o in groups["localidad"]["options"]]
+        assert "Bodega" not in labels
+        assert "Matriz" in labels
 
     def test_filter_groups_expose_every_dimension(
         self, client, make_user, make_company, make_area, make_location

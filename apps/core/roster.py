@@ -14,7 +14,7 @@ from dataclasses import dataclass
 
 from django.db.models import Q
 
-from apps.accounts.models import FoldCatalogName, catalog_name_key
+from apps.accounts.models import FoldCatalogName, UserProfile, catalog_name_key
 from apps.accounts.roles import ROLES
 
 ORDER_NAME = "nombre"
@@ -23,12 +23,13 @@ ORDER_ACTIVATION = "activacion"
 ORDERS = (ORDER_NAME, ORDER_PROGRESS, ORDER_ACTIVATION)
 
 # The URL speaks Spanish; these map onto `UserProfile.Sex` values.
-SEX_SLUGS = {"masculino": "male", "femenino": "female"}
+SEX_SLUGS = {"masculino": UserProfile.Sex.MALE, "femenino": UserProfile.Sex.FEMALE}
 
-# What each sexo slug is called on screen. `UserProfile.Sex` holds the same two
-# labels against the stored values; these are keyed by slug because that is what
-# the filter pills carry as their value.
-SEX_SLUGS_TO_LABELS = {"masculino": "Masculino", "femenino": "Femenino"}
+# Labels come from the model so relabelling the choice cannot leave the
+# filter pill reading a word the rest of the app has stopped using.
+SEX_SLUGS_TO_LABELS = {
+    slug: UserProfile.Sex(value).label for slug, value in SEX_SLUGS.items()
+}
 
 # A search is a convenience, not a query language. More terms than this is a
 # paste accident, and each one costs four LIKEs.

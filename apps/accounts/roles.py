@@ -37,12 +37,6 @@ ROLES: tuple[RoleDefinition, ...] = (
 ROLE_NAMES: tuple[str, ...] = tuple(role.name for role in ROLES)
 
 _BY_NAME = {role.name: role for role in ROLES}
-_BY_SLUG = {role.slug: role for role in ROLES}
-
-
-def role_for_slug(slug: str) -> RoleDefinition | None:
-    """The role a URL's `rol` value names, or None if it names none."""
-    return _BY_SLUG.get(slug)
 
 
 def label_for_name(name: str) -> str | None:

@@ -33,13 +33,6 @@ class TestRoleDefinitions:
             "empleado",
         ]
 
-    def test_role_for_slug_finds_a_role(self):
-        assert roles.role_for_slug("ejecutivo-principal").name == "Principal Exec"
-
-    def test_role_for_slug_returns_none_for_an_unknown_slug(self):
-        assert roles.role_for_slug("gerente") is None
-        assert roles.role_for_slug("") is None
-
     def test_label_for_name_returns_none_for_an_unknown_group(self):
         """A group created by hand in the admin has no label to show."""
         assert roles.label_for_name("Auditores") is None

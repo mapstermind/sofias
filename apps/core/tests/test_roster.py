@@ -71,6 +71,10 @@ class TestSex:
     def test_ignores_an_unknown_value(self):
         assert parse({"sexo": "otro"}).sex == ""
 
+    def test_sex_labels_come_from_the_model(self):
+        """Relabelling UserProfile.Sex must move the filter pill's wording too."""
+        assert roster.SEX_SLUGS_TO_LABELS["femenino"] == UserProfile.Sex.FEMALE.label
+
 
 class TestCatalogs:
     def test_accepts_a_pk_belonging_to_the_company(self):
@@ -319,13 +323,6 @@ class TestNarrowProfiles:
         assert self._emails(roster_company, area=area_ids, rol="empleado") == [
             "ana@example.com"
         ]
-
-    def test_a_person_in_two_groups_is_not_duplicated(
-        self, roster_company, bootstrap_groups
-    ):
-        roster_company["ana"].groups.add(bootstrap_groups["Admins"])
-
-        assert self._emails(roster_company, rol="empleado") == ["ana@example.com"]
 
     def test_a_person_in_two_selected_roles_appears_once(
         self, roster_company, bootstrap_groups

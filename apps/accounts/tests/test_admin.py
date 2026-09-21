@@ -1,5 +1,7 @@
 import pytest
+from django.db import connection
 from django.forms.models import inlineformset_factory
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -427,3 +429,28 @@ class TestUserAdminRoleColumn:
         extending it, so every filter the admin had must stay named."""
         for expected in ("is_staff", "is_superuser", "is_active", "groups"):
             assert expected in CustomUserAdmin.list_filter
+
+    def test_changelist_query_count_does_not_grow_with_the_roster(
+        self, staff_client, make_user, bootstrap_groups
+    ):
+        """`get_queryset` prefetches `groups` precisely so the Rol column costs
+        one query for the whole changelist, not one per row; this pins that."""
+
+        def load_with(user_count, start):
+            for i in range(start, start + user_count):
+                user = make_user(email=f"u{i}@example.com")
+                user.groups.add(bootstrap_groups["Employees"])
+            # Warm any per-process caches before counting.
+            staff_client.get("/admin/accounts/user/")
+            with CaptureQueriesContext(connection) as ctx:
+                response = staff_client.get("/admin/accounts/user/")
+            assert response.status_code == 200
+            return len(ctx)
+
+        small = load_with(3, 0)
+        large = load_with(27, 3)
+
+        assert large == small, (
+            f"query count grew from {small} to {large} when the changelist grew "
+            f"from 3 to 30 usuarios — the groups prefetch was dropped"
+        )

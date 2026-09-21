@@ -50,7 +50,7 @@ Identity, authentication, authorization, and company/employee onboarding. Define
 
 Permissions are defined on `Role.Meta.permissions`; groups that bundle them are created by `python manage.py bootstrap_groups` (idempotent). The four groups: **Admins, Principal Exec, Secondary Exec, Employees**.
 
-`roles.py` is where those four live — each one's `auth.Group.name` (the stored lookup key, English), its Spanish display label (*Administrador*, *Ejecutivo principal*, *Ejecutivo secundario*, *Empleado*), its URL slug (`administrador`, `ejecutivo-principal`, `ejecutivo-secundario`, `empleado`) and their display order, most authority first. Import `ROLES`, `ROLE_NAMES`, `role_for_slug()`, `label_for_name()` or `labels_for_names()` from there rather than retyping a name; anything a user reads goes through a label, never through the stored name. Renaming the stored names is open finding #1.
+`roles.py` is where those four live — each one's `auth.Group.name` (the stored lookup key, English), its Spanish display label (*Administrador*, *Ejecutivo principal*, *Ejecutivo secundario*, *Empleado*), its URL slug (`administrador`, `ejecutivo-principal`, `ejecutivo-secundario`, `empleado`) and their display order, most authority first. Import `ROLES`, `ROLE_NAMES`, `label_for_name()` or `labels_for_names()` from there rather than retyping a name; anything a user reads goes through a label, never through the stored name. Renaming the stored names is open finding #1.
 
 When adding a permission, update **both** `Role.Meta.permissions` and `bootstrap_groups.GROUP_PERMISSIONS` — two places, not three: the `bootstrap_groups` fixture in `conftest.py` imports `GROUP_PERMISSIONS` rather than restating it, so tests follow automatically.
 
