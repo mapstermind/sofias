@@ -1,5 +1,6 @@
 import math
 import re
+from html.parser import HTMLParser
 
 import pytest
 from django.contrib.auth.models import Permission
@@ -42,6 +43,57 @@ def _avatar(html):
     match = re.search(r"<div data-avatar\b.*?</div>", html, re.S)
     assert match, "no element carrying data-avatar was rendered"
     return " ".join(match.group(0).split())
+
+
+_VOID_ELEMENTS = {
+    "area",
+    "base",
+    "br",
+    "col",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr",
+}
+
+
+class _PillSiblingCounter(HTMLParser):
+    """Tracks, for every element in the tree, how many `<input class="peer
+    ...">` pills it holds as *direct* children, and remembers the worst
+    offender across the whole document."""
+
+    def __init__(self):
+        super().__init__()
+        self._stack = [0]  # pill count of the currently-open element, per depth
+        self.max_pills_sharing_a_parent = 0
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "input":
+            if "peer" in attrs.get("class", "").split():
+                self._stack[-1] += 1
+                self.max_pills_sharing_a_parent = max(
+                    self.max_pills_sharing_a_parent, self._stack[-1]
+                )
+            return
+        if tag not in _VOID_ELEMENTS:
+            self._stack.append(0)
+
+    def handle_endtag(self, tag):
+        if tag not in _VOID_ELEMENTS and len(self._stack) > 1:
+            self._stack.pop()
+
+
+def _max_pills_sharing_a_parent(html):
+    parser = _PillSiblingCounter()
+    parser.feed(html)
+    return parser.max_pills_sharing_a_parent
 
 
 def _give_perm(user, codename):
@@ -1035,6 +1087,22 @@ class TestCompanyEmployeeListView:
         assert [(f["type"], f["value"]) for f in areas] == [("checkbox", str(area.id))]
 
         assert "<select" not in html
+
+    def test_no_two_filter_pills_share_a_parent(
+        self, client, make_user, make_company, make_area
+    ):
+        """Tailwind's peer-checked: compiles to a general sibling selector, so
+        two pill inputs sharing a parent make checking the first one style
+        every pill after it. Each pair gets its own wrapper to confine the
+        match."""
+        company = make_company()
+        make_area(company, name="Producción")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL).content.decode()
+
+        assert _max_pills_sharing_a_parent(_dialog(html)) <= 1
 
     def test_a_chosen_pill_comes_back_checked(
         self, client, make_user, make_company, make_area
