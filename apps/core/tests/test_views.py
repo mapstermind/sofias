@@ -829,6 +829,118 @@ class TestCompanyEmployeeListView:
 
         assert response.status_code == 200
 
+    def test_filter_groups_expose_every_dimension(
+        self, client, make_user, make_company, make_area, make_location
+    ):
+        """Sexo, rol and área always; localidad only when there are two."""
+        company = make_company()
+        make_area(company, name="Producción")
+        make_location(company, name="Matriz")
+        make_location(company, name="Norte")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        groups = {g["key"]: g for g in response.context["filter_groups"]}
+        assert list(groups.keys()) == ["sexo", "rol", "area", "localidad"]
+
+        assert groups["sexo"]["label"] == "Sexo"
+        assert groups["sexo"]["multiple"] is False
+        assert [o["value"] for o in groups["sexo"]["options"]] == [
+            "masculino",
+            "femenino",
+        ]
+        assert [o["label"] for o in groups["sexo"]["options"]] == [
+            "Masculino",
+            "Femenino",
+        ]
+
+        assert groups["rol"]["label"] == "Rol"
+        assert groups["rol"]["multiple"] is True
+        assert [o["value"] for o in groups["rol"]["options"]] == [
+            "administrador",
+            "ejecutivo-principal",
+            "ejecutivo-secundario",
+            "empleado",
+        ]
+        assert [o["label"] for o in groups["rol"]["options"]] == [
+            "Administrador",
+            "Ejecutivo principal",
+            "Ejecutivo secundario",
+            "Empleado",
+        ]
+
+        assert groups["area"]["label"] == "Área"
+        assert groups["area"]["multiple"] is True
+        assert [o["label"] for o in groups["area"]["options"]] == ["Producción"]
+
+        assert groups["localidad"]["label"] == "Localidad"
+        assert groups["localidad"]["multiple"] is True
+        assert [o["label"] for o in groups["localidad"]["options"]] == [
+            "Matriz",
+            "Norte",
+        ]
+
+    def test_selected_options_are_marked(
+        self, client, make_user, make_company, make_area
+    ):
+        """GET ?area=<pk> marks that option's selected True, others False."""
+        company = make_company()
+        producción = make_area(company, name="Producción")
+        ventas = make_area(company, name="Ventas")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"area": str(producción.id)})
+
+        groups = {g["key"]: g for g in response.context["filter_groups"]}
+        selected_by_value = {
+            o["value"]: o["selected"] for o in groups["area"]["options"]
+        }
+        assert selected_by_value[str(producción.id)] is True
+        assert selected_by_value[str(ventas.id)] is False
+
+    def test_active_filter_count_counts_dimensions_not_values(
+        self, client, make_user, make_company, make_area, bootstrap_groups
+    ):
+        """?area=<a>&area=<b>&rol=empleado -> 2, not 3."""
+        company = make_company()
+        first = make_area(company, name="Producción")
+        second = make_area(company, name="Ventas")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(
+            self.URL,
+            {"area": [str(first.id), str(second.id)], "rol": "empleado"},
+        )
+
+        assert response.context["active_filter_count"] == 2
+
+    def test_search_does_not_count_as_a_filter(self, client, make_user, make_company):
+        """?q=ana -> active_filter_count == 0; the search box is visible anyway."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL, {"q": "ana"})
+
+        assert response.context["active_filter_count"] == 0
+
+    def test_localidad_group_absent_with_one_localidad(
+        self, client, make_user, make_company, make_location
+    ):
+        company = make_company()
+        make_location(company, name="Matriz")
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        response = client.get(self.URL)
+
+        keys = [g["key"] for g in response.context["filter_groups"]]
+        assert "localidad" not in keys
+
     # ── the rendered page ─────────────────────────────────────────────────────
 
     def test_toolbar_is_a_get_form(self, client, make_user, make_company):

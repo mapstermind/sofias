@@ -357,6 +357,80 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
 
         members_data = roster.sort_members(members_data, query.order)
 
+        # A list the template walks blindly: adding a filter dimension later is
+        # a view change, not a template change. `options` reuses the `areas`/
+        # `locations` lists already fetched above, so this adds no query.
+        filter_groups = [
+            {
+                "key": "sexo",
+                "label": "Sexo",
+                "multiple": False,
+                "options": [
+                    {
+                        "value": slug,
+                        "label": label,
+                        "selected": slug == query.sex_slug,
+                    }
+                    for slug, label in roster.SEX_SLUGS_TO_LABELS.items()
+                ],
+            },
+            {
+                "key": "rol",
+                "label": "Rol",
+                "multiple": True,
+                "options": [
+                    {
+                        "value": role.slug,
+                        "label": role.label,
+                        "selected": role.slug in query.role_slugs,
+                    }
+                    for role in ROLES
+                ],
+            },
+            {
+                "key": "area",
+                "label": "Área",
+                "multiple": True,
+                "options": [
+                    {
+                        "value": str(area.id),
+                        "label": area.name,
+                        "selected": area.id in query.area_ids,
+                    }
+                    for area in areas
+                ],
+            },
+        ]
+        # Same rule as `show_location_filter`: a single localidad offers
+        # nothing to narrow by.
+        if len(locations) > 1:
+            filter_groups.append(
+                {
+                    "key": "localidad",
+                    "label": "Localidad",
+                    "multiple": True,
+                    "options": [
+                        {
+                            "value": str(location.id),
+                            "label": location.name,
+                            "selected": location.id in query.location_ids,
+                        }
+                        for location in locations
+                    ],
+                }
+            )
+
+        # Dimensions in use, not values chosen: three áreas picked is one
+        # filter. Search has its own visible box and is not counted here.
+        active_filter_count = sum(
+            (
+                bool(query.sex_slug),
+                bool(query.role_slugs),
+                bool(query.area_ids),
+                bool(query.location_ids),
+            )
+        )
+
         return render(
             request,
             "core/employee_list.html",
@@ -371,6 +445,8 @@ class CompanyEmployeeListView(LoginRequiredMixin, View):
                 "area_options": areas,
                 "location_options": locations,
                 "show_location_filter": len(locations) > 1,
+                "filter_groups": filter_groups,
+                "active_filter_count": active_filter_count,
                 "shown_count": len(members_data),
                 "total_count": company.members.count(),
             },
