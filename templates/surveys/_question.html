@@ -17,14 +17,14 @@
     </legend>
 
     {% if question.question_type == "boolean" %}
-      <div class="flex gap-6">
-        <label class="flex items-center gap-2 cursor-pointer">
+      <div class="flex flex-col gap-2 lg:flex-row lg:gap-6">
+        <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md border border-gray-200 px-3 py-2.5 transition-colors hover:bg-gray-50 lg:min-h-0 lg:border-0 lg:px-0 lg:py-0 lg:hover:bg-transparent">
           <input type="radio" name="question_{{ question.id }}" value="true"
             {% if ans == True %}checked{% endif %}
             class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
           <span class="text-sm text-gray-700">Sí</span>
         </label>
-        <label class="flex items-center gap-2 cursor-pointer">
+        <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md border border-gray-200 px-3 py-2.5 transition-colors hover:bg-gray-50 lg:min-h-0 lg:border-0 lg:px-0 lg:py-0 lg:hover:bg-transparent">
           <input type="radio" name="question_{{ question.id }}" value="false"
             {% if ans == False and ans is not None %}checked{% endif %}
             class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
@@ -35,7 +35,7 @@
     {% elif question.question_type == "single_choice" %}
       <div class="space-y-2">
         {% for choice in question.choices.all %}
-          <label class="flex items-center gap-3 cursor-pointer rounded-md px-3 py-2 hover:bg-gray-50 transition-colors">
+          <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md px-3 py-2.5 hover:bg-gray-50 transition-colors">
             <input type="radio" name="question_{{ question.id }}" value="{{ choice.value }}"
               {% if ans == choice.value %}checked{% endif %}
               class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
@@ -47,7 +47,7 @@
     {% elif question.question_type == "multiple_choice" %}
       <div class="space-y-2">
         {% for choice in question.choices.all %}
-          <label class="flex items-center gap-3 cursor-pointer rounded-md px-3 py-2 hover:bg-gray-50 transition-colors">
+          <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md px-3 py-2.5 hover:bg-gray-50 transition-colors">
             <input type="checkbox" name="question_{{ question.id }}" value="{{ choice.value }}"
               {% if ans and choice.value in ans %}checked{% endif %}
               class="h-4 w-4 rounded text-indigo-600 border-gray-300 focus:ring-indigo-500">
@@ -86,9 +86,9 @@
         class="w-48 rounded-md border-gray-300 border px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none">
 
     {% elif question.question_type == "rating" %}
-      <div class="flex gap-4">
+      <div class="flex flex-col gap-2 lg:flex-row lg:gap-4">
         {% for i in "12345" %}
-          <label class="flex flex-col items-center gap-1 cursor-pointer">
+          <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md border border-gray-200 px-3 py-2.5 transition-colors hover:bg-gray-50 lg:min-h-0 lg:flex-col lg:items-center lg:gap-1 lg:border-0 lg:px-0 lg:py-0 lg:hover:bg-transparent">
             <input type="radio" name="question_{{ question.id }}" value="{{ i }}"
               {% if ans == i %}checked{% endif %}
               class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
@@ -99,13 +99,18 @@
 
     {% elif question.question_type == "likert" %}
       {% with pairs=question|likert_pairs %}
-      <div class="flex gap-2 flex-wrap">
+      {% comment %}
+      One row per option on a phone: five 72px columns need 392px and overflow,
+      and wrapping them onto two lines stops the scale reading as a scale. The
+      horizontal form survives behind `lg:`, where there is room for it.
+      {% endcomment %}
+      <div class="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:gap-2">
         {% for value, label in pairs %}
-          <label class="flex flex-col items-center gap-1 cursor-pointer min-w-[72px] text-center">
+          <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md border border-gray-200 px-3 py-2.5 transition-colors hover:bg-gray-50 lg:min-h-0 lg:min-w-[72px] lg:flex-col lg:items-center lg:gap-1 lg:border-0 lg:px-0 lg:py-0 lg:text-center lg:hover:bg-transparent">
             <input type="radio" name="question_{{ question.id }}" value="{{ value }}"
               {% if ans == value %}checked{% endif %}
               class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
-            <span class="text-xs text-gray-600">{{ label }}</span>
+            <span class="text-sm text-gray-700 lg:text-xs lg:text-gray-600">{{ label }}</span>
           </label>
         {% endfor %}
       </div>
