@@ -878,9 +878,11 @@ class TestCompanyEmployeeListView:
         assert 'role="progressbar"'.encode() in response.content
         assert 'aria-valuenow="0"'.encode() in response.content
 
-    def test_empty_result_offers_to_clear_the_filters(
+    def test_a_search_matching_nobody_says_the_search_is_empty(
         self, client, make_user, make_company, make_user_with_profile
     ):
+        """One of the two empty states: the company has people, the search
+        found none of them, so the way out is to clear the filters."""
         company = make_company()
         make_user_with_profile(email="ana@example.com", company=company)
         viewer = self._make_viewer(make_user, company)
@@ -888,10 +890,33 @@ class TestCompanyEmployeeListView:
 
         response = client.get(self.URL, {"q": "nadie"})
 
-        assert "Limpiar filtros".encode() in response.content
         assert response.context["shown_count"] == 0
-        # The link drops every parameter: it points at the bare roster URL.
+        assert response.context["total_count"] == 2
+        assert "Ningún colaborador coincide con la búsqueda".encode() in (
+            response.content
+        )
+        assert "Aún no hay colaboradores vinculados".encode() not in response.content
+        # The way out points at the roster with every parameter dropped.
         assert f'href="{self.URL}"'.encode() in response.content
+
+    def test_a_company_with_nobody_in_it_says_so_instead(
+        self, client, make_user, make_company
+    ):
+        """The other empty state: nothing is being hidden, the company is empty.
+        Offering to clear filters here would answer a question nobody asked."""
+        empty = make_company(name="Vacía")
+        viewer = self._make_viewer(make_user, make_company())
+        viewer = _give_perm(viewer, "can_manage_surveys")
+        client.force_login(viewer)
+
+        response = client.get(f"/empresas/{empty.reference_code}/colaboradores/")
+
+        assert response.context["total_count"] == 0
+        assert response.context["roster_query"].is_narrowed is False
+        assert "Aún no hay colaboradores vinculados a Vacía.".encode() in (
+            response.content
+        )
+        assert "Ningún colaborador coincide".encode() not in response.content
 
 
 # ── EmployeeDetailView ────────────────────────────────────────────────────────
