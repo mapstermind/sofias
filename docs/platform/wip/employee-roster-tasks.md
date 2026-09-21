@@ -343,11 +343,11 @@ git commit -m "feat(core): give the roster cards again and a filter modal"
 
 ### Task 4: Documentation
 
-- [ ] **Step 1: Rewrite `docs/platform/employee-roster.md`** to describe the new behaviour in present tense, with no migration commentary — a reader must not be able to tell the single-value version existed. Specifically: the parameter table gains repeatability for `rol`/`area`/`localidad`; "The toolbar" becomes the search bar plus the modal; "The card" describes cards; the key decision about one value per dimension is replaced by the OR-within/AND-across rule and the `.distinct()` reason; the accessibility section gains the dialog and the pill inputs. Add a decision recording why sexo stays single-choice.
-- [ ] **Step 2: Update `apps/core/CLAUDE.md`** — the six parameters, now some repeatable; `roster.py`'s `_values`/`_valid_pks`; and that the roster page carries a TS file, so `npm run build:js` matters when touching it.
-- [ ] **Step 3: Check `.claude/CLAUDE.md`'s frontend-build section** still reads true now that a second page has TypeScript. Correct it only if it is wrong.
-- [ ] **Step 4: Verify** — `grep -rniE "formerly|previously|no longer|used to|replaces the old|deprecated" docs/platform/employee-roster.md` returns nothing.
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Rewrite `docs/platform/employee-roster.md`** to describe the new behaviour in present tense, with no migration commentary — a reader must not be able to tell the single-value version existed. Specifically: the parameter table gains repeatability for `rol`/`area`/`localidad`; "The toolbar" becomes the search bar plus the modal; "The card" describes cards; the key decision about one value per dimension is replaced by the OR-within/AND-across rule and the `.distinct()` reason; the accessibility section gains the dialog and the pill inputs. Add a decision recording why sexo stays single-choice.
+- [x] **Step 2: Update `apps/core/CLAUDE.md`** — the six parameters, now some repeatable; `roster.py`'s `_values`/`_valid_pks`; and that the roster page carries a TS file, so `npm run build:js` matters when touching it.
+- [x] **Step 3: Check `.claude/CLAUDE.md`'s frontend-build section** still reads true now that a second page has TypeScript. Correct it only if it is wrong.
+- [x] **Step 4: Verify** — `grep -rniE "formerly|previously|no longer|used to|replaces the old|deprecated" docs/platform/employee-roster.md` returns nothing.
+- [x] **Step 5: Commit**
 
 ```bash
 git commit -m "docs: describe the roster's multi-select filters and its cards"
