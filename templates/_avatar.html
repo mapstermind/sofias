@@ -1,0 +1,17 @@
+{% comment %}
+The initials circle. Takes `person`, a User, and optionally `size` and `text`
+(Tailwind utilities, defaulting to the 48px roster circle). Included by the app
+header, the roster card and the colaborador detail page so none can drift away
+from the others.
+
+`aspect-square` beside the size is not redundant: the circle is a flex item in
+its callers, and a long name beside it would squash the width below the height
+and hand back an ellipse. `leading-none` seats the initials optically in the
+middle — the default line box sits the glyphs low. A `<span>` rather than a
+`<div>` so the header can nest it inside its logout button; as a flex item the
+`inline-flex` is blockified, so the roster and detail page are unaffected. The
+initials repeat the name printed next to them, so they are decorative to a
+screen reader.
+{% endcomment %}
+<span data-avatar aria-hidden="true"
+      class="inline-flex aspect-square {{ size|default:"size-12" }} shrink-0 select-none items-center justify-center rounded-full bg-indigo-50 {{ text|default:"text-sm" }} font-semibold uppercase leading-none text-indigo-700 ring-1 ring-inset ring-indigo-600/20">{% if person.get_initials %}{{ person.get_initials }}{% else %}{{ person.email|slice:":2" }}{% endif %}</span>

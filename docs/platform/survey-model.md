@@ -140,11 +140,14 @@ Between the two controls nothing is unreachable: the six listed entries are the
 button covers the tail below the reader. A one-line hint under the heading says
 the entries are selectable, since a hover state alone does not advertise it.
 
-The panel is desktop-shaped. `survey_detail.html` lays the sidebar out as a fixed
-`w-96` flex column with no breakpoint, so on a narrow viewport it overflows
-horizontally along with the rest of that sidebar. The panel's own markup avoids
-fixed pixel widths and uses viewport-relative caps, so a responsive pass can
-re-place it without rewriting it.
+The panel is the sidebar's last card on a wide screen. Below `lg:` the sidebar
+stacks after the form, so the panel is what a respondent meets on reaching the
+end of the questions — where **Ir a la siguiente** walks them back through
+whatever is still blank. Progress and **Guardar progreso** stay reachable
+throughout in an action bar pinned to the bottom of the screen; it is the same
+element as the sidebar block, repositioned, so the panel and the bar can never
+disagree about what is left. See
+[`responsive-layout.md`](./responsive-layout.md).
 
 ### Confirming a submission
 
