@@ -1296,7 +1296,7 @@ Use the `frontend-design` skill for this task. The design constraints are fixed 
 - Each progress bar is a `<div role="progressbar" aria-valuenow="{{ prog.percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="...">` naming its survey. The *Completada / En progreso / Sin iniciar* pills are gone; the bar's fill colour carries the state.
 - The empty state distinguishes the two cases: no colaboradores at all versus none matching, the latter offering *Limpiar filtros*.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `TestCompanyEmployeeListView`:
 
@@ -1397,27 +1397,27 @@ Append to `TestCompanyEmployeeListView`:
         assert response.context["shown_count"] == 0
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `pytest apps/core/tests/test_views.py::TestCompanyEmployeeListView -v`
 Expected: FAIL on the toolbar, badge and progressbar assertions.
 
-- [ ] **Step 3: Rewrite the template**
+- [x] **Step 3: Rewrite the template**
 
 Rewrite `templates/core/employee_list.html` to the constraints above. Keep the existing `{% block header_nav %}` structure, changing its label to `Colaboradores`.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest apps/core/tests/test_views.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Rebuild the CSS**
+- [x] **Step 5: Rebuild the CSS**
 
 Run: `npm run build:css`
 
 Every class in the new template must appear in `static/css/output.css` afterwards. The template is already a Tailwind `@source`, so nothing needs adding to `static/css/main.css` unless a width is passed from Python. Spot-check one new class: `grep -c "sticky" static/css/output.css` should be non-zero.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add templates/core/employee_list.html static/css/output.css apps/core/tests/test_views.py
@@ -1437,7 +1437,7 @@ git commit -m "feat(core): rebuild the roster card and add the filter toolbar"
 - Consumes: `roster_querystring` naming convention from Task 6.
 - Produces: `roster_querystring` in the detail view's context.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```python
     def test_back_link_preserves_the_roster_filters(
@@ -1457,12 +1457,12 @@ git commit -m "feat(core): rebuild the roster card and add the filter toolbar"
 
 Place it in the detail view's test class and use that class's existing URL helper in place of `self._detail_url` if it is named differently.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `pytest apps/core/tests/test_views.py -k back_link -v`
 Expected: FAIL — the back link has no query string.
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Add `"roster_querystring": request.GET.urlencode(),` to `EmployeeDetailView`'s render context, and in `templates/core/employee_detail.html` append the query string to both back links:
 
@@ -1474,12 +1474,12 @@ Add `"roster_querystring": request.GET.urlencode(),` to `EmployeeDetailView`'s r
 
 and the same for the non-admin branch with `{% url 'core:company_employee_list' %}`.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `pytest apps/core/tests/test_views.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 ruff format . && ruff check .
