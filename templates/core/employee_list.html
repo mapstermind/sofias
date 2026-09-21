@@ -140,7 +140,7 @@
               {# Preflight leaves fieldset and legend with their browser defaults. #}
               <fieldset class="m-0 min-w-0 border-0 p-0">
                 <legend class="m-0 p-0 text-sm font-semibold text-gray-700">{{ group.label }}</legend>
-                <div class="mt-2 mb-1 flex flex-wrap gap-x-2 gap-y-3">
+                <div class="mt-2 mb-3 flex flex-wrap gap-x-2 gap-y-3">
                   {% for option in group.options %}
                     {% with field_id="roster-pill-"|add:group.key|add:"-"|add:option.value %}
                       <span>
