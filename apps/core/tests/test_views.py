@@ -1122,6 +1122,29 @@ class TestCompanyEmployeeListView:
         pressed = [b for b in buttons if 'aria-pressed="true"' in b]
         assert len(pressed) == 1 and 'value="progreso"' in pressed[0]
 
+    def test_the_search_button_is_the_forms_first_submit(
+        self, client, make_user, make_company
+    ):
+        """Enter in a text field submits a form through its FIRST submit button.
+        The search button has to stay ahead of the sort buttons, and has to name
+        the order it submits under, or typing a name and pressing Enter would
+        quietly re-sort the roster instead of searching it."""
+        company = make_company()
+        viewer = self._make_viewer(make_user, company)
+        client.force_login(viewer)
+
+        html = client.get(self.URL, {"orden": "progreso"}).content.decode()
+        form = html.split('id="roster-filters"', 1)[1].split("</form>", 1)[0]
+
+        submits = re.findall(r'<button\b[^>]*type="submit"[^>]*>', form)
+        assert submits, "the toolbar submits nothing"
+        assert 'aria-label="Buscar"' in submits[0], (
+            "a submit button now comes before the search button; Enter in the "
+            "search box would fire that one instead"
+        )
+        assert 'name="orden"' in submits[0]
+        assert 'value="progreso"' in submits[0]
+
     def test_each_colaborador_is_a_discrete_card(
         self, client, make_user, make_company, make_user_with_profile
     ):

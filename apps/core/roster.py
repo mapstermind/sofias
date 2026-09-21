@@ -27,7 +27,7 @@ SEX_SLUGS = {"masculino": "male", "femenino": "female"}
 
 # What each sexo slug is called on screen. `UserProfile.Sex` holds the same two
 # labels against the stored values; these are keyed by slug because that is what
-# the toolbar's <option> values are.
+# the filter pills carry as their value.
 SEX_SLUGS_TO_LABELS = {"masculino": "Masculino", "femenino": "Femenino"}
 
 # A search is a convenience, not a query language. More terms than this is a
