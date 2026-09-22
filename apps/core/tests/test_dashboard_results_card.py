@@ -38,8 +38,7 @@ def test_dashboard_links_to_results(
     body = resp.content.decode()
     assert "Valoración de resultados" in body
     assert reverse("core:company_results_for", args=[company.reference_code]) in body
-    assert "Por área" not in body
-    assert "company_valuation" not in resp.context
+    assert resp.context["latest_scored_count"] == 1
 
 
 def test_dashboard_hides_results_card_without_permission(

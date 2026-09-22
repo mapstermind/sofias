@@ -64,7 +64,7 @@ Extends `User` with business context. Created separately from the auth user.
 | `date_of_birth` | DateField | Nullable; supplied at activation. The `age` property derives completed years from it against today's date in `America/Mexico_City`, so no age is stored |
 | `is_activated` | BooleanField | First-login activation flag, default `False` |
 | `company` | ForeignKey → `Company` | SET NULL on company delete; nullable |
-| `area` | ForeignKey → `CompanyArea` | SET NULL; nullable. Chosen by the employee at activation; groups the per-área NOM-035 breakdown |
+| `area` | ForeignKey → `CompanyArea` | SET NULL; nullable. Chosen by the employee at activation; groups the NOM-035 results page's participation table and área filter |
 | `location` | ForeignKey → `CompanyLocation` | SET NULL; nullable. Chosen at activation only when the company has >1; auto-assigned when it has exactly 1 |
 
 `clean()` rejects an `area`/`location` belonging to a different company than `company`, and a `date_of_birth` that does not correspond to between `MIN_ACTIVATION_AGE` (15) and `MAX_ACTIVATION_AGE` (99) completed years. A future date falls below the minimum, so the one bound covers it.
@@ -80,6 +80,7 @@ Permissions:
 - `can_take_assigned_surveys`
 - `can_manage_employees`
 - `can_view_submissions`
+- `can_view_small_groups`
 
 #### `EmailOTP`
 One-time passcode record for passwordless login. The email is stored as a plain `EmailField`, not a foreign key, because OTP request and verification are email-driven.
@@ -219,7 +220,7 @@ Materialized NOM-035 valuation results, derived from `responses.Answer` rows by 
 `python manage.py recompute_nom035_scores`.
 
 #### `SubmissionScore`
-One row per scored submission: the final score, its Nivel de Riesgo (NDR), and the binary Guía I clinical-referral flag.
+One row per scored submission: the final score, its Nivel de Riesgo (NDR), and the two Guía I flags.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -228,19 +229,20 @@ One row per scored submission: the final score, its Nivel de Riesgo (NDR), and t
 | `final_score` | IntegerField | `Cfinal` (sum of scored items) |
 | `final_ndr` | CharField | `nulo` / `bajo` / `medio` / `alto` / `muy_alto` |
 | `guia1_positive` | BooleanField | Official Guía I clinical-referral outcome (binary) |
+| `guia1_event` | BooleanField | Guía I Sección I (`g1-1`) answered "Sí" — a severe traumatic event occurred; true whenever `guia1_positive` is |
 | `computed_at` | DateTimeField | `auto_now`; last materialization |
 
 #### `GroupScore`
-Per-grouping breakdown for a submission — one row per categoría and per dominio (dimensión is not scored).
+Per-grouping breakdown for a submission — one row per categoría, per dominio and per dimensión (dimensión rows are score-only, with a blank `ndr`).
 
 | Field | Type | Notes |
 |---|---|---|
 | `id` | BigAutoField | PK |
 | `submission_score` | ForeignKey → `SubmissionScore` | Cascades; `related_name="groups"` |
-| `level` | CharField | `categoria` / `dominio` |
+| `level` | CharField | `categoria` / `dominio` / `dimension` |
 | `key` | CharField | Stable group identifier from the scoring taxonomy |
 | `score` | IntegerField | Summed score for the group |
-| `ndr` | CharField | Group NDR (same choices as `final_ndr`) |
+| `ndr` | CharField | Group NDR (same choices as `final_ndr`); blank on dimensión rows |
 
 Constraint: `UNIQUE (submission_score, level, key)`. Indexes on `(submission_score, level)` and `(level, ndr)`.
 
@@ -357,6 +359,6 @@ Completion counts only questions visible under the current answers (see `apps/su
 
 **Users are decoupled from companies at the auth level.** `User` is a standard Django auth model; company membership lives in `UserProfile`.
 
-**Company-scoped catalogs, unique under a normalizing fold.** Áreas and localidades are per-company child tables rather than free text or a shared enum, because the employee picks from them at activation and the per-área NOM-035 breakdown groups by their pk. `UniqueConstraint(company, FoldCatalogName(name))` makes duplicate spellings impossible within a company — case, Spanish vowel accents and whitespace runs all collapse to one key — while leaving names free across companies. That matters because the breakdown groups by pk: a second spelling of one área is an unmergeable split into two dashboard rows. Entries are retired with `is_active=False`, not deleted — the FKs are `SET_NULL` (so deleting a `Company` stays possible) and the admin inline blocks deleting an entry that still has members. See `docs/adr/adr-0004-per-company-area-and-locality-catalogs.md`.
+**Company-scoped catalogs, unique under a normalizing fold.** Áreas and localidades are per-company child tables rather than free text or a shared enum, because the employee picks from them at activation and the NOM-035 results page groups by their pk. `UniqueConstraint(company, FoldCatalogName(name))` makes duplicate spellings impossible within a company — case, Spanish vowel accents and whitespace runs all collapse to one key — while leaving names free across companies. That matters because the results page groups by pk: a second spelling of one área is an unmergeable split into two participation rows. Entries are retired with `is_active=False`, not deleted — the FKs are `SET_NULL` (so deleting a `Company` stays possible) and the admin inline blocks deleting an entry that still has members. See `docs/adr/adr-0004-per-company-area-and-locality-catalogs.md`.
 
 **Spanish text sorts under an explicit column collation.** Every column holding Spanish text that a user reads as a sorted list — `Company.name`/`legal_name`, `CompanyCatalogEntry.name`, and `User.first_name`/`paternal_last_name`/`maternal_last_name` — declares `db_collation = SPANISH_COLLATION` (`es-MX-x-icu`, defined in `apps/accounts/models.py`). The database's own collation is byte order, under which every accented name sorts after `Z`: "Álvaro Obregón" below "Zacatecas", "Cañada" below "Cazador". Putting the collation on the column rather than on the database means it lives in the schema, so migrations carry it to every environment including the test database, which is built from the cluster template rather than from the application database. The collation is deterministic, so equality and uniqueness — including the `FoldCatalogName` unique index — are unaffected. This requires a PostgreSQL built with ICU, which the standard packages are.

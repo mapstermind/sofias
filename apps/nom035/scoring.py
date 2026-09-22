@@ -61,7 +61,7 @@ def score_submission(submission) -> ScoreResult:
     for code, (cat_key, dom_key, dim_key) in taxonomy.items():
         value = answers.get(code)
         if value is None:
-            continue  # unanswered or hidden block — excluded (see supuestos §2.4)
+            continue  # unanswered or hidden block — excluded (see supuestos §1)
         item = likert_item_score(int(value), inverted=cfg.is_inverted(code))
         final += item
         cat_scores[cat_key] = cat_scores.get(cat_key, 0) + item
