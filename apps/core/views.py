@@ -226,11 +226,10 @@ class CompanyDashboardView(LoginRequiredMixin, View):
                 }
             )
 
-        company_valuation = None
+        latest_scored_count = None
         if request.user.has_perm("accounts.can_view_insights"):
-            from apps.nom035.aggregates import company_valuation as _company_valuation
-
-            company_valuation = _company_valuation(company)
+            latest = select_assignment(assignment_options(company), None)
+            latest_scored_count = latest.scored_count if latest is not None else None
 
         return render(
             request,
@@ -245,7 +244,12 @@ class CompanyDashboardView(LoginRequiredMixin, View):
                 "assignment_data": assignment_data,
                 "can_take_surveys": can_take_surveys,
                 "is_admin_view": reference_code is not None,
-                "company_valuation": company_valuation,
+                "latest_scored_count": latest_scored_count,
+                "results_url": (
+                    reverse("core:company_results_for", args=[reference_code])
+                    if reference_code is not None
+                    else reverse("core:company_results")
+                ),
             },
         )
 
