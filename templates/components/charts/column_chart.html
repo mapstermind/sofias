@@ -1,0 +1,18 @@
+{% load l10n %}{% localize off %}
+<figure class="m-0 w-full min-w-0 pt-4">
+  <svg class="block h-36 w-full overflow-visible" role="img" aria-label="{{ aria_label }}">
+    {% for col in cols %}
+      <rect x="{{ col.x }}%" y="{{ col.y }}%" width="{{ col.width }}%" height="{{ col.height }}%" rx="3"
+            class="{{ col.fill }} outline-none hover:opacity-80 focus:opacity-80"
+            tabindex="0" aria-label="{{ col.tooltip }}" data-tooltip="{{ col.tooltip }}"></rect>
+      {% if col.value %}
+        <text x="{{ col.center }}%" y="{{ col.y }}%" dy="-4" text-anchor="middle" class="fill-gray-700 text-[10px]">{{ col.value }}</text>
+      {% endif %}
+    {% endfor %}
+  </svg>
+  <div class="mt-1 grid gap-0.5 text-center text-[10px] leading-tight text-gray-500"
+       style="grid-template-columns: repeat({{ cols|length }}, minmax(0, 1fr))">
+    {% for col in cols %}<span>{{ col.label }}</span>{% endfor %}
+  </div>
+</figure>
+{% endlocalize %}

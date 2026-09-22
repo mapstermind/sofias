@@ -13,3 +13,12 @@ def test_ndr_badge_muy_alto_is_red():
 
 def test_ndr_bar_unknown_is_neutral():
     assert "gray" in ndr_bar("")
+
+
+def test_ndr_fill_maps_every_level():
+    from apps.core.templatetags.valuation_extras import ndr_fill
+    from apps.nom035 import constants as c
+
+    assert ndr_fill(c.NDR_BAJO) == "fill-green-500"
+    assert ndr_fill(c.NDR_MUY_ALTO) == "fill-red-500"
+    assert ndr_fill("nonsense") == "fill-gray-200"
