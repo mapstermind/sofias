@@ -8,6 +8,8 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
+from apps.accounts.demographics import age_on
+
 # Columns holding Spanish text an operator or employee reads as a sorted list.
 # The database's own collation is byte order, which files every accented name
 # after `Z` ("Álvaro Obregón" below "Zacatecas") and `ñ` after `z`; this ICU
@@ -266,12 +268,7 @@ class UserProfile(models.Model):
         """
         if self.date_of_birth is None:
             return None
-        today = timezone.localdate()
-        birthday_passed = (today.month, today.day) >= (
-            self.date_of_birth.month,
-            self.date_of_birth.day,
-        )
-        return today.year - self.date_of_birth.year - (0 if birthday_passed else 1)
+        return age_on(self.date_of_birth, timezone.localdate())
 
     def clean(self):
         super().clean()
