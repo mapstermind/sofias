@@ -71,7 +71,8 @@
       </div>
     </form>
 
-    <div id="results-body" class="mt-6" aria-live="polite">
+    <p id="results-status" class="sr-only" aria-live="polite"></p>
+    <div id="results-body" class="mt-6">
       {% include "core/results/_body.html" %}
     </div>
     <div id="chart-tooltip" role="tooltip" hidden

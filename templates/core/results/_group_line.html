@@ -6,7 +6,7 @@
     </a>
   {% endfor %}
 </div>
-<p class="mt-2 text-sm text-gray-600">
+<p data-group-line class="mt-2 text-sm text-gray-600">
   {% for pill in pills %}{{ pill.label }}{% if not forloop.last %} · {% endif %}{% empty %}Toda la empresa{% endfor %}
   — <span class="font-semibold text-gray-900">{{ results.size }}</span> cuestionario{{ results.size|pluralize }}
 </p>
