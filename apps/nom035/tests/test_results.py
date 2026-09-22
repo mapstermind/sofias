@@ -227,6 +227,13 @@ def test_small_filtered_group_is_suppressed_for_executives_only(people):
     assert sum(s.value for s in locked.sex) == 2  # people counts stay visible
 
 
+def test_suppressed_group_hides_every_participation_row(people):
+    query = ResultsQuery(area_ids=(people["ventas"].pk,))
+    results = results_for(people["assignment"], query, suppress_small_groups=True)
+    assert results.suppressed
+    assert all(row.counts == () for row in results.participation)
+
+
 def test_complement_rule_suppresses_all_but_a_few(people):
     # Operaciones = 6 of 8: the 2 left out would be exposed by subtraction.
     query = ResultsQuery(area_ids=(people["ops"].pk,))

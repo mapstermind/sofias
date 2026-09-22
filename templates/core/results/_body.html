@@ -1,0 +1,27 @@
+{% if results %}
+  {% include "core/results/_group_line.html" %}
+  {% if results.empty %}
+    <div class="mt-6 rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-10 text-center">
+      <p class="text-sm text-gray-500">Ningún cuestionario coincide con los filtros.</p>
+    </div>
+  {% else %}
+    <h2 class="mt-8 text-xs font-semibold uppercase tracking-wide text-gray-500">Empresa</h2>
+    {% include "core/results/_participation.html" %}
+    <div class="mt-4 grid gap-4 lg:grid-cols-2">
+      {% include "core/results/_sex_profile.html" %}
+      {% include "core/results/_age_profile.html" %}
+    </div>
+    {% if results.suppressed %}
+      <div class="mt-4 rounded-2xl border border-gray-200 bg-white px-6 py-8 text-center">
+        {% include "core/results/_suppressed.html" %}
+      </div>
+    {% else %}
+      {% include "core/results/_final_distribution.html" %}
+      {% include "core/results/_final_stats.html" %}
+      {% include "core/results/_guia1.html" %}
+      <h2 class="mt-10 text-xs font-semibold uppercase tracking-wide text-gray-500">Por categoría</h2>
+      {% include "core/results/_categoria_distribution.html" %}
+      {% include "core/results/_categoria_stats.html" %}
+    {% endif %}
+  {% endif %}
+{% endif %}

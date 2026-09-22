@@ -15,5 +15,9 @@ urlpatterns = [
     path("empresas/<str:reference_code>/colaboradores/", views.CompanyEmployeeListView.as_view(), name="company_employee_list_for"),
     path("tablero-empresa/colaboradores/<int:employee_id>/", views.EmployeeDetailView.as_view(), name="company_employee_detail"),
     path("empresas/<str:reference_code>/colaboradores/<int:employee_id>/", views.EmployeeDetailView.as_view(), name="company_employee_detail_for"),
+    path("tablero-empresa/resultados/", views.CompanyResultsView.as_view(), name="company_results"),
+    path("tablero-empresa/resultados/fragmento/", views.CompanyResultsFragmentView.as_view(), name="company_results_fragment"),
+    path("empresas/<str:reference_code>/resultados/", views.CompanyResultsView.as_view(), name="company_results_for"),
+    path("empresas/<str:reference_code>/resultados/fragmento/", views.CompanyResultsFragmentView.as_view(), name="company_results_fragment_for"),
     path("que-es-sofia/", TemplateView.as_view(template_name="core/about.html"), name="about"),
 ]

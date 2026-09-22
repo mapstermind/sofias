@@ -1,0 +1,7 @@
+{% load charts %}
+<section class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+  <h3 class="text-base font-semibold text-gray-900">Guía I — acontecimientos traumáticos severos</h3>
+  <p class="mt-3 text-3xl font-bold text-gray-900">{{ results.guia1.positive }}</p>
+  <p class="text-sm text-gray-600">colaborador{{ results.guia1.positive|pluralize:"es" }} requiere{{ results.guia1.positive|pluralize:"n" }} valoración clínica</p>
+  <div class="mt-4">{% stacked_bar results.guia1.slices legend=True %}</div>
+</section>

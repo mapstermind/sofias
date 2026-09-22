@@ -1,0 +1,12 @@
+{% load charts %}
+<section class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+  <h3 class="text-base font-semibold text-gray-900">Calificación final — distribución</h3>
+  {% with row=results.final_distribution %}
+    <div class="mt-4 grid items-center gap-2 md:grid-cols-[12rem_minmax(0,1fr)_4rem]">
+      <span class="text-sm font-medium text-gray-900">{{ row.label }}</span>
+      {% stacked_bar row.slices %}
+      <span class="text-xs text-gray-500 md:text-right">n = {{ row.n }}</span>
+    </div>
+  {% endwith %}
+  {% include "core/results/_ndr_legend.html" %}
+</section>

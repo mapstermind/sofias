@@ -1,14 +1,21 @@
 import math
+from dataclasses import replace
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views import View
 
-from apps.accounts.models import Company, UserProfile
+from apps.accounts.demographics import AGE_BANDS
+from apps.accounts.models import Company, CompanyArea, CompanyLocation, UserProfile
 from apps.accounts.roles import ROLES, labels_for_names
 from apps.core import roster
+from apps.core.query_params import SEX_SLUGS_TO_LABELS
+from apps.core.results_query import filter_pills, parse_results_query, results_url
+from apps.nom035 import constants as nom035_constants
+from apps.nom035.results import assignment_options, results_for, select_assignment
 from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import Module, SurveyAssignment
 from apps.surveys.visibility import progress_for_modules
@@ -561,3 +568,108 @@ class EmployeeDetailView(LoginRequiredMixin, View):
                 "container_width": "max-w-6xl",
             },
         )
+
+
+def _company_for(request, reference_code):
+    """The company a results view shows, or None when the viewer has none yet."""
+    if reference_code is not None:
+        if not request.user.has_perm("accounts.can_manage_surveys"):
+            raise PermissionDenied
+        return get_object_or_404(Company, reference_code=reference_code)
+    profile = getattr(request.user, "profile", None)
+    return profile.company if profile is not None and profile.company_id else None
+
+
+def _results_context(request, company, reference_code) -> dict:
+    if reference_code is None:
+        page_url = reverse("core:company_results")
+        fragment_url = reverse("core:company_results_fragment")
+    else:
+        page_url = reverse("core:company_results_for", args=[reference_code])
+        fragment_url = reverse(
+            "core:company_results_fragment_for", args=[reference_code]
+        )
+
+    options = assignment_options(company)
+    areas = list(CompanyArea.objects.filter(company=company).order_by("name"))
+    locations = list(CompanyLocation.objects.filter(company=company).order_by("name"))
+    query = parse_results_query(
+        request.GET,
+        assignment_ids={o.assignment.pk for o in options},
+        area_ids={a.pk for a in areas},
+        location_ids={loc.pk for loc in locations},
+    )
+    selected = select_assignment(options, query.assignment_id)
+    results = None
+    if selected is not None:
+        query = replace(query, assignment_id=selected.assignment.pk)
+        results = results_for(
+            selected.assignment,
+            query,
+            suppress_small_groups=not request.user.has_perm(
+                "accounts.can_view_small_groups"
+            ),
+        )
+    participation_rows = [
+        {
+            "row": row,
+            "filter_url": (
+                results_url(page_url, query, add=("area", str(row.area_id)))
+                if row.area_id is not None and row.area_id not in query.area_ids
+                else None
+            ),
+        }
+        for row in (results.participation if results else ())
+    ]
+    return {
+        "company": company,
+        "is_admin_view": reference_code is not None,
+        "options": options,
+        "selected": selected,
+        "areas": areas,
+        "locations": locations,
+        "age_bands": AGE_BANDS,
+        "sex_choices": list(SEX_SLUGS_TO_LABELS.items()),
+        "query": query,
+        "results": results,
+        "pills": filter_pills(
+            query,
+            page_url,
+            area_names={a.pk: a.name for a in areas},
+            location_names={loc.pk: loc.name for loc in locations},
+        ),
+        "participation_rows": participation_rows,
+        "active_filter_count": len(query.params())
+        - (1 if query.assignment_id is not None else 0),
+        "ndr_levels": [
+            (level, nom035_constants.NDR_LABELS[level])
+            for level in nom035_constants.NDR_ORDER
+        ],
+        "page_url": page_url,
+        "fragment_url": fragment_url,
+        "container_width": "max-w-6xl",
+    }
+
+
+class CompanyResultsView(LoginRequiredMixin, View):
+    """The NOM-035 results page: one assignment, one filter bar, SVG charts."""
+
+    template_name = "core/company_results.html"
+
+    def get(self, request, reference_code=None):
+        if not request.user.has_perm("accounts.can_view_insights"):
+            raise PermissionDenied
+        company = _company_for(request, reference_code)
+        if company is None:
+            return redirect("accounts:setup_profile")
+        return render(
+            request,
+            self.template_name,
+            _results_context(request, company, reference_code),
+        )
+
+
+class CompanyResultsFragmentView(CompanyResultsView):
+    """The results body alone, swapped into the page by results_dashboard.ts."""
+
+    template_name = "core/results/_body.html"
