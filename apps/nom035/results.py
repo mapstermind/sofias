@@ -238,15 +238,32 @@ def _participation(assignment, query, scores, today, *, group_suppressed, suppre
         area = _area_of(_profile(score), company)
         by_area[area.pk if area else None].append(score.final_ndr)
 
-    size = len(scores)
+    group_size = len(scores)
+    areas = CompanyArea.objects.filter(company=company).order_by("name")
+    if query.area_ids:
+        areas = areas.filter(pk__in=query.area_ids)
+    entries = [
+        (area.pk, area.name, registered.get(area.pk, 0))
+        for area in areas
+        if area.is_active or registered.get(area.pk) or by_area.get(area.pk)
+    ]
+    if by_area.get(None):
+        entries.append((None, NO_AREA, None))
+
+    visible = {
+        area_id
+        for area_id, _label, _registered in entries
+        if by_area.get(area_id)
+        and not group_suppressed
+        and shows(len(by_area[area_id]), group_size, suppress=suppress)
+    }
+    if suppress:
+        _hide_until_safe(entries, by_area, visible)
 
     def row(area_id, label, registered_count):
         ndrs = by_area.get(area_id, [])
-        visible = (
-            bool(ndrs)
-            and not group_suppressed
-            and shows(len(ndrs), size, suppress=suppress)
-        )
+        counted = Counter(ndrs)
+        shown = area_id in visible
         return ParticipationRow(
             area_id=area_id,
             label=label,
@@ -255,23 +272,29 @@ def _participation(assignment, query, scores, today, *, group_suppressed, suppre
             participation=round(len(ndrs) * 100 / registered_count)
             if registered_count
             else None,
-            counts=tuple((lvl, Counter(ndrs)[lvl]) for lvl in c.NDR_ORDER)
-            if visible
-            else (),
-            suppressed=bool(ndrs) and not visible,
+            counts=tuple((lvl, counted[lvl]) for lvl in c.NDR_ORDER) if shown else (),
+            suppressed=bool(ndrs) and not shown,
         )
 
-    areas = CompanyArea.objects.filter(company=company).order_by("name")
-    if query.area_ids:
-        areas = areas.filter(pk__in=query.area_ids)
-    rows = [
-        row(area.pk, area.name, registered.get(area.pk, 0))
-        for area in areas
-        if area.is_active or registered.get(area.pk) or by_area.get(area.pk)
-    ]
-    if by_area.get(None):
-        rows.append(row(None, NO_AREA, None))
-    return tuple(rows)
+    return tuple(row(*entry) for entry in entries)
+
+
+def _hide_until_safe(entries, by_area, visible):
+    """Hide the smallest visible rows until the hidden respondents number 0 or >= 5.
+
+    The group's final distribution is always shown, so a hidden total of 1-4
+    would be recoverable by subtracting the visible rows from it. Mutates
+    `visible`; ties go to the label that sorts first.
+    """
+    answered = [(len(by_area.get(a, [])), label, a) for a, label, _r in entries]
+    answered = [entry for entry in answered if entry[0]]
+    hidden = sum(n for n, _label, a in answered if a not in visible)
+    candidates = sorted(entry for entry in answered if entry[2] in visible)
+    for n, _label, area_id in candidates:
+        if hidden == 0 or hidden >= c.MIN_GROUP_SIZE:
+            break
+        visible.discard(area_id)
+        hidden += n
 
 
 def _distribution(key, label, ndrs, children=()) -> DistributionRow:

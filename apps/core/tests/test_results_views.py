@@ -147,3 +147,19 @@ def test_query_count_is_independent_of_respondents(
     with CaptureQueriesContext(connection) as large:
         client.get(url)
     assert len(large.captured_queries) == len(small.captured_queries)
+
+
+def test_unanswered_survey_says_so_instead_of_blaming_filters(client, setup):
+    client.force_login(setup["exec"])
+    body = client.get(reverse("core:company_results")).content.decode()
+    assert "Esta encuesta aún no tiene cuestionarios contestados." in body
+    assert "Ningún cuestionario coincide con los filtros." not in body
+
+
+def test_filtered_empty_group_blames_the_filters(client, setup, make_user_with_profile):
+    add_respondents(setup, make_user_with_profile, 6)
+    client.force_login(setup["exec"])
+    url = reverse("core:company_results") + f"?area={setup['area'].pk}"
+    body = client.get(url).content.decode()
+    assert "Ningún cuestionario coincide con los filtros." in body
+    assert "Esta encuesta aún no tiene cuestionarios contestados." not in body

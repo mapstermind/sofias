@@ -430,3 +430,69 @@ def test_foreign_area_buckets_as_sin_area(
     )
     assert "Ajena" not in [r.label for r in results.participation]
     assert results.participation[-1].label == "Sin área"
+
+
+@pytest.fixture
+def make_area_respondents(
+    make_company, make_user_with_profile, make_area, nom035_survey
+):
+    """make_area_respondents({"A": 6, ...}) → assignment with that many scored per área."""
+
+    def factory(sizes):
+        company = make_company()
+        assignment = make_assignment(company, nom035_survey)
+        for name, count in sizes.items():
+            area = make_area(company, name=name)
+            for i in range(count):
+                user = make_user_with_profile(
+                    email=f"{name.lower()}{i}@x.mx", company=company, area=area
+                )
+                make_score(assignment, user)
+        return assignment
+
+    return factory
+
+
+def test_participation_hides_more_areas_until_the_hidden_total_is_safe(
+    make_area_respondents,
+):
+    # Final minus A minus B would reveal Dirección's single NDR.
+    assignment = make_area_respondents({"A": 6, "B": 6, "Dirección": 1})
+    results = results_for(assignment, ResultsQuery(), suppress_small_groups=True)
+    rows = {r.label: r for r in results.participation}
+    assert rows["Dirección"].suppressed
+    assert rows["A"].suppressed or rows["B"].suppressed
+    hidden = [r for r in results.participation if r.suppressed]
+    assert sum(r.responded for r in hidden) >= c.MIN_GROUP_SIZE
+    assert all(r.counts == () for r in hidden)
+    assert [(r.registered, r.responded) for r in results.participation] == [
+        (6, 6),
+        (6, 6),
+        (1, 1),
+    ]
+
+
+def test_participation_secondary_rule_picks_the_smallest_then_the_label(
+    make_area_respondents,
+):
+    assignment = make_area_respondents({"A": 6, "B": 6, "Dirección": 1})
+    results = results_for(assignment, ResultsQuery(), suppress_small_groups=True)
+    rows = {r.label: r for r in results.participation}
+    assert rows["A"].suppressed and not rows["B"].suppressed
+
+
+def test_participation_secondary_rule_spares_admins(make_area_respondents):
+    assignment = make_area_respondents({"A": 6, "B": 6, "Dirección": 1})
+    results = results_for(assignment, ResultsQuery(), suppress_small_groups=False)
+    assert not any(r.suppressed for r in results.participation)
+    assert all(r.counts for r in results.participation)
+
+
+def test_participation_no_secondary_rule_when_enough_is_already_hidden(
+    make_area_respondents,
+):
+    assignment = make_area_respondents({"X": 3, "Y": 3, "Z": 10})
+    results = results_for(assignment, ResultsQuery(), suppress_small_groups=True)
+    rows = {r.label: r for r in results.participation}
+    assert rows["X"].suppressed and rows["Y"].suppressed
+    assert not rows["Z"].suppressed and rows["Z"].counts

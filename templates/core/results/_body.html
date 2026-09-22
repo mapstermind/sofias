@@ -2,7 +2,11 @@
   {% include "core/results/_group_line.html" %}
   {% if results.empty %}
     <div class="mt-6 rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-10 text-center">
-      <p class="text-sm text-gray-500">Ningún cuestionario coincide con los filtros.</p>
+      {% if results.filtered %}
+        <p class="text-sm text-gray-500">Ningún cuestionario coincide con los filtros.</p>
+      {% else %}
+        <p class="text-sm text-gray-500">Esta encuesta aún no tiene cuestionarios contestados.</p>
+      {% endif %}
     </div>
   {% else %}
     <h2 class="mt-8 text-xs font-semibold uppercase tracking-wide text-gray-500">Empresa</h2>

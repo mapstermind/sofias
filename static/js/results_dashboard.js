@@ -111,7 +111,8 @@ function initFilters() {
         body.setAttribute("aria-busy", "true");
         try {
             const response = await fetch(withQuery(fragmentUrl, params), { signal: controller.signal });
-            if (!response.ok) {
+            // A redirect means the session expired and fetch followed it to the login page.
+            if (!response.ok || response.redirected) {
                 window.location.assign(withQuery(pageUrl, params));
                 return;
             }
