@@ -496,3 +496,33 @@ def test_participation_no_secondary_rule_when_enough_is_already_hidden(
     rows = {r.label: r for r in results.participation}
     assert rows["X"].suppressed and rows["Y"].suppressed
     assert not rows["Z"].suppressed and rows["Z"].counts
+
+
+def test_participation_secondary_rule_breaks_ties_between_equally_sized_rows(
+    make_company, make_area, make_user_with_profile, nom035_survey
+):
+    """A catalog área literally named "Sin área" can tie the orphaned bucket.
+
+    Both are candidates for secondary suppression with the same size and the
+    same label, so the tie-break must not fall through to comparing area_id
+    (an int) against the orphaned bucket's None.
+    """
+    company = make_company()
+    named_sin_area = make_area(company, name="Sin área")
+    small = make_area(company, name="Intranet")
+    assignment = make_assignment(company, nom035_survey)
+    for i in range(5):
+        user = make_user_with_profile(
+            email=f"sa{i}@x.mx", company=company, area=named_sin_area
+        )
+        make_score(assignment, user)
+    for i in range(3):
+        user = make_user_with_profile(email=f"sm{i}@x.mx", company=company, area=small)
+        make_score(assignment, user)
+    for _ in range(5):
+        make_score(assignment, None)  # orphaned respondents bucket as "Sin área" too
+
+    results = results_for(assignment, ResultsQuery(), suppress_small_groups=True)
+
+    hidden = sum(r.responded for r in results.participation if r.suppressed)
+    assert hidden == 0 or hidden >= c.MIN_GROUP_SIZE

@@ -91,11 +91,16 @@ fuera.
   personas**, se ocultan también las áreas más pequeñas hasta que lo oculto
   sume al menos 5 personas. Las áreas ocultas siguen mostrando cuántas personas
   están registradas y cuántas respondieron, pero no su distribución.
-- **Límite conocido:** restar **dos vistas filtradas distintas** entre sí sigue
-  siendo posible (por ejemplo, "Operaciones" menos "Operaciones, 25–29 años").
-  Evitarlo por completo exigiría ocultar muchas combinaciones útiles; lo
-  documentamos como límite conocido.
-- **Lo que necesitamos:** confirmar que este límite es aceptable.
+- **Límite conocido:** restar **dos vistas distintas** entre sí sigue siendo posible, y **una de ellas
+  puede ser la vista completa, sin filtros**. Por ejemplo, con dos áreas de 6 personas y Dirección con
+  una sola, la vista completa oculta una de las áreas de 6 junto con Dirección; pero al filtrar por esa
+  área se ve su distribución completa (6 personas, y quedan fuera 7), y entonces la vista completa menos
+  esa área menos la otra revela el resultado de Dirección. Lo mismo ocurre entre dos vistas filtradas
+  (por ejemplo, "Operaciones" menos "Operaciones, 25–29 años"). Evitarlo por completo exigiría ocultar
+  muchas combinaciones útiles; hoy lo documentamos como límite conocido.
+- **Lo que necesitamos:** confirmar si este límite es aceptable, o si preferimos que al filtrar por un
+  área también se oculte cuando esa área quedó oculta en la vista completa (más protección, pero el
+  Ejecutivo principal vería menos áreas).
 
 ## 6. Quiénes se cuentan 🟡
 

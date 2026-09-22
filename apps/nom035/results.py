@@ -289,7 +289,10 @@ def _hide_until_safe(entries, by_area, visible):
     answered = [(len(by_area.get(a, [])), label, a) for a, label, _r in entries]
     answered = [entry for entry in answered if entry[0]]
     hidden = sum(n for n, _label, a in answered if a not in visible)
-    candidates = sorted(entry for entry in answered if entry[2] in visible)
+    candidates = sorted(
+        (entry for entry in answered if entry[2] in visible),
+        key=lambda entry: (entry[0], entry[1]),
+    )
     for n, _label, area_id in candidates:
         if hidden == 0 or hidden >= c.MIN_GROUP_SIZE:
             break

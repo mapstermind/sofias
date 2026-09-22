@@ -278,8 +278,9 @@ cuestionarios contestados."* when none is.
 The rule is enforced in the data layer: a suppressed group carries
 `suppressed=True` and no distribution, statistics or Guía I data, and a
 suppressed participation row carries `suppressed=True` and an empty `counts`,
-so no template can print a small group. Differences between two filtered views
-remain possible and are recorded as a known limitation in
+so no template can print a small group. Differences between two views —
+including a filtered view subtracted from the unfiltered page — remain
+possible and are recorded as a known limitation in
 `nom-035-valoracion-supuestos.md`.
 
 ### In-place filtering
