@@ -6,14 +6,20 @@ rule is applied here, not in templates: a suppressed result carries no numbers.
 See docs/platform/nom-035-results-dashboard.md.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from django.db.models import Count, Max, Min, Q
 from django.utils import timezone
 
+from apps.accounts import demographics
+from apps.accounts.models import UserProfile
+from apps.nom035 import constants as c
+from apps.nom035.models import SubmissionScore
 from apps.surveys.models import SurveyAssignment
 
 NOM035_SURVEY_KEY = "nom035"
+NO_DATA = "Sin dato"
+_PROFILE = "submission__user__profile__"
 
 _MONTHS = (
     "ene",
@@ -93,3 +99,147 @@ def select_assignment(options, requested_pk):
         if option.assignment.pk == requested_pk:
             return option
     return next((o for o in options if o.scored_count), options[0])
+
+
+def shows(size: int, base: int, *, suppress: bool) -> bool:
+    """Whether `size` questionnaires out of `base` may be shown.
+
+    Both the set and what it leaves out of its base must be empty or at least
+    MIN_GROUP_SIZE, so no one is exposed directly or by subtraction.
+    """
+    if not suppress:
+        return True
+    rest = base - size
+    return size >= c.MIN_GROUP_SIZE and (rest == 0 or rest >= c.MIN_GROUP_SIZE)
+
+
+@dataclass(frozen=True)
+class Slice:
+    key: str
+    label: str
+    value: int
+    color: str
+
+
+@dataclass(frozen=True)
+class Results:
+    assignment: SurveyAssignment
+    size: int
+    whole_size: int
+    filtered: bool
+    suppressed: bool
+    sex: tuple[Slice, ...] = ()
+    age: tuple[Slice, ...] = ()
+    participation: tuple = ()
+    final_distribution: object = None
+    categoria_distribution: tuple = ()
+    final_stats: object = None
+    categoria_stats: tuple = ()
+    guia1: object = None
+
+    @property
+    def empty(self) -> bool:
+        return self.size == 0
+
+
+def narrow(queryset, query, today, prefix=_PROFILE):
+    """Apply the query's respondent filters to a queryset reaching UserProfile at `prefix`."""
+    q = Q()
+    if query.sex:
+        q &= Q(**{f"{prefix}sex": query.sex})
+    if query.area_ids:
+        q &= Q(**{f"{prefix}area_id__in": query.area_ids})
+    if query.location_ids:
+        q &= Q(**{f"{prefix}location_id__in": query.location_ids})
+    if query.age_slugs:
+        ages = Q()
+        for slug in query.age_slugs:
+            earliest, latest = demographics.birth_date_range(
+                demographics.band_by_slug(slug), today
+            )
+            band = Q(**{f"{prefix}date_of_birth__lte": latest})
+            if earliest is not None:
+                band &= Q(**{f"{prefix}date_of_birth__gte": earliest})
+            ages |= band
+        q &= ages
+    return queryset.filter(q)
+
+
+def _profile(score):
+    user = score.submission.user
+    return getattr(user, "profile", None) if user is not None else None
+
+
+_SEXES = ((UserProfile.Sex.FEMALE, "sex-female"), (UserProfile.Sex.MALE, "sex-male"))
+
+
+def _sex_slices(sexes) -> tuple[Slice, ...]:
+    counts = {value: 0 for value, _ in _SEXES}
+    missing = 0
+    for sex in sexes:
+        if sex in counts:
+            counts[sex] += 1
+        else:
+            missing += 1
+    slices = [
+        Slice(value, UserProfile.Sex(value).label, counts[value], color)
+        for value, color in _SEXES
+    ]
+    return (*slices, Slice("none", NO_DATA, missing, "none"))
+
+
+def _age_slices(birth_dates, today) -> tuple[Slice, ...]:
+    counts = {band.slug: 0 for band in demographics.AGE_BANDS}
+    missing = 0
+    for dob in birth_dates:
+        band = demographics.age_band(demographics.age_on(dob, today)) if dob else None
+        if band is None:
+            missing += 1
+        else:
+            counts[band.slug] += 1
+    slices = [
+        Slice(b.slug, b.label, counts[b.slug], "age") for b in demographics.AGE_BANDS
+    ]
+    return (*slices, Slice("none", NO_DATA, missing, "none"))
+
+
+def results_for(assignment, query, *, suppress_small_groups: bool) -> Results:
+    today = timezone.localdate()
+    base = SubmissionScore.objects.filter(submission__assignment=assignment)
+    whole_size = base.count()
+    scores = list(
+        narrow(base, query, today)
+        .select_related(f"{_PROFILE}area", f"{_PROFILE}location")
+        .order_by("pk")
+    )
+    size = len(scores)
+    filtered = query.is_filtered
+    suppressed = (
+        filtered
+        and size > 0
+        and not shows(size, whole_size, suppress=suppress_small_groups)
+    )
+
+    profiles = [_profile(s) for s in scores]
+    if query.sex:
+        sexes = narrow(base, replace(query, sex="", sex_slug=""), today).values_list(
+            f"{_PROFILE}sex", flat=True
+        )
+    else:
+        sexes = [p.sex if p else "" for p in profiles]
+    if query.age_slugs:
+        dobs = narrow(base, replace(query, age_slugs=()), today).values_list(
+            f"{_PROFILE}date_of_birth", flat=True
+        )
+    else:
+        dobs = [p.date_of_birth if p else None for p in profiles]
+
+    return Results(
+        assignment=assignment,
+        size=size,
+        whole_size=whole_size,
+        filtered=filtered,
+        suppressed=suppressed,
+        sex=_sex_slices(sexes),
+        age=_age_slices(dobs, today),
+    )
