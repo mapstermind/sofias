@@ -14,22 +14,23 @@ from dataclasses import dataclass
 
 from django.db.models import Q
 
-from apps.accounts.models import FoldCatalogName, UserProfile, catalog_name_key
+from apps.accounts.models import FoldCatalogName, catalog_name_key
 from apps.accounts.roles import ROLES
+
+# SEX_SLUGS / SEX_SLUGS_TO_LABELS are re-exported: templates and tests import
+# them as `roster.SEX_SLUGS` / `roster.SEX_SLUGS_TO_LABELS`.
+from apps.core.query_params import (
+    SEX_SLUGS,  # noqa: F401
+    SEX_SLUGS_TO_LABELS,  # noqa: F401
+    first_sex,
+    valid_pks,
+    values,
+)
 
 ORDER_NAME = "nombre"
 ORDER_PROGRESS = "progreso"
 ORDER_ACTIVATION = "activacion"
 ORDERS = (ORDER_NAME, ORDER_PROGRESS, ORDER_ACTIVATION)
-
-# The URL speaks Spanish; these map onto `UserProfile.Sex` values.
-SEX_SLUGS = {"masculino": UserProfile.Sex.MALE, "femenino": UserProfile.Sex.FEMALE}
-
-# Labels come from the model so relabelling the choice cannot leave the
-# filter pill reading a word the rest of the app has stopped using.
-SEX_SLUGS_TO_LABELS = {
-    slug: UserProfile.Sex(value).label for slug, value in SEX_SLUGS.items()
-}
 
 # A search is a convenience, not a query language. More terms than this is a
 # paste accident, and each one costs four LIKEs.
@@ -62,61 +63,14 @@ class RosterQuery:
         )
 
 
-def _values(params, key) -> list[str]:
-    """Every value given for `key`, whether params is a QueryDict or a dict.
-
-    The view hands us `request.GET`, which may repeat a parameter; unit tests
-    hand us a plain dict. `getlist` exists only on the former.
-    """
-    getlist = getattr(params, "getlist", None)
-    if getlist is not None:
-        return getlist(key)
-    value = params.get(key)
-    if value is None:
-        return []
-    return list(value) if isinstance(value, (list, tuple)) else [value]
-
-
-def _valid_pk(raw: str, valid_ids: set[int]) -> int | None:
-    try:
-        pk = int(raw)
-    except (TypeError, ValueError):
-        return None
-    return pk if pk in valid_ids else None
-
-
-def _valid_pks(raw_values, valid_ids: set[int]) -> tuple[int, ...]:
-    """Every value that names an entry the company owns, deduplicated.
-
-    A bad value is dropped on its own rather than discarding its neighbours:
-    a stale bookmark listing four áreas, one of them since deleted, should
-    still filter by the other three.
-    """
-    seen = []
-    for raw in raw_values:
-        pk = _valid_pk(raw, valid_ids)
-        if pk is not None and pk not in seen:
-            seen.append(pk)
-    return tuple(seen)
-
-
 def parse_roster_query(params, *, area_ids: set[int], location_ids: set[int]):
     """Turn a request's GET parameters into a validated `RosterQuery`."""
     raw_q = (params.get("q") or "").strip()
     terms = tuple(catalog_name_key(term) for term in raw_q.split()[:MAX_SEARCH_TERMS])
 
-    # A repeated parameter keeps the first value that names a sex we know.
-    # `QueryDict.get()` would return the LAST value, and an unrecognized one
-    # must not shadow a valid one that follows it — the same rule the pk
-    # filters follow.
-    sex, sex_slug = "", ""
-    for candidate in _values(params, "sexo"):
-        stored = SEX_SLUGS.get(candidate.strip())
-        if stored:
-            sex, sex_slug = stored, candidate.strip()
-            break
+    sex, sex_slug = first_sex(params)
 
-    role_slugs = {slug for slug in _values(params, "rol")}
+    role_slugs = {slug for slug in values(params, "rol")}
     selected_roles = [role for role in ROLES if role.slug in role_slugs]
 
     order = (params.get("orden") or "").strip()
@@ -128,8 +82,8 @@ def parse_roster_query(params, *, area_ids: set[int], location_ids: set[int]):
         terms=terms,
         sex=sex,
         sex_slug=sex_slug,
-        area_ids=_valid_pks(_values(params, "area"), area_ids),
-        location_ids=_valid_pks(_values(params, "localidad"), location_ids),
+        area_ids=valid_pks(values(params, "area"), area_ids),
+        location_ids=valid_pks(values(params, "localidad"), location_ids),
         role_names=tuple(role.name for role in selected_roles),
         role_slugs=tuple(role.slug for role in selected_roles),
         order=order,
