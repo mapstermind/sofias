@@ -6,6 +6,8 @@ rule is applied here, not in templates: a suppressed result carries no numbers.
 See docs/platform/nom-035-results-dashboard.md.
 """
 
+import statistics
+from collections import Counter, defaultdict
 from dataclasses import dataclass, replace
 
 from django.db.models import Count, Max, Min, Q
@@ -13,12 +15,14 @@ from django.utils import timezone
 
 from apps.accounts import demographics
 from apps.accounts.models import UserProfile
+from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
-from apps.nom035.models import SubmissionScore
+from apps.nom035.models import GroupScore, SubmissionScore
 from apps.surveys.models import SurveyAssignment
 
 NOM035_SURVEY_KEY = "nom035"
 NO_DATA = "Sin dato"
+FINAL = "final"
 _PROFILE = "submission__user__profile__"
 
 _MONTHS = (
@@ -119,6 +123,191 @@ class Slice:
     label: str
     value: int
     color: str
+
+
+def _ndr_slices(counts) -> tuple[Slice, ...]:
+    """Shared by DistributionRow and ParticipationRow: one Slice per (level, count)."""
+    return tuple(
+        Slice(level, c.NDR_LABELS[level], count, f"ndr-{level}")
+        for level, count in counts
+    )
+
+
+@dataclass(frozen=True)
+class DistributionRow:
+    key: str
+    label: str
+    n: int
+    counts: tuple[tuple[str, int], ...]
+    children: tuple["DistributionRow", ...] = ()
+
+    @property
+    def slices(self) -> tuple[Slice, ...]:
+        return _ndr_slices(self.counts)
+
+
+@dataclass(frozen=True)
+class StatsRow:
+    key: str
+    label: str
+    n: int
+    mean: float | None
+    median: float | None
+    minimum: int | None
+    maximum: int | None
+    scale_max: int
+    strip_bands: tuple[tuple[float, str, str], ...]
+    children: tuple["StatsRow", ...] = ()
+
+    @property
+    def strip_points(self) -> list[tuple[str, str, float]]:
+        if not self.n:
+            return []
+        return [
+            ("min", "Mín", self.minimum),
+            ("median", "Mediana", self.median),
+            ("mean", "Prom.", self.mean),
+            ("max", "Máx", self.maximum),
+        ]
+
+
+@dataclass(frozen=True)
+class Guia1:
+    none: int
+    event: int
+    positive: int
+
+    @property
+    def slices(self) -> tuple[Slice, ...]:
+        return (
+            Slice("none", "Sin acontecimiento", self.none, "guia1-none"),
+            Slice(
+                "event",
+                "Acontecimiento sin requerir valoración",
+                self.event,
+                "guia1-event",
+            ),
+            Slice(
+                "positive",
+                "Requiere valoración clínica",
+                self.positive,
+                "guia1-positive",
+            ),
+        )
+
+
+def _distribution(key, label, ndrs, children=()) -> DistributionRow:
+    counted = Counter(ndrs)
+    return DistributionRow(
+        key=key,
+        label=label,
+        n=len(ndrs),
+        counts=tuple((level, counted[level]) for level in c.NDR_ORDER),
+        children=tuple(children),
+    )
+
+
+def _stats(key, label, values, *, level, variant, scale_max, children=()) -> StatsRow:
+    bands = tuple(
+        (upper, f"ndr-{ndr}", c.NDR_LABELS[ndr])
+        for upper, ndr in cfg.thresholds_for(level, key, variant)
+    )
+    return StatsRow(
+        key=key,
+        label=label,
+        n=len(values),
+        mean=round(statistics.fmean(values), 1) if values else None,
+        median=statistics.median(values) if values else None,
+        minimum=min(values) if values else None,
+        maximum=max(values) if values else None,
+        scale_max=scale_max,
+        strip_bands=bands,
+        children=tuple(children),
+    )
+
+
+def _structure(variant):
+    """(categorías in order, {categoría: [dominios]}, {key: item count}) for a variant."""
+    taxonomy = cfg.taxonomy_for_variant(variant)
+    items = Counter()
+    for cat_key, dom_key, _dim in taxonomy.values():
+        items[cat_key] += 1
+        items[dom_key] += 1
+    categorias = [k for k in cfg.CATEGORIA_ORDER if k in items]
+    dominios = {
+        k: [d for d in cfg.dominios_for_categoria(k) if d in items] for k in categorias
+    }
+    return categorias, dominios, items, len(taxonomy)
+
+
+def _valuation(assignment, scores):
+    variant = assignment.variant
+    categorias, dominios, items, total_items = _structure(variant)
+    rows = defaultdict(list)  # (level, key) -> [(score, ndr)]
+    for level, key, value, ndr in GroupScore.objects.filter(
+        submission_score_id__in=[s.pk for s in scores],
+        level__in=(c.LEVEL_CATEGORIA, c.LEVEL_DOMINIO),
+    ).values_list("level", "key", "score", "ndr"):
+        rows[(level, key)].append((value, ndr))
+
+    def ndrs(level, key):
+        return [ndr for _v, ndr in rows[(level, key)]]
+
+    def values(level, key):
+        return [v for v, _ndr in rows[(level, key)]]
+
+    distribution, stats = [], []
+    for cat in categorias:
+        doms = dominios[cat]
+        distribution.append(
+            _distribution(
+                cat,
+                cfg.group_label(cat),
+                ndrs(c.LEVEL_CATEGORIA, cat),
+                [
+                    _distribution(d, cfg.group_label(d), ndrs(c.LEVEL_DOMINIO, d))
+                    for d in doms
+                ],
+            )
+        )
+        stats.append(
+            _stats(
+                cat,
+                cfg.group_label(cat),
+                values(c.LEVEL_CATEGORIA, cat),
+                level=c.LEVEL_CATEGORIA,
+                variant=variant,
+                scale_max=items[cat] * 4,
+                children=[
+                    _stats(
+                        d,
+                        cfg.group_label(d),
+                        values(c.LEVEL_DOMINIO, d),
+                        level=c.LEVEL_DOMINIO,
+                        variant=variant,
+                        scale_max=items[d] * 4,
+                    )
+                    for d in doms
+                ],
+            )
+        )
+    final_distribution = _distribution(
+        FINAL, "Calificación final", [s.final_ndr for s in scores]
+    )
+    final_stats = _stats(
+        FINAL,
+        "Calificación final",
+        [s.final_score for s in scores],
+        level=FINAL,
+        variant=variant,
+        scale_max=total_items * 4,
+    )
+    guia1 = Guia1(
+        none=sum(1 for s in scores if not s.guia1_event),
+        event=sum(1 for s in scores if s.guia1_event and not s.guia1_positive),
+        positive=sum(1 for s in scores if s.guia1_positive),
+    )
+    return final_distribution, tuple(distribution), final_stats, tuple(stats), guia1
 
 
 @dataclass(frozen=True)
@@ -234,6 +423,23 @@ def results_for(assignment, query, *, suppress_small_groups: bool) -> Results:
     else:
         dobs = [p.date_of_birth if p else None for p in profiles]
 
+    valuation = {}
+    if size and not suppressed:
+        (
+            final_distribution,
+            categoria_distribution,
+            final_stats,
+            categoria_stats,
+            guia1,
+        ) = _valuation(assignment, scores)
+        valuation = dict(
+            final_distribution=final_distribution,
+            categoria_distribution=categoria_distribution,
+            final_stats=final_stats,
+            categoria_stats=categoria_stats,
+            guia1=guia1,
+        )
+
     return Results(
         assignment=assignment,
         size=size,
@@ -242,4 +448,5 @@ def results_for(assignment, query, *, suppress_small_groups: bool) -> Results:
         suppressed=suppressed,
         sex=_sex_slices(sexes),
         age=_age_slices(dobs, today),
+        **valuation,
     )

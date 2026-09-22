@@ -4,6 +4,7 @@ import pytest
 from django.utils import timezone
 
 from apps.core.results_query import ResultsQuery
+from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
 from apps.nom035.models import GroupScore, SubmissionScore
 from apps.nom035.results import (
@@ -253,3 +254,103 @@ def test_deleted_respondent_counts_unfiltered_but_drops_when_filtered(people):
         suppress_small_groups=False,
     )
     assert filtered.size == 3
+
+
+@pytest.fixture
+def scored_large(make_company, nom035_survey):
+    company = make_company()
+    assignment = make_assignment(company, nom035_survey, variant="large")
+    amb = cfg.CAT_AMBIENTE
+    cond = cfg.DOM_CONDICIONES
+    rows = [
+        (40, c.NDR_NULO, 3, c.NDR_NULO, False, False),
+        (60, c.NDR_BAJO, 6, c.NDR_BAJO, True, False),
+        (80, c.NDR_MEDIO, 10, c.NDR_MEDIO, True, True),
+        (160, c.NDR_MUY_ALTO, 14, c.NDR_MUY_ALTO, False, False),
+    ]
+    for final, final_ndr, cat_score, cat_ndr, event, positive in rows:
+        make_score(
+            assignment,
+            final_score=final,
+            final_ndr=final_ndr,
+            guia1_event=event,
+            guia1_positive=positive,
+            groups=[
+                (c.LEVEL_CATEGORIA, amb, cat_score, cat_ndr),
+                (c.LEVEL_DOMINIO, cond, cat_score, cat_ndr),
+            ],
+        )
+    return assignment
+
+
+def test_final_distribution_counts_every_level(scored_large):
+    results = results_for(scored_large, ResultsQuery(), suppress_small_groups=True)
+    row = results.final_distribution
+    assert row.n == 4
+    assert dict(row.counts) == {
+        c.NDR_NULO: 1,
+        c.NDR_BAJO: 1,
+        c.NDR_MEDIO: 1,
+        c.NDR_ALTO: 0,
+        c.NDR_MUY_ALTO: 1,
+    }
+    assert [s.color for s in row.slices] == [f"ndr-{lvl}" for lvl in c.NDR_ORDER]
+
+
+def test_categoria_rows_follow_the_variant(scored_large):
+    results = results_for(scored_large, ResultsQuery(), suppress_small_groups=True)
+    keys = [row.key for row in results.categoria_distribution]
+    assert keys == [k for k in cfg.CATEGORIA_ORDER]  # Guía III has all five
+    ambiente = results.categoria_distribution[0]
+    assert ambiente.n == 4
+    assert [d.key for d in ambiente.children][0] == cfg.DOM_CONDICIONES
+    tiempo = results.categoria_distribution[2]
+    assert tiempo.n == 0  # no rows stored for it in this fixture
+
+
+def test_small_variant_has_no_entorno(make_company, nom035_survey):
+    assignment = make_assignment(make_company(), nom035_survey, variant="small")
+    make_score(assignment)
+    results = results_for(assignment, ResultsQuery(), suppress_small_groups=False)
+    assert cfg.CAT_ENTORNO not in [row.key for row in results.categoria_distribution]
+    assert len(results.categoria_distribution) == 4
+
+
+def test_statistics_final_and_categoria(scored_large):
+    results = results_for(scored_large, ResultsQuery(), suppress_small_groups=True)
+    final = results.final_stats
+    assert (final.n, final.mean, final.median, final.minimum, final.maximum) == (
+        4,
+        85.0,
+        70,
+        40,
+        160,
+    )
+    assert final.scale_max == len(cfg.taxonomy_for_variant("large")) * 4
+    assert final.strip_bands[0] == (50, "ndr-nulo", "Nulo")
+    assert [p[0] for p in final.strip_points] == ["min", "median", "mean", "max"]
+    ambiente = results.categoria_stats[0]
+    assert (ambiente.mean, ambiente.median) == (8.2, 8.0)
+    tiempo = results.categoria_stats[2]
+    assert tiempo.n == 0 and tiempo.mean is None and tiempo.strip_points == []
+
+
+def test_guia1_outcomes(scored_large):
+    results = results_for(scored_large, ResultsQuery(), suppress_small_groups=True)
+    assert (results.guia1.none, results.guia1.event, results.guia1.positive) == (
+        2,
+        1,
+        1,
+    )
+    assert [s.color for s in results.guia1.slices] == [
+        "guia1-none",
+        "guia1-event",
+        "guia1-positive",
+    ]
+
+
+def test_group_rows_query_count_does_not_grow(
+    scored_large, django_assert_max_num_queries
+):
+    with django_assert_max_num_queries(3):
+        results_for(scored_large, ResultsQuery(), suppress_small_groups=True)
