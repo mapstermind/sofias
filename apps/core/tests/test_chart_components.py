@@ -60,6 +60,8 @@ def test_range_strip_renders_bands_and_labelled_markers():
     assert 'data-tooltip="Prom.: 84.3 · Nulo"' in html
     assert "fill-red-500" in html
     assert ">200<" in html
+    assert 'data-tooltip="Muy alto"' in html
+    assert 'aria-label="Nulo"' in html
 
 
 def test_unknown_color_key_falls_back_to_gray():
