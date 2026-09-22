@@ -15,3 +15,7 @@ NDR_LABELS = {
 LEVEL_CATEGORIA = "categoria"
 LEVEL_DOMINIO = "dominio"
 LEVEL_DIMENSION = "dimension"
+
+# Smallest group of questionnaires shown to viewers without
+# can_view_small_groups — and the smallest group they may subtract to.
+MIN_GROUP_SIZE = 5

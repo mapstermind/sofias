@@ -22,6 +22,7 @@ docs/
 │   ├── database.md
 │   ├── localization.md
 │   ├── nom-035-analytics.md
+│   ├── nom-035-results-dashboard.md
 │   ├── nom-035-valoracion-supuestos.md
 │   ├── setup-access-codes.md
 │   ├── survey-model.md
@@ -94,7 +95,8 @@ Docs moved here when the feature they describe is retired or superseded. Include
 | `internal/prompting-workflow.md` | End-to-end development workflow, starting with how a request is routed — which docs it needs, and whether it takes a branch or goes straight to `main` |
 | `platform/survey-model.md` | The survey authoring base (Survey→Module→Question), variants, `visible_when` branching |
 | `platform/database.md` | Full database schema reference |
-| `platform/nom-035-analytics.md` | NOM-035 valuation engine (scores → NDR) + Insights panels |
+| `platform/nom-035-analytics.md` | NOM-035 valuation engine (scores → NDR, Guía I flags) + the employee valuation card |
+| `platform/nom-035-results-dashboard.md` | The company NOM-035 results page: filters, SVG charts, small-group rule |
 | `platform/nom-035-valoracion-supuestos.md` | (Spanish) NOM-035 scoring assumptions tracked for the domain expert |
 | `platform/auth-and-onboarding.md` | Login flows, OTP, setup codes, profile activation |
 | `platform/csv-user-import.md` | Bulk user creation via Django Admin |

@@ -1,0 +1,82 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}Resultados | {{ company.name }} | SOFIA-S{% endblock %}
+
+{% block header_nav %}
+  <span class="text-gray-300 select-none">|</span>
+  <a href="{% if is_admin_view %}{% url 'core:company_dashboard_for' company.reference_code %}{% else %}{% url 'core:company_dashboard' %}{% endif %}"
+     class="text-sm text-gray-400 hover:text-gray-600 transition-colors">&larr; Regresa al tablero</a>
+{% endblock %}
+
+{% block content %}
+  <div class="mb-5">
+    <h1 class="text-2xl font-bold text-gray-900">Resultados NOM-035</h1>
+    <p class="mt-1 text-sm text-gray-500">{{ company.name }}</p>
+  </div>
+
+  {% if not options %}
+    <div class="rounded-2xl border border-dashed border-gray-300 bg-white px-8 py-12 text-center">
+      <p class="text-sm text-gray-500">Esta empresa aún no tiene encuestas NOM-035 asignadas.</p>
+    </div>
+  {% else %}
+    <form method="get" action="{{ page_url }}" id="results-filters" data-fragment-url="{{ fragment_url }}"
+          class="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+      <div class="flex flex-col gap-3 md:flex-row md:items-start">
+        <label class="min-w-0 flex-1">
+          <span class="sr-only">Encuesta</span>
+          <select name="encuesta" class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900">
+            {% for option in options %}
+              <option value="{{ option.assignment.pk }}"{% if option.assignment.pk == selected.assignment.pk %} selected{% endif %}>{{ option.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <details class="group min-w-0 md:w-auto">
+          <summary class="flex cursor-pointer list-none items-center justify-center gap-2 rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            Filtros (<span data-filter-count>{{ active_filter_count }}</span>)
+          </summary>
+          <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <fieldset class="m-0 min-w-0 border-0 p-0">
+              <legend class="mb-2 p-0 text-xs font-semibold uppercase tracking-wide text-gray-500">Sexo</legend>
+              <label class="flex items-center gap-2 py-1 text-sm"><input type="radio" name="sexo" value=""{% if not query.sex_slug %} checked{% endif %}> Todos</label>
+              {% for slug, label in sex_choices %}
+                <label class="flex items-center gap-2 py-1 text-sm"><input type="radio" name="sexo" value="{{ slug }}"{% if query.sex_slug == slug %} checked{% endif %}> {{ label }}</label>
+              {% endfor %}
+            </fieldset>
+            <fieldset class="m-0 min-w-0 border-0 p-0">
+              <legend class="mb-2 p-0 text-xs font-semibold uppercase tracking-wide text-gray-500">Edad</legend>
+              {% for band in age_bands %}
+                <label class="flex items-center gap-2 py-1 text-sm"><input type="checkbox" name="edad" value="{{ band.slug }}"{% if band.slug in query.age_slugs %} checked{% endif %}> {{ band.label }}</label>
+              {% endfor %}
+            </fieldset>
+            <fieldset class="m-0 min-w-0 border-0 p-0">
+              <legend class="mb-2 p-0 text-xs font-semibold uppercase tracking-wide text-gray-500">Área</legend>
+              {% for area in areas %}
+                <label class="flex items-center gap-2 py-1 text-sm"><input type="checkbox" name="area" value="{{ area.pk }}"{% if area.pk in query.area_ids %} checked{% endif %}> {{ area.name }}</label>
+              {% endfor %}
+            </fieldset>
+            {% if locations %}
+              <fieldset class="m-0 min-w-0 border-0 p-0">
+                <legend class="mb-2 p-0 text-xs font-semibold uppercase tracking-wide text-gray-500">Localidad</legend>
+                {% for location in locations %}
+                  <label class="flex items-center gap-2 py-1 text-sm"><input type="checkbox" name="localidad" value="{{ location.pk }}"{% if location.pk in query.location_ids %} checked{% endif %}> {{ location.name }}</label>
+                {% endfor %}
+              </fieldset>
+            {% endif %}
+          </div>
+          <div class="mt-3 flex justify-end">
+            <button type="submit" class="w-full rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto">Aplicar</button>
+          </div>
+        </details>
+      </div>
+    </form>
+
+    <p id="results-status" class="sr-only" aria-live="polite"></p>
+    <div id="results-body" class="mt-6">
+      {% include "core/results/_body.html" %}
+    </div>
+    <div id="chart-tooltip" role="tooltip" hidden
+         class="pointer-events-none fixed z-50 max-w-xs rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg"></div>
+    <script src="{% static 'js/results_dashboard.js' %}"></script>
+  {% endif %}
+{% endblock %}

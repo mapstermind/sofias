@@ -1,5 +1,7 @@
 """The canonical four authorization groups and their Spanish labels."""
 
+import pytest
+
 from apps.accounts import roles
 
 
@@ -57,3 +59,24 @@ class TestCanonicalNamesAreUsedEverywhere:
     def test_the_test_fixture_creates_exactly_those_groups(self, bootstrap_groups):
         """A fixture that drifts from the command tests a system nobody runs."""
         assert set(bootstrap_groups) == set(roles.ROLE_NAMES)
+
+
+class TestSmallGroupsPermission:
+    def test_only_admins_may_view_small_groups(self):
+        from apps.accounts.management.commands.bootstrap_groups import (
+            GROUP_PERMISSIONS,
+        )
+
+        holders = {
+            name
+            for name, codenames in GROUP_PERMISSIONS.items()
+            if "can_view_small_groups" in codenames
+        }
+        assert holders == {"Admins"}
+
+    @pytest.mark.django_db
+    def test_small_groups_permission_exists(self):
+        from django.contrib.auth.models import Permission
+
+        perm = Permission.objects.get(codename="can_view_small_groups")
+        assert perm.content_type.app_label == "accounts"

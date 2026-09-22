@@ -35,9 +35,11 @@ Identity, authentication, authorization, and company/employee onboarding. Define
   free-text `position` (cargo); `sex` (`male`/`female`, labelled Masculino/Femenino);
   `date_of_birth`; `area` and `location` FKs (both `SET_NULL`, nullable). The cargo, sexo,
   fecha de nacimiento, área and localidad — along with the three `User` name fields — are
-  all supplied by the employee at activation, not at import. `area` drives
-  `apps/nom035`'s per-área company aggregation — a null área falls into a "Sin área"
-  bucket. `age` is a **property** over `date_of_birth` and `timezone.localdate()`, never a
+  all supplied by the employee at activation, not at import. `area`, `sex` and
+  `date_of_birth` drive the NOM-035 results page's filters and breakdowns
+  (`apps/nom035/results.py`) — a null área falls into a "Sin área" bucket, missing
+  sex or date of birth into "Sin dato". `age` is a **property** over `date_of_birth` and
+  `timezone.localdate()` (through `demographics.age_on`), never a
   column, so it cannot go stale. `clean()` rejects an área/localidad belonging to a
   different company, and a `date_of_birth` outside the
   `MIN_ACTIVATION_AGE`/`MAX_ACTIVATION_AGE` (15-99) working-age window — a future date
@@ -52,11 +54,14 @@ Permissions are defined on `Role.Meta.permissions`; groups that bundle them are 
 
 `roles.py` is where those four live — each one's `auth.Group.name` (the stored lookup key, English), its Spanish display label (*Administrador*, *Ejecutivo principal*, *Ejecutivo secundario*, *Empleado*), its URL slug (`administrador`, `ejecutivo-principal`, `ejecutivo-secundario`, `empleado`) and their display order, most authority first. Import `ROLES`, `ROLE_NAMES`, `label_for_name()` or `labels_for_names()` from there rather than retyping a name; anything a user reads goes through a label, never through the stored name. Renaming the stored names is open finding #1.
 
+`can_view_small_groups` (Administrador only) lets a viewer see results-page groups below `MIN_GROUP_SIZE`; everyone else holding `can_view_insights` gets them suppressed (see `docs/platform/nom-035-results-dashboard.md`).
+
 When adding a permission, update **both** `Role.Meta.permissions` and `bootstrap_groups.GROUP_PERMISSIONS` — two places, not three: the `bootstrap_groups` fixture in `conftest.py` imports `GROUP_PERMISSIONS` rather than restating it, so tests follow automatically.
 
 ## Key files
 
 - `roles.py` — the four authorization groups declared once: stored name, Spanish label, URL slug, display order.
+- `demographics.py` — instrument-agnostic age arithmetic over `UserProfile`: `AGE_BANDS` (15–19 … 55–59, 60 o más; each with a URL slug and label), `band_by_slug`, `age_on(date_of_birth, today)`, `age_band(age)`, and `birth_date_range(band, today)`, which turns a band into the `date_of_birth` range a database filter needs.
 - `backends.py` — `EmailOTPBackend`: a near-empty backend; OTP validation happens in the view, the backend exists only so `login()` can record it. `ModelBackend` stays first in `AUTHENTICATION_BACKENDS` to keep admin password login working.
 - `middleware.py` — two gates, applied in this order:
   - `RequirePasswordChangeMiddleware`: traps users with `must_change_password=True` on the change-password flow (admin/static/logout exempted).

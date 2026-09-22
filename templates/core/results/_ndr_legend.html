@@ -1,0 +1,6 @@
+{% load valuation_extras %}
+<ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+  {% for level, label in ndr_levels %}
+    <li class="flex items-center gap-1.5"><span class="size-2.5 shrink-0 rounded-sm {{ level|ndr_bar }}" aria-hidden="true"></span>{{ label }}</li>
+  {% endfor %}
+</ul>

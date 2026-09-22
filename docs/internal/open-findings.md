@@ -79,24 +79,11 @@ the same constant.
 
 ---
 
-## 4. Sexo and fecha de nacimiento are collected but nothing reads them 🟡
-
-**Where:** `accounts.UserProfile.sex` / `date_of_birth` / `age`; the would-be
-consumer is `apps/nom035/aggregates.py`, which today groups only by área.
-
-**What:** Employees supply both at activation, and `age` derives completed years
-on demand, but no dashboard, filter or chart segments on either. Collecting them
-was the whole point: reading NOM-035 results by age range and sex, and by
-combinations such as *mujeres de un área específica entre 18 y 35 años*.
-
-**Why it was left alone:** the decisions that shape it — the age bands, the
-minimum group size below which a segment must not be displayed (a real
-re-identification risk in a small company), and where the segmentation UI lives —
-need the domain expert and real data to look at. Deferred to a feature doc of its
-own rather than guessed at. Until that doc exists this is branch C work: no code
-before it is written and signed off.
-
----
+*Finding 4 — reading NOM-035 results by sex and age — is **resolved** by the
+results page, with its minimum group size of 5 awaiting the
+domain expert's confirmation. See
+[`docs/platform/nom-035-results-dashboard.md`](../platform/nom-035-results-dashboard.md)
+and [`docs/platform/nom-035-valoracion-supuestos.md`](../platform/nom-035-valoracion-supuestos.md).*
 
 *Finding 5 — grouping the employee roster by localidad → área — is **resolved**,
 by a different design than it sketched: the roster is narrowed with a search

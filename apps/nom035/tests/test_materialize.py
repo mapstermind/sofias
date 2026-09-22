@@ -40,3 +40,16 @@ def test_materialize_is_idempotent(completed_submission):
     second = materialize(completed_submission)
     assert SubmissionScore.objects.count() == 1
     assert second.groups.count() == before
+
+
+def test_materialize_persists_guia1_event(completed_submission):
+    from apps.responses.models import Answer
+    from apps.surveys.models import Question
+
+    codes = {q.code: q for q in Question.objects.all()}
+    Answer.objects.create(
+        submission=completed_submission, question=codes["g1-1"], value=True
+    )
+
+    score = materialize(completed_submission)
+    assert score.guia1_event is True

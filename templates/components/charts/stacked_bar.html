@@ -1,0 +1,27 @@
+{% load l10n %}{% localize off %}
+<figure class="m-0 w-full min-w-0">
+  {% if segments %}
+    <div class="overflow-hidden rounded-full">
+      <svg class="block h-3 w-full" role="img" aria-label="{{ aria_label }}">
+        {% for s in segments %}
+          <rect x="{{ s.x }}%" y="0" width="{{ s.width }}%" height="100%"
+                class="{{ s.fill }} stroke-white outline-none hover:opacity-80 focus:opacity-80"
+                stroke-width="2" tabindex="0" aria-label="{{ s.tooltip }}" data-tooltip="{{ s.tooltip }}"></rect>
+        {% endfor %}
+      </svg>
+    </div>
+  {% else %}
+    <div class="h-3 w-full rounded-full bg-gray-100"></div>
+  {% endif %}
+  {% if legend and segments %}
+    <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+      {% for s in segments %}
+        <li class="flex items-center gap-1.5">
+          <span class="size-2.5 shrink-0 rounded-sm {{ s.swatch }}" aria-hidden="true"></span>
+          {{ s.label }} <span class="text-gray-500">{{ s.percent }} % ({{ s.value }})</span>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</figure>
+{% endlocalize %}

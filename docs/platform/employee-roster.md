@@ -80,10 +80,10 @@ sent the operator back for a second look at the other half.
 - Filtering by cargo. It is free text typed per person, not a catalog, so it
   offers no stable set of options; the search box reaches it instead.
 - Filtering by edad or by date ranges, and any segmented *aggregate* of the
-  demographics. Reading NOM-035 results by age band and sex is open finding #4
-  and needs its own doc — the minimum segment size that avoids re-identifying a
-  person in a small company is a decision for the domain expert, and a roster
-  filter does not raise it because the roster already names each person.
+  demographics. NOM-035 results by age band and sex are read on the results
+  page ([`nom-035-results-dashboard.md`](./nom-035-results-dashboard.md)), which
+  applies a minimum group size; a roster filter needs none because the roster
+  already names each person.
 - A count of matching people beside each filter option, which would cost a query
   per dimension to render a number the result already states.
 - Saved or shared filter presets, pagination, and CSV export of a filtered view.
