@@ -84,6 +84,13 @@ fuera.
 - **Supuesto actual:** también se oculta un grupo que deja fuera **de 1 a 4
   personas** (por ejemplo, "todos menos Dirección" cuando Dirección tiene dos
   personas).
+- **Dentro de la misma página:** la calificación final del grupo se muestra con
+  sus conteos exactos, así que restarle los renglones visibles de la tabla por
+  área revelaría a las áreas ocultas (por ejemplo, dos áreas de 6 personas y
+  Dirección con una sola). Por eso, cuando las áreas ocultas suman **de 1 a 4
+  personas**, se ocultan también las áreas más pequeñas hasta que lo oculto
+  sume al menos 5 personas. Las áreas ocultas siguen mostrando cuántas personas
+  están registradas y cuántas respondieron, pero no su distribución.
 - **Límite conocido:** restar **dos vistas filtradas distintas** entre sí sigue
   siendo posible (por ejemplo, "Operaciones" menos "Operaciones, 25–29 años").
   Evitarlo por completo exigiría ocultar muchas combinaciones útiles; lo

@@ -227,8 +227,8 @@ At 360px the page reads as one column with no horizontal scroll. The filter bar
 stacks: the survey selector runs full width and the *Filtros (n)* disclosure sits
 below it, opening onto one column of fieldsets with a full-width *Aplicar*
 button. Participation rows become stacked cards — the área name on its own line,
-then Registrados, Respondieron and Participación side by side, each with an
-inline label, then the distribution bar full width; the table's column header is
+then Registrados, Respondieron and Participación side by side, each with its
+label stacked above the value, then the distribution bar full width; the table's column header is
 hidden. The sex and age sections stack in one column (they sit side by side only
 from the `lg` breakpoint). Each statistics row puts its label, then its five
 numbers, then its range strip below them. Distribution rows put the label above
@@ -246,27 +246,40 @@ questionnaires *S* taken out of a base *B* is shown only when
 - *|B| − |S|* is 0 or ≥ `MIN_GROUP_SIZE`.
 
 `shows(size, base, *, suppress)` in `apps/nom035/results.py` is the rule. It
-applies at two levels:
+applies at two levels, and área rows carry one more rule on top:
 
 - **The group.** When a filter is active, *S* is the group and *B* is every
   scored questionnaire of the assignment. If the rule fails, sections 4–8 are
   replaced by *"Grupo demasiado pequeño para mostrar resultados sin identificar a
   las personas (mínimo 5)"*. Sections 0–3 still render: they count people and
-  reveal no scores, and every participation row keeps its counts but shows the
-  same message in place of its distribution bar. With no filter active, the whole
+  reveal no scores, and every row with respondents in section 1 shows the same
+  message in place of its distribution bar. With no filter active, the whole
   assignment is always shown, whatever its size.
-- **Each área row** in section 1. *S* is the row's respondents and *B* is the
-  group. If the rule fails, the row keeps its counts and shows the same message
-  in place of its distribution bar — also when no filter is active.
+- **Each área row** in section 1, "Sin área" included. *S* is the row's
+  respondents and *B* is the group. If the rule fails, the row shows the same
+  message in place of its distribution bar — also when no filter is active.
+- **The hidden total.** The group's final distribution is shown with exact
+  counts, so hidden rows would be recoverable as that distribution minus the
+  visible rows. After the per-row rule, when the respondents of the rows with
+  respondents that are hidden number from 1 to 4, the smallest visible row with
+  respondents is hidden as well (ascending by respondents, ties broken by
+  label), one row at a time, until the hidden rows hold at least
+  `MIN_GROUP_SIZE` respondents or no visible row with respondents remains. A row
+  with no respondents is never hidden and never counts toward that total.
 
-A group of zero questionnaires shows *"Ningún cuestionario coincide con los
-filtros."* for every viewer, in place of every section after the group line.
+A suppressed participation row keeps its headcounts (Registrados, Respondieron)
+and shows no NDR distribution.
+
+A group of zero questionnaires shows, for every viewer and in place of every
+section after the group line, *"Ningún cuestionario coincide con los
+filtros."* when a filter is active and *"Esta encuesta aún no tiene
+cuestionarios contestados."* when none is.
 
 The rule is enforced in the data layer: a suppressed group carries
 `suppressed=True` and no distribution, statistics or Guía I data, and a
-suppressed participation row carries `suppressed=True` and no counts, so no
-template can print a small group. Differences between two filtered views remain
-possible and are recorded as a known limitation in
+suppressed participation row carries `suppressed=True` and an empty `counts`,
+so no template can print a small group. Differences between two filtered views
+remain possible and are recorded as a known limitation in
 `nom-035-valoracion-supuestos.md`.
 
 ### In-place filtering
@@ -399,7 +412,7 @@ resultados de grupos pequeños")`, granted to Administrador by
 
 | Path | Role |
 |---|---|
-| `apps/nom035/results.py` | `assignment_options`, `select_assignment`, `results_for` and the `Results` dataclasses; `narrow`, `shows` (small-group rule), `_area_of` |
+| `apps/nom035/results.py` | `assignment_options`, `select_assignment`, `results_for` and the `Results` dataclasses; `narrow`, `shows` (small-group rule), `_hide_until_safe` (hidden-total rule for área rows), `_area_of` |
 | `apps/nom035/constants.py` | `MIN_GROUP_SIZE` |
 | `apps/nom035/scoring.py`, `services.py`, `models.py` | `guia1_event` computed, stored, declared |
 | `apps/nom035/aggregates.py` | `employee_valuation` only |

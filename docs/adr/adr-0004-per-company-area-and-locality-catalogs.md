@@ -57,8 +57,8 @@ decision in `docs/platform/nom-035-analytics.md`.
   so `Cañada` and `Canada` may coexist.
 - Renaming an área propagates to every member; identically named áreas in different
   companies can no longer merge into one dashboard bucket.
-- Grouping is by pk, which is the stable key the pending área-level valuation work
-  needs.
+- Grouping is by pk, which is the stable key the NOM-035 results page's
+  participation table and área filter group by.
 - The catalogs are ordinary child models, so a future operator-facing UI outside Django
   admin gets `inlineformset_factory` rather than needing a bespoke JSON list widget.
 - The activation picker is the **only** path that assigns an área, so a mismatched or

@@ -33,8 +33,10 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
   the dashboard card's count), `results_for(assignment, query, *,
   suppress_small_groups)` returning frozen `Results` dataclasses, `narrow` (the
   query's respondent filters in the database), `shows` (the small-group and
-  complement rule) and `_area_of` (an área counts only when it belongs to the
-  company; otherwise "Sin área"). Área grouping is by `CompanyArea` **pk**, so
+  complement rule), `_hide_until_safe` (the participation table's secondary
+  rule: when the hidden área rows hold 1–4 respondents, the smallest visible
+  rows are hidden too until they hold at least 5) and `_area_of` (an área
+  counts only when it belongs to the company; otherwise "Sin área"). Área grouping is by `CompanyArea` **pk**, so
   identically named áreas in different companies never merge. A suppressed result
   carries no numbers — keep the rule here, never in a template. Its query count
   is fixed regardless of respondents (`tests/test_results.py` caps it). See
