@@ -14,7 +14,7 @@ from django.db.models import Count, Max, Min, Q
 from django.utils import timezone
 
 from apps.accounts import demographics
-from apps.accounts.models import UserProfile
+from apps.accounts.models import CompanyArea, UserProfile
 from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
 from apps.nom035.models import GroupScore, SubmissionScore
@@ -22,6 +22,7 @@ from apps.surveys.models import SurveyAssignment
 
 NOM035_SURVEY_KEY = "nom035"
 NO_DATA = "Sin dato"
+NO_AREA = "Sin área"
 FINAL = "final"
 _PROFILE = "submission__user__profile__"
 
@@ -194,6 +195,83 @@ class Guia1:
                 "guia1-positive",
             ),
         )
+
+
+@dataclass(frozen=True)
+class ParticipationRow:
+    area_id: int | None
+    label: str
+    registered: int | None
+    responded: int
+    participation: int | None
+    counts: tuple[tuple[str, int], ...]
+    suppressed: bool
+
+    @property
+    def slices(self) -> tuple[Slice, ...]:
+        return _ndr_slices(self.counts)
+
+
+def _area_of(profile, company):
+    """The respondent's área, but only if it belongs to `company` (else "Sin área")."""
+    area = profile.area if profile is not None else None
+    if area is not None and area.company_id != company.pk:
+        return None
+    return area
+
+
+def _participation(assignment, query, scores, today, *, group_suppressed, suppress):
+    company = assignment.company
+    registered = dict(
+        narrow(
+            UserProfile.objects.filter(company=company, is_activated=True),
+            query,
+            today,
+            prefix="",
+        )
+        .values("area_id")
+        .annotate(n=Count("pk"))
+        .values_list("area_id", "n")
+    )
+    by_area = defaultdict(list)
+    for score in scores:
+        area = _area_of(_profile(score), company)
+        by_area[area.pk if area else None].append(score.final_ndr)
+
+    size = len(scores)
+
+    def row(area_id, label, registered_count):
+        ndrs = by_area.get(area_id, [])
+        visible = (
+            bool(ndrs)
+            and not group_suppressed
+            and shows(len(ndrs), size, suppress=suppress)
+        )
+        return ParticipationRow(
+            area_id=area_id,
+            label=label,
+            registered=registered_count,
+            responded=len(ndrs),
+            participation=round(len(ndrs) * 100 / registered_count)
+            if registered_count
+            else None,
+            counts=tuple((lvl, Counter(ndrs)[lvl]) for lvl in c.NDR_ORDER)
+            if visible
+            else (),
+            suppressed=bool(ndrs) and not visible,
+        )
+
+    areas = CompanyArea.objects.filter(company=company).order_by("name")
+    if query.area_ids:
+        areas = areas.filter(pk__in=query.area_ids)
+    rows = [
+        row(area.pk, area.name, registered.get(area.pk, 0))
+        for area in areas
+        if area.is_active or registered.get(area.pk) or by_area.get(area.pk)
+    ]
+    if by_area.get(None):
+        rows.append(row(None, NO_AREA, None))
+    return tuple(rows)
 
 
 def _distribution(key, label, ndrs, children=()) -> DistributionRow:
@@ -423,6 +501,15 @@ def results_for(assignment, query, *, suppress_small_groups: bool) -> Results:
     else:
         dobs = [p.date_of_birth if p else None for p in profiles]
 
+    participation = _participation(
+        assignment,
+        query,
+        scores,
+        today,
+        group_suppressed=suppressed,
+        suppress=suppress_small_groups,
+    )
+
     valuation = {}
     if size and not suppressed:
         (
@@ -448,5 +535,6 @@ def results_for(assignment, query, *, suppress_small_groups: bool) -> Results:
         suppressed=suppressed,
         sex=_sex_slices(sexes),
         age=_age_slices(dobs, today),
+        participation=participation,
         **valuation,
     )

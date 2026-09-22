@@ -352,5 +352,74 @@ def test_guia1_outcomes(scored_large):
 def test_group_rows_query_count_does_not_grow(
     scored_large, django_assert_max_num_queries
 ):
-    with django_assert_max_num_queries(3):
-        results_for(scored_large, ResultsQuery(), suppress_small_groups=True)
+    assignment = SurveyAssignment.objects.select_related("company").get(
+        pk=scored_large.pk
+    )
+    with django_assert_max_num_queries(5):
+        results_for(assignment, ResultsQuery(), suppress_small_groups=True)
+
+
+def test_participation_rows(people, make_user_with_profile):
+    # One more Ventas member who never answered.
+    make_user_with_profile(
+        email="quiet@x.mx", company=people["company"], area=people["ventas"]
+    )
+    results = results_for(
+        people["assignment"], ResultsQuery(), suppress_small_groups=False
+    )
+    rows = {r.label: r for r in results.participation}
+    assert [r.label for r in results.participation] == ["Operaciones", "Ventas"]
+    assert (
+        rows["Ventas"].registered,
+        rows["Ventas"].responded,
+        rows["Ventas"].participation,
+    ) == (3, 2, 67)
+    assert rows["Operaciones"].registered == 6
+
+
+def test_participation_area_rows_follow_the_small_group_rule(people):
+    locked = results_for(
+        people["assignment"], ResultsQuery(), suppress_small_groups=True
+    )
+    rows = {r.label: r for r in locked.participation}
+    assert rows["Ventas"].suppressed  # 2 respondents
+    assert rows["Operaciones"].suppressed  # complement of 2 within 8
+    assert rows["Ventas"].counts == ()
+
+
+def test_participation_sin_area_row_for_orphaned_respondents(people):
+    make_score(people["assignment"], None)  # deleted account
+    results = results_for(
+        people["assignment"], ResultsQuery(), suppress_small_groups=False
+    )
+    last = results.participation[-1]
+    assert (last.label, last.registered, last.responded, last.participation) == (
+        "Sin área",
+        None,
+        1,
+        None,
+    )
+
+
+def test_participation_respects_filters(people):
+    query = ResultsQuery(sex="female", sex_slug="femenino")
+    results = results_for(people["assignment"], query, suppress_small_groups=False)
+    rows = {r.label: r for r in results.participation}
+    assert (rows["Operaciones"].registered, rows["Operaciones"].responded) == (3, 3)
+
+
+def test_foreign_area_buckets_as_sin_area(
+    people, make_company, make_area, make_user_with_profile
+):
+    other = make_company(name="Otra")
+    stray = make_user_with_profile(
+        email="stray@x.mx",
+        company=people["company"],
+        area=make_area(other, name="Ajena"),
+    )
+    make_score(people["assignment"], stray)
+    results = results_for(
+        people["assignment"], ResultsQuery(), suppress_small_groups=False
+    )
+    assert "Ajena" not in [r.label for r in results.participation]
+    assert results.participation[-1].label == "Sin área"
