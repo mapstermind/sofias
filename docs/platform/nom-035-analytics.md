@@ -1,31 +1,24 @@
-# NOM-035 Analytics (Valuation Engine + Insights)
+# NOM-035 Analytics (Valuation Engine)
 
 ## Status
 
-Current — implemented in `apps/nom035`; results render in the `core` dashboards.
+Current — implemented in `apps/nom035`.
 
 ## What this does
 
 SOFIA-S turns raw NOM-035 survey answers into a **valuation**: each scored answer
 becomes a number, those numbers roll up into a **Nivel de Riesgo (NDR)** per
-Dominio, Categoría and a final overall score, and the results surface inside the
-_Insights_ panels of the company dashboard and employee-detail pages, under the
-heading **"Valoración de resultados"**, as color-coded NDR badges over a
-categoría → dominio → dimensión hierarchy on the employee card, and a
-company-wide summary plus a per-área breakdown on the company
-dashboard (see [Presentation](#presentation)).
+Dominio, Categoría and a final overall score, and the Guía I answers yield two
+stored flags — whether a severe traumatic event occurred, and whether the worker
+requires clinical valuation. This document covers that engine (`apps/nom035`):
+how answers become stored scores, and the one per-employee read built on them.
 
-The feature has two halves:
-
-1. **The valuation engine** (`apps/nom035`) — computes and stores per-submission
-   scores and NDR from `responses.Answer` rows, plus a separate Guía I
-   (traumatic-events) clinical-referral flag.
-2. **The presentation** — the "Valoración de resultados" panels, readable only by
-   roles holding `can_view_insights`. Employees never see their own results. The
-   platform never surfaces a prescriptive "necesidad de acción" verdict on an
-   individual — the official NOM-035 criteria (*Programa de intervención*,
-   *política de prevención*) are defined at the área/centro-de-trabajo level, so
-   that language appears only on the aggregate reads.
+Results are presented in two places, both readable only by roles holding
+`can_view_insights`: the company-level **Resultados** page, described in
+[`nom-035-results-dashboard.md`](./nom-035-results-dashboard.md), and the
+**"Valoración de resultados"** card on the employee-detail page, described under
+[Presentation](#presentation). Employees never see their own results. The
+platform surfaces no prescriptive "necesidad de acción" verdict anywhere.
 
 NDR levels follow the official NOM-035 tables, which define thresholds only at the
 **dominio, categoría and final** levels. Dimensión organizes items within the
@@ -66,7 +59,7 @@ seed pattern), keyed by the stable `surveys.Question.code` (`g1-1…g1-15`,
   level (`{Nulo, Bajo, Medio, Alto, Muy alto}`) at the **final, categoría, and
   dominio** levels.
 - **Action text** — the canonical "Necesidad de acción según NOM-035" string for
-  each NDR level.
+  each NDR level, transcribed with the tables; no page displays it.
 - **Guía I section codes** — the trigger question and the three section groupings
   the clinical-referral rule counts over.
 
@@ -102,22 +95,24 @@ Only **answered, visible** questions are scored; unanswered or
 3. Classifies each dominio, categoría and the final sum against the matching
    threshold band table (`classify`) to assign an NDR level.
 
-### Guía I — traumatic-events referral flag
+### Guía I — traumatic event and referral flags
 
-Guía I is **not** scored into the NDR. Its 15 boolean items produce a single
-**binary** flag, `guia1_positive`, following the official NOM-035 clinical-referral
-rule (Guías de Referencia, "Interpretación … Guía de Referencia I"):
+Guía I is **not** scored into the NDR. Its 15 boolean items produce two stored
+flags, following the official NOM-035 clinical-referral rule (Guías de
+Referencia, "Interpretación … Guía de Referencia I"):
 
-- The trigger question (`g1-1`, Sección I) must be answered "Sí" — a severe
-  traumatic event occurred; otherwise the flag is `False`.
-- Given the event, the worker is **positive** when any section threshold is met: any
-  "Sí" in Section II (`g1-2…g1-3`), **or** ≥3 "Sí" in Section III (`g1-4…g1-10`),
-  **or** ≥2 "Sí" in Section IV (`g1-11…g1-15`).
+- **`guia1_event`** — the trigger question (`g1-1`, Sección I) was answered "Sí":
+  a severe traumatic event occurred.
+- **`guia1_positive`** — given the event, the worker is **positive** when any
+  section threshold is met: any "Sí" in Section II (`g1-2…g1-3`), **or** ≥3 "Sí"
+  in Section III (`g1-4…g1-10`), **or** ≥2 "Sí" in Section IV (`g1-11…g1-15`).
+  Without the event it is `False`, so `guia1_positive` implies `guia1_event`.
 
-A positive result surfaces on the employee-detail panel as **"Usuario positivo a un
-acontecimiento traumático severo."** and indicates the worker requires clinical
-valuation. There is **no severity gradient** — the standard defines a binary
-referral outcome.
+The two flags give three outcomes — no event, an event not requiring valuation,
+and a positive referral — which the results page counts. A positive result
+surfaces on the employee-detail card as **"Usuario positivo a un acontecimiento
+traumático severo."** and indicates the worker requires clinical valuation. There
+is **no severity gradient** — the standard defines a binary referral outcome.
 
 ### When scoring runs (materialized)
 
@@ -132,73 +127,40 @@ Scores are **materialized**, not recomputed on every page load:
 - `python manage.py recompute_nom035_scores [--company <reference_code>]` backfills
   existing submissions and refreshes all scores after a configuration change.
 
-### Area grouping
+### Reads
 
-Company-level aggregation groups employees by **área** so risk can be read per
-area, not just company-wide. `UserProfile.area` (`apps/accounts`) is a
-`SET_NULL` FK to **`CompanyArea`**, a per-company catalog curated by an admin as
-an inline on the Company change page and offered to the employee as a picker
-during activation (see
-[`auth-and-onboarding.md`](./auth-and-onboarding.md) and
-[ADR-0004](../adr/adr-0004-per-company-area-and-locality-catalogs.md)).
+`apps/nom035/aggregates.py` holds one on-demand read:
 
-An área is only used as a label when it belongs to the company being aggregated;
-a submission whose respondent belongs to a *different* company buckets as "Sin
-área" rather than printing another client's catalog name on this dashboard.
+- **`employee_valuation(user, company)`** — the user's latest scored submission
+  in that company as a nested categoría→dominio→dimensión tree with scores (no
+  action text), plus the final NDR + score and the `guia1_positive` flag.
 
-Grouping is by área **pk**, not by name: `CompanyArea` carries a
-`UniqueConstraint(company, Lower("name"))`, so duplicate spellings within a
-company are impossible, and two companies that both have an "Operaciones" área
-stay distinct. A profile with no área (CSV-imported without the optional `area`
-column, or whose área was deleted) falls into a **"Sin área"** bucket so no
-scored employee is dropped from the breakdown.
-
-`UserProfile.location` (FK to `CompanyLocation`) exists alongside it but does
-**not** yet drive any aggregation.
-
-### Reads and aggregation
-
-`apps/nom035/aggregates.py` exposes two on-demand read helpers consumed by
-`apps/core` views:
-
-- **`employee_valuation(user, company)`** — returns the nested categoría→dominio→
-  dimensión tree with scores (no action text), plus the final NDR + score and the
-  `guia1_positive` flag.
-- **`company_valuation(company)`** — the company roll-up: count of scored
-  submissions, the NDR distribution, a "needing action" count (submissions whose
-  final NDR is Alto or Muy alto), the count of Guía I-positive workers, plus a
-  per-area breakdown (grouped by `UserProfile.area`) with an
-  organization-framed action line keyed to the most-severe NDR present.
-
-Company-level figures are **not** materialized — they are computed on demand from
-the stored per-submission rows (cheap and always consistent as employees complete).
+Company-level reads — distributions, statistics, participation and Guía I
+outcomes for one assignment and one filtered group — live in
+`apps/nom035/results.py` and are described in
+[`nom-035-results-dashboard.md`](./nom-035-results-dashboard.md). Neither kind of
+read is materialized: both are computed on demand from the stored per-submission
+rows (cheap and always consistent as employees complete).
 
 ### Presentation
 
-Both panels are Django templates in `apps/core`
-(`templates/core/employee_detail.html`, `templates/core/company_dashboard.html`).
+The **employee card** is the "Valoración de resultados" section of
+`templates/core/employee_detail.html`: the final NDR + score as a colored badge,
+then an indented hierarchy — Categoría (bold, score + colored NDR badge) →
+Dominio (score + NDR badge) → Dimensión (score only, muted — no NDR, per the
+scoring rule above). The Guía I message shows only when `guia1_positive` is true.
+There is no action-sentence verdict on the card (see Key decisions).
+
 NDR colors are centralized in one place —
 `apps/core/templatetags/valuation_extras.py` (`ndr_badge` for pill badges,
-`ndr_bar` for distribution-bar segments) — so no color literals are scattered
+`ndr_bar` for bar segments and legend swatches, `ndr_fill` for SVG chart marks,
+`ndr_scale` for the ordinal five-step scale) — so no color literals are scattered
 across templates: Nulo → gris, Bajo → verde, Medio → ámbar, Alto → naranja,
 Muy alto → rojo.
 
-- **Employee card** — the final NDR + score as a colored badge, then an
-  indented hierarchy: Categoría (bold, score + colored NDR badge) → Dominio
-  (score + NDR badge) → Dimensión (score only, muted — no NDR, per the
-  scoring rule above). The Guía I message shows only when `guia1_positive`
-  is true. There is no action-sentence verdict anywhere on this card (see
-  Key decisions).
-- **Company dashboard** — a company-wide summary (scored count,
-  needing-action count, Guía I count, NDR distribution — numbers only, not
-  color-coded), followed by a **per-área** section: one card per area with a
-  stacked NDR distribution bar, headcount scored, needing-action count, Guía I
-  count, and the org-framed action line for that area's most-severe NDR
-  present.
-- Progress/assignment rows elsewhere in `core` display the assignment's
-  variant as **"Guía II"** or **"Guía III"** (`SurveyAssignment.Variant`'s
-  labels), so admins can see at a glance which guía a company's employees
-  were assigned.
+Progress/assignment rows elsewhere in `core` display the assignment's variant as
+**"Guía II"** or **"Guía III"** (`SurveyAssignment.Variant`'s labels), so admins
+can see at a glance which guía a company's employees were assigned.
 
 ### Known limitation — skipped conditional blocks
 
@@ -215,12 +177,13 @@ the domain expert in
 | Path | Role |
 |---|---|
 | `apps.py` | `AppConfig` (`name="apps.nom035"`, `label="nom035"`); connects the scoring signal in `ready()` |
-| `constants.py` | Shared string constants: NDR levels and categoría/dominio group levels |
+| `constants.py` | Shared constants: NDR levels and labels, categoría/dominio/dimensión group levels, `MIN_GROUP_SIZE` |
 | `_nom035_scoring.py` | Scoring config as data (taxonomy, inverted items, thresholds, action text, Guía I sections) + accessor functions |
-| `scoring.py` | Pure functions (`likert_item_score`, `classify`, `guia1_positive`, `score_submission`) + the `ScoreResult`/`GroupResult` dataclasses |
+| `scoring.py` | Pure functions (`likert_item_score`, `classify`, `guia1_positive`, `score_submission`) + the `ScoreResult`/`GroupResult` dataclasses (`ScoreResult` carries `guia1_positive` and `guia1_event`) |
 | `services.py` | `materialize()` — transactional upsert of the result rows |
 | `signals.py` | `post_save` receiver on `responses.SurveySubmission` |
-| `aggregates.py` | On-demand `employee_valuation` / `company_valuation` helpers |
+| `aggregates.py` | On-demand `employee_valuation` (the employee card) |
+| `results.py` | Company-level results for one assignment — see [`nom-035-results-dashboard.md`](./nom-035-results-dashboard.md) |
 | `models.py` | `SubmissionScore`, `GroupScore` |
 | `admin.py` | Read-only `SubmissionScore` admin with an inline `GroupScore` |
 | `management/commands/recompute_nom035_scores.py` | Backfill / refresh command |
@@ -229,21 +192,13 @@ the domain expert in
 
 ### Integration points in `core`
 
-`CompanyDashboardView` and `EmployeeDetailView` (`apps/core/views.py`) call the
-`apps/nom035` aggregate helpers **only when the caller has `can_view_insights`**,
-and pass the result to context. The "Valoración de resultados" panels live in
-`templates/core/company_dashboard.html` and `templates/core/employee_detail.html`,
-using the NDR-color filters from `apps/core/templatetags/valuation_extras.py`
-(see [Presentation](#presentation)).
-
-### Routes
-
-**No new routes.** Results render inside the existing `core` pages:
-`CompanyDashboardView` (`/tablero-empresa/`, `/empresas/<reference_code>/`) and
-`EmployeeDetailView`. Both panels are gated on `accounts.can_view_insights`, so
-employees never see scored results. `Question.code` remains the integration key
-between the instrument and the engine — no changes to `apps/surveys` or
-`apps/responses`.
+`EmployeeDetailView` (`apps/core/views.py`) calls `employee_valuation` **only
+when the caller has `can_view_insights`** and passes the result to
+`templates/core/employee_detail.html`. The company-level results page and its
+routes are described in
+[`nom-035-results-dashboard.md`](./nom-035-results-dashboard.md).
+`Question.code` remains the integration key between the instrument and the
+engine — `apps/surveys` and `apps/responses` know nothing of scoring.
 
 ## Schema
 
@@ -257,6 +212,7 @@ Two tables in `apps/nom035`:
 | `final_score` | `IntegerField` | `Cfinal` |
 | `final_ndr` | `CharField(choices=NDR)` | Nulo / Bajo / Medio / Alto / Muy alto |
 | `guia1_positive` | `BooleanField` | Official Guía I clinical-referral outcome (binary) |
+| `guia1_event` | `BooleanField` | Guía I Sección I (`g1-1`) answered "Sí" — a severe traumatic event occurred; true whenever `guia1_positive` is |
 | `computed_at` | `DateTimeField(auto_now=True)` | Last materialization |
 
 **`GroupScore`** — per-grouping breakdown for a submission. Alongside categoría and
@@ -273,8 +229,8 @@ threshold table).
 | `ndr` | `CharField(choices=NDR)` | Group NDR |
 
 `unique_together = (submission_score, level, key)`; indexes on
-`(submission_score, level)` for the per-employee panel and `(level, ndr)` for
-company aggregation.
+`(submission_score, level)` for the per-employee card and `(level, ndr)` for
+company-level reads.
 
 ## Key decisions
 
@@ -288,38 +244,29 @@ company aggregation.
   (scoped to the NOM-035 survey), with a recompute command for backfill/refresh.
   Keeps dashboards cheap, gives stored results to aggregate over, and keeps
   `surveys`/`responses` unaware of scoring (one-way dependency).
-- **Compute company aggregates on demand** from stored rows rather than materializing
+- **Compute company-level reads on demand** from stored rows rather than materializing
   them. They change as each employee completes, so deriving them keeps results
   consistent with no invalidation logic.
-- **Guía I yields a single binary referral flag** from the official section-based
-  clinical rule, separate from the NDR. Guía I is a clinical-referral screen with a
-  defined binary outcome, not a psychosocial score; the norm publishes no severity
-  gradient.
+- **Guía I yields a binary referral flag plus a stored event flag**, separate from
+  the NDR. Guía I is a clinical-referral screen with a defined binary outcome, not
+  a psychosocial score; the norm publishes no severity gradient. The event flag is
+  stored like the referral flag so company-level reads count outcomes without
+  touching the `Answer` table.
 - **No per-dimensión NDR.** The official tables define thresholds only at
   dominio/categoría/final; dimensión is materialized score-only to support the
   per-employee panel.
-- **Action text is organization/area-framed, not individual-framed**, and is shown
-  only in aggregate reads (`company_valuation`'s per-area breakdown) — the
-  per-employee tree (`employee_valuation`) carries scores only, no action text.
-  The official NOM-035 criteria (*Programa de intervención*, *política de
-  prevención*) are defined at the área/centro-de-trabajo level, not the
-  individual, so a per-person "necesidad de acción" verdict would misrepresent
-  what the platform (and the SME operating it) is entitled to conclude about a
-  named employee.
-- **Per-company `CompanyArea` catalog, curated by an admin.** The employee
-  *picks* their área from a preloaded list, so the options must exist as data;
-  grouping by pk also gives the pending área-level valuation work a stable key.
-  See
-  [ADR-0004](../adr/adr-0004-per-company-area-and-locality-catalogs.md).
+- **No action text on the employee card.** The per-employee tree
+  (`employee_valuation`) carries scores only. The official NOM-035 criteria
+  (*Programa de intervención*, *política de prevención*) are defined at the
+  área/centro-de-trabajo level, not the individual, so a per-person "necesidad de
+  acción" verdict would misrepresent what the platform (and the SME operating it)
+  is entitled to conclude about a named employee.
 - **NDR colors centralized in one template-filter module**
   (`apps/core/templatetags/valuation_extras.py`), not literal Tailwind classes
   scattered per template, so the Nulo/Bajo/Medio/Alto/Muy alto ramp stays a
-  single source of truth for both panels.
+  single source of truth for the employee card and the results page's charts.
 - **Results visible only to `can_view_insights` roles**; employees do not see their
   own results (NOM-035 confidentiality and existing permission gating).
-- **Open SME question:** the per-area "most-severe-NDR" action rule is a working
-  assumption, not a confirmed norm criterion — see
-  [`nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md) §3.
 - **UI heading is "Valoración de resultados" but the permission codename stays
   `can_view_insights`** — avoids a permissions migration and `bootstrap_groups` churn
   for a cosmetic change.
@@ -327,29 +274,23 @@ company aggregation.
 ## Scope boundaries
 
 **In scope:** the `apps/nom035` valuation engine (categoría/dominio/dimensión,
-including dimensión score-only materialization and the
-`recompute_nom035_scores` backfill/refresh command); on-demand company
-aggregation with a per-área breakdown; the NOM-035 scoring config; the
-`UserProfile.area` FK (+ optional CSV column, admin editing) backing that
-grouping; and the "Valoración de resultados" panels —
-the nested categoría→dominio→dimensión employee breakdown with NDR badges,
-and the company-wide summary plus per-área company dashboard — gated on
-`can_view_insights`.
+including dimensión score-only materialization, the Guía I event and referral
+flags, and the `recompute_nom035_scores` backfill/refresh command); the NOM-035
+scoring config; `employee_valuation`; and the employee-detail "Valoración de
+resultados" card — the nested categoría→dominio→dimensión breakdown with NDR
+badges — gated on `can_view_insights`.
 
-**Out of scope:** interactive charts/graphs beyond the distribution bars; the
+**Out of scope:** company-level presentation — the results page, its filters,
+charts and small-group rule, in scope for
+[`nom-035-results-dashboard.md`](./nom-035-results-dashboard.md); the
 downloadable/static PDF report (Iniciativa 2); an employee-facing self-view of
-results; any operator UI for authoring scoring configuration; a
-`CompanyLocation`-based breakdown (the FK exists but drives no aggregation
-yet); a second survey instrument; and automatic generation of the Plan Bianual
-de Prevención.
+results; any operator UI for authoring scoring configuration; a second survey
+instrument; and automatic generation of the Plan Bianual de Prevención.
 
 ## Linked ADRs
 
 - [ADR-0003 — per-instrument survey-processing apps](../adr/adr-0003-per-instrument-survey-processing-apps.md)
   — the decision to build a NOM-035-specific engine in its own app rather than a
   generic configurable engine.
-- [ADR-0004 — per-company área/localidad catalogs](../adr/adr-0004-per-company-area-and-locality-catalogs.md)
-  — why the per-área breakdown groups by a curated per-company `CompanyArea`
-  catalog.
 - [ADR-0002 — flatten survey authoring model](../adr/adr-0002-flatten-survey-authoring-model.md)
   — establishes `Question.code` as the stable integration key this engine consumes.

@@ -1,0 +1,6 @@
+{% load charts %}
+<section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+  <h3 class="text-base font-semibold text-gray-900">Perfil de quienes respondieron — edad</h3>
+  {% if query.age_slugs %}<p class="mt-1 text-xs text-gray-400">Sin filtro de edad</p>{% endif %}
+  <div class="mt-2">{% column_chart results.age unit="persona" %}</div>
+</section>

@@ -222,3 +222,44 @@ def test_small_variant_known_case(nom035_small_assignment):
     # Guía II has no Entorno organizacional groups.
     assert (c.LEVEL_DOMINIO, cfg.DOM_RECONOCIMIENTO) not in groups
     assert (c.LEVEL_CATEGORIA, cfg.CAT_ENTORNO) not in groups
+
+
+def test_guia1_event_true_when_trigger_answered_yes(nom035_assignment):
+    sub = SurveySubmission.objects.create(
+        assignment=nom035_assignment, status=SurveySubmission.Status.COMPLETED
+    )
+    codes = {
+        q.code: q for q in Question.objects.filter(survey=nom035_assignment.survey)
+    }
+    # Event, but below every section threshold: an event without a referral.
+    _answer_guia1(sub, codes, event=True, yes_codes=["g1-4"])
+
+    result = score_submission(sub)
+    assert result.guia1_event is True
+    assert result.guia1_positive is False
+
+
+def test_guia1_event_false_without_trigger(nom035_assignment):
+    sub = SurveySubmission.objects.create(
+        assignment=nom035_assignment, status=SurveySubmission.Status.COMPLETED
+    )
+    codes = {
+        q.code: q for q in Question.objects.filter(survey=nom035_assignment.survey)
+    }
+    _answer_guia1(sub, codes, event=False, yes_codes=["g1-2"])
+
+    assert score_submission(sub).guia1_event is False
+
+
+def test_guia1_positive_implies_event(nom035_assignment):
+    sub = SurveySubmission.objects.create(
+        assignment=nom035_assignment, status=SurveySubmission.Status.COMPLETED
+    )
+    codes = {
+        q.code: q for q in Question.objects.filter(survey=nom035_assignment.survey)
+    }
+    _answer_guia1(sub, codes, event=True, yes_codes=["g1-2"])
+
+    result = score_submission(sub)
+    assert result.guia1_positive is True
+    assert result.guia1_event is True

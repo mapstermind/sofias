@@ -32,6 +32,9 @@ class SubmissionScore(models.Model):
     )
     # Official Guía I clinical-referral outcome (binary); see scoring.guia1_positive.
     guia1_positive = models.BooleanField("positivo en Guía I", default=False)
+    # Guía I Sección I answered "Sí": a severe traumatic event occurred. Always
+    # true when guia1_positive is; see scoring.score_submission.
+    guia1_event = models.BooleanField("acontecimiento traumático severo", default=False)
     computed_at = models.DateTimeField("fecha de cálculo", auto_now=True)
 
     class Meta:

@@ -1,0 +1,12 @@
+{% load charts %}
+<div class="grid gap-3 md:grid-cols-[minmax(0,14rem)_minmax(0,16rem)_minmax(0,1fr)] md:items-center">
+  <span class="text-sm font-medium text-gray-900">{{ row.label }}</span>
+  <dl class="grid grid-cols-5 gap-2 text-center text-xs">
+    <div><dt class="text-gray-400">n</dt><dd class="font-semibold text-gray-900">{{ row.n }}</dd></div>
+    <div><dt class="text-gray-400">Prom.</dt><dd class="font-semibold text-gray-900">{{ row.mean|default_if_none:"—" }}</dd></div>
+    <div><dt class="text-gray-400">Mediana</dt><dd class="font-semibold text-gray-900">{{ row.median|default_if_none:"—" }}</dd></div>
+    <div><dt class="text-gray-400">Mín</dt><dd class="font-semibold text-gray-900">{{ row.minimum|default_if_none:"—" }}</dd></div>
+    <div><dt class="text-gray-400">Máx</dt><dd class="font-semibold text-gray-900">{{ row.maximum|default_if_none:"—" }}</dd></div>
+  </dl>
+  <div class="min-w-0">{% if row.n %}{% range_strip row.strip_bands row.scale_max row.strip_points %}{% endif %}</div>
+</div>

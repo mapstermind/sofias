@@ -401,8 +401,9 @@ _THRESHOLDS_SMALL = {
 
 # ── "Necesidad de acción" per NDR level, framed for the ÁREA / organización ──
 # The NOM-035 action criteria are organizational (Programa de intervención, política
-# de prevención, centro de trabajo); they are surfaced only in aggregate reads, never
-# as a per-person verdict. See docs/platform/nom-035-analytics.md.
+# de prevención, centro de trabajo), never a per-person verdict. No page displays
+# them: the results page states no área or company verdict until the domain expert
+# settles how one is obtained. See docs/platform/nom-035-results-dashboard.md.
 _ACTION_TEXT = {
     c.NDR_NULO: (
         "El nivel de riesgo del área resulta despreciable, por lo que no se "

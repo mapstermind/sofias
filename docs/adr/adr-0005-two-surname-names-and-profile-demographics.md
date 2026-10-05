@@ -64,9 +64,10 @@ everywhere.
 - A roster can sort by apellido paterno, which is how a Mexican list of people
   reads, and a search can match either surname independently.
 - Every dimension a demographic breakdown needs — área, localidad, sex, date of
-  birth — hangs off one related object, so `apps/nom035` extends its existing
-  `select_related("submission__user__profile__area")` rather than straddling two
-  models for one conceptual grouping.
+  birth — hangs off one related object, so `apps/nom035/results.py` reaches every
+  dimension through one
+  `select_related("submission__user__profile__area", "submission__user__profile__location")`
+  rather than straddling two models for one conceptual grouping.
 - Operator accounts carry no demographic columns, because they carry no
   `UserProfile`. There is no class of rows for which these fields are permanently
   meaningless.

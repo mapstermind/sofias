@@ -22,6 +22,15 @@ _BAR = {
 }
 _NEUTRAL_BAR = "bg-gray-200"
 
+_FILL = {
+    c.NDR_NULO: "fill-gray-300",
+    c.NDR_BAJO: "fill-green-500",
+    c.NDR_MEDIO: "fill-amber-500",
+    c.NDR_ALTO: "fill-orange-500",
+    c.NDR_MUY_ALTO: "fill-red-500",
+}
+_NEUTRAL_FILL = "fill-gray-200"
+
 
 @register.filter
 def ndr_badge(ndr):
@@ -33,6 +42,12 @@ def ndr_badge(ndr):
 def ndr_bar(ndr):
     """Tailwind background class for an NDR distribution-bar segment."""
     return _BAR.get(ndr, _NEUTRAL_BAR)
+
+
+@register.filter
+def ndr_fill(ndr):
+    """Tailwind SVG fill class for an NDR chart mark."""
+    return _FILL.get(ndr, _NEUTRAL_FILL)
 
 
 @register.filter

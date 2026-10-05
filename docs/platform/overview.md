@@ -56,10 +56,11 @@ Three things do not live where the clean pattern would eventually put them:
 
 - **The NOM-035 instrument definition/seed** lives in `apps/core`
   (`seed_nom035_survey`, data in `_nom035_data.py`), not in `surveys` or `nom035`.
-- **Results presentation** (color-coded NDR badges over a nested
-  categoría→dominio→dimensión hierarchy, plus a per-área breakdown on the
-  company dashboard) currently renders in `apps/core` views and templates,
-  calling `nom035`'s aggregate helpers. `apps/reports` is reserved as a future,
+- **Results presentation** — the company **Resultados** page (filtered NDR
+  distributions, statistics and Guía I outcomes, drawn by instrument-agnostic SVG
+  chart components) and the employee card's color-coded NDR badges over a nested
+  categoría→dominio→dimensión hierarchy — renders in `apps/core` views and
+  templates, reading `apps/nom035/results.py` and `aggregates.py`. `apps/reports` is reserved as a future,
   dedicated reporting home but is an empty, unregistered stub today.
 - **`SurveyAssignment.Variant`'s display labels are NOM-035-specific**
   (`"Guía II"`/`"Guía III"`) despite `SurveyAssignment` living in the
@@ -76,12 +77,12 @@ assign to a Company       →  SurveyAssignment (frozen variant by headcount)
 employee takes the survey →  SurveySubmission + Answer (JSON, typed)     (apps/responses)
 submission completed      →  post_save signal materializes scores        (apps/nom035)
                              SubmissionScore + GroupScore (per dominio/categoría/dimensión)
-view results              →  dashboards + valuation panels               (apps/core)
+view results              →  results page + employee valuation card      (apps/core)
                              gated on can_view_insights
 ```
 
 Company-level figures are aggregated on demand from the stored per-submission
-scores; per-submission scores are materialized once on completion and re-buildable
+scores by `apps/nom035/results.py`; per-submission scores are materialized once on completion and re-buildable
 with `python manage.py recompute_nom035_scores`.
 
 ## Cross-cutting concerns
@@ -91,29 +92,34 @@ with `python manage.py recompute_nom035_scores`.
 - **Authorization** — custom permissions on the unmanaged `accounts.Role`, bundled
   into four groups by `python manage.py bootstrap_groups`. Views authorize on
   permission codenames (e.g. `can_view_dashboard`, `can_view_insights`).
+  `can_view_small_groups` (Administrador only) lifts the results page's
+  small-group suppression.
 - **Company isolation** — all response and valuation data traces back to a
   `SurveyAssignment` belonging to exactly one `Company`.
 - **Per-company catalogs** — `CompanyArea` and `CompanyLocation` are admin-curated
   lists unique to each company (unique by name ignoring case, Spanish vowel accents
   and whitespace runs), which the employee picks from during activation.
-- **Área grouping** — `UserProfile.area` (FK to `CompanyArea`) groups employees
-  for `nom035.company_valuation`'s per-área breakdown; a profile with no área
-  falls into a "Sin área" bucket. Grouping is by pk, so identically named áreas
-  in different companies never merge.
+- **Área grouping** — `UserProfile.area` (FK to `CompanyArea`) groups respondents
+  in the results page's participation table and área filter
+  (`apps/nom035/results.py`); a respondent with no área of the company falls into
+  a "Sin área" bucket. Grouping is by pk, so identically named áreas in different
+  companies never merge.
 - **Employee demographics** — `UserProfile.sex` and `UserProfile.date_of_birth`
   are collected at activation, and `UserProfile.age` derives completed years
   against today's date in `America/Mexico_City`, so no age is stored. They sit
   on the profile rather than on `User` because operators and admins deliberately
-  have no profile; a name, which every account has, stays on `User`. No
-  aggregate reads them yet — they are groundwork for segmenting results by age
-  range and sex. See
+  have no profile; a name, which every account has, stays on `User`. The results
+  page filters and charts respondents by sex and by age band;
+  `apps/accounts/demographics.py` holds the age bands (`AGE_BANDS`) and the age
+  arithmetic shared with `UserProfile.age`. See
   [ADR-0005](../adr/adr-0005-two-surname-names-and-profile-demographics.md).
 
 ## Where to read next
 
 - [`survey-model.md`](./survey-model.md) — the authoring base in detail.
 - [`database.md`](./database.md) — full schema, including the `nom035` result tables.
-- [`nom-035-analytics.md`](./nom-035-analytics.md) — the valuation engine and Insights panels.
+- [`nom-035-analytics.md`](./nom-035-analytics.md) — the valuation engine and the employee valuation card.
+- [`nom-035-results-dashboard.md`](./nom-035-results-dashboard.md) — the company results page.
 - [`adr/adr-0002-…`](../adr/adr-0002-flatten-survey-authoring-model.md),
   [`adr/adr-0003-…`](../adr/adr-0003-per-instrument-survey-processing-apps.md) — the
   decisions behind the shape above.
