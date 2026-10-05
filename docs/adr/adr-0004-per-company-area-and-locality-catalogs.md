@@ -108,5 +108,4 @@ decision in `docs/platform/nom-035-analytics.md`.
 - Requirement: `docs/internal/meetings/20260803.md`
 - Supersedes the free-text key decision in: `docs/platform/nom-035-analytics.md`
 - Spec: `docs/platform/auth-and-onboarding.md`, `docs/platform/database.md`
-- Open question this unblocks: `docs/platform/nom-035-valoracion-supuestos.md` §3
 - App docs: `apps/accounts/CLAUDE.md`, `apps/nom035/CLAUDE.md`

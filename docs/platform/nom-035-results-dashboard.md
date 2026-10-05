@@ -548,8 +548,7 @@ None blocking. Assumptions awaiting confirmation from the domain expert are
 tracked in [`nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md):
 the small-group threshold and its exemption, the complement rule and the
 subtraction limitation, the respondent-based demographics and "Sin dato"
-buckets, the three Guía I outcomes, and how a company- or área-level rating
-should be obtained, if at all.
+buckets, and the three Guía I outcomes.
 
 ## Linked ADRs
 
