@@ -5,7 +5,7 @@
 
 {% block header_nav %}
   <span class="text-gray-300 select-none">|</span>
-  <a href="{% url 'reports:admin_list' company.reference_code %}"
+  <a href="{% if is_admin_view %}{% url 'reports:admin_list' company.reference_code %}{% else %}{% url 'reports:exec_list' %}{% endif %}"
      class="text-sm text-gray-400 hover:text-gray-600 transition-colors">&larr; Regresa a los reportes</a>
 {% endblock %}
 
@@ -25,6 +25,7 @@
     {% else %}
       <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">Borrador</span>
     {% endif %}
+    {% if is_admin_view %}
     <div class="flex flex-wrap gap-2 sm:ml-auto">
       {% if report.status == "published" %}
         <form method="post" action="{% url 'reports:admin_unpublish' company.reference_code report.assignment.pk %}">
@@ -40,9 +41,10 @@
         </form>
       {% endif %}
     </div>
+    {% endif %}
   </div>
 
-  {% if blockers %}
+  {% if is_admin_view and blockers %}
     <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:px-6">
       <p class="font-semibold">Para publicar falta:</p>
       <ul class="mt-2 list-disc space-y-1 pl-5">

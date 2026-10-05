@@ -184,3 +184,69 @@ class AdminUnpublishView(AdminMixin, View):
             publishing.unpublish(report)
             messages.success(request, "Reporte despublicado.")
         return redirect("reports:admin_detail", reference_code, assignment_id)
+
+
+class ExecutiveMixin(LoginRequiredMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not request.user.has_perm(
+            "accounts.can_view_insights"
+        ):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def own_company(self):
+        profile = getattr(self.request.user, "profile", None)
+        return profile.company if profile is not None and profile.company_id else None
+
+    def published(self, company):
+        return get_object_or_404(
+            Report.objects.select_related("assignment__company"),
+            assignment_id=self.kwargs["assignment_id"],
+            assignment__company=company,
+            assignment__survey__key=NOM035_SURVEY_KEY,
+            status=Report.Status.PUBLISHED,
+        )
+
+
+class ExecutiveReportListView(ExecutiveMixin, View):
+    def get(self, request):
+        company = self.own_company()
+        if company is None:
+            return redirect("accounts:setup_profile")
+        published = {
+            r.assignment_id: r
+            for r in Report.objects.filter(
+                assignment__company=company, status=Report.Status.PUBLISHED
+            )
+        }
+        rows = [
+            {"option": o, "report": published[o.assignment.pk]}
+            for o in assignment_options(company)
+            if o.assignment.pk in published
+        ]
+        return render(
+            request,
+            "reports/report_list.html",
+            {"company": company, "rows": rows, "is_admin_view": False},
+        )
+
+
+class ExecutiveReportDetailView(ExecutiveMixin, View):
+    def get(self, request, assignment_id):
+        company = self.own_company()
+        if company is None:
+            return redirect("accounts:setup_profile")
+        report = self.published(company)
+        ctx = context_for(report)
+        return render(
+            request,
+            "reports/report_detail.html",
+            {
+                "company": company,
+                "report": report,
+                "ctx": ctx,
+                "sections": render_sections(ctx),
+                "blockers": [],
+                "is_admin_view": False,
+            },
+        )

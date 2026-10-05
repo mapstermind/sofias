@@ -211,6 +211,15 @@
            class="mt-3 flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-6 py-4 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:border-indigo-300 hover:text-indigo-700">
           Reporte de resultados <span aria-hidden="true">&rarr;</span>
         </a>
+      {% else %}
+        <a href="{% url 'reports:exec_list' %}"
+           class="group mt-3 flex flex-col gap-3 rounded-2xl border-2 border-indigo-100 bg-white px-6 py-5 shadow-sm transition-all hover:border-indigo-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-900">Reporte de resultados</p>
+            <p class="mt-1 text-sm text-gray-500">Consulta y descarga los reportes publicados.</p>
+          </div>
+          <span class="text-sm font-semibold text-indigo-600 group-hover:text-indigo-700">Ver reportes &rarr;</span>
+        </a>
       {% endif %}
     </section>
   {% endif %}
