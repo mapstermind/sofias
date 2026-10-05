@@ -9,6 +9,7 @@ from apps.nom035 import constants as c
 from apps.nom035.results import (
     assignment_label,
     assignment_options,
+    period_span,
     results_for,
     select_assignment,
     shows,
@@ -37,6 +38,13 @@ def test_assignment_label_forms():
         assignment_label("Guía II", date(2026, 3, 4), date(2026, 3, 4), created)
         == "Guía II · aplicada 4 mar 2026"
     )
+
+
+def test_period_span_forms():
+    assert period_span(None, None) == ""
+    assert period_span(date(2026, 3, 4), date(2026, 3, 4)) == "4 mar 2026"
+    assert period_span(date(2026, 1, 12), date(2026, 2, 28)) == "12 ene – 28 feb 2026"
+    assert period_span(date(2025, 12, 1), date(2026, 1, 5)) == "1 dic 2025 – 5 ene 2026"
 
 
 def test_assignment_options_only_nom035_newest_first(

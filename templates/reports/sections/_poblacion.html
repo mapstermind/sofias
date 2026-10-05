@@ -1,5 +1,5 @@
 <h2 class="report-h2"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h2>
 <div class="report-prose">
-  <p>Se aplicaron la {{ c.guides }} de la NOM-035-STPS-2018 mediante la plataforma, en el periodo {{ data.period_label }}.</p>
+  <p>Se aplicaron la {{ c.guides }} de la NOM-035-STPS-2018 mediante la plataforma{% if data.period_label %}, en el periodo {{ data.period_label }}{% endif %}.</p>
   <p>Colaboradores registrados y activos: <strong>{{ data.registered }}</strong>. Cuestionarios respondidos: <strong>{{ data.responded }}</strong>{% if data.participation_percent is not None %} ({{ data.participation_percent }}&nbsp;% de participación){% endif %}.</p>
 </div>

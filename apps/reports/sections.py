@@ -186,8 +186,7 @@ def _actividades(ctx):
 
 
 def _poblacion(ctx):
-    guide = "Guía II" if ctx.data.variant == "small" else "Guía III"
-    return {"guides": f"Guía I y la {guide}"}
+    return {"guides": f"Guía I y la {ctx.data.variant_label}"}
 
 
 def _criterios(ctx):

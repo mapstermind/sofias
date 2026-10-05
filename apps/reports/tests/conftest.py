@@ -1,4 +1,7 @@
+from datetime import datetime
+
 import pytest
+from django.utils import timezone
 
 from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
@@ -8,7 +11,12 @@ from apps.surveys.models import SurveyAssignment
 
 @pytest.fixture
 def scored_assignment(company, make_user_with_profile, make_area, nom035_survey):
-    """A closed Guía III assignment: 6 in Operaciones, 5 in Ventas, 1 with no área."""
+    """A closed Guía III assignment: 6 in Operaciones, 5 in Ventas, 1 with no área.
+
+    Answered between 3 Feb and 10 Mar 2026 (local dates).
+    """
+    first = timezone.make_aware(datetime(2026, 2, 3, 10))
+    last = timezone.make_aware(datetime(2026, 3, 10, 18))
     company.industry = "Manufactura"
     company.work_center = "Planta Norte"
     company.save()
@@ -24,6 +32,7 @@ def scored_assignment(company, make_user_with_profile, make_area, nom035_survey)
                 assignment,
                 user,
                 final_score=90,
+                completed_at=first,
                 final_ndr=ndr,
                 groups=[
                     (c.LEVEL_CATEGORIA, cfg.CAT_AMBIENTE, 12, ndr),
@@ -35,6 +44,7 @@ def scored_assignment(company, make_user_with_profile, make_area, nom035_survey)
         assignment,
         make_user_with_profile(email="solo@x.mx", company=company),
         final_ndr=c.NDR_NULO,
+        completed_at=last,
     )
     assignment.status = SurveyAssignment.Status.CLOSED
     assignment.save()

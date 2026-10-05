@@ -47,16 +47,21 @@ def _short(day, *, year=True) -> str:
     return f"{text} {day.year}" if year else text
 
 
+def period_span(first, last) -> str:
+    """The application span, "3 feb – 10 mar 2026"; "" when nothing was answered."""
+    if first is None:
+        return ""
+    if first == last:
+        return _short(first)
+    if first.year == last.year:
+        return f"{_short(first, year=False)} – {_short(last)}"
+    return f"{_short(first)} – {_short(last)}"
+
+
 def assignment_label(variant_label, first, last, created) -> str:
     if first is None:
         return f"{variant_label} · creada {_short(created)} · sin respuestas"
-    if first == last:
-        span = _short(first)
-    elif first.year == last.year:
-        span = f"{_short(first, year=False)} – {_short(last)}"
-    else:
-        span = f"{_short(first)} – {_short(last)}"
-    return f"{variant_label} · aplicada {span}"
+    return f"{variant_label} · aplicada {period_span(first, last)}"
 
 
 @dataclass(frozen=True)
@@ -66,7 +71,7 @@ class AssignmentOption:
     scored_count: int
 
 
-def _local_date(moment):
+def local_date(moment):
     return timezone.localtime(moment).date() if moment is not None else None
 
 
@@ -87,9 +92,9 @@ def assignment_options(company) -> list[AssignmentOption]:
             assignment=a,
             label=assignment_label(
                 a.get_variant_display(),
-                _local_date(a.first_answer),
-                _local_date(a.last_answer),
-                _local_date(a.created_at),
+                local_date(a.first_answer),
+                local_date(a.last_answer),
+                local_date(a.created_at),
             ),
             scored_count=a.scored_count,
         )

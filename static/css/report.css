@@ -295,9 +295,9 @@
 
 /* ── Risk levels ────────────────────────────────────────────────────────── */
 
-/* Same colors as valuation_extras' ndr_badge, so the badge reads alike with or
-   without Tailwind on the page; the ring is a border because WeasyPrint draws
-   no box-shadow. */
+/* The NDR badge in valuation_extras' ndr_badge colors, without Tailwind so the
+   PDF draws it too; the ring is a border because WeasyPrint draws no
+   box-shadow. */
 .report-badge {
   display: inline-block;
   border-radius: 9999px;

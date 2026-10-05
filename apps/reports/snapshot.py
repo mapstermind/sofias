@@ -7,6 +7,7 @@ renders through the same dataclasses as a live draft.
 from dataclasses import asdict, dataclass, replace
 from datetime import date
 
+from django.db.models import Max, Min
 from django.utils import timezone
 
 from apps.nom035.results import (
@@ -17,7 +18,8 @@ from apps.nom035.results import (
     ParticipationRow,
     Slice,
     StatsRow,
-    assignment_options,
+    local_date,
+    period_span,
     report_results,
 )
 
@@ -74,8 +76,8 @@ def build_report_data(assignment) -> ReportData:
     rr = report_results(assignment)
     r = rr.results
     company = assignment.company
-    label = next(
-        o.label for o in assignment_options(company) if o.assignment.pk == assignment.pk
+    answered = assignment.submissions.filter(nom035_score__isnull=False).aggregate(
+        first=Min("completed_at"), last=Max("completed_at")
     )
     return ReportData(
         company=CompanyFacts(
@@ -89,7 +91,9 @@ def build_report_data(assignment) -> ReportData:
         ),
         variant=assignment.variant,
         variant_label=assignment.get_variant_display(),
-        period_label=label,
+        period_label=period_span(
+            local_date(answered["first"]), local_date(answered["last"])
+        ),
         registered=rr.registered,
         responded=r.size,
         participation_percent=round(r.size * 100 / rr.registered)

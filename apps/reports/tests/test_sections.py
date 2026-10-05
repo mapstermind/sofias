@@ -93,6 +93,25 @@ def test_optional_blocks_render_when_filled(report):
     assert ">14<" in html  # the headcount sum
 
 
+def test_poblacion_prints_the_bare_application_span(report):
+    html = _render(report)
+    poblacion = html.split('id="sec-poblacion"')[1].split("</section>")[0]
+    assert "en el periodo 3 feb – 10 mar 2026." in poblacion
+    assert "Guía I y la Guía III" in poblacion
+    assert "Guía III ·" not in poblacion
+    assert "sin respuestas" not in poblacion
+
+
+def test_poblacion_omits_the_period_without_answer_dates(company, nom035_survey):
+    from apps.nom035.tests.factories import make_assignment, make_score
+
+    assignment = make_assignment(company, nom035_survey, variant="small")
+    make_score(assignment)
+    html = _render(Report(assignment=assignment))
+    poblacion = html.split('id="sec-poblacion"')[1].split("</section>")[0]
+    assert "periodo" not in poblacion
+
+
 def test_unsaved_report_previews(scored_assignment):
     html = _render(Report(assignment=scored_assignment))
     assert "Datos del centro de trabajo" in html
