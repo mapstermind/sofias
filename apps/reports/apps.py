@@ -2,4 +2,7 @@ from django.apps import AppConfig
 
 
 class ReportsConfig(AppConfig):
-    name = "reports"
+    name = "apps.reports"
+    label = "reports"
+    verbose_name = "Reportes"
+    default_auto_field = "django.db.models.BigAutoField"

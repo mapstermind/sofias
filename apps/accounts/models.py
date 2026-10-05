@@ -112,6 +112,8 @@ class Company(models.Model):
     )
     rfc = models.CharField("RFC", max_length=13, blank=True)
     address = models.CharField("domicilio", max_length=500, blank=True)
+    industry = models.CharField("actividad principal", max_length=255, blank=True)
+    work_center = models.CharField("centro de trabajo", max_length=255, blank=True)
     reference_code = models.CharField(
         "código de referencia",
         max_length=5,

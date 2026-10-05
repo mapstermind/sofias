@@ -47,16 +47,21 @@ def _short(day, *, year=True) -> str:
     return f"{text} {day.year}" if year else text
 
 
+def period_span(first, last) -> str:
+    """The application span, "3 feb – 10 mar 2026"; "" when nothing was answered."""
+    if first is None:
+        return ""
+    if first == last:
+        return _short(first)
+    if first.year == last.year:
+        return f"{_short(first, year=False)} – {_short(last)}"
+    return f"{_short(first)} – {_short(last)}"
+
+
 def assignment_label(variant_label, first, last, created) -> str:
     if first is None:
         return f"{variant_label} · creada {_short(created)} · sin respuestas"
-    if first == last:
-        span = _short(first)
-    elif first.year == last.year:
-        span = f"{_short(first, year=False)} – {_short(last)}"
-    else:
-        span = f"{_short(first)} – {_short(last)}"
-    return f"{variant_label} · aplicada {span}"
+    return f"{variant_label} · aplicada {period_span(first, last)}"
 
 
 @dataclass(frozen=True)
@@ -66,7 +71,7 @@ class AssignmentOption:
     scored_count: int
 
 
-def _local_date(moment):
+def local_date(moment):
     return timezone.localtime(moment).date() if moment is not None else None
 
 
@@ -87,9 +92,9 @@ def assignment_options(company) -> list[AssignmentOption]:
             assignment=a,
             label=assignment_label(
                 a.get_variant_display(),
-                _local_date(a.first_answer),
-                _local_date(a.last_answer),
-                _local_date(a.created_at),
+                local_date(a.first_answer),
+                local_date(a.last_answer),
+                local_date(a.created_at),
             ),
             scored_count=a.scored_count,
         )
@@ -406,11 +411,7 @@ def _valuation(assignment, scores):
         variant=variant,
         scale_max=total_items * 4,
     )
-    guia1 = Guia1(
-        none=sum(1 for s in scores if not s.guia1_event),
-        event=sum(1 for s in scores if s.guia1_event and not s.guia1_positive),
-        positive=sum(1 for s in scores if s.guia1_positive),
-    )
+    guia1 = _guia1(scores)
     return final_distribution, tuple(distribution), final_stats, tuple(stats), guia1
 
 
@@ -563,4 +564,157 @@ def results_for(assignment, query, *, suppress_small_groups: bool) -> Results:
         age=_age_slices(dobs, today),
         participation=participation,
         **valuation,
+    )
+
+
+NEUTRAL_BAND_LABEL = "Sin umbral oficial"
+
+
+@dataclass(frozen=True)
+class _WholeAssignment:
+    """A results query with no filters: what the report always reads."""
+
+    sex: str = ""
+    age_slugs: tuple = ()
+    area_ids: tuple = ()
+    location_ids: tuple = ()
+    is_filtered: bool = False
+
+
+WHOLE_ASSIGNMENT = _WholeAssignment()
+
+
+@dataclass(frozen=True)
+class DimensionGroup:
+    key: str
+    label: str
+    rows: tuple[StatsRow, ...]
+
+
+@dataclass(frozen=True)
+class AreaResults:
+    area_id: int | None
+    label: str
+    n: int
+    suppressed: bool
+    final: DistributionRow | None = None
+    categorias: tuple[DistributionRow, ...] = ()
+    guia1: Guia1 | None = None
+
+
+@dataclass(frozen=True)
+class ReportResults:
+    results: Results
+    registered: int
+    dimensions: tuple[DimensionGroup, ...]
+    areas: tuple[AreaResults, ...]
+
+
+def _guia1(scores) -> Guia1:
+    return Guia1(
+        none=sum(1 for s in scores if not s.guia1_event),
+        event=sum(1 for s in scores if s.guia1_event and not s.guia1_positive),
+        positive=sum(1 for s in scores if s.guia1_positive),
+    )
+
+
+def _dimensions(assignment, scores) -> tuple[DimensionGroup, ...]:
+    variant = assignment.variant
+    categorias, dominios, _items, _total = _structure(variant)
+    dim_items = Counter(
+        dim for _c, _d, dim in cfg.taxonomy_for_variant(variant).values()
+    )
+    values = defaultdict(list)
+    for key, value in GroupScore.objects.filter(
+        submission_score_id__in=[s.pk for s in scores], level=c.LEVEL_DIMENSION
+    ).values_list("key", "score"):
+        values[key].append(value)
+
+    def row(dim):
+        scale_max = dim_items[dim] * 4
+        vals = values[dim]
+        return StatsRow(
+            key=dim,
+            label=cfg.group_label(dim),
+            n=len(vals),
+            mean=round(statistics.fmean(vals), 1) if vals else None,
+            median=statistics.median(vals) if vals else None,
+            minimum=min(vals) if vals else None,
+            maximum=max(vals) if vals else None,
+            scale_max=scale_max,
+            strip_bands=((scale_max, "none", NEUTRAL_BAND_LABEL),),
+        )
+
+    return tuple(
+        DimensionGroup(
+            key=dom,
+            label=cfg.group_label(dom),
+            rows=tuple(row(d) for d in cfg.dimensions_for_dominio(dom, variant)),
+        )
+        for cat in categorias
+        for dom in dominios[cat]
+    )
+
+
+def _areas(assignment, scores, participation) -> tuple[AreaResults, ...]:
+    company = assignment.company
+    categorias, _dominios, _items, _total = _structure(assignment.variant)
+    by_area = defaultdict(list)
+    for score in scores:
+        area = _area_of(_profile(score), company)
+        by_area[area.pk if area else None].append(score)
+    cat_ndrs = defaultdict(list)  # (submission_score_id, key) -> ndr
+    for score_id, key, ndr in GroupScore.objects.filter(
+        submission_score_id__in=[s.pk for s in scores], level=c.LEVEL_CATEGORIA
+    ).values_list("submission_score_id", "key", "ndr"):
+        cat_ndrs[(score_id, key)].append(ndr)
+
+    rows = []
+    for p in participation:
+        area_scores = by_area.get(p.area_id, [])
+        if not area_scores:
+            continue
+        if p.suppressed:
+            rows.append(AreaResults(p.area_id, p.label, len(area_scores), True))
+            continue
+        ids = [s.pk for s in area_scores]
+        rows.append(
+            AreaResults(
+                area_id=p.area_id,
+                label=p.label,
+                n=len(area_scores),
+                suppressed=False,
+                final=_distribution(
+                    FINAL, "Calificación final", [s.final_ndr for s in area_scores]
+                ),
+                categorias=tuple(
+                    _distribution(
+                        cat,
+                        cfg.group_label(cat),
+                        [n for i in ids for n in cat_ndrs[(i, cat)]],
+                    )
+                    for cat in categorias
+                ),
+                guia1=_guia1(area_scores),
+            )
+        )
+    return tuple(rows)
+
+
+def report_results(assignment) -> ReportResults:
+    """Everything the report reads: the whole assignment, small groups always hidden."""
+    results = results_for(assignment, WHOLE_ASSIGNMENT, suppress_small_groups=True)
+    scores = list(
+        SubmissionScore.objects.filter(submission__assignment=assignment)
+        .select_related(f"{_PROFILE}area")
+        .order_by("pk")
+    )
+    registered = UserProfile.objects.filter(
+        company=assignment.company, is_activated=True
+    ).count()
+    return ReportResults(
+        results=results,
+        registered=registered,
+        dimensions=_dimensions(assignment, scores) if scores else (),
+        areas=_areas(assignment, scores, results.participation),
     )

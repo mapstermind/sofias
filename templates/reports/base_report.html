@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Reporte de resultados — {{ ctx.data.company.legal_name|default:ctx.data.company.name }}</title>
+  {# Relative to pdf.BASE_URL; pdf.ReportURLFetcher serves them from static files. #}
+  <link rel="stylesheet" href="static/css/output.css">
+  <link rel="stylesheet" href="static/css/report.css">
+  <link rel="stylesheet" href="static/css/report-wide.css">
+  <link rel="stylesheet" href="static/css/report-print.css">
+</head>
+<body>
+  {% if ctx.draft %}<div class="report-watermark" aria-hidden="true">BORRADOR</div>{% endif %}
+  {% block document %}{% endblock %}
+</body>
+</html>

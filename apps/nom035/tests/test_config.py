@@ -129,15 +129,15 @@ def test_inverted_items_are_known_codes():
     assert cfg.INVERTED_ITEMS <= known
 
 
-def test_action_text_is_org_framed_for_every_level():
-    for level in c.NDR_ORDER:
-        text = cfg.action_text(level)
-        assert text
-    # The Muy alto guidance must not carry individual-clinical phrasing.
-    assert "clínica" not in cfg.action_text(c.NDR_MUY_ALTO).lower()
-    assert "colaboradores que" not in cfg.action_text(c.NDR_MUY_ALTO).lower()
-    # It speaks about the área / centro de trabajo.
-    assert "área" in cfg.action_text(c.NDR_MUY_ALTO).lower()
+def test_action_text_is_the_norms_wording():
+    # Guias de Referencia.md, "Tabla - Criterios para la toma de acciones".
+    assert cfg.action_text(c.NDR_NULO) == (
+        "El riesgo resulta despreciable por lo que no se requieren medidas adicionales."
+    )
+    assert cfg.action_text(c.NDR_MEDIO).startswith(
+        "Se requiere revisar la política de prevención de riesgos psicosociales"
+    )
+    assert "área" not in " ".join(cfg.action_text(n) for n in c.NDR_ORDER)
 
 
 def test_group_label_covers_every_categoria_and_dominio():

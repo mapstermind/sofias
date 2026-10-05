@@ -1,0 +1,6 @@
+<h2 class="report-h2"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h2>
+{% if ctx.report.conclusions %}
+  <div class="report-prose">{{ ctx.report.conclusions|linebreaks }}</div>
+{% else %}
+  <p class="report-small">Sin conclusiones registradas.</p>
+{% endif %}

@@ -19,7 +19,7 @@ folder; for the reasoning behind a structural choice see the ADRs in `docs/adr/`
 | `responses` | Response storage: `SurveySubmission` + `Answer` | ✅ |
 | `nom035` | The **NOM-035 valuation engine**: answers → scores → Nivel de Riesgo (NDR) + Guía I referral flag | ✅ |
 | `core` | Home routing, company/employee dashboards, and the NOM-035 instrument seed | ✅ |
-| `reports` | Placeholder for future exports/rendered reports built on `apps/nom035` | ❌ (stub) |
+| `reports` | The **NOM-035 results report**: Administrador drafts and publishes one report per closed assignment, a frozen data snapshot, the Ejecutivo principal's read-only pages, and the letter-size PDF (WeasyPrint) | ✅ |
 
 ## Architectural shape: a shared base with per-instrument engines
 
@@ -60,8 +60,10 @@ Three things do not live where the clean pattern would eventually put them:
   distributions, statistics and Guía I outcomes, drawn by instrument-agnostic SVG
   chart components) and the employee card's color-coded NDR badges over a nested
   categoría→dominio→dimensión hierarchy — renders in `apps/core` views and
-  templates, reading `apps/nom035/results.py` and `aggregates.py`. `apps/reports` is reserved as a future,
-  dedicated reporting home but is an empty, unregistered stub today.
+  templates, reading `apps/nom035/results.py` and `aggregates.py`. The formal
+  **results report** lives in its own app, `apps/reports`, which reads
+  `report_results` from `apps/nom035/results.py` and reuses `apps/core`'s chart
+  components (see [`nom-035-report.md`](./nom-035-report.md)).
 - **`SurveyAssignment.Variant`'s display labels are NOM-035-specific**
   (`"Guía II"`/`"Guía III"`) despite `SurveyAssignment` living in the
   instrument-agnostic `apps/surveys` app. This was accepted as-is when the

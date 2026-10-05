@@ -1,0 +1,29 @@
+{% load charts %}
+<h3 class="report-h3"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h3>
+{% if not data.final_distribution or not data.guia1 %}
+  <p class="report-small">Aún no hay cuestionarios valorados en esta encuesta.</p>
+{% else %}
+  <div class="report-chart">{% stacked_bar data.guia1.slices legend=True %}</div>
+  <table class="report-table report-table--stack">
+    <thead>
+      <tr><th scope="col">Área</th><th scope="col">Sin acontecimiento</th><th scope="col">Acontecimiento sin requerir valoración</th><th scope="col">Requiere valoración clínica</th></tr>
+    </thead>
+    <tbody>
+      {% for a in data.areas %}
+        <tr>
+          <th scope="row">{{ a.label }}</th>
+          {% if a.suppressed or not a.guia1 %}
+            <td colspan="3" data-label="Resultados">{% include "reports/sections/results/_suppressed.html" %}</td>
+          {% else %}
+            <td data-label="Sin acontecimiento" class="report-cell-num">{{ a.guia1.none }}</td>
+            <td data-label="Acontecimiento sin requerir valoración" class="report-cell-num">{{ a.guia1.event }}</td>
+            <td data-label="Requiere valoración clínica" class="report-cell-num">{{ a.guia1.positive }}</td>
+          {% endif %}
+        </tr>
+      {% empty %}
+        <tr><td colspan="4">Esta empresa no tiene áreas registradas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="report-small">n = {{ data.responded }} cuestionario{{ data.responded|pluralize }} valorado{{ data.responded|pluralize }}.</p>
+{% endif %}

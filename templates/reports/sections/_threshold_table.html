@@ -1,0 +1,17 @@
+{# Thresholds: a row per key (`rows` of (name, bands)), a column per NDR level. #}
+<table class="report-table report-table--stack">
+  <thead>
+    <tr>
+      <th scope="col">{{ first }}</th>
+      {% for level, label in levels %}<th scope="col" class="report-level--{{ level }}">{{ label }}</th>{% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for name, bands in rows %}
+      <tr>
+        <th scope="row">{{ name }}</th>
+        {% for level, band, label in bands %}<td data-label="{{ label }}" class="report-cell-num">{{ band }}</td>{% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

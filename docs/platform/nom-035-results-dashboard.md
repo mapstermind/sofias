@@ -49,8 +49,9 @@ downloadable report in mind (`docs/internal/meetings/20260803.md`).
 
 **Out of scope:**
 
-- The downloadable/PDF report itself (the components are built to be reused by
-  it).
+- The results report and its PDF — a feature of its own,
+  [`nom-035-report.md`](./nom-035-report.md), which reuses this page's chart
+  components.
 - Operator-authored names for survey rounds; rounds are labelled from their data.
 - Comparing two assignments side by side, or trends across assignments.
 - Statistics or charts at the dimensión level.

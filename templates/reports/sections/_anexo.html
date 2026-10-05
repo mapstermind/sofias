@@ -1,0 +1,57 @@
+<h2 class="report-h2"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h2>
+
+<h3 class="report-h3">Glosario</h3>
+<dl class="report-glossary">
+  {% for term, definition in c.glossary %}
+    <dt class="report-term">{{ term }}</dt>
+    <dd class="report-prose">{{ definition|linebreaks }}</dd>
+  {% endfor %}
+</dl>
+
+<h3 class="report-h3">Ley Federal del Trabajo</h3>
+{% for heading, body in c.lft %}
+  <h4 class="report-h4">{{ heading }}</h4>
+  <div class="report-prose">{{ body|linebreaks }}</div>
+{% endfor %}
+
+<h3 class="report-h3">Método utilizado</h3>
+<p class="report-prose">Clasificación de los ítems de la {{ data.variant_label }}, sentido de su calificación y rangos para determinar el nivel de riesgo, conforme a la NOM-035-STPS-2018.</p>
+
+<h4 class="report-h4">Categorías, dominios, dimensiones e ítems</h4>
+<table class="report-table report-table--stack">
+  <thead><tr><th scope="col">Categoría</th><th scope="col">Dominio</th><th scope="col">Dimensión</th><th scope="col">Ítems</th></tr></thead>
+  <tbody>
+    {% for row in c.method.taxonomy %}
+      <tr>
+        <td data-label="Categoría">{{ row.categoria }}</td>
+        <td data-label="Dominio">{{ row.dominio }}</td>
+        <td data-label="Dimensión">{{ row.dimension }}</td>
+        <td data-label="Ítems" class="report-cell-num">{{ row.items }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h4 class="report-h4">Calificación de las opciones de respuesta</h4>
+<table class="report-table report-table--stack">
+  <thead><tr><th scope="col">Ítems</th><th scope="col">Siempre</th><th scope="col">Casi siempre</th><th scope="col">Algunas veces</th><th scope="col">Casi nunca</th><th scope="col">Nunca</th></tr></thead>
+  <tbody>
+    <tr>
+      <td data-label="Ítems">{{ c.method.direct }}</td>
+      <td data-label="Siempre" class="report-cell-num">0</td><td data-label="Casi siempre" class="report-cell-num">1</td><td data-label="Algunas veces" class="report-cell-num">2</td><td data-label="Casi nunca" class="report-cell-num">3</td><td data-label="Nunca" class="report-cell-num">4</td>
+    </tr>
+    <tr>
+      <td data-label="Ítems">{{ c.method.inverted }}</td>
+      <td data-label="Siempre" class="report-cell-num">4</td><td data-label="Casi siempre" class="report-cell-num">3</td><td data-label="Algunas veces" class="report-cell-num">2</td><td data-label="Casi nunca" class="report-cell-num">1</td><td data-label="Nunca" class="report-cell-num">0</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 class="report-h4">Calificación final del cuestionario</h4>
+{% include "reports/sections/_threshold_table.html" with first="Calificación" rows=c.final_rows levels=c.method.levels %}
+
+<h4 class="report-h4">Calificación por categoría</h4>
+{% include "reports/sections/_threshold_table.html" with first="Categoría" rows=c.method.categorias levels=c.method.levels %}
+
+<h4 class="report-h4">Calificación por dominio</h4>
+{% include "reports/sections/_threshold_table.html" with first="Dominio" rows=c.method.dominios levels=c.method.levels %}

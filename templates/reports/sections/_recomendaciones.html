@@ -1,0 +1,22 @@
+<h2 class="report-h2"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h2>
+{% regroup c.recommendations by categoria_label as by_categoria %}
+{% for categoria in by_categoria %}
+  <h3 class="report-h3">{{ categoria.grouper }}</h3>
+  {% regroup categoria.list by dominio_label as by_dominio %}
+  {% for dominio in by_dominio %}
+    <h4 class="report-h4">{{ dominio.grouper }}</h4>
+    {% for r in dominio.list %}
+      <div class="report-criterion report-criterion--{{ r.level }}">
+        <p class="report-figure">{% include "reports/_badge.html" with level=r.level label=r.level_label %} {{ r.share }} en {{ r.level_label }}</p>
+        <p class="report-prose">{{ r.text }}</p>
+      </div>
+    {% endfor %}
+    <p class="report-small">Ver la sección de resultados por dominio.</p>
+  {% endfor %}
+{% empty %}
+  <p class="report-prose">Ningún colaborador alcanzó un nivel de riesgo medio, alto o muy alto en ningún dominio.</p>
+{% endfor %}
+{% if ctx.report.additional_recommendations %}
+  <h3 class="report-h3">Recomendaciones adicionales</h3>
+  <div class="report-prose">{{ ctx.report.additional_recommendations|linebreaks }}</div>
+{% endif %}

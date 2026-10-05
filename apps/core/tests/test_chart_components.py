@@ -98,3 +98,21 @@ def test_level_columns_names_on_phone_only_and_size():
 def test_unknown_color_key_falls_back_to_gray():
     html = _render("{% stacked_bar items %}", items=[Item("a", "A", 1, "mystery")])
     assert "fill-gray-300" in html
+
+
+def test_marks_carry_their_color_as_a_fill_attribute():
+    """Renderers that skip CSS (WeasyPrint's SVG) still paint each mark."""
+    html = _render(
+        "{% stacked_bar items %}{% column_chart ages %}",
+        items=[Item("alto", "Alto", 3, "ndr-alto"), Item("x", "X", 1, "sex-female")],
+        ages=[Item("15-19", "15–19", 2, "age")],
+    )
+    assert 'class="fill-orange-500 stroke-white" fill="#F97316"' in html
+    assert 'fill="#7C3AED"' in html
+    assert 'fill="#6366F1"' in html
+
+
+def test_every_color_key_has_a_hex():
+    from apps.core.templatetags.charts import _COLORS, _HEX
+
+    assert _HEX.keys() == _COLORS.keys()

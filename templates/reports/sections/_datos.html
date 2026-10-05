@@ -1,0 +1,10 @@
+<h2 class="report-h2"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h2>
+<table class="report-table report-table--facts">
+  <tbody>
+    <tr><th scope="row">Razón social</th><td>{{ data.company.legal_name|default:"—" }}</td></tr>
+    <tr><th scope="row">Domicilio</th><td>{{ data.company.address|default:"—" }}</td></tr>
+    <tr><th scope="row">RFC</th><td>{{ data.company.rfc|default:"—" }}</td></tr>
+    <tr><th scope="row">Centro de trabajo</th><td>{{ data.company.work_center|default:"—" }}</td></tr>
+    <tr><th scope="row">Actividad principal</th><td>{{ data.company.industry|default:"—" }}</td></tr>
+  </tbody>
+</table>

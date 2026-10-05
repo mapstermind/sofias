@@ -6,71 +6,18 @@ from django.utils import timezone
 from apps.core.results_query import ResultsQuery
 from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
-from apps.nom035.models import GroupScore, SubmissionScore
 from apps.nom035.results import (
     assignment_label,
     assignment_options,
+    period_span,
     results_for,
     select_assignment,
     shows,
 )
-from apps.responses.models import SurveySubmission
-from apps.surveys.models import Survey, SurveyAssignment
+from apps.nom035.tests.factories import make_assignment, make_score
+from apps.surveys.models import SurveyAssignment
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def nom035_survey(db):
-    return Survey.objects.create(
-        key="nom035", title="NOM-035", status=Survey.Status.PUBLISHED
-    )
-
-
-def make_assignment(company, survey, variant="large"):
-    return SurveyAssignment.objects.create(
-        company=company,
-        survey=survey,
-        variant=variant,
-        status=SurveyAssignment.Status.ACTIVE,
-    )
-
-
-def make_score(
-    assignment,
-    user=None,
-    *,
-    final_score=10,
-    final_ndr=c.NDR_BAJO,
-    groups=(),
-    guia1_event=False,
-    guia1_positive=False,
-    completed_at=None,
-):
-    """A scored submission without running the engine.
-
-    Created IN_PROGRESS so the completion signal does not overwrite the
-    explicit score; `completed_at` is set directly for label tests.
-    `groups` is an iterable of (level, key, score, ndr).
-    """
-    sub = SurveySubmission.objects.create(
-        assignment=assignment,
-        user=user,
-        status=SurveySubmission.Status.IN_PROGRESS,
-        completed_at=completed_at,
-    )
-    score = SubmissionScore.objects.create(
-        submission=sub,
-        final_score=final_score,
-        final_ndr=final_ndr,
-        guia1_event=guia1_event,
-        guia1_positive=guia1_positive,
-    )
-    GroupScore.objects.bulk_create(
-        GroupScore(submission_score=score, level=level, key=key, score=value, ndr=ndr)
-        for level, key, value, ndr in groups
-    )
-    return score
 
 
 def test_assignment_label_forms():
@@ -91,6 +38,13 @@ def test_assignment_label_forms():
         assignment_label("Guía II", date(2026, 3, 4), date(2026, 3, 4), created)
         == "Guía II · aplicada 4 mar 2026"
     )
+
+
+def test_period_span_forms():
+    assert period_span(None, None) == ""
+    assert period_span(date(2026, 3, 4), date(2026, 3, 4)) == "4 mar 2026"
+    assert period_span(date(2026, 1, 12), date(2026, 2, 28)) == "12 ene – 28 feb 2026"
+    assert period_span(date(2025, 12, 1), date(2026, 1, 5)) == "1 dic 2025 – 5 ene 2026"
 
 
 def test_assignment_options_only_nom035_newest_first(

@@ -1,0 +1,127 @@
+/* The report's paged media: letter pages for WeasyPrint (apps/reports/pdf.py).
+   Loaded after output.css and report.css, by templates/reports/base_report.html
+   only. */
+
+@page {
+  size: letter;
+  margin: 2.2cm 2cm 2cm;
+
+  @top-center {
+    content: string(company);
+    font: 9pt "Source Sans 3";
+    color: #4338CA;
+  }
+
+  @bottom-right {
+    content: "Página " counter(page) " de " counter(pages);
+    font: 9pt "Source Sans 3";
+    color: #4B5563;
+  }
+}
+
+@page :first {
+  @top-center { content: none; }
+  @bottom-right { content: none; }
+}
+
+body {
+  margin: 0;
+  background: #ffffff;
+}
+
+.report-cover-company {
+  string-set: company content();
+}
+
+.report-watermark {
+  position: fixed;
+  top: 40%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  transform: rotate(-30deg);
+  font: 700 96pt "Source Sans 3";
+  color: rgba(239, 68, 68, 0.12);
+  z-index: 10;
+}
+
+.report-sheet {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Page breaks ────────────────────────────────────────────────────────── */
+
+/* The cover fills the first page with its foot at the bottom; absolute
+   rather than the screen's flex `margin-top: auto`, which WeasyPrint does not
+   push down. */
+.report-cover {
+  position: relative;
+  height: 22cm;
+  padding: 0;
+}
+
+.report-cover-foot {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.report-section--portada {
+  break-after: page;
+  margin: 0;
+}
+
+.report-section--resultados,
+.report-section--anexo {
+  break-before: page;
+}
+
+.report-finding {
+  break-after: avoid;
+}
+
+.report-finding,
+.report-chart,
+.report-group,
+.report-stats,
+.report-criterion,
+.report-table tr {
+  break-inside: avoid;
+}
+
+.report-table thead {
+  display: table-header-group;
+}
+
+/* ── Contents with page numbers ─────────────────────────────────────────── */
+
+.report-toc-link {
+  display: block;
+}
+
+.report-toc-page {
+  display: none;
+}
+
+.report-toc-link::after {
+  content: leader(". ") target-counter(attr(href), page);
+  color: #4338CA;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Range-strip tick labels ────────────────────────────────────────────── */
+
+/* The strip centres or end-anchors its tick labels with Tailwind's
+   `-translate-x-*` classes, which set the `translate` property WeasyPrint
+   ignores; `transform` gives the same shift. A start-anchored label carries
+   neither class and stays put. */
+.report-sheet .-translate-x-1\/2 {
+  transform: translateX(-50%);
+}
+
+.report-sheet .-translate-x-full {
+  transform: translateX(-100%);
+}

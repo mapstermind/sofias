@@ -1,0 +1,11 @@
+{% load charts %}
+<h3 class="report-h3"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h3>
+{% if not data.final_distribution %}
+  <p class="report-small">Aún no hay cuestionarios valorados en esta encuesta.</p>
+{% else %}
+  <h4 class="report-h4">Sexo</h4>
+  <div class="report-chart">{% stacked_bar data.sex unit="persona" legend=True %}</div>
+  <h4 class="report-h4">Edad</h4>
+  <div class="report-chart">{% column_chart data.age unit="persona" %}</div>
+  <p class="report-small">n = {{ data.responded }} cuestionario{{ data.responded|pluralize }} valorado{{ data.responded|pluralize }}.</p>
+{% endif %}

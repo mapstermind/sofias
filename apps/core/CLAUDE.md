@@ -58,8 +58,14 @@ The `charts` tag library (`{% load charts %}`) provides the inclusion tags
 on a 0–100 % scale, each value printed beneath) and `range_strip`, rendering
 `templates/components/charts/*.html`, and is the chart palette: it maps each
 color key to spelled-out `fill-*`/`bg-*` classes (NDR keys through
-`valuation_extras`). A new color key goes in `_COLORS` there; Tailwind scans
-`apps/**/templatetags/*.py`, but run `npm run build:css` after adding one.
+`valuation_extras`). Every mark also carries its color as a hex `fill`
+presentation attribute from `_HEX`, and the chart `<text>` elements carry
+`fill`, `font-size` and `font-family` attributes: WeasyPrint (the report PDF,
+`apps/reports/pdf.py`) ignores the Tailwind `fill-*` classes, while on screen the
+class wins over the attribute. A new color key therefore goes in **both**
+`_COLORS` and `_HEX` (`test_every_color_key_has_a_hex` checks they match);
+Tailwind scans `apps/**/templatetags/*.py`, but run `npm run build:css` after
+adding one.
 Each SVG is one `role="img"` with an `aria-label`; its marks are never
 focusable and carry no tooltip or SVG `<title>` — every value is printed as text
 instead, so nothing interactive ends up inside a `<summary>`. SVG coordinates

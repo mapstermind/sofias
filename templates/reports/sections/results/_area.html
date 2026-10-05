@@ -1,0 +1,35 @@
+{% load charts %}
+<h3 class="report-h3"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h3>
+{% if not data.final_distribution %}
+  <p class="report-small">Aún no hay cuestionarios valorados en esta encuesta.</p>
+{% else %}
+  <table class="report-table report-table--stack">
+    <thead>
+      <tr><th scope="col">Área</th><th scope="col">n</th><th scope="col">Calificación final</th></tr>
+    </thead>
+    <tbody>
+      {% for a in data.areas %}
+        <tr>
+          <th scope="row">{{ a.label }}</th>
+          <td data-label="n" class="report-cell-num">{{ a.n }}</td>
+          <td data-label="Calificación final" class="report-cell-chart">
+            {% if a.suppressed %}{% include "reports/sections/results/_suppressed.html" %}{% elif a.final %}{% stacked_bar a.final.slices %}{% else %}—{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="3">Esta empresa no tiene áreas registradas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% for a in data.areas %}{% if not a.suppressed and a.categorias %}
+    <h4 class="report-h4">{{ a.label }}</h4>
+    {% for cat in a.categorias %}
+      <div class="report-group report-group--nested">
+        <p class="report-group-label">{{ cat.label }}</p>
+        <div class="report-chart">{% level_columns cat.slices size="sm" %}</div>
+      </div>
+    {% endfor %}
+  {% endif %}{% endfor %}
+  {% include "reports/sections/results/_legend.html" with legend=c.legend %}
+  <p class="report-small">Un área con menos de cinco cuestionarios, o cuya distribución permitiría deducir por diferencia la de otras personas, no muestra sus resultados.</p>
+{% endif %}

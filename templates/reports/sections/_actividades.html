@@ -1,0 +1,19 @@
+<h2 class="report-h2"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h2>
+{% if ctx.report.activities_summary %}
+  <div class="report-prose">{{ ctx.report.activities_summary|linebreaks }}</div>
+{% else %}
+  <p class="report-small">Sin actividades registradas.</p>
+{% endif %}
+{% if c.headcounts %}
+  <h3 class="report-h3">Número de trabajadores</h3>
+  <p class="report-small">Cifras reportadas por la empresa, por modalidad de trabajo.</p>
+  <table class="report-table report-table--compact">
+    <thead><tr><th scope="col">Modalidad</th><th scope="col" class="report-cell-num">Trabajadores</th></tr></thead>
+    <tbody>
+      {% for label, value in c.headcounts %}
+        <tr><th scope="row">{{ label }}</th><td class="report-cell-num">{{ value }}</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot><tr><th scope="row">Total</th><td class="report-cell-num">{{ c.headcount_total }}</td></tr></tfoot>
+  </table>
+{% endif %}

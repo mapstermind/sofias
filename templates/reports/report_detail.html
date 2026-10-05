@@ -1,0 +1,63 @@
+{% extends "base_app.html" %}
+{% load static %}
+
+{% block title %}Reporte | {{ company.name }} | SOFIA-S{% endblock %}
+
+{% block header_nav %}
+  <span class="text-gray-300 select-none">|</span>
+  <a href="{% if is_admin_view %}{% url 'reports:admin_list' company.reference_code %}{% else %}{% url 'reports:exec_list' %}{% endif %}"
+     class="text-sm text-gray-400 hover:text-gray-600 transition-colors">&larr; Regresa a los reportes</a>
+{% endblock %}
+
+{% block content %}
+  <link rel="stylesheet" href="{% static 'css/report.css' %}">
+  <link rel="stylesheet" href="{% static 'css/report-wide.css' %}" media="print, (min-width: 768px)">
+
+  <div class="mb-5">
+    <h1 class="text-2xl font-bold text-gray-900">Reporte de resultados</h1>
+    <p class="mt-1 text-sm text-gray-500">{{ company.name }}</p>
+  </div>
+
+  {% include "reports/_messages.html" %}
+
+  <div class="sticky top-0 z-10 -mx-4 mb-5 flex flex-wrap items-center gap-2 border-b border-gray-200 bg-gray-100 px-4 py-3">
+    {% if report.status == "published" %}
+      <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Publicado el {{ report.published_at|date:"j \d\e F \d\e Y" }}</span>
+    {% else %}
+      <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">Borrador</span>
+    {% endif %}
+    <div class="flex flex-wrap gap-2 sm:ml-auto">
+      <a href="{% if is_admin_view %}{% url 'reports:admin_pdf' company.reference_code report.assignment.pk %}{% else %}{% url 'reports:exec_pdf' report.assignment.pk %}{% endif %}"
+         class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Descargar PDF</a>
+      {% if is_admin_view %}
+      {% if report.status == "published" %}
+        <form method="post" action="{% url 'reports:admin_unpublish' company.reference_code report.assignment.pk %}"
+              onsubmit="return confirm('¿Despublicar el reporte? El contenido congelado se descartará y la empresa dejará de verlo hasta que se publique de nuevo.')">
+          {% csrf_token %}
+          <button type="submit" class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Despublicar</button>
+        </form>
+      {% else %}
+        <a href="{% url 'reports:admin_edit' company.reference_code report.assignment.pk %}"
+           class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Editar</a>
+        <form method="post" action="{% url 'reports:admin_publish' company.reference_code report.assignment.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Publicar</button>
+        </form>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  {% if is_admin_view and blockers %}
+    <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:px-6">
+      <p class="font-semibold">Para publicar falta:</p>
+      <ul class="mt-2 list-disc space-y-1 pl-5">
+        {% for blocker in blockers %}<li>{{ blocker }}</li>{% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <article class="report-sheet">
+    {% include "reports/_document.html" %}
+  </article>
+{% endblock %}

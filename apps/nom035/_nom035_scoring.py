@@ -399,36 +399,16 @@ _THRESHOLDS_SMALL = {
     (c.LEVEL_DOMINIO, DOM_VIOLENCIA): _bands(7, 10, 13, 16),
 }
 
-# ── "Necesidad de acción" per NDR level, framed for the ÁREA / organización ──
-# The NOM-035 action criteria are organizational (Programa de intervención, política
-# de prevención, centro de trabajo), never a per-person verdict. No page displays
-# them: the results page states no área or company verdict until the domain expert
-# settles how one is obtained. See docs/platform/nom-035-results-dashboard.md.
+# ── "Necesidad de acción" per NDR level ─────────────────────────────────────
+# Verbatim from Guias de Referencia.md, "Tabla - Criterios para la toma de
+# acciones" (identical in Guía II and Guía III). The report prints the row of
+# every level at least one worker reached; see docs/platform/nom-035-report.md.
 _ACTION_TEXT = {
-    c.NDR_NULO: (
-        "El nivel de riesgo del área resulta despreciable, por lo que no se "
-        "requieren medidas adicionales."
-    ),
-    c.NDR_BAJO: (
-        "Es necesaria una mayor difusión, en el área, de la política de prevención "
-        "de riesgos psicosociales y de los programas para la prevención de los "
-        "factores de riesgo psicosocial."
-    ),
-    c.NDR_MEDIO: (
-        "Se requiere revisar la política de prevención de riesgos psicosociales y "
-        "reforzar su aplicación y difusión en el área, mediante un Programa de "
-        "intervención."
-    ),
-    c.NDR_ALTO: (
-        "El área requiere un análisis de cada categoría y dominio para determinar "
-        "las acciones de intervención apropiadas, a través de un Programa de "
-        "intervención."
-    ),
-    c.NDR_MUY_ALTO: (
-        "El área presenta un nivel de riesgo muy alto: se requiere el análisis de "
-        "cada categoría y dominio para establecer acciones de intervención a nivel "
-        "del área o centro de trabajo, mediante un Programa de intervención."
-    ),
+    c.NDR_NULO: "El riesgo resulta despreciable por lo que no se requieren medidas adicionales.",
+    c.NDR_BAJO: "Es necesario una mayor difusión de la política de prevención de riesgos psicosociales y programas para: la prevención de los factores de riesgo psicosocial, la promoción de un entorno organizacional favorable y la prevención de la violencia laboral.",
+    c.NDR_MEDIO: "Se requiere revisar la política de prevención de riesgos psicosociales y programas para la prevención de los factores de riesgo psicosocial, la promoción de un entorno organizacional favorable y la prevención de la violencia laboral, así como reforzar su aplicación y difusión, mediante un Programa de intervención.",
+    c.NDR_ALTO: "Se requiere realizar un análisis de cada categoría y dominio, de manera que se puedan determinar las acciones de intervención apropiadas a través de un Programa de intervención, que podrá incluir una evaluación específica y deberá incluir una campaña de sensibilización, revisar la política de prevención de riesgos psicosociales y programas para la prevención de los factores de riesgo psicosocial, la promoción de un entorno organizacional favorable y la prevención de la violencia laboral, así como reforzar su aplicación y difusión.",
+    c.NDR_MUY_ALTO: "Se requiere realizar el análisis de cada categoría y dominio para establecer las acciones de intervención apropiadas, mediante un Programa de intervención que deberá incluir evaluaciones específicas, y contemplar campañas de sensibilización, revisar la política de prevención de riesgos psicosociales y programas para la prevención de los factores de riesgo psicosocial, la promoción de un entorno organizacional favorable y la prevención de la violencia laboral, así como reforzar su aplicación y difusión.",
 }
 
 

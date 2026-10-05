@@ -5,6 +5,11 @@ pair of Tailwind classes here (an SVG fill, and a background for legend
 swatches). NDR entries come from valuation_extras so the risk ramp has one
 source. Classes are spelled out in full so Tailwind's scan of templatetags/
 compiles them.
+
+Each color key also has a hex, emitted as the mark's SVG `fill` attribute. On
+screen the class wins (CSS beats presentation attributes); WeasyPrint draws
+inline SVG without the page's stylesheets, so the PDF report paints from the
+attribute.
 """
 
 from dataclasses import asdict
@@ -29,6 +34,22 @@ _COLORS = {
 }
 _FALLBACK = ("fill-gray-300", "bg-gray-300")
 
+_HEX = {
+    "ndr-nulo": "#D1D5DB",
+    "ndr-bajo": "#22C55E",
+    "ndr-medio": "#F59E0B",
+    "ndr-alto": "#F97316",
+    "ndr-muy_alto": "#EF4444",
+    "sex-female": "#7C3AED",
+    "sex-male": "#0284C7",
+    "age": "#6366F1",
+    "none": "#D1D5DB",
+    "guia1-none": "#D1D5DB",
+    "guia1-event": "#F59E0B",
+    "guia1-positive": "#EF4444",
+}
+_FALLBACK_HEX = "#D1D5DB"
+
 UNITS = {
     "cuestionario": ("cuestionario", "cuestionarios"),
     "persona": ("persona", "personas"),
@@ -37,7 +58,8 @@ UNITS = {
 
 def _paint(mark) -> dict:
     fill, swatch = _COLORS.get(mark.color, _FALLBACK)
-    return {**asdict(mark), "fill": fill, "swatch": swatch}
+    hex_ = _HEX.get(mark.color, _FALLBACK_HEX)
+    return {**asdict(mark), "fill": fill, "swatch": swatch, "hex": hex_}
 
 
 @register.inclusion_tag("components/charts/stacked_bar.html")
