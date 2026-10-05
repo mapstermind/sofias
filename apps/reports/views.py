@@ -3,6 +3,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
@@ -186,6 +187,21 @@ class AdminUnpublishView(AdminMixin, View):
         return redirect("reports:admin_detail", reference_code, assignment_id)
 
 
+def _pdf_response(report):
+    from apps.reports import pdf  # WeasyPrint loads only when a PDF is asked for
+
+    response = HttpResponse(
+        pdf.render_report_pdf(report), content_type="application/pdf"
+    )
+    response["Content-Disposition"] = f'attachment; filename="{pdf.filename(report)}"'
+    return response
+
+
+class AdminReportPdfView(AdminMixin, View):
+    def get(self, request, reference_code, assignment_id):
+        return _pdf_response(self.report(self.assignment()))
+
+
 class ExecutiveMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and not request.user.has_perm(
@@ -250,3 +266,11 @@ class ExecutiveReportDetailView(ExecutiveMixin, View):
                 "is_admin_view": False,
             },
         )
+
+
+class ExecutiveReportPdfView(ExecutiveMixin, View):
+    def get(self, request, assignment_id):
+        company = self.own_company()
+        if company is None:
+            return redirect("accounts:setup_profile")
+        return _pdf_response(self.published(company))

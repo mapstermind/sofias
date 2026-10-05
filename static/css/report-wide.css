@@ -1,0 +1,76 @@
+/* The NOM-035 results report, wide layout: report.css's phone-first rules
+   widened for wider screens and for the PDF page.
+
+   The screen links this file with media="print, (min-width: 768px)"; the PDF
+   (templates/reports/base_report.html) links it unconditionally, because
+   WeasyPrint matches no width media feature and rejects a media list that
+   contains one. */
+
+.report-sheet {
+  padding: 3rem;
+}
+
+.report-people {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Flex, not grid: WeasyPrint's grid layout collapses these tracks. */
+.report-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.report-stats-label {
+  flex: 0 1 14rem;
+  min-width: 0;
+}
+
+.report-stats-figures {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.report-stats-figures > div {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.report-stats-strip {
+  flex: 0 0 100%;
+}
+
+.report-cell-chart {
+  width: 40%;
+}
+
+.report-table--stack thead {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  display: table-header-group;
+}
+
+.report-table--stack tr {
+  display: table-row;
+  padding: 0;
+  border-bottom: 0;
+}
+
+.report-table--stack th,
+.report-table--stack td {
+  display: table-cell;
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.report-table--stack thead th {
+  border-bottom: 1px solid #111827;
+}
+
+.report-table--stack td::before {
+  content: none;
+}

@@ -1,11 +1,11 @@
 {% load l10n %}{% localize off %}
 <figure class="m-0 w-full min-w-0">
   <svg class="block w-full overflow-visible {% if size == 'lg' %}h-24{% elif size == 'sm' %}h-8{% else %}h-10{% endif %}" role="img" aria-label="{{ aria_label }}">
-    <line x1="0" x2="100%" y1="50%" y2="50%" class="stroke-gray-200" stroke-width="1" stroke-dasharray="2 3"></line>
+    <line x1="0" x2="100%" y1="50%" y2="50%" class="stroke-gray-200" stroke="#E5E7EB" stroke-width="1" stroke-dasharray="2 3"></line>
     {% for col in cols %}
-      <rect x="{{ col.x }}%" y="100%" width="{{ col.width }}%" height="1" class="fill-gray-300"></rect>
+      <rect x="{{ col.x }}%" y="100%" width="{{ col.width }}%" height="1" class="fill-gray-300" fill="#D1D5DB"></rect>
       {% if col.value %}
-        <rect x="{{ col.x }}%" y="{{ col.y }}%" width="{{ col.width }}%" height="{{ col.height }}%" rx="2" class="{{ col.fill }}"></rect>
+        <rect x="{{ col.x }}%" y="{{ col.y }}%" width="{{ col.width }}%" height="{{ col.height }}%" rx="2" class="{{ col.fill }}" fill="{{ col.hex }}"></rect>
       {% endif %}
     {% endfor %}
   </svg>

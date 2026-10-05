@@ -1,7 +1,8 @@
 {% comment %}
-  The report body: every section of the registry, in order. Shared by the
-  screen and the PDF; the page around it (sheet, action bar, paged media) is
-  the caller's.
+  The report body: every section of the registry, in order, with the TOC
+  partial (sections/_toc.html) right after the portada. Shared by the screen
+  and the PDF; the page around it (sheet, action bar, paged media) is the
+  caller's.
 {% endcomment %}
 {% for s in sections %}
   <section id="sec-{{ s.key|slugify }}" class="report-section report-section--{{ s.key|slugify }}">
@@ -12,4 +13,5 @@
       </section>
     {% endfor %}
   </section>
+  {% if s.key == "portada" %}{% include "reports/sections/_toc.html" %}{% endif %}
 {% endfor %}
