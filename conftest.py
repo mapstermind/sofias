@@ -204,6 +204,16 @@ def survey(db):
 
 
 @pytest.fixture
+def nom035_survey(db):
+    """The NOM-035 survey row (key "nom035"), without modules — scores are made directly."""
+    from apps.surveys.models import Survey
+
+    return Survey.objects.create(
+        key="nom035", title="NOM-035", status=Survey.Status.PUBLISHED
+    )
+
+
+@pytest.fixture
 def survey_module(db, survey):
     """A single `all`-variant module within the survey."""
     from apps.surveys.models import Module

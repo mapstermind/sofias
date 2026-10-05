@@ -41,6 +41,10 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
   carries no numbers — keep the rule here, never in a template. Its query count
   is fixed regardless of respondents (`tests/test_results.py` caps it). See
   `docs/platform/nom-035-results-dashboard.md`.
+- `report_results(assignment)` in `results.py` — the NOM-035 report's read: the whole
+  assignment (`WHOLE_ASSIGNMENT`, small groups always hidden), per-dominio dimensión
+  stats (`DimensionGroup`, one neutral band `NEUTRAL_BAND_LABEL`) and per-área
+  distributions (`AreaResults`, hidden by the participation table's visibility).
 - `management/commands/recompute_nom035_scores.py` — backfill/refresh.
 
 ## Conventions & gotchas
