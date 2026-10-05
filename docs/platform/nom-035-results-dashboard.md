@@ -41,8 +41,8 @@ downloadable report in mind (`docs/internal/meetings/20260803.md`).
   expandable to its dominios.
 - The small-group and complement suppression rule for viewers without
   `can_view_small_groups`.
-- Three instrument-agnostic chart components (stacked bar, column chart, range
-  strip) with their geometry in pure Python.
+- Four instrument-agnostic chart components (stacked bar, column chart, level
+  columns, range strip) with their geometry in pure Python.
 - A stored `SubmissionScore.guia1_event` column and the `can_view_small_groups`
   permission.
 - The company dashboard's "Valoración de resultados" link card.
@@ -154,19 +154,26 @@ come first under an *Empresa* heading, categoría-level sections second under
 |---|---|---|---|
 | 0 | Active-filter pills and group line: *"Femenino · 25–29 · Operaciones — 18 cuestionarios"*, or *"Toda la empresa — 60 cuestionarios"* | `_group_line.html` | text |
 | **Empresa** | | | |
-| 1 | **Participación por área** — Registrados, Respondieron, Participación, final-NDR distribution | `_participation.html` | `stacked_bar` per row |
+| 1 | **Participación por área** — Registrados, Respondieron, Participación, final-NDR distribution | `_participation.html` | `level_columns` per row |
 | 2 | **Perfil de quienes respondieron — sexo** | `_sex_profile.html` | `stacked_bar` with legend |
 | 3 | **Perfil de quienes respondieron — edad** | `_age_profile.html` | `column_chart` |
-| 4 | **Calificación final — distribución** | `_final_distribution.html` | `stacked_bar` |
+| 4 | **Calificación final — distribución** | `_final_distribution.html` | `level_columns` |
 | 5 | **Calificación final — estadística** | `_final_stats.html` | stats row + `range_strip` |
 | 6 | **Guía I — acontecimientos traumáticos severos** | `_guia1.html` | headline count + `stacked_bar` with legend |
 | **Por categoría** | | | |
-| 7 | **Distribución por categoría** | `_categoria_distribution.html` | one `stacked_bar` per categoría, each a `<details>` expanding to its dominios |
-| 8 | **Estadística por categoría** | `_categoria_stats.html` | stats row + `range_strip` per categoría, each a `<details>` expanding to its dominios |
+| 7 | **Distribución por categoría** | `_categoria_distribution.html` | `level_columns` per categoría, each followed by a `<details>` holding its dominios |
+| 8 | **Estadística por categoría** | `_categoria_stats.html` | stats row + `range_strip` per categoría, each followed by a `<details>` holding its dominios |
 
 `_body.html` assembles them; `_stats_row.html` is the one statistics row sections
-5 and 8 share, `_ndr_legend.html` the five-level legend under sections 1, 4, 5, 7
-and 8, and `_suppressed.html` the small-group message.
+5 and 8 share; `_ndr_columns.html` the five level names, with swatches, that head
+the level columns of sections 1, 4 and 7 from the `md` breakpoint up;
+`_ndr_legend.html` the five-level legend under sections 5 and 8;
+`_dominios_summary.html` the *"Dominios (n)"* disclosure of sections 7 and 8; and
+`_suppressed.html` the small-group message.
+
+Every number on the page is printed as text. No chart mark is focusable, has a
+tooltip, or responds to hover, so a phone, a keyboard and a printed report read
+the same page.
 
 **1 — Participación por área.** One row per área of the company, sorted by name;
 a retired área (`is_active=False`) appears only while it still has registered
@@ -177,9 +184,10 @@ birth); *Respondieron* counts the group's scored questionnaires in that área;
 *Participación* is Respondieron ÷ Registrados as a whole percent. The sexo, edad
 and localidad filters apply to both counts; the área filter limits which rows
 appear. "Sin área" shows "—" for Registrados and Participación, since activation
-always assigns an área. A row with no respondents shows "—" in place of its bar.
-The área name links to the same page with that área added to the filter, unless
-it is already selected. A company with no áreas shows *"Esta empresa no tiene
+always assigns an área. Each row with respondents shows its final-score
+distribution as level columns, as in sections 4 and 7; a row with no respondents
+shows "—" in their place. The área name links to the same page with that área added to
+the filter, unless it is already selected. A company with no áreas shows *"Esta empresa no tiene
 áreas registradas."*
 
 **2 — Sexo.** One 100 % bar: Femenino, Masculino, Sin dato, with a legend giving
@@ -190,14 +198,32 @@ each segment's percent and count of *personas*. Ignores the `sexo` filter, notin
 labelled above each non-empty column, then a "Sin dato" column. Ignores the
 `edad` filter, noting *"Sin filtro de edad"* when one is set.
 
-**4 and 7 — NDR distribution.** A 100 % bar across the five levels Nulo, Bajo,
-Medio, Alto, Muy alto, with the row's *n* beside it. Row 4 is the final score;
-section 7 has one row per categoría of the assignment's variant (five for
-Guía III, four for Guía II, which has no Entorno organizacional), each expanding
-to one row per dominio. Empty segments are omitted. Percents are rounded by
-largest remainder so a bar always sums to 100. Hovering, focusing or tapping a
-segment shows *"Alto · 14 cuestionarios · 23 %"*; a legend under the section
-repeats the five levels.
+**4 and 7 — NDR distribution.** Five columns, one per level — Nulo, Bajo, Medio,
+Alto, Muy alto, always in that order and always in the same slot — with the
+row's *n* beside them. Row 4 is the final score; section 7 has one row per
+categoría of the assignment's variant (five for Guía III, four for Guía II,
+which has no Entorno organizacional), each expanding to one row per dominio.
+
+Every column's height is that level's share of the row's questionnaires on a
+fixed 0–100 % scale shared by every row on the page, so a column of a given
+height means the same share in every categoría and dominio, and a level can be
+compared straight down a section. A dashed line marks 50 %. A level with no
+questionnaires keeps its slot: a gray baseline with no column, and *0 %* printed
+in gray. A level with any questionnaire is drawn at least 4 % tall so it never
+vanishes. Under each slot the level's percent and count of questionnaires are
+printed; percents are rounded by largest remainder so a row always sums to 100.
+From `md` up the level names head the columns once per section
+(`_ndr_columns.html`) and every row's slots line up beneath them; below `md` each
+slot carries its own level name and swatch. Screen readers get the level name in
+every row. A line under each section title states the scale: *"Porcentaje de
+cuestionarios en cada nivel. Todas las filas usan la misma escala, de 0 a
+100 %."* (section 7), *"…en una escala de 0 a 100 %."* (section 4). The plot is
+96px tall for the final score, 40px for a categoría or área row, and 32px for a
+dominio row.
+
+The categoría's row is always in view. Below it, a `<details>` whose summary reads
+*"Dominios (n)"* — text only, with the categoría's name added for screen readers —
+opens that categoría's dominio rows, indented beneath it.
 
 **5 and 8 — Statistics.** Each row shows *n*, *Prom.* (mean, one decimal),
 *Mediana* (may end in .5), *Mín* and *Máx* of the raw integer scores, with "—"
@@ -206,12 +232,15 @@ conditional block was skipped has no `GroupScore` row, so a dominio's *n* can be
 lower than the final score's. Beside the numbers a range strip draws that row's
 NDR threshold bands, from 0 to the highest possible score for that row in the
 variant (item count × 4; the Muy alto band is open-ended in the official tables,
-so it runs to that maximum), with the two ends labelled, and plots four labelled
+so it runs to that maximum). A tick under the strip labels 0, every band
+boundary that falls inside the scale, and the maximum, so each band's span reads
+as numbers; the band colors follow the five-level legend under the section. The
+strip plots four labelled
 points — *Mín*, *Mediana*, *Prom.*, *Máx*. A label near either end anchors to
 that end. Points whose labels would collide alternate above and below the strip.
-Hovering, focusing or tapping a point shows its value and the band it falls in —
-*"Prom.: 45.3 · Medio"*; hovering or tapping a band shows its level. A row with
-no scores draws no strip. No NDR badge is attached to any of the four values; the
+A row with no scores draws no strip. In section 8 each categoría's row is
+always in view, followed by the same *"Dominios (n)"* disclosure as section 7,
+which opens its dominio rows. No NDR badge is attached to any of the four values; the
 page states no company or área verdict.
 
 **6 — Guía I.** A headline count — *"4 colaboradores requieren valoración
@@ -228,13 +257,13 @@ stacks: the survey selector runs full width and the *Filtros (n)* disclosure sit
 below it, opening onto one column of fieldsets with a full-width *Aplicar*
 button. Participation rows become stacked cards — the área name on its own line,
 then Registrados, Respondieron and Participación side by side, each with its
-label stacked above the value, then the distribution bar full width; the table's column header is
-hidden. The sex and age sections stack in one column (they sit side by side only
+label stacked above the value, then the level columns full width; the table's
+column header is hidden. The sex and age sections stack in one column (they sit side by side only
 from the `lg` breakpoint). Each statistics row puts its label, then its five
-numbers, then its range strip below them. Distribution rows put the label above
-the bar, and a categoría expands its dominio rows inline, indented beneath it.
-The tooltip is shown by tapping a mark and hidden by tapping anywhere else or
-scrolling.
+numbers, then its range strip below them. Distribution rows put the label and
+*n* on one line and the level columns full width beneath, each slot about 60px
+wide with its level name above the percent and count.
+*"Dominios (n)"* opens the dominio rows inline, indented beneath the categoría.
 
 ### Small-group and complement rule
 
@@ -253,11 +282,11 @@ applies at two levels, and área rows carry one more rule on top:
   replaced by *"Grupo demasiado pequeño para mostrar resultados sin identificar a
   las personas (mínimo 5)"*. Sections 0–3 still render: they count people and
   reveal no scores, and every row with respondents in section 1 shows the same
-  message in place of its distribution bar. With no filter active, the whole
+  message in place of its level columns. With no filter active, the whole
   assignment is always shown, whatever its size.
 - **Each área row** in section 1, "Sin área" included. *S* is the row's
   respondents and *B* is the group. If the rule fails, the row shows the same
-  message in place of its distribution bar — also when no filter is active.
+  message in place of its level columns — also when no filter is active.
 - **The hidden total.** The group's final distribution is shown with exact
   counts, so hidden rows would be recoverable as that distribution minus the
   visible rows. After the per-row rule, when the respondents of the rows with
@@ -309,34 +338,42 @@ line render inside `#results-body`, so the swap refreshes them. Pills and área
 links carry `data-results-link`: clicking one sets the form's controls from the
 link's query string and runs the same swap. The company's áreas and localidades
 do not depend on the assignment, so the filter bar itself is never re-rendered.
-The same module drives the tooltip (`#chart-tooltip`) for any `[data-tooltip]`
-mark on hover, keyboard focus and tap, placed above the mark (below it when there
-is no room) and kept inside the viewport.
 
 ### Chart components
 
-Three components render inline SVG from plain data and know nothing about
+Four components render inline SVG from plain data and know nothing about
 NOM-035:
 
 | Tag (`apps/core/templatetags/charts.py`) | Template (`templates/components/charts/`) | Geometry (`apps/core/charts.py`) |
 |---|---|---|
 | `{% stacked_bar items unit="cuestionario" legend=False %}` | `stacked_bar.html` | `stacked_segments()` — widths, largest-remainder percents; 2px white gaps between segments |
 | `{% column_chart items unit="persona" %}` | `column_chart.html` | `columns()` — heights against the tallest column |
-| `{% range_strip bands scale_max points %}` | `range_strip.html` | `range_strip()` — band positions, marker positions, label lanes |
+| `{% level_columns items unit="cuestionario" names="always" size="md" %}` | `level_columns.html` | `level_columns()` — one slot per item, empty ones included; heights as shares of a fixed 0–100 % scale, at least `LEVEL_MIN_HEIGHT` (4 %) when non-empty; largest-remainder percents |
+| `{% range_strip bands scale_max points %}` | `range_strip.html` | `range_strip()` — band positions, boundary ticks, marker positions, label lanes |
 
 Each input item carries a key, a label, a value and a **color key**; the tag
-library turns the key into Tailwind `fill-*` (and legend `bg-*`) classes, so the
-data layer names no class. `unit` picks the counted noun for tooltips
-(*cuestionario* or *persona*). Each tag also takes an optional `label` for the
-SVG's own `aria-label`, which otherwise joins every mark's text.
+library turns the key into Tailwind `fill-*` (and swatch `bg-*`) classes, so the
+data layer names no class. `unit` picks the counted noun (*cuestionario* or
+*persona*) for the SVG's `aria-label` and screen-reader text. Each tag also
+takes an optional `label` for that `aria-label`, which otherwise joins every
+mark's description (*"Alto · 14 cuestionarios · 23 %"*; a range strip adds each
+band's span, *"Medio: 75 a 99"*).
 
-Bar segments, columns and strip markers carry an `aria-label` and `data-tooltip`
-text and are keyboard-focusable. Strip bands carry an `aria-label` and
-`data-tooltip` with their level but are not focusable — the markers are the marks
-a keyboard reaches. There is no SVG `<title>`, which would stack a second, native
-tooltip on the styled one. SVG numbers render inside `{% localize off %}` so a
-locale separator can never reach a coordinate. Every colored mark has a direct
-label or a legend entry, so no reading depends on color alone.
+`level_columns` draws the slots and, beneath them, a `<dl>` with one
+equal-width column per item — the item's name with its swatch, its percent, and
+its count — so each value sits under its column. `names="phone"` hides the names
+from `md` up (they stay readable by screen readers) for rows under a shared
+column header such as `_ndr_columns.html`. `size` is the plot height: `sm`
+(32px), `md` (40px) or `lg` (96px).
+
+Each SVG is one `role="img"` element with an `aria-label`; its marks carry no
+`aria-label`, `tabindex`, `data-tooltip` or SVG `<title>`, and no mark reacts
+to hover. Values reach the reader as text instead: the percent and count under
+every level column, the legends of the sex and Guía I bars, the counts above
+the age columns, and the labels and ticks of the range strip. SVG numbers render
+inside `{% localize off %}` so a locale separator can never reach a coordinate.
+Every colored mark has a direct label or a legend entry, so no reading depends
+on color alone.
 
 Colors:
 
@@ -422,18 +459,18 @@ resultados de grupos pequeños")`, granted to Administrador by
 | `apps/core/query_params.py` | Shared GET-parameter readers |
 | `apps/core/results_query.py` | `ResultsQuery`, `parse_results_query`, `results_url`, `filter_pills` |
 | `apps/core/charts.py` | Pure chart geometry |
-| `apps/core/templatetags/charts.py` | `stacked_bar`, `column_chart`, `range_strip` tags; the chart palette |
+| `apps/core/templatetags/charts.py` | `stacked_bar`, `column_chart`, `level_columns`, `range_strip` tags; the chart palette |
 | `apps/core/templatetags/valuation_extras.py` | `ndr_fill` |
 | `apps/core/views.py`, `urls.py` | `CompanyResultsView`, `CompanyResultsFragmentView`, `_results_context`, four routes; the dashboard card's count in `CompanyDashboardView` |
-| `templates/components/charts/` | `stacked_bar.html`, `column_chart.html`, `range_strip.html` |
-| `templates/core/company_results.html` | Page: selector, filter bar, `#results-status`, `#results-body`, `#chart-tooltip` |
+| `templates/components/charts/` | `stacked_bar.html`, `column_chart.html`, `level_columns.html`, `range_strip.html` |
+| `templates/core/company_results.html` | Page: selector, filter bar, `#results-status`, `#results-body` |
 | `templates/core/results/` | `_body.html` and one partial per section |
 | `templates/core/company_dashboard.html` | Link card |
-| `static/ts/results_dashboard.ts` | Fragment swap, URL sync, pills, status line, tooltip (compiled to `static/js/results_dashboard.js`) |
+| `static/ts/results_dashboard.ts` | Fragment swap, URL sync, pills, status line (compiled to `static/js/results_dashboard.js`) |
 
 Tests: `apps/nom035/tests/test_results.py` (the data layer, including a query
-cap), `apps/core/tests/test_results_views.py` (routes, authorization, rendering,
-and a query count that does not grow with respondents),
+cap), `apps/core/tests/test_results_views.py` (routes, authorization, rendering, no
+interactive content inside a `<summary>`, and a query count that does not grow with respondents),
 `test_results_query.py`, `test_charts.py`, `test_chart_components.py`,
 `test_responsive.py` and `test_dashboard_results_card.py` in `apps/core/tests/`,
 and `apps/accounts/tests/test_demographics.py`. The TypeScript has no test
@@ -472,6 +509,14 @@ runner; its behavior is checked in the browser.
 - Decision: Demographic charts count respondents of the selected assignment.
   Reason: They describe who stands behind the results; the participation table
   carries the registered headcount alongside.
+- Decision: NDR distributions as five fixed level columns on a shared 0–100 %
+  scale, not 100 % stacked bars.
+  Reason: In a stacked bar an empty level loses its color and shifts every
+  segment after it, and only the two end levels share a baseline, so Medio or
+  Alto cannot be compared across categorías. Fixed slots on a common scale keep
+  every level in place and comparable down a section. Sexo and Guía I keep
+  stacked bars: each is one whole split into two or three named parts, not a
+  scale.
 - Decision: Sex and age as bars and columns, not pies.
   Reason: A two-slice pie compares angles poorly, and ten ordered age bands lose
   their order in a pie.
@@ -490,6 +535,12 @@ runner; its behavior is checked in the browser.
   line; the body is not a live region.
   Reason: Announcing the whole swapped body would read every chart aloud; the
   group line says what changed in one sentence.
+- Decision: Every value is printed as text; chart marks have no tooltips, no
+  hover state and no focus stop, and a `<summary>` holds only text.
+  Reason: Hover does not exist on a phone, a tap on a mark inside a `<summary>`
+  also toggled its `<details>`, a focusable mark nested in a `<summary>` is not
+  reliably reachable by keyboard or announced by a screen reader, and the PDF
+  report needs the same values in view.
 
 ## Open questions
 

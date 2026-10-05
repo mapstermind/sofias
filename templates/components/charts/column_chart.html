@@ -2,9 +2,7 @@
 <figure class="m-0 w-full min-w-0 pt-4">
   <svg class="block h-36 w-full overflow-visible" role="img" aria-label="{{ aria_label }}">
     {% for col in cols %}
-      <rect x="{{ col.x }}%" y="{{ col.y }}%" width="{{ col.width }}%" height="{{ col.height }}%" rx="3"
-            class="{{ col.fill }} outline-none hover:opacity-80 focus:opacity-80"
-            tabindex="0" aria-label="{{ col.tooltip }}" data-tooltip="{{ col.tooltip }}"></rect>
+      <rect x="{{ col.x }}%" y="{{ col.y }}%" width="{{ col.width }}%" height="{{ col.height }}%" rx="3" class="{{ col.fill }}"></rect>
       {% if col.value %}
         <text x="{{ col.center }}%" y="{{ col.y }}%" dy="-4" text-anchor="middle" class="fill-gray-700 text-[10px]">{{ col.value }}</text>
       {% endif %}

@@ -10,6 +10,7 @@ from dataclasses import dataclass
 COLUMN_HEADROOM = 88.0  # tallest column's height, leaving room for its count
 LABEL_GAP = 9.0  # minimum % between two marker labels sharing a lane
 EDGE = 6.0  # % from either end where a label anchors to the edge
+LEVEL_MIN_HEIGHT = 4.0  # % of a level column's height kept by any non-empty level
 
 
 def format_number(value: float) -> str:
@@ -44,7 +45,7 @@ class Segment:
     x: float
     width: float
     color: str
-    tooltip: str
+    description: str
 
 
 def stacked_segments(items, unit) -> list[Segment]:
@@ -66,7 +67,7 @@ def stacked_segments(items, unit) -> list[Segment]:
                     x=round(x, 3),
                     width=round(width, 3),
                     color=item.color,
-                    tooltip=f"{item.label} · {_count(item.value, unit)} · {percent} %",
+                    description=f"{item.label} · {_count(item.value, unit)} · {percent} %",
                 )
             )
         x += width
@@ -84,7 +85,7 @@ class Column:
     y: float
     height: float
     color: str
-    tooltip: str
+    description: str
 
 
 def columns(items, unit) -> list[Column]:
@@ -105,7 +106,56 @@ def columns(items, unit) -> list[Column]:
                 y=round(100 - height, 3),
                 height=height,
                 color=item.color,
-                tooltip=f"{item.label} · {_count(item.value, unit)}",
+                description=f"{item.label} · {_count(item.value, unit)}",
+            )
+        )
+    return out
+
+
+@dataclass(frozen=True)
+class LevelColumn:
+    key: str
+    label: str
+    value: int
+    percent: int
+    x: float
+    width: float
+    y: float
+    height: float
+    color: str
+    description: str
+
+
+def level_columns(items, unit) -> list[LevelColumn]:
+    """One column per item, empty ones included, on a fixed 0–100 % scale.
+
+    Heights are the item's exact share of the total, so rows drawn with this
+    function compare with each other; a non-empty item is never drawn shorter
+    than LEVEL_MIN_HEIGHT.
+    """
+    items = list(items)
+    total = sum(item.value for item in items)
+    percents = largest_remainder([item.value for item in items])
+    slot = 100 / len(items) if items else 0
+    out = []
+    for i, (item, percent) in enumerate(zip(items, percents)):
+        height = item.value * 100 / total if total else 0.0
+        if item.value:
+            height = max(height, LEVEL_MIN_HEIGHT)
+        out.append(
+            LevelColumn(
+                key=item.key,
+                label=item.label,
+                value=item.value,
+                percent=percent,
+                x=round(i * slot + slot * 0.2, 3),
+                width=round(slot * 0.6, 3),
+                y=round(100 - height, 3),
+                height=round(height, 3),
+                color=item.color,
+                description=(
+                    f"{item.label} · {_count(item.value, unit)} · {percent} %"
+                ),
             )
         )
     return out
@@ -117,6 +167,14 @@ class StripBand:
     label: str
     x: float
     width: float
+    description: str
+
+
+@dataclass(frozen=True)
+class Tick:
+    display: str
+    x: float
+    anchor: str  # "start" | "middle" | "end"
 
 
 @dataclass(frozen=True)
@@ -129,13 +187,14 @@ class Marker:
     lane: str  # "above" | "below"
     anchor: str  # SVG text-anchor: "start" | "middle" | "end"
     band_label: str
-    tooltip: str
+    description: str
 
 
 @dataclass(frozen=True)
 class Strip:
     bands: tuple[StripBand, ...]
     markers: tuple[Marker, ...]
+    ticks: tuple[Tick, ...]
     scale_max: int
 
 
@@ -151,6 +210,7 @@ def range_strip(bands, scale_max, points) -> Strip | None:
     if scale_max <= 0:
         return None
     drawn, lower = [], 0.0
+    ticks = [Tick(display="0", x=0.0, anchor="start")]
     for upper, color, label in bands:
         upper = min(upper, scale_max)
         if upper > lower:
@@ -160,9 +220,21 @@ def range_strip(bands, scale_max, points) -> Strip | None:
                     label=label,
                     x=round(lower * 100 / scale_max, 3),
                     width=round((upper - lower) * 100 / scale_max, 3),
+                    description=(
+                        f"{label}: {format_number(lower)} a {format_number(upper)}"
+                    ),
                 )
             )
+            if upper < scale_max:
+                ticks.append(
+                    Tick(
+                        display=format_number(upper),
+                        x=round(upper * 100 / scale_max, 3),
+                        anchor="middle",
+                    )
+                )
             lower = upper
+    ticks.append(Tick(display=format_number(scale_max), x=100.0, anchor="end"))
 
     last = {"above": None, "below": None}
     markers = []
@@ -187,7 +259,12 @@ def range_strip(bands, scale_max, points) -> Strip | None:
                 lane=lane,
                 anchor="start" if x < EDGE else "end" if x > 100 - EDGE else "middle",
                 band_label=band_label,
-                tooltip=f"{label}: {display} · {band_label}",
+                description=f"{label}: {display} · {band_label}",
             )
         )
-    return Strip(bands=tuple(drawn), markers=tuple(markers), scale_max=scale_max)
+    return Strip(
+        bands=tuple(drawn),
+        markers=tuple(markers),
+        ticks=tuple(ticks),
+        scale_max=scale_max,
+    )

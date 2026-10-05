@@ -22,7 +22,7 @@ All are `LoginRequiredMixin` class-based views that authorize via the custom per
   - The page carries TypeScript — `static/ts/roster_filters.ts`, which only opens and closes the filter `<dialog>`, allows a chosen `sexo` radio to be un-chosen, and restores the pills on dismiss. No filter state lives in it. **Run `npm run build:js` and commit `static/js/roster_filters.js` when touching it**; nothing in the Python suite covers it.
 - `EmployeeSurveyListView` — an employee's assigned surveys.
 - `CompanyResultsView` / `CompanyResultsFragmentView` — the NOM-035 results page (`core:company_results`, `/tablero-empresa/resultados/`; `core:company_results_for`, `/empresas/<reference_code>/resultados/`) and its body alone at `…/fragmento/` (`core:company_results_fragment`, `core:company_results_fragment_for`). Both require `can_view_insights`; the fragment view is the page view with `template_name = "core/results/_body.html"`, and both build their context in `_results_context`. GET parameters (`encuesta`, `sexo`, repeatable `edad`/`area`/`localidad`) are parsed by `results_query.py` (`parse_results_query` → `ResultsQuery`; `results_url` and `filter_pills` build the page's links) with the same ignore-bad-values rule as the roster; the data comes from `apps/nom035/results.py`, which applies the small-group rule unless the viewer holds `can_view_small_groups`. `tests/test_results_views.py` pins the fragment view's query count: it must not grow with the number of respondents. See `docs/platform/nom-035-results-dashboard.md`.
-  - The page carries TypeScript — `static/ts/results_dashboard.ts` swaps `#results-body` with the fragment, keeps the address bar in step with `history.replaceState`, writes the new group line into the `#results-status` live region, and shows the chart tooltip. **Run `npm run build:js` and commit `static/js/results_dashboard.js` when touching it**; nothing in the Python suite covers it.
+  - The page carries TypeScript — `static/ts/results_dashboard.ts` swaps `#results-body` with the fragment, keeps the address bar in step with `history.replaceState`, and writes the new group line into the `#results-status` live region. **Run `npm run build:js` and commit `static/js/results_dashboard.js` when touching it**; nothing in the Python suite covers it.
 
 `CompanyDashboardView`'s "Valoración de resultados" card (gated on
 `can_view_insights`) shows `latest_scored_count` — the scored count of the
@@ -50,16 +50,20 @@ order, filled up to the reached one; render it through
 ## Charts (`charts.py`, `templatetags/charts.py`)
 
 Instrument-agnostic, server-rendered SVG components. `charts.py` holds the pure
-geometry — `stacked_segments`, `columns`, `range_strip`, `largest_remainder` —
+geometry — `stacked_segments`, `columns`, `level_columns`, `range_strip`,
+`largest_remainder` —
 from items carrying a `color` *key*, and knows nothing of NOM-035 or Tailwind.
 The `charts` tag library (`{% load charts %}`) provides the inclusion tags
-`stacked_bar`, `column_chart` and `range_strip`, rendering
+`stacked_bar`, `column_chart`, `level_columns` (a distribution over fixed levels: one slot per level
+on a 0–100 % scale, each value printed beneath) and `range_strip`, rendering
 `templates/components/charts/*.html`, and is the chart palette: it maps each
 color key to spelled-out `fill-*`/`bg-*` classes (NDR keys through
 `valuation_extras`). A new color key goes in `_COLORS` there; Tailwind scans
 `apps/**/templatetags/*.py`, but run `npm run build:css` after adding one.
-Marks carry `aria-label` and `data-tooltip`, never an SVG `<title>`, and SVG
-coordinates render inside `{% localize off %}`.
+Each SVG is one `role="img"` with an `aria-label`; its marks are never
+focusable and carry no tooltip or SVG `<title>` — every value is printed as text
+instead, so nothing interactive ends up inside a `<summary>`. SVG coordinates
+render inside `{% localize off %}`.
 
 ## Management commands (`management/commands/`)
 

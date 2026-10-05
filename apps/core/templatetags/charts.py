@@ -46,7 +46,7 @@ def stacked_bar(items, unit="cuestionario", legend=False, label=""):
     return {
         "segments": segments,
         "legend": legend,
-        "aria_label": label or "; ".join(s["tooltip"] for s in segments),
+        "aria_label": label or "; ".join(s["description"] for s in segments),
     }
 
 
@@ -55,7 +55,7 @@ def column_chart(items, unit="persona", label=""):
     cols = [_paint(col) for col in charts.columns(items, UNITS[unit])]
     return {
         "cols": cols,
-        "aria_label": label or "; ".join(col["tooltip"] for col in cols),
+        "aria_label": label or "; ".join(col["description"] for col in cols),
     }
 
 
@@ -68,7 +68,32 @@ def range_strip(bands, scale_max, points, label=""):
         "strip": {
             "bands": [_paint(b) for b in strip.bands],
             "markers": [asdict(m) for m in strip.markers],
-            "scale_max": strip.scale_max,
+            "ticks": [asdict(t) for t in strip.ticks],
         },
-        "aria_label": label or "; ".join(m.tooltip for m in strip.markers),
+        "aria_label": label
+        or "; ".join(
+            [m.description for m in strip.markers]
+            + [b.description for b in strip.bands]
+        ),
+    }
+
+
+@register.inclusion_tag("components/charts/level_columns.html")
+def level_columns(items, unit="cuestionario", names="always", size="md", label=""):
+    """One column per item on a fixed 0–100 % scale, each with its percent and count.
+
+    `names="phone"` keeps the item names for screen readers but shows them only
+    below `md`, for rows that sit under a shared column header. `size` is the
+    plot height: "sm", "md" or "lg".
+    """
+    singular, plural = UNITS[unit]
+    cols = [
+        {**_paint(col), "unit": singular if col.value == 1 else plural}
+        for col in charts.level_columns(items, UNITS[unit])
+    ]
+    return {
+        "cols": cols,
+        "names_on_phone_only": names == "phone",
+        "size": size,
+        "aria_label": label or "; ".join(col["description"] for col in cols),
     }

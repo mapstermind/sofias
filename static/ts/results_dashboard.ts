@@ -4,10 +4,9 @@
  * The NOM-035 results page (templates/core/company_results.html).
  *
  * Swaps #results-body with the fragment URL when the survey changes or the
- * filter form is applied, keeps the address bar in step, and shows a tooltip
- * for chart marks on hover, focus and tap. Without this script the form is a
- * plain GET form and the page reloads; nothing here holds state the server
- * does not also render.
+ * filter form is applied, and keeps the address bar in step. Without this
+ * script the form is a plain GET form and the page reloads; nothing here holds
+ * state the server does not also render.
  */
 
 const FILTER_KEYS = ["sexo", "edad", "area", "localidad"];
@@ -42,56 +41,6 @@ function applyParamsToForm(form: HTMLFormElement, params: URLSearchParams): void
 function withQuery(base: string, params: URLSearchParams): string {
   const qs = params.toString();
   return qs ? `${base}?${qs}` : base;
-}
-
-/** Above the mark when it fits, below otherwise; never past the viewport edges. */
-function tooltipPosition(
-  mark: DOMRect,
-  tip: { width: number; height: number },
-  viewportWidth: number,
-): { left: number; top: number } {
-  const left = Math.min(Math.max(8, mark.left + mark.width / 2 - tip.width / 2), viewportWidth - tip.width - 8);
-  const above = mark.top - tip.height - 8;
-  return { left, top: above < 8 ? mark.bottom + 8 : above };
-}
-
-function initTooltip(): void {
-  const tip = document.getElementById("chart-tooltip");
-  if (!tip) return;
-  const tooltip: HTMLElement = tip;
-
-  function markOf(target: EventTarget | null): Element | null {
-    return target instanceof Element ? target.closest("[data-tooltip]") : null;
-  }
-  function show(mark: Element): void {
-    tooltip.textContent = mark.getAttribute("data-tooltip");
-    tooltip.hidden = false;
-    const pos = tooltipPosition(mark.getBoundingClientRect(), tooltip.getBoundingClientRect(), window.innerWidth);
-    tooltip.style.left = `${pos.left}px`;
-    tooltip.style.top = `${pos.top}px`;
-  }
-  function hide(): void {
-    tooltip.hidden = true;
-  }
-
-  document.addEventListener("pointerover", (event) => {
-    const mark = markOf(event.target);
-    if (mark) show(mark);
-  });
-  document.addEventListener("pointerout", (event) => {
-    if (markOf(event.target)) hide();
-  });
-  document.addEventListener("focusin", (event) => {
-    const mark = markOf(event.target);
-    if (mark) show(mark);
-    else hide();
-  });
-  document.addEventListener("click", (event) => {
-    const mark = markOf(event.target);
-    if (mark) show(mark);
-    else hide();
-  });
-  window.addEventListener("scroll", hide, { passive: true });
 }
 
 function initFilters(): void {
@@ -155,4 +104,3 @@ function initFilters(): void {
 }
 
 initFilters();
-initTooltip();

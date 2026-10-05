@@ -4,9 +4,7 @@
     <div class="overflow-hidden rounded-full">
       <svg class="block h-3 w-full" role="img" aria-label="{{ aria_label }}">
         {% for s in segments %}
-          <rect x="{{ s.x }}%" y="0" width="{{ s.width }}%" height="100%"
-                class="{{ s.fill }} stroke-white outline-none hover:opacity-80 focus:opacity-80"
-                stroke-width="2" tabindex="0" aria-label="{{ s.tooltip }}" data-tooltip="{{ s.tooltip }}"></rect>
+          <rect x="{{ s.x }}%" y="0" width="{{ s.width }}%" height="100%" class="{{ s.fill }} stroke-white" stroke-width="2"></rect>
         {% endfor %}
       </svg>
     </div>

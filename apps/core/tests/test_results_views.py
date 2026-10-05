@@ -1,3 +1,5 @@
+from html.parser import HTMLParser
+
 import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
@@ -163,3 +165,37 @@ def test_filtered_empty_group_blames_the_filters(client, setup, make_user_with_p
     body = client.get(url).content.decode()
     assert "Ningún cuestionario coincide con los filtros." in body
     assert "Esta encuesta aún no tiene cuestionarios contestados." not in body
+
+
+class _SummaryContents(HTMLParser):
+    """Tags opened inside each <summary>, and every tabindex on the page."""
+
+    def __init__(self):
+        super().__init__()
+        self.depth = 0
+        self.nested = []
+        self.tabindexes = 0
+
+    def handle_starttag(self, tag, attrs):
+        if any(name == "tabindex" for name, _ in attrs):
+            self.tabindexes += 1
+        if tag == "summary":
+            self.depth += 1
+        elif self.depth:
+            self.nested.append(tag)
+
+    def handle_endtag(self, tag):
+        if tag == "summary":
+            self.depth -= 1
+
+
+def test_summaries_hold_no_interactive_content(client, setup, make_user_with_profile):
+    add_respondents(setup, make_user_with_profile, 6)
+    client.force_login(setup["exec"])
+    body = client.get(reverse("core:company_results_fragment")).content.decode()
+    parser = _SummaryContents()
+    parser.feed(body)
+    assert "Dominios (" in body
+    assert not {"a", "button", "input", "select", "textarea"} & set(parser.nested)
+    assert parser.tabindexes == 0
+    assert "data-tooltip" not in body

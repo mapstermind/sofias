@@ -608,9 +608,10 @@ git commit -m "feat(core): parse results-page filters; share query readers with 
 - Consumes: any item with attributes `key: str`, `label: str`, `value: int`, `color: str`.
 - Produces:
   - `largest_remainder(values: list[int]) -> list[int]` (sums to 100 when any value > 0)
-  - `Segment(key, label, value, percent, x, width, color, tooltip)`; `stacked_segments(items, unit: tuple[str, str]) -> list[Segment]`
-  - `Column(key, label, value, x, width, center, y, height, color, tooltip)`; `columns(items, unit) -> list[Column]`
-  - `StripBand(color, label, x, width)`, `Marker(key, label, value, display, x, lane, anchor, band_label, tooltip)`, `Strip(bands, markers, scale_max)`; `range_strip(bands: list[tuple[float, str, str]], scale_max: int, points: list[tuple[str, str, float]]) -> Strip | None` — `bands` are `(upper_exclusive, color_key, label)`, `points` are `(key, label, value)`.
+  - `Segment(key, label, value, percent, x, width, color, description)`; `stacked_segments(items, unit: tuple[str, str]) -> list[Segment]`
+  - `Column(key, label, value, x, width, center, y, height, color, description)`; `columns(items, unit) -> list[Column]`
+  - `LevelColumn(key, label, value, percent, x, width, y, height, color, description)`; `level_columns(items, unit) -> list[LevelColumn]` — every item, empty ones included, heights on a fixed 0–100 % scale (non-empty at least `LEVEL_MIN_HEIGHT` = 4)
+  - `StripBand(color, label, x, width, description)`, `Tick(display, x, anchor)`, `Marker(key, label, value, display, x, lane, anchor, band_label, description)`, `Strip(bands, markers, ticks, scale_max)`; `range_strip(bands: list[tuple[float, str, str]], scale_max: int, points: list[tuple[str, str, float]]) -> Strip | None` — `bands` are `(upper_exclusive, color_key, label)`, `points` are `(key, label, value)`.
   - `format_number(value: float) -> str` — whole numbers without decimals, others to one decimal with `.`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -622,6 +623,7 @@ from apps.core.charts import (
     columns,
     format_number,
     largest_remainder,
+    level_columns,
     range_strip,
     stacked_segments,
 )
@@ -645,12 +647,41 @@ def test_largest_remainder_sums_to_100():
 
 
 def test_stacked_segments_positions_and_omits_empty():
-    segs = stacked_segments([Item("a", "Bajo", 1), Item("b", "Medio", 0), Item("c", "Alto", 3)], UNIT)
+    segs = stacked_segments(
+        [Item("a", "Bajo", 1), Item("b", "Medio", 0), Item("c", "Alto", 3)], UNIT
+    )
     assert [s.key for s in segs] == ["a", "c"]
     assert (segs[0].x, segs[0].width) == (0.0, 25.0)
     assert (segs[1].x, segs[1].width) == (25.0, 75.0)
-    assert segs[0].tooltip == "Bajo · 1 cuestionario · 25 %"
-    assert segs[1].tooltip == "Alto · 3 cuestionarios · 75 %"
+    assert segs[0].description == "Bajo · 1 cuestionario · 25 %"
+    assert segs[1].description == "Alto · 3 cuestionarios · 75 %"
+
+
+def test_level_columns_keep_every_slot_on_a_fixed_scale():
+    cols = level_columns(
+        [Item("a", "Bajo", 1), Item("b", "Medio", 0), Item("c", "Alto", 3)], UNIT
+    )
+    assert [(c.key, c.value, c.percent) for c in cols] == [
+        ("a", 1, 25),
+        ("b", 0, 0),
+        ("c", 3, 75),
+    ]
+    # Heights are shares of 100, not of the tallest column.
+    assert [c.height for c in cols] == [25.0, 0.0, 75.0]
+    assert cols[2].y == 25.0
+    assert cols[0].x < cols[1].x < cols[2].x
+    assert cols[1].description == "Medio · 0 cuestionarios · 0 %"
+
+
+def test_level_columns_keep_a_tiny_share_visible():
+    cols = level_columns([Item("a", "A", 1), Item("b", "B", 199)], UNIT)
+    assert cols[0].height == 4.0
+    assert cols[0].percent == 1
+
+
+def test_level_columns_empty_total():
+    cols = level_columns([Item("a", "A", 0), Item("b", "B", 0)], UNIT)
+    assert [(c.height, c.percent) for c in cols] == [(0.0, 0), (0.0, 0)]
 
 
 def test_stacked_segments_empty_when_total_zero():
@@ -658,26 +689,63 @@ def test_stacked_segments_empty_when_total_zero():
 
 
 def test_columns_scale_to_the_tallest_with_headroom():
-    cols = columns([Item("a", "15–19", 2), Item("b", "20–24", 4), Item("c", "Sin dato", 0)], UNIT)
+    cols = columns(
+        [Item("a", "15–19", 2), Item("b", "20–24", 4), Item("c", "Sin dato", 0)], UNIT
+    )
     assert [c.height for c in cols] == [44.0, 88.0, 0.0]
     assert cols[1].y == 12.0
     assert cols[0].x < cols[0].center < cols[1].x
-    assert cols[2].tooltip == "Sin dato · 0 cuestionarios"
+    assert cols[2].description == "Sin dato · 0 cuestionarios"
 
 
-BANDS = [(50, "ndr-nulo", "Nulo"), (75, "ndr-bajo", "Bajo"), (99, "ndr-medio", "Medio"),
-         (140, "ndr-alto", "Alto"), (float("inf"), "ndr-muy_alto", "Muy alto")]
+BANDS = [
+    (50, "ndr-nulo", "Nulo"),
+    (75, "ndr-bajo", "Bajo"),
+    (99, "ndr-medio", "Medio"),
+    (140, "ndr-alto", "Alto"),
+    (float("inf"), "ndr-muy_alto", "Muy alto"),
+]
 
 
 def test_range_strip_bands_clip_to_scale():
     strip = range_strip(BANDS, 200, [])
-    assert [b.label for b in strip.bands] == ["Nulo", "Bajo", "Medio", "Alto", "Muy alto"]
+    assert [b.label for b in strip.bands] == [
+        "Nulo",
+        "Bajo",
+        "Medio",
+        "Alto",
+        "Muy alto",
+    ]
     assert strip.bands[0].x == 0.0 and strip.bands[0].width == 25.0
     assert strip.bands[-1].x == 70.0 and strip.bands[-1].width == 30.0
 
 
+def test_range_strip_ticks_mark_each_band_boundary():
+    strip = range_strip(BANDS, 200, [])
+    assert [(t.display, t.x, t.anchor) for t in strip.ticks] == [
+        ("0", 0.0, "start"),
+        ("50", 25.0, "middle"),
+        ("75", 37.5, "middle"),
+        ("99", 49.5, "middle"),
+        ("140", 70.0, "middle"),
+        ("200", 100.0, "end"),
+    ]
+    assert strip.bands[1].description == "Bajo: 50 a 75"
+    assert strip.bands[-1].description == "Muy alto: 140 a 200"
+
+
+def test_range_strip_ticks_skip_boundaries_past_the_scale():
+    strip = range_strip(BANDS, 60, [])
+    assert [t.display for t in strip.ticks] == ["0", "50", "60"]
+
+
 def test_range_strip_markers_band_and_lanes():
-    points = [("min", "Mín", 20), ("median", "Mediana", 80), ("mean", "Prom.", 84.3), ("max", "Máx", 180)]
+    points = [
+        ("min", "Mín", 20),
+        ("median", "Mediana", 80),
+        ("mean", "Prom.", 84.3),
+        ("max", "Máx", 180),
+    ]
     strip = range_strip(BANDS, 200, points)
     by_key = {m.key: m for m in strip.markers}
     assert by_key["min"].band_label == "Nulo"
@@ -687,7 +755,7 @@ def test_range_strip_markers_band_and_lanes():
     # Median (40%) and mean (42.15%) are too close to share a lane.
     assert by_key["median"].lane != by_key["mean"].lane
     assert by_key["min"].lane == "above"
-    assert by_key["mean"].tooltip == "Prom.: 84.3 · Medio"
+    assert by_key["mean"].description == "Prom.: 84.3 · Medio"
 
 
 def test_range_strip_anchors_labels_at_the_edges():
@@ -726,6 +794,7 @@ from dataclasses import dataclass
 COLUMN_HEADROOM = 88.0  # tallest column's height, leaving room for its count
 LABEL_GAP = 9.0  # minimum % between two marker labels sharing a lane
 EDGE = 6.0  # % from either end where a label anchors to the edge
+LEVEL_MIN_HEIGHT = 4.0  # % of a level column's height kept by any non-empty level
 
 
 def format_number(value: float) -> str:
@@ -760,7 +829,7 @@ class Segment:
     x: float
     width: float
     color: str
-    tooltip: str
+    description: str
 
 
 def stacked_segments(items, unit) -> list[Segment]:
@@ -782,7 +851,7 @@ def stacked_segments(items, unit) -> list[Segment]:
                     x=round(x, 3),
                     width=round(width, 3),
                     color=item.color,
-                    tooltip=f"{item.label} · {_count(item.value, unit)} · {percent} %",
+                    description=f"{item.label} · {_count(item.value, unit)} · {percent} %",
                 )
             )
         x += width
@@ -800,7 +869,7 @@ class Column:
     y: float
     height: float
     color: str
-    tooltip: str
+    description: str
 
 
 def columns(items, unit) -> list[Column]:
@@ -821,7 +890,56 @@ def columns(items, unit) -> list[Column]:
                 y=round(100 - height, 3),
                 height=height,
                 color=item.color,
-                tooltip=f"{item.label} · {_count(item.value, unit)}",
+                description=f"{item.label} · {_count(item.value, unit)}",
+            )
+        )
+    return out
+
+
+@dataclass(frozen=True)
+class LevelColumn:
+    key: str
+    label: str
+    value: int
+    percent: int
+    x: float
+    width: float
+    y: float
+    height: float
+    color: str
+    description: str
+
+
+def level_columns(items, unit) -> list[LevelColumn]:
+    """One column per item, empty ones included, on a fixed 0–100 % scale.
+
+    Heights are the item's exact share of the total, so rows drawn with this
+    function compare with each other; a non-empty item is never drawn shorter
+    than LEVEL_MIN_HEIGHT.
+    """
+    items = list(items)
+    total = sum(item.value for item in items)
+    percents = largest_remainder([item.value for item in items])
+    slot = 100 / len(items) if items else 0
+    out = []
+    for i, (item, percent) in enumerate(zip(items, percents)):
+        height = item.value * 100 / total if total else 0.0
+        if item.value:
+            height = max(height, LEVEL_MIN_HEIGHT)
+        out.append(
+            LevelColumn(
+                key=item.key,
+                label=item.label,
+                value=item.value,
+                percent=percent,
+                x=round(i * slot + slot * 0.2, 3),
+                width=round(slot * 0.6, 3),
+                y=round(100 - height, 3),
+                height=round(height, 3),
+                color=item.color,
+                description=(
+                    f"{item.label} · {_count(item.value, unit)} · {percent} %"
+                ),
             )
         )
     return out
@@ -833,6 +951,14 @@ class StripBand:
     label: str
     x: float
     width: float
+    description: str
+
+
+@dataclass(frozen=True)
+class Tick:
+    display: str
+    x: float
+    anchor: str  # "start" | "middle" | "end"
 
 
 @dataclass(frozen=True)
@@ -845,13 +971,14 @@ class Marker:
     lane: str  # "above" | "below"
     anchor: str  # SVG text-anchor: "start" | "middle" | "end"
     band_label: str
-    tooltip: str
+    description: str
 
 
 @dataclass(frozen=True)
 class Strip:
     bands: tuple[StripBand, ...]
     markers: tuple[Marker, ...]
+    ticks: tuple[Tick, ...]
     scale_max: int
 
 
@@ -867,6 +994,7 @@ def range_strip(bands, scale_max, points) -> Strip | None:
     if scale_max <= 0:
         return None
     drawn, lower = [], 0.0
+    ticks = [Tick(display="0", x=0.0, anchor="start")]
     for upper, color, label in bands:
         upper = min(upper, scale_max)
         if upper > lower:
@@ -876,9 +1004,21 @@ def range_strip(bands, scale_max, points) -> Strip | None:
                     label=label,
                     x=round(lower * 100 / scale_max, 3),
                     width=round((upper - lower) * 100 / scale_max, 3),
+                    description=(
+                        f"{label}: {format_number(lower)} a {format_number(upper)}"
+                    ),
                 )
             )
+            if upper < scale_max:
+                ticks.append(
+                    Tick(
+                        display=format_number(upper),
+                        x=round(upper * 100 / scale_max, 3),
+                        anchor="middle",
+                    )
+                )
             lower = upper
+    ticks.append(Tick(display=format_number(scale_max), x=100.0, anchor="end"))
 
     last = {"above": None, "below": None}
     markers = []
@@ -903,10 +1043,15 @@ def range_strip(bands, scale_max, points) -> Strip | None:
                 lane=lane,
                 anchor="start" if x < EDGE else "end" if x > 100 - EDGE else "middle",
                 band_label=band_label,
-                tooltip=f"{label}: {display} · {band_label}",
+                description=f"{label}: {display} · {band_label}",
             )
         )
-    return Strip(bands=tuple(drawn), markers=tuple(markers), scale_max=scale_max)
+    return Strip(
+        bands=tuple(drawn),
+        markers=tuple(markers),
+        ticks=tuple(ticks),
+        scale_max=scale_max,
+    )
 ```
 
 - [ ] **Step 4: Run to verify pass, then commit**
@@ -926,7 +1071,7 @@ git commit -m "feat(core): pure geometry for stacked bars, columns and range str
 **Files:**
 - Modify: `apps/core/templatetags/valuation_extras.py` (add `_FILL`, `ndr_fill`)
 - Create: `apps/core/templatetags/charts.py`
-- Create: `templates/components/charts/stacked_bar.html`, `column_chart.html`, `range_strip.html`
+- Create: `templates/components/charts/stacked_bar.html`, `column_chart.html`, `range_strip.html`, `level_columns.html`
 - Test: `apps/core/tests/test_chart_components.py`, `apps/core/tests/test_valuation_extras.py`
 
 **Interfaces:**
@@ -935,6 +1080,8 @@ git commit -m "feat(core): pure geometry for stacked bars, columns and range str
   - `{% stacked_bar items unit="cuestionario" legend=False label="" %}`
   - `{% column_chart items unit="persona" label="" %}`
   - `{% range_strip bands scale_max points label="" %}`
+  - `{% level_columns items unit="cuestionario" names="always" size="md" label="" %}` — one fixed slot per item on a 0–100 % scale with its percent and count printed beneath; `names="phone"` shows the names below `md` only; `size` is `sm`/`md`/`lg`
+  - No mark is focusable or carries a tooltip; each SVG is one `role="img"` with an `aria-label` joining the marks' descriptions.
   - Color keys understood: `ndr-<level>` for every NDR level, `sex-female`, `sex-male`, `age`, `none`, `guia1-none`, `guia1-event`, `guia1-positive`. Units: `cuestionario`, `persona`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -972,13 +1119,17 @@ def _render(source, **context):
     return Template("{% load charts %}" + source).render(Context(context))
 
 
-def test_stacked_bar_renders_segments_with_tooltip_and_fill():
+def test_stacked_bar_renders_segments_with_fill_and_no_focusable_marks():
     html = _render(
         "{% stacked_bar items legend=True label='Distribución' %}",
-        items=[Item("bajo", "Bajo", 1, "ndr-bajo"), Item("alto", "Alto", 3, "ndr-alto")],
+        items=[
+            Item("bajo", "Bajo", 1, "ndr-bajo"),
+            Item("alto", "Alto", 3, "ndr-alto"),
+        ],
     )
-    assert 'data-tooltip="Alto · 3 cuestionarios · 75 %"' in html
+    assert 'aria-label="Distribución"' in html
     assert "fill-orange-500" in html
+    assert "tabindex" not in html and "data-tooltip" not in html
     assert 'x="25.0%"' in html
     assert "<title>" not in html
     assert "75 %" in html  # legend
@@ -1000,7 +1151,8 @@ def test_column_chart_labels_every_column():
     )
     assert "15–19" in html and "Sin dato" in html
     assert "fill-indigo-500" in html
-    assert 'data-tooltip="15–19 · 2 personas"' in html
+    assert 'aria-label="15–19 · 2 personas; Sin dato · 0 personas"' in html
+    assert "tabindex" not in html
 
 
 def test_range_strip_renders_bands_and_labelled_markers():
@@ -1010,9 +1162,40 @@ def test_range_strip_renders_bands_and_labelled_markers():
         points=[("mean", "Prom.", 84.3)],
     )
     assert "Prom. 84.3" in html
-    assert 'data-tooltip="Prom.: 84.3 · Nulo"' in html
     assert "fill-red-500" in html
-    assert ">200<" in html
+    assert ">100<" in html and ">200<" in html  # boundary and end ticks
+    assert 'aria-label="Prom.: 84.3 · Nulo; Nulo: 0 a 100; Muy alto: 100 a 200"' in html
+    assert "tabindex" not in html
+
+
+def test_level_columns_render_every_level_with_percent_and_count():
+    html = _render(
+        "{% level_columns items %}",
+        items=[
+            Item("bajo", "Bajo", 1, "ndr-bajo"),
+            Item("medio", "Medio", 0, "ndr-medio"),
+            Item("alto", "Alto", 3, "ndr-alto"),
+        ],
+    )
+    assert "repeat(3, minmax(0, 1fr))" in html
+    assert html.count('class="fill-gray-300"') == 3  # a baseline for every slot
+    assert html.count('rx="2"') == 2  # no bar for the empty level
+    assert 'height="75.0%"' in html and "fill-orange-500" in html
+    assert ">Medio<" in html and "0 %" in html
+    assert '<span class="sr-only"> cuestionario</span>' in html
+    assert '<span class="sr-only"> cuestionarios</span>' in html
+    assert "md:sr-only" not in html
+    assert "h-10" in html
+    assert "tabindex" not in html and "data-tooltip" not in html
+
+
+def test_level_columns_names_on_phone_only_and_size():
+    html = _render(
+        "{% level_columns items names='phone' size='lg' %}",
+        items=[Item("bajo", "Bajo", 1, "ndr-bajo")],
+    )
+    assert "md:sr-only" in html
+    assert "h-24" in html
 
 
 def test_unknown_color_key_falls_back_to_gray():
@@ -1097,7 +1280,7 @@ def stacked_bar(items, unit="cuestionario", legend=False, label=""):
     return {
         "segments": segments,
         "legend": legend,
-        "aria_label": label or "; ".join(s["tooltip"] for s in segments),
+        "aria_label": label or "; ".join(s["description"] for s in segments),
     }
 
 
@@ -1106,7 +1289,7 @@ def column_chart(items, unit="persona", label=""):
     cols = [_paint(col) for col in charts.columns(items, UNITS[unit])]
     return {
         "cols": cols,
-        "aria_label": label or "; ".join(col["tooltip"] for col in cols),
+        "aria_label": label or "; ".join(col["description"] for col in cols),
     }
 
 
@@ -1119,9 +1302,34 @@ def range_strip(bands, scale_max, points, label=""):
         "strip": {
             "bands": [_paint(b) for b in strip.bands],
             "markers": [asdict(m) for m in strip.markers],
-            "scale_max": strip.scale_max,
+            "ticks": [asdict(t) for t in strip.ticks],
         },
-        "aria_label": label or "; ".join(m.tooltip for m in strip.markers),
+        "aria_label": label
+        or "; ".join(
+            [m.description for m in strip.markers]
+            + [b.description for b in strip.bands]
+        ),
+    }
+
+
+@register.inclusion_tag("components/charts/level_columns.html")
+def level_columns(items, unit="cuestionario", names="always", size="md", label=""):
+    """One column per item on a fixed 0–100 % scale, each with its percent and count.
+
+    `names="phone"` keeps the item names for screen readers but shows them only
+    below `md`, for rows that sit under a shared column header. `size` is the
+    plot height: "sm", "md" or "lg".
+    """
+    singular, plural = UNITS[unit]
+    cols = [
+        {**_paint(col), "unit": singular if col.value == 1 else plural}
+        for col in charts.level_columns(items, UNITS[unit])
+    ]
+    return {
+        "cols": cols,
+        "names_on_phone_only": names == "phone",
+        "size": size,
+        "aria_label": label or "; ".join(col["description"] for col in cols),
     }
 ```
 
@@ -1134,9 +1342,7 @@ def range_strip(bands, scale_max, points, label=""):
     <div class="overflow-hidden rounded-full">
       <svg class="block h-3 w-full" role="img" aria-label="{{ aria_label }}">
         {% for s in segments %}
-          <rect x="{{ s.x }}%" y="0" width="{{ s.width }}%" height="100%"
-                class="{{ s.fill }} stroke-white outline-none hover:opacity-80 focus:opacity-80"
-                stroke-width="2" tabindex="0" aria-label="{{ s.tooltip }}" data-tooltip="{{ s.tooltip }}"></rect>
+          <rect x="{{ s.x }}%" y="0" width="{{ s.width }}%" height="100%" class="{{ s.fill }} stroke-white" stroke-width="2"></rect>
         {% endfor %}
       </svg>
     </div>
@@ -1164,9 +1370,7 @@ def range_strip(bands, scale_max, points, label=""):
 <figure class="m-0 w-full min-w-0 pt-4">
   <svg class="block h-36 w-full overflow-visible" role="img" aria-label="{{ aria_label }}">
     {% for col in cols %}
-      <rect x="{{ col.x }}%" y="{{ col.y }}%" width="{{ col.width }}%" height="{{ col.height }}%" rx="3"
-            class="{{ col.fill }} outline-none hover:opacity-80 focus:opacity-80"
-            tabindex="0" aria-label="{{ col.tooltip }}" data-tooltip="{{ col.tooltip }}"></rect>
+      <rect x="{{ col.x }}%" y="{{ col.y }}%" width="{{ col.width }}%" height="{{ col.height }}%" rx="3" class="{{ col.fill }}"></rect>
       {% if col.value %}
         <text x="{{ col.center }}%" y="{{ col.y }}%" dy="-4" text-anchor="middle" class="fill-gray-700 text-[10px]">{{ col.value }}</text>
       {% endif %}
@@ -1198,13 +1402,45 @@ def range_strip(bands, scale_max, points, label=""):
         <line x1="{{ m.x }}%" x2="{{ m.x }}%" y1="34" y2="43" class="stroke-gray-400" stroke-width="1"></line>
         <text x="{{ m.x }}%" y="55" text-anchor="{{ m.anchor }}" class="fill-gray-700 text-[10px]">{{ m.label }} {{ m.display }}</text>
       {% endif %}
-      <circle cx="{{ m.x }}%" cy="29" r="5" class="fill-gray-900 stroke-white outline-none" stroke-width="2"
-              tabindex="0" aria-label="{{ m.tooltip }}" data-tooltip="{{ m.tooltip }}"></circle>
+      <circle cx="{{ m.x }}%" cy="29" r="5" class="fill-gray-900 stroke-white" stroke-width="2"></circle>
     {% endfor %}
   </svg>
-  <div class="flex justify-between text-[10px] text-gray-400"><span>0</span><span>{{ strip.scale_max }}</span></div>
+  <div class="relative h-3 text-[10px] leading-none text-gray-400" aria-hidden="true">
+    {% for t in strip.ticks %}
+      <span class="absolute top-0{% if t.anchor == 'middle' %} -translate-x-1/2{% elif t.anchor == 'end' %} -translate-x-full{% endif %}" style="left: {{ t.x }}%">{{ t.display }}</span>
+    {% endfor %}
+  </div>
 </figure>
 {% endif %}
+{% endlocalize %}
+```
+
+`templates/components/charts/level_columns.html`:
+
+```django
+{% load l10n %}{% localize off %}
+<figure class="m-0 w-full min-w-0">
+  <svg class="block w-full overflow-visible {% if size == 'lg' %}h-24{% elif size == 'sm' %}h-8{% else %}h-10{% endif %}" role="img" aria-label="{{ aria_label }}">
+    <line x1="0" x2="100%" y1="50%" y2="50%" class="stroke-gray-200" stroke-width="1" stroke-dasharray="2 3"></line>
+    {% for col in cols %}
+      <rect x="{{ col.x }}%" y="100%" width="{{ col.width }}%" height="1" class="fill-gray-300"></rect>
+      {% if col.value %}
+        <rect x="{{ col.x }}%" y="{{ col.y }}%" width="{{ col.width }}%" height="{{ col.height }}%" rx="2" class="{{ col.fill }}"></rect>
+      {% endif %}
+    {% endfor %}
+  </svg>
+  <dl class="m-0 mt-1.5 grid text-center" style="grid-template-columns: repeat({{ cols|length }}, minmax(0, 1fr))">
+    {% for col in cols %}
+      <div class="min-w-0">
+        <dt class="flex items-center justify-center gap-1 text-[10px] leading-tight text-gray-500{% if names_on_phone_only %} md:sr-only{% endif %}">
+          <span class="size-2 shrink-0 rounded-sm {{ col.swatch }}" aria-hidden="true"></span><span class="truncate">{{ col.label }}</span>
+        </dt>
+        <dd class="m-0 text-xs font-semibold tabular-nums {% if col.value %}text-gray-900{% else %}text-gray-400{% endif %}">{{ col.percent }} %</dd>
+        <dd class="m-0 text-[10px] tabular-nums text-gray-500">{{ col.value }}<span class="sr-only"> {{ col.unit }}</span></dd>
+      </div>
+    {% endfor %}
+  </dl>
+</figure>
 {% endlocalize %}
 ```
 
@@ -1215,7 +1451,7 @@ Expected: PASS.
 
 ```bash
 git add apps/core templates/components
-git commit -m "feat(core): SVG chart components — stacked bar, columns, range strip"
+git commit -m "feat(core): chart components — stacked bar, columns, range strip, level columns"
 ```
 
 ---
@@ -2169,7 +2405,7 @@ git commit -m "feat(nom035): participation by área with per-row suppression"
 - Modify: `apps/core/views.py` (`_company_for`, `_results_context`, `CompanyResultsView`, `CompanyResultsFragmentView`)
 - Modify: `apps/core/urls.py`
 - Create: `templates/core/company_results.html`
-- Create: `templates/core/results/_body.html`, `_group_line.html`, `_suppressed.html`, `_ndr_legend.html`, `_participation.html`, `_sex_profile.html`, `_age_profile.html`, `_final_distribution.html`, `_final_stats.html`, `_stats_row.html`, `_guia1.html`, `_categoria_distribution.html`, `_categoria_stats.html`
+- Create: `templates/core/results/_body.html`, `_group_line.html`, `_suppressed.html`, `_ndr_legend.html`, `_ndr_columns.html`, `_dominios_summary.html`, `_participation.html`, `_sex_profile.html`, `_age_profile.html`, `_final_distribution.html`, `_final_stats.html`, `_stats_row.html`, `_guia1.html`, `_categoria_distribution.html`, `_categoria_stats.html`
 - Test: `apps/core/tests/test_results_views.py`
 
 **Interfaces:**
@@ -2179,6 +2415,8 @@ git commit -m "feat(nom035): participation by área with per-row suppression"
 - [ ] **Step 1: Write the failing tests** (`apps/core/tests/test_results_views.py`)
 
 ```python
+from html.parser import HTMLParser
+
 import pytest
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
@@ -2197,9 +2435,14 @@ MESSAGE = "Grupo demasiado pequeño para mostrar resultados sin identificar a la
 
 @pytest.fixture
 def setup(company, make_user_with_profile, make_area, bootstrap_groups):
-    survey = Survey.objects.create(key="nom035", title="NOM-035", status=Survey.Status.PUBLISHED)
+    survey = Survey.objects.create(
+        key="nom035", title="NOM-035", status=Survey.Status.PUBLISHED
+    )
     assignment = SurveyAssignment.objects.create(
-        company=company, survey=survey, variant="large", status=SurveyAssignment.Status.ACTIVE
+        company=company,
+        survey=survey,
+        variant="large",
+        status=SurveyAssignment.Status.ACTIVE,
     )
     area = make_area(company, name="Operaciones")
     exec_user = make_user_with_profile(email="exec@x.mx", company=company)
@@ -2208,8 +2451,14 @@ def setup(company, make_user_with_profile, make_area, bootstrap_groups):
     admin.groups.add(bootstrap_groups[ROLES[0].name])
     employee = make_user_with_profile(email="emp@x.mx", company=company)
     employee.groups.add(bootstrap_groups[ROLES[3].name])
-    return {"company": company, "assignment": assignment, "area": area,
-            "exec": exec_user, "admin": admin, "employee": employee}
+    return {
+        "company": company,
+        "assignment": assignment,
+        "area": area,
+        "exec": exec_user,
+        "admin": admin,
+        "employee": employee,
+    }
 
 
 def add_respondents(setup, make_user_with_profile, count, *, area=None, prefix="r"):
@@ -2218,9 +2467,13 @@ def add_respondents(setup, make_user_with_profile, count, *, area=None, prefix="
             email=f"{prefix}{i}@x.mx", company=setup["company"], area=area
         )
         sub = SurveySubmission.objects.create(
-            assignment=setup["assignment"], user=user, status=SurveySubmission.Status.IN_PROGRESS
+            assignment=setup["assignment"],
+            user=user,
+            status=SurveySubmission.Status.IN_PROGRESS,
         )
-        SubmissionScore.objects.create(submission=sub, final_score=60, final_ndr=c.NDR_BAJO)
+        SubmissionScore.objects.create(
+            submission=sub, final_score=60, final_ndr=c.NDR_BAJO
+        )
 
 
 def test_employee_gets_403(client, setup):
@@ -2245,18 +2498,24 @@ def test_executive_cannot_use_admin_route(client, setup):
     assert client.get(url).status_code == 403
 
 
-def test_small_filtered_group_locked_for_executive_not_admin(client, setup, make_user_with_profile):
+def test_small_filtered_group_locked_for_executive_not_admin(
+    client, setup, make_user_with_profile
+):
     add_respondents(setup, make_user_with_profile, 3, area=setup["area"], prefix="ops")
     add_respondents(setup, make_user_with_profile, 10, prefix="rest")
     params = {"area": setup["area"].pk}
 
     client.force_login(setup["exec"])
-    locked = client.get(reverse("core:company_results_fragment"), params).content.decode()
+    locked = client.get(
+        reverse("core:company_results_fragment"), params
+    ).content.decode()
     assert MESSAGE in locked
     assert "Distribución por categoría" not in locked
 
     client.force_login(setup["admin"])
-    url = reverse("core:company_results_fragment_for", args=[setup["company"].reference_code])
+    url = reverse(
+        "core:company_results_fragment_for", args=[setup["company"].reference_code]
+    )
     free = client.get(url, params).content.decode()
     assert MESSAGE not in free
     assert "Distribución por categoría" in free
@@ -2273,13 +2532,17 @@ def test_fragment_is_a_fragment(client, setup, make_user_with_profile):
 def test_invalid_parameters_are_ignored(client, setup, make_user_with_profile):
     add_respondents(setup, make_user_with_profile, 5)
     client.force_login(setup["exec"])
-    resp = client.get(reverse("core:company_results"),
-                      {"encuesta": "999", "edad": "nope", "area": "abc", "sexo": "x"})
+    resp = client.get(
+        reverse("core:company_results"),
+        {"encuesta": "999", "edad": "nope", "area": "abc", "sexo": "x"},
+    )
     assert resp.status_code == 200
     assert resp.context["query"].is_filtered is False
 
 
-def test_no_nom035_assignment(client, company, make_user_with_profile, bootstrap_groups):
+def test_no_nom035_assignment(
+    client, company, make_user_with_profile, bootstrap_groups
+):
     user = make_user_with_profile(email="solo@x.mx", company=company)
     user.groups.add(bootstrap_groups[ROLES[1].name])
     client.force_login(user)
@@ -2288,9 +2551,13 @@ def test_no_nom035_assignment(client, company, make_user_with_profile, bootstrap
     assert 'id="results-filters"' not in body
 
 
-def test_query_count_is_independent_of_respondents(client, setup, make_user_with_profile):
+def test_query_count_is_independent_of_respondents(
+    client, setup, make_user_with_profile
+):
     client.force_login(setup["admin"])
-    url = reverse("core:company_results_fragment_for", args=[setup["company"].reference_code])
+    url = reverse(
+        "core:company_results_fragment_for", args=[setup["company"].reference_code]
+    )
     add_respondents(setup, make_user_with_profile, 3, prefix="a")
     client.get(url)  # warm session/permission caches
     with CaptureQueriesContext(connection) as small:
@@ -2299,6 +2566,56 @@ def test_query_count_is_independent_of_respondents(client, setup, make_user_with
     with CaptureQueriesContext(connection) as large:
         client.get(url)
     assert len(large.captured_queries) == len(small.captured_queries)
+
+
+def test_unanswered_survey_says_so_instead_of_blaming_filters(client, setup):
+    client.force_login(setup["exec"])
+    body = client.get(reverse("core:company_results")).content.decode()
+    assert "Esta encuesta aún no tiene cuestionarios contestados." in body
+    assert "Ningún cuestionario coincide con los filtros." not in body
+
+
+def test_filtered_empty_group_blames_the_filters(client, setup, make_user_with_profile):
+    add_respondents(setup, make_user_with_profile, 6)
+    client.force_login(setup["exec"])
+    url = reverse("core:company_results") + f"?area={setup['area'].pk}"
+    body = client.get(url).content.decode()
+    assert "Ningún cuestionario coincide con los filtros." in body
+    assert "Esta encuesta aún no tiene cuestionarios contestados." not in body
+
+
+class _SummaryContents(HTMLParser):
+    """Tags opened inside each <summary>, and every tabindex on the page."""
+
+    def __init__(self):
+        super().__init__()
+        self.depth = 0
+        self.nested = []
+        self.tabindexes = 0
+
+    def handle_starttag(self, tag, attrs):
+        if any(name == "tabindex" for name, _ in attrs):
+            self.tabindexes += 1
+        if tag == "summary":
+            self.depth += 1
+        elif self.depth:
+            self.nested.append(tag)
+
+    def handle_endtag(self, tag):
+        if tag == "summary":
+            self.depth -= 1
+
+
+def test_summaries_hold_no_interactive_content(client, setup, make_user_with_profile):
+    add_respondents(setup, make_user_with_profile, 6)
+    client.force_login(setup["exec"])
+    body = client.get(reverse("core:company_results_fragment")).content.decode()
+    parser = _SummaryContents()
+    parser.feed(body)
+    assert "Dominios (" in body
+    assert not {"a", "button", "input", "select", "textarea"} & set(parser.nested)
+    assert parser.tabindexes == 0
+    assert "data-tooltip" not in body
 ```
 
 - [ ] **Step 2: Run to verify failure**
@@ -2502,11 +2819,10 @@ class CompanyResultsFragmentView(CompanyResultsView):
       </div>
     </form>
 
-    <div id="results-body" class="mt-6" aria-live="polite">
+    <p id="results-status" class="sr-only" aria-live="polite"></p>
+    <div id="results-body" class="mt-6">
       {% include "core/results/_body.html" %}
     </div>
-    <div id="chart-tooltip" role="tooltip" hidden
-         class="pointer-events-none fixed z-50 max-w-xs rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg"></div>
     <script src="{% static 'js/results_dashboard.js' %}"></script>
   {% endif %}
 {% endblock %}
@@ -2578,14 +2894,35 @@ class CompanyResultsFragmentView(CompanyResultsView):
 </ul>
 ```
 
+`_ndr_columns.html` (the level names heading the level columns from `md` up):
+
+```django
+{% load valuation_extras %}
+<div class="grid grid-cols-5 text-center text-[11px] leading-tight text-gray-500" aria-hidden="true">
+  {% for level, label in ndr_levels %}
+    <span class="flex items-center justify-center gap-1"><span class="size-2 shrink-0 rounded-sm {{ level|ndr_bar }}"></span>{{ label }}</span>
+  {% endfor %}
+</div>
+```
+
+`_dominios_summary.html` (expects `row`; text only, nothing focusable inside):
+
+```django
+<summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded-md py-1 text-xs font-medium text-indigo-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 [&::-webkit-details-marker]:hidden">
+  <svg class="size-4 shrink-0 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd"/></svg>
+  Dominios ({{ row.children|length }})<span class="sr-only"> de {{ row.label }}</span>
+</summary>
+```
+
 `_participation.html`:
 
 ```django
 {% load charts %}
 <section class="mt-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
   <h3 class="text-base font-semibold text-gray-900">Participación por área</h3>
-  <div class="mt-4 hidden gap-4 border-b border-gray-100 pb-2 text-xs font-medium uppercase tracking-wide text-gray-400 md:grid md:grid-cols-[minmax(0,1.2fr)_5.5rem_6.5rem_6.5rem_minmax(0,2fr)]">
-    <span>Área</span><span class="text-right">Registrados</span><span class="text-right">Respondieron</span><span class="text-right">Participación</span><span>Distribución (final)</span>
+  <div class="mt-4 hidden items-end gap-4 border-b border-gray-100 pb-2 text-xs font-medium uppercase tracking-wide text-gray-400 md:grid md:grid-cols-[minmax(0,1.2fr)_5.5rem_6.5rem_6.5rem_minmax(0,2fr)]">
+    <span>Área</span><span class="text-right">Registrados</span><span class="text-right">Respondieron</span><span class="text-right">Participación</span>
+    <div class="normal-case tracking-normal"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-400">Distribución (final)</span>{% include "core/results/_ndr_columns.html" %}</div>
   </div>
   <ul class="divide-y divide-gray-100">
     {% for item in participation_rows %}{% with row=item.row %}
@@ -2604,7 +2941,7 @@ class CompanyResultsFragmentView(CompanyResultsView):
           {% if row.suppressed %}
             {% include "core/results/_suppressed.html" %}
           {% elif row.counts %}
-            {% stacked_bar row.slices %}
+            {% level_columns row.slices names="phone" %}
           {% else %}
             <span class="text-xs text-gray-400">—</span>
           {% endif %}
@@ -2614,7 +2951,6 @@ class CompanyResultsFragmentView(CompanyResultsView):
       <li class="py-3 text-sm text-gray-500">Esta empresa no tiene áreas registradas.</li>
     {% endfor %}
   </ul>
-  {% include "core/results/_ndr_legend.html" %}
 </section>
 ```
 
@@ -2646,14 +2982,17 @@ class CompanyResultsFragmentView(CompanyResultsView):
 {% load charts %}
 <section class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
   <h3 class="text-base font-semibold text-gray-900">Calificación final — distribución</h3>
+  <p class="mt-1 text-xs text-gray-500">Porcentaje de cuestionarios en cada nivel, en una escala de 0 a 100 %.</p>
+  <div class="mt-4 hidden gap-2 md:grid md:grid-cols-[12rem_minmax(0,1fr)_4rem]">
+    <span></span>{% include "core/results/_ndr_columns.html" %}<span></span>
+  </div>
   {% with row=results.final_distribution %}
-    <div class="mt-4 grid items-center gap-2 md:grid-cols-[12rem_minmax(0,1fr)_4rem]">
+    <div class="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:grid-cols-[12rem_minmax(0,1fr)_4rem]">
       <span class="text-sm font-medium text-gray-900">{{ row.label }}</span>
-      {% stacked_bar row.slices %}
-      <span class="text-xs text-gray-500 md:text-right">n = {{ row.n }}</span>
+      <span class="text-xs text-gray-500 md:order-last md:text-right">n = {{ row.n }}</span>
+      <div class="col-span-2 min-w-0 md:col-span-1">{% level_columns row.slices names="phone" size="lg" %}</div>
     </div>
   {% endwith %}
-  {% include "core/results/_ndr_legend.html" %}
 </section>
 ```
 
@@ -2702,30 +3041,35 @@ class CompanyResultsFragmentView(CompanyResultsView):
 {% load charts %}
 <section class="mt-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
   <h3 class="text-base font-semibold text-gray-900">Distribución por categoría</h3>
-  <div class="mt-4 space-y-2">
+  <p class="mt-1 text-xs text-gray-500">Porcentaje de cuestionarios en cada nivel. Todas las filas usan la misma escala, de 0 a 100 %.</p>
+  <div class="mt-4 hidden gap-2 md:grid md:grid-cols-[14rem_minmax(0,1fr)_4rem]">
+    <span></span>{% include "core/results/_ndr_columns.html" %}<span></span>
+  </div>
+  <div class="mt-2 divide-y divide-gray-100">
     {% for row in results.categoria_distribution %}
-      <details class="group">
-        <summary class="grid cursor-pointer list-none items-center gap-2 rounded-lg py-1 md:grid-cols-[14rem_minmax(0,1fr)_4rem]">
-          <span class="flex items-center gap-1.5 text-sm font-medium text-gray-900">
-            <svg class="size-4 shrink-0 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd"/></svg>
-            {{ row.label }}
-          </span>
-          {% stacked_bar row.slices %}
-          <span class="text-xs text-gray-500 md:text-right">n = {{ row.n }}</span>
-        </summary>
-        <div class="mt-2 space-y-2 border-l border-gray-100 pl-4 md:ml-6">
-          {% for child in row.children %}
-            <div class="grid items-center gap-2 md:grid-cols-[13rem_minmax(0,1fr)_4rem]">
-              <span class="text-xs text-gray-700">{{ child.label }}</span>
-              {% stacked_bar child.slices %}
-              <span class="text-xs text-gray-500 md:text-right">n = {{ child.n }}</span>
-            </div>
-          {% endfor %}
+      <div class="py-3">
+        <div class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:grid-cols-[14rem_minmax(0,1fr)_4rem]">
+          <span class="text-sm font-medium text-gray-900">{{ row.label }}</span>
+          <span class="text-xs text-gray-500 md:order-last md:text-right">n = {{ row.n }}</span>
+          <div class="col-span-2 min-w-0 md:col-span-1">{% level_columns row.slices names="phone" %}</div>
         </div>
-      </details>
+        {% if row.children %}
+          <details class="group mt-2">
+            {% include "core/results/_dominios_summary.html" %}
+            <div class="mt-2 space-y-3 border-l border-gray-100 pl-4 md:ml-6">
+              {% for child in row.children %}
+                <div class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:grid-cols-[11.5rem_minmax(0,1fr)_4rem]">
+                  <span class="text-xs text-gray-700">{{ child.label }}</span>
+                  <span class="text-xs text-gray-500 md:order-last md:text-right">n = {{ child.n }}</span>
+                  <div class="col-span-2 min-w-0 md:col-span-1">{% level_columns child.slices names="phone" size="sm" %}</div>
+                </div>
+              {% endfor %}
+            </div>
+          </details>
+        {% endif %}
+      </div>
     {% endfor %}
   </div>
-  {% include "core/results/_ndr_legend.html" %}
 </section>
 ```
 
@@ -2734,14 +3078,19 @@ class CompanyResultsFragmentView(CompanyResultsView):
 ```django
 <section class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
   <h3 class="text-base font-semibold text-gray-900">Estadística por categoría</h3>
-  <div class="mt-4 space-y-4">
+  <div class="mt-2 divide-y divide-gray-100">
     {% for row in results.categoria_stats %}
-      <details class="group">
-        <summary class="cursor-pointer list-none">{% include "core/results/_stats_row.html" with row=row %}</summary>
-        <div class="mt-3 space-y-3 border-l border-gray-100 pl-4 md:ml-6">
-          {% for child in row.children %}{% include "core/results/_stats_row.html" with row=child %}{% endfor %}
-        </div>
-      </details>
+      <div class="py-3">
+        {% include "core/results/_stats_row.html" with row=row %}
+        {% if row.children %}
+          <details class="group mt-2">
+            {% include "core/results/_dominios_summary.html" %}
+            <div class="mt-3 space-y-3 border-l border-gray-100 pl-4 md:ml-6">
+              {% for child in row.children %}{% include "core/results/_stats_row.html" with row=child %}{% endfor %}
+            </div>
+          </details>
+        {% endif %}
+      </div>
     {% endfor %}
   </div>
   {% include "core/results/_ndr_legend.html" %}
@@ -2764,14 +3113,14 @@ git commit -m "feat(core): NOM-035 results page with global filters"
 
 ---
 
-### Task 12: In-place filtering and tooltips (`results_dashboard.ts`)
+### Task 12: In-place filtering (`results_dashboard.ts`)
 
 **Files:**
 - Create: `static/ts/results_dashboard.ts`
 - Create (generated): `static/js/results_dashboard.js`
 
 **Interfaces:**
-- Consumes: `#results-filters[data-fragment-url]`, `#results-body`, `[data-filter-count]`, `a[data-results-link]`, `[data-tooltip]`, `#chart-tooltip` (Task 11).
+- Consumes: `#results-filters[data-fragment-url]`, `#results-body`, `[data-filter-count]`, `a[data-results-link]`, `[data-group-line]`, `#results-status` (Task 11).
 
 - [ ] **Step 1: Write `static/ts/results_dashboard.ts`**
 
@@ -2782,10 +3131,9 @@ git commit -m "feat(core): NOM-035 results page with global filters"
  * The NOM-035 results page (templates/core/company_results.html).
  *
  * Swaps #results-body with the fragment URL when the survey changes or the
- * filter form is applied, keeps the address bar in step, and shows a tooltip
- * for chart marks on hover, focus and tap. Without this script the form is a
- * plain GET form and the page reloads; nothing here holds state the server
- * does not also render.
+ * filter form is applied, and keeps the address bar in step. Without this
+ * script the form is a plain GET form and the page reloads; nothing here holds
+ * state the server does not also render.
  */
 
 const FILTER_KEYS = ["sexo", "edad", "area", "localidad"];
@@ -2822,56 +3170,6 @@ function withQuery(base: string, params: URLSearchParams): string {
   return qs ? `${base}?${qs}` : base;
 }
 
-/** Above the mark when it fits, below otherwise; never past the viewport edges. */
-function tooltipPosition(
-  mark: DOMRect,
-  tip: { width: number; height: number },
-  viewportWidth: number,
-): { left: number; top: number } {
-  const left = Math.min(Math.max(8, mark.left + mark.width / 2 - tip.width / 2), viewportWidth - tip.width - 8);
-  const above = mark.top - tip.height - 8;
-  return { left, top: above < 8 ? mark.bottom + 8 : above };
-}
-
-function initTooltip(): void {
-  const tip = document.getElementById("chart-tooltip");
-  if (!tip) return;
-  const tooltip: HTMLElement = tip;
-
-  function markOf(target: EventTarget | null): Element | null {
-    return target instanceof Element ? target.closest("[data-tooltip]") : null;
-  }
-  function show(mark: Element): void {
-    tooltip.textContent = mark.getAttribute("data-tooltip");
-    tooltip.hidden = false;
-    const pos = tooltipPosition(mark.getBoundingClientRect(), tooltip.getBoundingClientRect(), window.innerWidth);
-    tooltip.style.left = `${pos.left}px`;
-    tooltip.style.top = `${pos.top}px`;
-  }
-  function hide(): void {
-    tooltip.hidden = true;
-  }
-
-  document.addEventListener("pointerover", (event) => {
-    const mark = markOf(event.target);
-    if (mark) show(mark);
-  });
-  document.addEventListener("pointerout", (event) => {
-    if (markOf(event.target)) hide();
-  });
-  document.addEventListener("focusin", (event) => {
-    const mark = markOf(event.target);
-    if (mark) show(mark);
-    else hide();
-  });
-  document.addEventListener("click", (event) => {
-    const mark = markOf(event.target);
-    if (mark) show(mark);
-    else hide();
-  });
-  window.addEventListener("scroll", hide, { passive: true });
-}
-
 function initFilters(): void {
   const formElement = document.getElementById("results-filters");
   const bodyElement = document.getElementById("results-body");
@@ -2890,7 +3188,8 @@ function initFilters(): void {
     body.setAttribute("aria-busy", "true");
     try {
       const response = await fetch(withQuery(fragmentUrl, params), { signal: controller.signal });
-      if (!response.ok) {
+      // A redirect means the session expired and fetch followed it to the login page.
+      if (!response.ok || response.redirected) {
         window.location.assign(withQuery(pageUrl, params));
         return;
       }
@@ -2900,6 +3199,11 @@ function initFilters(): void {
       if (count) count.textContent = String(activeFilterCount(params));
       const panel = form.querySelector("details");
       if (panel) panel.open = false;
+      const status = document.getElementById("results-status");
+      const groupLine = body.querySelector("[data-group-line]");
+      if (status && groupLine) {
+        status.textContent = (groupLine.textContent ?? "").replace(/\s+/g, " ").trim();
+      }
     } catch (error) {
       if (!(error instanceof DOMException && error.name === "AbortError")) {
         window.location.assign(withQuery(pageUrl, params));
@@ -2927,7 +3231,6 @@ function initFilters(): void {
 }
 
 initFilters();
-initTooltip();
 ```
 
 - [ ] **Step 2: Build and verify**
@@ -2942,7 +3245,7 @@ Expected: PASS.
 
 ```bash
 git add static/ts/results_dashboard.ts static/js/results_dashboard.js static/css/output.css
-git commit -m "feat(core): swap results in place and show chart tooltips"
+git commit -m "feat(core): swap results in place"
 ```
 
 ---
@@ -3131,8 +3434,8 @@ Run `python manage.py runserver`, log in as an Ejecutivo principal and as an Adm
 2. Open *Filtros*, pick Femenino + an age band + an área, press *Aplicar* — the body updates, the disclosure closes, the count reads the number of values, pills appear.
 3. Click a pill's × and an área name in the participation table — each updates in place.
 4. Reload the page — the same filters and results render. Back button leaves the page (filters use `replaceState`).
-5. Hover and tab onto bar segments, columns and strip points — a tooltip appears next to the mark and never leaves the viewport; tap on a phone shows it, tapping elsewhere hides it.
-6. Expand a categoría in both the distribution and the statistics sections — dominio rows appear.
+5. Every NDR distribution (final, categoría, dominio, área) shows five level columns in fixed slots on the same 0–100 % scale, a level at 0 % keeping its gray baseline and "0 %"; percents and counts sit under their columns, lined up under the level names (desktop) or each with its own name (phone); range strips show their band boundaries as numbers. Nothing on a chart reacts to hover, and tabbing through the page never stops on a chart mark.
+6. Press *Dominios (n)* under a categoría in both the distribution and the statistics sections — dominio rows appear; tapping a bar never opens or closes them.
 7. As Ejecutivo, filter to an área with fewer than 5 respondents — the message replaces the results; the sex and age charts still show. As Administrador, the same filter shows everything.
 8. At 360px wide: no horizontal scroll; participation rows stack as cards; statistics strips sit below their numbers; overlapping strip labels alternate above and below.
 9. Disable JavaScript — *Aplicar* reloads the page with the filters applied.
