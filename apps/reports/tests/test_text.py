@@ -1,5 +1,6 @@
 import pytest
 
+from apps.core.charts import largest_remainder
 from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
 from apps.nom035.results import DistributionRow
@@ -134,3 +135,28 @@ def test_recommendations_one_per_dominio_level_reached(scored_assignment):
     assert (cfg.DOM_CONDICIONES, c.NDR_ALTO, f"55{NB}%") in recs
     assert (cfg.DOM_LIDERAZGO, c.NDR_MUY_ALTO, f"100{NB}%") in recs
     assert all(level != c.NDR_BAJO for _d, level, _s in recs)
+
+
+def test_dominio_sentence_share_is_the_sum_of_largest_remainder_percents():
+    # n=3, 1 Alto + 1 Muy alto + 1 Nulo: raw 33.33 each, floors 33/33/33, the one
+    # spare point goes to Nulo (first index) -> Alto 33 + Muy alto 33 = 66, not 67.
+    r = row(cfg.DOM_CARGA, {c.NDR_NULO: 1, c.NDR_ALTO: 1, c.NDR_MUY_ALTO: 1})
+    pct = dict(zip(c.NDR_ORDER, largest_remainder([n for _l, n in r.counts])))
+    assert pct[c.NDR_ALTO] + pct[c.NDR_MUY_ALTO] == 66
+    assert f"(66{NB}%)" in text.dominio_sentence([r])
+
+
+def test_categoria_sentence_tie_with_different_displayed_shares():
+    # Both are exactly 25 %. A (n=8: 3 Nulo, 3 Bajo, 1 Alto, 1 Muy alto) has raw
+    # 37.5/37.5/12.5/12.5, floors 37/37/12/12, two spare points go to the first
+    # two .5 remainders (Nulo, Bajo) -> Alto + Muy alto = 24. B (n=4: 3 Nulo,
+    # 1 Alto) is 75/25 -> 25.
+    a = row(
+        cfg.CAT_AMBIENTE,
+        {c.NDR_NULO: 3, c.NDR_BAJO: 3, c.NDR_ALTO: 1, c.NDR_MUY_ALTO: 1},
+    )
+    b = row(cfg.CAT_TIEMPO, {c.NDR_NULO: 3, c.NDR_ALTO: 1})
+    assert text.categoria_sentence([a, b]) == (
+        f"Las categorías «{a.label}» (24{NB}%) y «{b.label}» (25{NB}%) concentran "
+        "la mayor proporción de trabajadores en niveles Alto o Muy alto."
+    )

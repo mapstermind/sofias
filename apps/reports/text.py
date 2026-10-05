@@ -18,6 +18,7 @@ RECOMMENDED = (c.NDR_MEDIO, c.NDR_ALTO, c.NDR_MUY_ALTO)
 
 
 def percent(count: int, n: int) -> str:
+    """Percent of a single count (not a distribution row, so no largest remainder)."""
     return f"{round(count * 100 / n) if n else 0}{NBSP}%"
 
 
@@ -37,7 +38,9 @@ def _high_share(row: DistributionRow) -> Fraction:
 
 
 def _share_text(row: DistributionRow) -> str:
-    return f"{round(_high_share(row) * 100)}{NBSP}%"
+    """High-level share as the charts print it: summed largest-remainder percents."""
+    pct = _row_percents(row)
+    return f"{sum(pct[lvl] for lvl in HIGH)}{NBSP}%"
 
 
 def final_sentence(row: DistributionRow) -> str:
@@ -57,13 +60,20 @@ def categoria_sentence(rows: Sequence[DistributionRow]) -> str:
         return "Ninguna categoría tiene trabajadores en niveles Alto o Muy alto."
     top = max(_high_share(r) for r in ranked)
     leaders = [r for r in ranked if _high_share(r) == top]
-    names = _join([f"«{r.label}»" for r in leaders])
-    share = _share_text(leaders[0])
+    shares = {_share_text(r) for r in leaders}
     if len(leaders) == 1:
         return (
-            f"La categoría {names} concentra la mayor proporción de trabajadores en "
-            f"niveles Alto o Muy alto: {share}."
+            f"La categoría «{leaders[0].label}» concentra la mayor proporción de "
+            f"trabajadores en niveles Alto o Muy alto: {_share_text(leaders[0])}."
         )
+    if len(shares) > 1:
+        names = _join([f"«{r.label}» ({_share_text(r)})" for r in leaders])
+        return (
+            f"Las categorías {names} concentran la mayor proporción de trabajadores "
+            "en niveles Alto o Muy alto."
+        )
+    names = _join([f"«{r.label}»" for r in leaders])
+    share = _share_text(leaders[0])
     return (
         f"Las categorías {names} concentran la mayor proporción de trabajadores en "
         f"niveles Alto o Muy alto: {share} cada una."
