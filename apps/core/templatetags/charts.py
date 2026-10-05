@@ -3,7 +3,8 @@
 This module is the chart palette: a color key from the data layer becomes a
 pair of Tailwind classes here (an SVG fill, and a background for legend
 swatches). NDR entries come from valuation_extras so the risk ramp has one
-source. Classes are spelled out in full so Tailwind's scan of templatetags/
+source, in two tiers: `ndr-<level>` for categorías and the final score, and the
+deeper `dom-<level>` for dominios. Classes are spelled out in full so Tailwind's scan of templatetags/
 compiles them.
 
 Each color key also has a hex, emitted as the mark's SVG `fill` attribute. On
@@ -24,6 +25,10 @@ register = template.Library()
 
 _COLORS = {
     **{f"ndr-{level}": (ndr_fill(level), ndr_bar(level)) for level in c.NDR_ORDER},
+    **{
+        f"dom-{level}": (ndr_fill(level, "dominio"), ndr_bar(level, "dominio"))
+        for level in c.NDR_ORDER
+    },
     "sex-female": ("fill-violet-600", "bg-violet-600"),
     "sex-male": ("fill-sky-600", "bg-sky-600"),
     "age": ("fill-indigo-500", "bg-indigo-500"),
@@ -40,6 +45,11 @@ _HEX = {
     "ndr-medio": "#F59E0B",
     "ndr-alto": "#F97316",
     "ndr-muy_alto": "#EF4444",
+    "dom-nulo": "#9CA3AF",
+    "dom-bajo": "#4A8039",
+    "dom-medio": "#CA9429",
+    "dom-alto": "#B5531F",
+    "dom-muy_alto": "#7A1010",
     "sex-female": "#7C3AED",
     "sex-male": "#0284C7",
     "age": "#6366F1",

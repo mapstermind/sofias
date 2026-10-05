@@ -1,5 +1,7 @@
-<ul class="report-legend" aria-label="Niveles de riesgo">
+{# tier="dom" (with heading="Dominios") for marks drawn in the dominio tier. #}
+<ul class="report-legend{% if tier %} report-legend--{{ tier }}{% endif %}" aria-label="Niveles de riesgo{% if heading %} — {{ heading|lower }}{% endif %}">
+  {% if heading %}<li class="report-legend-heading">{{ heading }}:</li>{% endif %}
   {% for level, label in legend %}
-    <li class="report-legend-item"><span class="report-swatch report-swatch--{{ level }}" aria-hidden="true"></span>{{ label }}</li>
+    <li class="report-legend-item"><span class="report-swatch report-swatch--{% if tier %}{{ tier }}-{% endif %}{{ level }}" aria-hidden="true"></span>{{ label }}</li>
   {% endfor %}
 </ul>

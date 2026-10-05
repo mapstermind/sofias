@@ -59,7 +59,13 @@ the results partials and the shared statistics row, `_stats.html`).
 - **Change the report's structure in the registry.** Reordering, removing or
   adding a section is an edit to `REGISTRY` in `sections.py` plus a partial;
   numbering, the TOC, the screen and the PDF all follow from it. Never hardcode
-  a section number in a partial (`s.number` carries it).
+  a section number in a partial (`s.number` carries it). A section starts a new
+  PDF page when its entry sets `break_before=True`; inside a section, wrap each
+  repeated group in `report-page-group` and every group after the first starts
+  a page (`report-print.css`). `report-group` is the unrelated keep-together box.
+- **Dominio marks use the dominio tier.** Partials pass `tier="dom"` to
+  `_badge.html`, `_legend.html` and `_threshold_table.html` for dominio-level
+  content; `report.css` holds the matching `--dom-<level>` classes.
 - **A snapshot shape change means republishing.** `ReportData` (and the
   `apps/nom035` dataclasses inside it) is stored as JSON in published reports.
   Adding, removing or renaming a field changes the shape; there is no data

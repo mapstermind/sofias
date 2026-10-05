@@ -168,7 +168,9 @@ come first under an *Empresa* heading, categoría-level sections second under
 `_body.html` assembles them; `_stats_row.html` is the one statistics row sections
 5 and 8 share; `_ndr_columns.html` the five level names, with swatches, that head
 the level columns of sections 1, 4 and 7 from the `md` breakpoint up;
-`_ndr_legend.html` the five-level legend under sections 5 and 8;
+`_ndr_legend.html` the five-level legend under sections 5 and 8, and — with
+`tier="dominio"` and a *Dominios* heading — inside every *"Dominios (n)"*
+disclosure, under the dominio rows;
 `_dominios_summary.html` the *"Dominios (n)"* disclosure of sections 7 and 8; and
 `_suppressed.html` the small-group message.
 
@@ -235,7 +237,8 @@ NDR threshold bands, from 0 to the highest possible score for that row in the
 variant (item count × 4; the Muy alto band is open-ended in the official tables,
 so it runs to that maximum). A tick under the strip labels 0, every band
 boundary that falls inside the scale, and the maximum, so each band's span reads
-as numbers; the band colors follow the five-level legend under the section. The
+as numbers; the band colors follow the five-level legend under the section, and
+a dominio row's bands the dominio legend inside its disclosure. The
 strip plots four labelled
 points — *Mín*, *Mediana*, *Prom.*, *Máx*. A label near either end anchors to
 that end. Points whose labels would collide alternate above and below the strip.
@@ -378,9 +381,16 @@ on color alone.
 
 Colors:
 
-- **NDR** — the ramp in `apps/core/templatetags/valuation_extras.py` (Nulo
-  gray-300, Bajo green-500, Medio amber-500, Alto orange-500, Muy alto red-500):
-  `ndr_fill` for SVG marks, `ndr_bar` for legend swatches.
+- **NDR** — the ramp in `apps/core/templatetags/valuation_extras.py`, in two
+  tiers. Categorías and the final score use the base tier (Nulo gray-300, Bajo
+  green-500, Medio amber-500, Alto orange-500, Muy alto red-500); dominio rows
+  and their statistics bands use the deeper dominio tier (Nulo `#9CA3AF`, Bajo
+  `#4A8039`, Medio `#CA9429`, Alto `#B5531F`, Muy alto `#7A1010`), so a dominio
+  never reads as a categoría. The data layer chooses the tier through the color
+  key (`ndr-<level>` / `dom-<level>`); `ndr_fill` gives SVG marks and `ndr_bar`
+  legend swatches, each taking `"dominio"` for the deeper tier. The dominio tier
+  is validated: adjacent levels at least ΔE 16.5 apart in normal vision and
+  11.4 under protan/deutan simulation.
 - **Sex** — Femenino violet-600 (`#7c3aed`), Masculino sky-600 (`#0284c7`), Sin
   dato gray-300. The pair passes the dataviz palette validator on a light
   surface (deutan ΔE 9.2, normal-vision ΔE 19.8). Neither reuses a risk color.

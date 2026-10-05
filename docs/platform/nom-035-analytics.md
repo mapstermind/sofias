@@ -151,12 +151,14 @@ rows (cheap and always consistent as employees complete).
 The **employee card** is the "Valoración de resultados" section of
 `templates/core/employee_detail.html`: the final NDR + score as a colored badge,
 then an indented hierarchy — Categoría (bold, score + colored NDR badge) →
-Dominio (score + NDR badge) → Dimensión (score only, muted — no NDR, per the
+Dominio (score + a solid NDR badge in the deeper dominio tier, so it never
+reads as a categoría's) → Dimensión (score only, muted — no NDR, per the
 scoring rule above). The Guía I message shows only when `guia1_positive` is true.
 There is no action-sentence verdict on the card (see Key decisions).
 
 NDR colors are centralized in one place —
-`apps/core/templatetags/valuation_extras.py` (`ndr_badge` for pill badges,
+`apps/core/templatetags/valuation_extras.py` (`ndr_badge` for pill badges —
+`|ndr_badge:"dominio"` for the solid dominio tier —
 `ndr_bar` for bar segments and legend swatches, `ndr_fill` for SVG chart marks,
 `ndr_scale` for the ordinal five-step scale) — so no color literals are scattered
 across templates: Nulo → gris, Bajo → verde, Medio → ámbar, Alto → naranja,

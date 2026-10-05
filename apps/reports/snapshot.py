@@ -11,6 +11,8 @@ from django.db.models import Max, Min
 from django.utils import timezone
 
 from apps.nom035.results import (
+    PALETTE_DOMINIO,
+    PALETTE_NDR,
     AreaResults,
     DimensionGroup,
     DistributionRow,
@@ -129,7 +131,9 @@ def _tuples(value):
     return tuple(tuple(v) if isinstance(v, list) else v for v in value)
 
 
-def _distribution(raw):
+def _distribution(raw, default_palette=PALETTE_NDR):
+    """A DistributionRow; a categoría's children are dominios, so a snapshot
+    stored without a palette defaults them to the dominio tier."""
     if raw is None:
         return None
     return DistributionRow(
@@ -137,7 +141,8 @@ def _distribution(raw):
         label=raw["label"],
         n=raw["n"],
         counts=_tuples(raw["counts"]),
-        children=tuple(_distribution(ch) for ch in raw["children"]),
+        palette=raw.get("palette", default_palette),
+        children=tuple(_distribution(ch, PALETTE_DOMINIO) for ch in raw["children"]),
     )
 
 

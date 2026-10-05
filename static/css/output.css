@@ -456,6 +456,9 @@
   .inline-flex {
     display: inline-flex;
   }
+  .table {
+    display: table;
+  }
   .aspect-square {
     aspect-ratio: 1 / 1;
   }
@@ -915,6 +918,21 @@
   .border-red-300 {
     border-color: var(--color-red-300);
   }
+  .bg-\[\#4A8039\] {
+    background-color: #4A8039;
+  }
+  .bg-\[\#7A1010\] {
+    background-color: #7A1010;
+  }
+  .bg-\[\#9CA3AF\] {
+    background-color: #9CA3AF;
+  }
+  .bg-\[\#B5531F\] {
+    background-color: #B5531F;
+  }
+  .bg-\[\#CA9429\] {
+    background-color: #CA9429;
+  }
   .bg-amber-50 {
     background-color: var(--color-amber-50);
   }
@@ -1001,6 +1019,21 @@
   }
   .bg-yellow-400 {
     background-color: var(--color-yellow-400);
+  }
+  .fill-\[\#4A8039\] {
+    fill: #4A8039;
+  }
+  .fill-\[\#7A1010\] {
+    fill: #7A1010;
+  }
+  .fill-\[\#9CA3AF\] {
+    fill: #9CA3AF;
+  }
+  .fill-\[\#B5531F\] {
+    fill: #B5531F;
+  }
+  .fill-\[\#CA9429\] {
+    fill: #CA9429;
   }
   .fill-amber-500 {
     fill: var(--color-amber-500);
@@ -1398,6 +1431,21 @@
   .ring-2 {
     --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+  }
+  .ring-\[\#4A8039\] {
+    --tw-ring-color: #4A8039;
+  }
+  .ring-\[\#7A1010\] {
+    --tw-ring-color: #7A1010;
+  }
+  .ring-\[\#9CA3AF\] {
+    --tw-ring-color: #9CA3AF;
+  }
+  .ring-\[\#B5531F\] {
+    --tw-ring-color: #B5531F;
+  }
+  .ring-\[\#CA9429\] {
+    --tw-ring-color: #CA9429;
   }
   .ring-amber-400 {
     --tw-ring-color: var(--color-amber-400);

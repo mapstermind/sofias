@@ -323,6 +323,13 @@
 .report-level--alto { background: linear-gradient(transparent calc(100% - 4px), #F97316 calc(100% - 4px)); }
 .report-level--muy_alto { background: linear-gradient(transparent calc(100% - 4px), #EF4444 calc(100% - 4px)); }
 
+/* The dominio tier: the deeper variant of each level, for dominio marks. */
+.report-level--dom-nulo { background: linear-gradient(transparent calc(100% - 4px), #9CA3AF calc(100% - 4px)); }
+.report-level--dom-bajo { background: linear-gradient(transparent calc(100% - 4px), #4A8039 calc(100% - 4px)); }
+.report-level--dom-medio { background: linear-gradient(transparent calc(100% - 4px), #CA9429 calc(100% - 4px)); }
+.report-level--dom-alto { background: linear-gradient(transparent calc(100% - 4px), #B5531F calc(100% - 4px)); }
+.report-level--dom-muy_alto { background: linear-gradient(transparent calc(100% - 4px), #7A1010 calc(100% - 4px)); }
+
 /* Phone first: a stacked table shows each row as a block of label / value
    lines; report-wide.css makes it an ordinary table again. */
 .report-table--stack thead {
@@ -373,6 +380,14 @@
 .report-badge--alto { background: #FFF7ED; color: #C2410C; border: 1px solid rgba(234, 88, 12, 0.2); }
 .report-badge--muy_alto { background: #FEF2F2; color: #B91C1C; border: 1px solid rgba(220, 38, 38, 0.2); }
 
+/* Dominio badges are solid, so they read as a different family from the
+   tinted categoría badges. Dark ink on the light Nulo and Medio. */
+.report-badge--dom-nulo { background: #9CA3AF; color: #111827; border: 1px solid #9CA3AF; }
+.report-badge--dom-bajo { background: #4A8039; color: #FFFFFF; border: 1px solid #4A8039; }
+.report-badge--dom-medio { background: #CA9429; color: #111827; border: 1px solid #CA9429; }
+.report-badge--dom-alto { background: #B5531F; color: #FFFFFF; border: 1px solid #B5531F; }
+.report-badge--dom-muy_alto { background: #7A1010; color: #FFFFFF; border: 1px solid #7A1010; }
+
 /* An action criterion or recommendation: left rule in the level's color. */
 .report-criterion {
   border-left: 4px solid #E5E7EB;
@@ -386,6 +401,11 @@
 .report-criterion--medio { border-left-color: #F59E0B; }
 .report-criterion--alto { border-left-color: #F97316; }
 .report-criterion--muy_alto { border-left-color: #EF4444; }
+.report-criterion--dom-nulo { border-left-color: #9CA3AF; }
+.report-criterion--dom-bajo { border-left-color: #4A8039; }
+.report-criterion--dom-medio { border-left-color: #CA9429; }
+.report-criterion--dom-alto { border-left-color: #B5531F; }
+.report-criterion--dom-muy_alto { border-left-color: #7A1010; }
 
 /* ── Results charts ─────────────────────────────────────────────────────── */
 
@@ -492,6 +512,16 @@
 .report-swatch--medio { background: #F59E0B; }
 .report-swatch--alto { background: #F97316; }
 .report-swatch--muy_alto { background: #EF4444; }
+.report-swatch--dom-nulo { background: #9CA3AF; }
+.report-swatch--dom-bajo { background: #4A8039; }
+.report-swatch--dom-medio { background: #CA9429; }
+.report-swatch--dom-alto { background: #B5531F; }
+.report-swatch--dom-muy_alto { background: #7A1010; }
+
+.report-legend-heading {
+  font-weight: 600;
+  color: #111827;
+}
 
 /* ── People, glossary, notice ───────────────────────────────────────────── */
 

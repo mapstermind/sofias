@@ -24,6 +24,7 @@
                   <div class="col-span-2 min-w-0 md:col-span-1">{% level_columns child.slices names="phone" size="sm" %}</div>
                 </div>
               {% endfor %}
+              {% include "core/results/_ndr_legend.html" with tier="dominio" heading="Dominios" %}
             </div>
           </details>
         {% endif %}

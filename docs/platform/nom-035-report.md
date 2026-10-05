@@ -228,7 +228,8 @@ the draft flag, the issue date and the signatories), and optional children
 section is numbered, the untitled portada is not. The screen, the PDF and the
 table of contents all iterate the registry through `templates/reports/_document.html`,
 so reordering, removing or adding a section is a registry change plus a
-partial. The screen and the PDF share every partial.
+partial. The screen and the PDF share every partial. A section's
+`break_before` flag makes it start a new page in the PDF (see *PDF*).
 
 ### Snapshot
 
@@ -260,9 +261,26 @@ message. Company-wide sections use the whole assignment.
 
 **Finding first, chart as evidence.** Each results section with a finding opens
 with its generated sentence, set larger in the serif, then the chart, then the
-small print (*n*, base, suppression note). The five-level NDR palette (gray,
-green, amber, orange, red — `valuation_extras`) is the only meaning-bearing
-color and appears only where a risk level is meant.
+small print (*n*, base, suppression note). The five-level NDR palette is the
+only meaning-bearing color and appears only where a risk level is meant. It
+has two tiers: categorías and the final score draw in the base tier, dominios
+in a deeper variant of the same five levels, so a reader can tell a dominio's
+level from a categoría's at a glance.
+
+| Level | Categoría and final | Dominio |
+|---|---|---|
+| Nulo | `#D1D5DB` | `#9CA3AF` |
+| Bajo | `#22C55E` | `#4A8039` |
+| Medio | `#F59E0B` | `#CA9429` |
+| Alto | `#F97316` | `#B5531F` |
+| Muy alto | `#EF4444` | `#7A1010` |
+
+Dominio marks — the 5.5 columns and statistics bands, the recommendation
+badges and left rules, the annex's dominio threshold headers — use the dominio
+tier; everything else uses the base tier. Categoría badges are tinted; dominio
+badges are solid, with white text on Bajo, Alto and Muy alto and `#111827` on
+Nulo and Medio. Every block of colored marks closes with the legend of its
+tier; 5.5's is headed *Dominios*.
 
 - **Type.** Source Serif 4 for prose (findings, Administrador text, fixed
   text); Source Sans 3 for data (headings, tables, charts, figures). Body
@@ -301,13 +319,13 @@ dashboard's partials, which carry filter, disclosure and fragment logic:
 | 5.2 Participación | table, `level_columns` (sm) per área row |
 | 5.3 Calificación final | `level_columns` (lg) and the statistics row with `range_strip` |
 | 5.4 Categoría | `level_columns` and the statistics row per categoría |
-| 5.5 Dominio | `level_columns` (sm) and the statistics row per dominio under its categoría; always expanded |
+| 5.5 Dominio | `level_columns` (sm) and the statistics row per dominio under its categoría, in the dominio tier; always expanded; a *Dominios* legend |
 | 5.6 Dimensión | the statistics row, `range_strip` with a single neutral gray band from 0 to the highest possible score |
 | 5.7 Por área | one `stacked_bar` row per área for the final score; then small `level_columns` per categoría under each visible área |
 | 5.8 Guía I | `stacked_bar` for the company; count table per área |
 | 6 Criterios de acción | NDR badge and text, with a left rule in the level's color |
-| 7 Recomendaciones | per dominio: NDR badge, the share, the matrix text; refers back to 5.5 |
-| Anexo, Método | numeric tables; threshold header cells carry a bar in each level's color |
+| 7 Recomendaciones | per dominio: a solid dominio-tier badge, the share, the matrix text, a left rule in the dominio tier; refers back to 5.5 |
+| Anexo, Método | numeric tables; threshold header cells carry a bar in each level's color — the dominio table in the dominio tier |
 
 ### On a phone
 
@@ -342,7 +360,13 @@ Paged media (`report-print.css`):
   footer *Página N de M*, both from page 2;
 - the portada alone on page 1, the table of contents from page 2, with dotted
   leaders and page numbers from `target-counter()`;
-- a page break after the portada, before *Resultados* and before the annex;
+- a new page after the portada and after the table of contents;
+- a new page for every section whose registry entry sets `break_before`:
+  *Resultados*, 5.5 to 5.8, and sections 6 to 10 (*Criterios de acción*,
+  *Recomendaciones*, *Conclusiones*, *Responsables*, *Anexo*);
+- inside 5.4, 5.5 and 5.6, each repeated group — a categoría, a categoría's
+  dominios, a dominio's dimensiones — is a `report-page-group`, and every group
+  after the first starts a new page, so the first follows its section heading;
 - finding blocks, charts, statistics rows, criteria and table rows never split;
   table headers repeat;
 - drafts carry a fixed-position *BORRADOR* watermark, repeated on every page.
@@ -396,6 +420,15 @@ reference material in `docs/internal/report-references/`.
 the admin) with Spanish model metadata.
 
 ## Key decisions
+
+- Decision: Dominios draw in a deeper tier of the risk palette; categorías and
+  the final score in the base tier.
+  Reason: Readers move between categoría and dominio charts constantly, and the
+  tier tells them which one they are reading. The dominio hexes are validated
+  (OKLab ΔE ×100): adjacent dominio levels at least 16.5 apart in normal vision
+  and 11.4 under protan/deutan simulation, every mark at least 2.5:1 on white.
+  Medio is the closest pair across tiers (ΔE 7.8), so the tier is never carried
+  by color alone: the legend names it and dominio badges are solid.
 
 - Decision: Risk is stated as the distribution of workers across levels; the
   mean is a plain number with no level attached, and there is no company verdict.

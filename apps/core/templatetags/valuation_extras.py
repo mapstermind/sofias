@@ -31,23 +31,52 @@ _FILL = {
 }
 _NEUTRAL_FILL = "fill-gray-200"
 
+# The dominio tier: a deeper variant of the same five levels, so a reader can
+# tell a dominio's level from a categoría's. Badges are solid fills (white text
+# where it holds contrast, gray-900 on the light Nulo and Medio).
+DOMINIO = "dominio"
+_DOMINIO_BADGE = {
+    c.NDR_NULO: "bg-[#9CA3AF] text-gray-900 ring-[#9CA3AF]",
+    c.NDR_BAJO: "bg-[#4A8039] text-white ring-[#4A8039]",
+    c.NDR_MEDIO: "bg-[#CA9429] text-gray-900 ring-[#CA9429]",
+    c.NDR_ALTO: "bg-[#B5531F] text-white ring-[#B5531F]",
+    c.NDR_MUY_ALTO: "bg-[#7A1010] text-white ring-[#7A1010]",
+}
+_DOMINIO_BAR = {
+    c.NDR_NULO: "bg-[#9CA3AF]",
+    c.NDR_BAJO: "bg-[#4A8039]",
+    c.NDR_MEDIO: "bg-[#CA9429]",
+    c.NDR_ALTO: "bg-[#B5531F]",
+    c.NDR_MUY_ALTO: "bg-[#7A1010]",
+}
+_DOMINIO_FILL = {
+    c.NDR_NULO: "fill-[#9CA3AF]",
+    c.NDR_BAJO: "fill-[#4A8039]",
+    c.NDR_MEDIO: "fill-[#CA9429]",
+    c.NDR_ALTO: "fill-[#B5531F]",
+    c.NDR_MUY_ALTO: "fill-[#7A1010]",
+}
+
 
 @register.filter
-def ndr_badge(ndr):
-    """Tailwind classes for a colored NDR badge (pill)."""
-    return _BADGE.get(ndr, _NEUTRAL_BADGE)
+def ndr_badge(ndr, tier=""):
+    """Tailwind classes for a colored NDR badge (pill); `tier="dominio"` for a dominio."""
+    table = _DOMINIO_BADGE if tier == DOMINIO else _BADGE
+    return table.get(ndr, _NEUTRAL_BADGE)
 
 
 @register.filter
-def ndr_bar(ndr):
-    """Tailwind background class for an NDR distribution-bar segment."""
-    return _BAR.get(ndr, _NEUTRAL_BAR)
+def ndr_bar(ndr, tier=""):
+    """Tailwind background class for an NDR bar or swatch; `tier="dominio"` for a dominio."""
+    table = _DOMINIO_BAR if tier == DOMINIO else _BAR
+    return table.get(ndr, _NEUTRAL_BAR)
 
 
 @register.filter
-def ndr_fill(ndr):
-    """Tailwind SVG fill class for an NDR chart mark."""
-    return _FILL.get(ndr, _NEUTRAL_FILL)
+def ndr_fill(ndr, tier=""):
+    """Tailwind SVG fill class for an NDR chart mark; `tier="dominio"` for a dominio."""
+    table = _DOMINIO_FILL if tier == DOMINIO else _FILL
+    return table.get(ndr, _NEUTRAL_FILL)
 
 
 @register.filter

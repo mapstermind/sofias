@@ -6,8 +6,8 @@
   {% for dominio in by_dominio %}
     <h4 class="report-h4">{{ dominio.grouper }}</h4>
     {% for r in dominio.list %}
-      <div class="report-criterion report-criterion--{{ r.level }}">
-        <p class="report-figure">{% include "reports/_badge.html" with level=r.level label=r.level_label %} {{ r.share }} en {{ r.level_label }}</p>
+      <div class="report-criterion report-criterion--dom-{{ r.level }}">
+        <p class="report-figure">{% include "reports/_badge.html" with level=r.level label=r.level_label tier="dom" %} {{ r.share }} en {{ r.level_label }}</p>
         <p class="report-prose">{{ r.text }}</p>
       </div>
     {% endfor %}

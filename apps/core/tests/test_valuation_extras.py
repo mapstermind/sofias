@@ -22,3 +22,37 @@ def test_ndr_fill_maps_every_level():
     assert ndr_fill(c.NDR_BAJO) == "fill-green-500"
     assert ndr_fill(c.NDR_MUY_ALTO) == "fill-red-500"
     assert ndr_fill("nonsense") == "fill-gray-200"
+
+
+DOMINIO_HEX = {
+    "nulo": "#9CA3AF",
+    "bajo": "#4A8039",
+    "medio": "#CA9429",
+    "alto": "#B5531F",
+    "muy_alto": "#7A1010",
+}
+
+
+def test_dominio_tier_classes():
+    from apps.core.templatetags.valuation_extras import ndr_badge, ndr_bar, ndr_fill
+
+    for level, hex_ in DOMINIO_HEX.items():
+        assert ndr_bar(level, "dominio") == f"bg-[{hex_}]"
+        assert ndr_fill(level, "dominio") == f"fill-[{hex_}]"
+        assert f"bg-[{hex_}]" in ndr_badge(level, "dominio")
+    for level in ("bajo", "alto", "muy_alto"):
+        assert "text-white" in ndr_badge(level, "dominio")
+    for level in ("nulo", "medio"):
+        assert "text-gray-900" in ndr_badge(level, "dominio")
+
+
+def test_categoria_tier_is_the_default():
+    from apps.core.templatetags.valuation_extras import ndr_badge, ndr_bar, ndr_fill
+
+    assert (
+        ndr_badge("bajo")
+        == ndr_badge("bajo", "")
+        == "bg-green-50 text-green-700 ring-green-600/20"
+    )
+    assert ndr_bar("alto") == "bg-orange-500"
+    assert ndr_fill("medio") == "fill-amber-500"

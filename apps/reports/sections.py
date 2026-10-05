@@ -40,6 +40,8 @@ class Section:
     template: str
     build: Callable[[ReportContext], dict] = _no_context
     children: tuple["Section", ...] = ()
+    # Printed: the section starts a new page (report-print.css).
+    break_before: bool = False
 
 
 @dataclass(frozen=True)
@@ -50,6 +52,7 @@ class RenderedSection:
     template: str
     context: dict = field(default_factory=dict)
     children: tuple["RenderedSection", ...] = ()
+    break_before: bool = False
 
 
 def context_for(report: Report) -> ReportContext:
@@ -83,6 +86,7 @@ def _walk(registry, ctx: ReportContext | None, prefix: str = "") -> list:
                 if ctx is None
                 else {"data": ctx.data, "ctx": ctx, **s.build(ctx)},
                 children=tuple(_walk(s.children, ctx, f"{number}.")),
+                break_before=s.break_before,
             )
         )
     return out
@@ -287,11 +291,26 @@ RESULTS_CHILDREN = (
         _categoria,
     ),
     Section(
-        "resultados.dominio", "Resultados por dominio", _R + "_dominio.html", _dominio
+        "resultados.dominio",
+        "Resultados por dominio",
+        _R + "_dominio.html",
+        _dominio,
+        break_before=True,
     ),
-    Section("resultados.dimension", "Resultados por dimensión", _R + "_dimension.html"),
-    Section("resultados.area", "Resultados por área", _R + "_area.html", _with_legend),
-    Section("resultados.guia1", "Guía I", _R + "_guia1.html"),
+    Section(
+        "resultados.dimension",
+        "Resultados por dimensión",
+        _R + "_dimension.html",
+        break_before=True,
+    ),
+    Section(
+        "resultados.area",
+        "Resultados por área",
+        _R + "_area.html",
+        _with_legend,
+        break_before=True,
+    ),
+    Section("resultados.guia1", "Guía I", _R + "_guia1.html", break_before=True),
 )
 
 REGISTRY = (
@@ -305,16 +324,38 @@ REGISTRY = (
         "poblacion", "Selección de la población", _T + "_poblacion.html", _poblacion
     ),
     Section(
-        "resultados", "Resultados", _T + "_resultados.html", children=RESULTS_CHILDREN
+        "resultados",
+        "Resultados",
+        _T + "_resultados.html",
+        children=RESULTS_CHILDREN,
+        break_before=True,
     ),
-    Section("criterios", "Criterios de acción", _T + "_criterios.html", _criterios),
+    Section(
+        "criterios",
+        "Criterios de acción",
+        _T + "_criterios.html",
+        _criterios,
+        break_before=True,
+    ),
     Section(
         "recomendaciones",
         "Recomendaciones según riesgo identificado",
         _T + "_recomendaciones.html",
         _recomendaciones,
+        break_before=True,
     ),
-    Section("conclusiones", "Conclusiones", _T + "_conclusiones.html"),
-    Section("responsables", "Responsables", _T + "_responsables.html", _responsables),
-    Section("anexo", "Anexo", _T + "_anexo.html", _anexo),
+    Section(
+        "conclusiones",
+        "Conclusiones",
+        _T + "_conclusiones.html",
+        break_before=True,
+    ),
+    Section(
+        "responsables",
+        "Responsables",
+        _T + "_responsables.html",
+        _responsables,
+        break_before=True,
+    ),
+    Section("anexo", "Anexo", _T + "_anexo.html", _anexo, break_before=True),
 )

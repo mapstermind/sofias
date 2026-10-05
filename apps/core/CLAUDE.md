@@ -42,8 +42,15 @@ would show an admin a link `apps.surveys.views._respondent_company` refuses.
 `ndr_badge`, `ndr_bar`, `ndr_fill` and `ndr_scale` — the single source of truth
 for NDR→Tailwind-color mapping (Nulo/Bajo/Medio/Alto/Muy alto), used by the
 employee card (`employee_detail.html`) and the results page's charts and legends.
-`ndr_fill` is the SVG `fill-*` class for chart marks. Add new NDR-derived colors
-here, not as literals in a template. `ndr_scale` returns the five levels in
+`ndr_fill` is the SVG `fill-*` class for chart marks. `ndr_badge`, `ndr_bar` and
+`ndr_fill` take an optional tier: `{{ level|ndr_badge:"dominio" }}` selects the
+deeper dominio palette (solid badges), which every dominio-level mark uses;
+the default is the categoría/final tier. In the charts the tier rides on the
+color key — `ndr-<level>` or `dom-<level>`, chosen by `apps/nom035/results.py`
+— and both sets live in `_COLORS` and `_HEX`. In a template, an unset variable
+passed as a filter argument raises, so default it first (see
+`results/_ndr_legend.html`). Add new NDR-derived colors here, not as literals
+in a template. `ndr_scale` returns the five levels in
 order, filled up to the reached one; render it through
 `templates/core/_ndr_scale.html`.
 

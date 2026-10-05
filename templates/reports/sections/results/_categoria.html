@@ -5,12 +5,12 @@
 {% else %}
   {% if c.finding %}<p class="report-finding">{{ c.finding }}</p>{% endif %}
   {% for r in c.rows %}
-    <div class="report-group">
+    <div class="report-group report-page-group">
       <h4 class="report-h4">{{ r.dist.label }}</h4>
       <div class="report-chart">{% level_columns r.dist.slices %}</div>
       {% if r.stats %}{% include "reports/sections/results/_stats.html" with row=r.stats %}{% endif %}
+      {% include "reports/sections/results/_legend.html" with legend=c.legend %}
     </div>
   {% endfor %}
-  {% include "reports/sections/results/_legend.html" with legend=c.legend %}
   <p class="report-small">n = {{ data.final_distribution.n }} cuestionario{{ data.final_distribution.n|pluralize }} valorado{{ data.final_distribution.n|pluralize }}.</p>
 {% endif %}

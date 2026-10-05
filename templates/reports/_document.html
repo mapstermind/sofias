@@ -5,10 +5,10 @@
   caller's.
 {% endcomment %}
 {% for s in sections %}
-  <section id="sec-{{ s.key|slugify }}" class="report-section report-section--{{ s.key|slugify }}">
+  <section id="sec-{{ s.key|slugify }}" class="report-section report-section--{{ s.key|slugify }}{% if s.break_before %} report-break-before{% endif %}">
     {% include s.template with s=s data=s.context.data ctx=s.context.ctx c=s.context %}
     {% for child in s.children %}
-      <section id="sec-{{ child.key|slugify }}" class="report-subsection">
+      <section id="sec-{{ child.key|slugify }}" class="report-subsection{% if child.break_before %} report-break-before{% endif %}">
         {% include child.template with s=child data=child.context.data ctx=child.context.ctx c=child.context %}
       </section>
     {% endfor %}
