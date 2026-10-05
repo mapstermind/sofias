@@ -23,5 +23,6 @@
       {% endfor %}
     </tbody>
   </table>
-  <p class="report-small">Registrados: miembros activados del área. La distribución es la de la calificación final.</p>
+  {% include "reports/sections/results/_legend.html" with legend=c.legend %}
+  <p class="report-small">Registrados: miembros del área con cuenta activada. La distribución es la de la calificación final.</p>
 {% endif %}

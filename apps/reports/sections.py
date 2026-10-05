@@ -233,6 +233,10 @@ def _final(ctx):
     }
 
 
+def _with_legend(ctx):
+    return {"legend": LEGEND}
+
+
 def _paired(dists, stats) -> list[dict]:
     """Each distribution row with the statistics row of the same key."""
     by_key = {s.key: s for s in stats}
@@ -270,7 +274,10 @@ _R = _T + "results/"
 RESULTS_CHILDREN = (
     Section("resultados.perfil", "Perfil de quienes respondieron", _R + "_perfil.html"),
     Section(
-        "resultados.participacion", "Participación por área", _R + "_participacion.html"
+        "resultados.participacion",
+        "Participación por área",
+        _R + "_participacion.html",
+        _with_legend,
     ),
     Section("resultados.final", "Calificación final", _R + "_final.html", _final),
     Section(
@@ -283,7 +290,7 @@ RESULTS_CHILDREN = (
         "resultados.dominio", "Resultados por dominio", _R + "_dominio.html", _dominio
     ),
     Section("resultados.dimension", "Resultados por dimensión", _R + "_dimension.html"),
-    Section("resultados.area", "Resultados por área", _R + "_area.html"),
+    Section("resultados.area", "Resultados por área", _R + "_area.html", _with_legend),
     Section("resultados.guia1", "Guía I", _R + "_guia1.html"),
 )
 

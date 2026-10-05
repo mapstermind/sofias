@@ -8,5 +8,6 @@
       {% include "reports/sections/results/_stats.html" with row=row %}
     {% endfor %}
   {% endfor %}
+  <p class="report-small">n = {{ data.responded }} cuestionario{{ data.responded|pluralize }} valorado{{ data.responded|pluralize }}.</p>
   <p class="report-small">La norma no publica umbrales por dimensión: la franja gris va de 0 a la calificación más alta posible y no indica un nivel de riesgo.</p>
 {% endif %}

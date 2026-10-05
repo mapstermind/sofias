@@ -30,5 +30,6 @@
       </div>
     {% endfor %}
   {% endif %}{% endfor %}
-  <p class="report-small">Un área con menos de cinco cuestionarios, o cuyos resultados permitirían deducir los de otra, no muestra su distribución.</p>
+  {% include "reports/sections/results/_legend.html" with legend=c.legend %}
+  <p class="report-small">Un área con menos de cinco cuestionarios, o cuya distribución permitiría deducir por diferencia la de otras personas, no muestra sus resultados.</p>
 {% endif %}

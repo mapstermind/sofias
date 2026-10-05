@@ -380,7 +380,7 @@
 
 .report-stats-figures {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
   margin: 0;
   text-align: center;
@@ -483,8 +483,12 @@
   }
 
   .report-stats {
-    grid-template-columns: minmax(0, 14rem) minmax(0, 16rem);
+    grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
     align-items: center;
+  }
+
+  .report-stats-figures {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .report-stats-strip {

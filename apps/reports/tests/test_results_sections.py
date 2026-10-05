@@ -34,11 +34,35 @@ def test_dimension_strip_is_neutral(scored_assignment):
     assert "Sin umbral oficial" in html
 
 
+def _slice(html, key):
+    return html.split(f'id="sec-{key}"')[1].split("</section>")[0]
+
+
 def test_area_sections_hide_small_groups(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
-    area = html.split('id="sec-resultadosarea"')[1].split("</section>")[0]
-    assert "Operaciones" in area and "Ventas" in area
-    assert SUPPRESSED in html  # "Sin área" (1 respondent) is hidden
+    area = _slice(html, "resultadosarea")
+    assert "Operaciones" in area and "Ventas" in area and "Sin área" in area
+    # Ventas is hidden too: "Sin área" (1 respondent) alone would be deducible.
+    assert area.count(SUPPRESSED) == 2
+    assert SUPPRESSED in _slice(html, "resultadosguia1")
+    # Only a visible área gets its categoría distributions.
+    assert '<h4 class="report-h4">Operaciones</h4>' in area
+    assert '<h4 class="report-h4">Ventas</h4>' not in area
+    assert '<h4 class="report-h4">Sin área</h4>' not in area
+
+
+def test_per_area_sections_close_with_the_ndr_legend(scored_assignment):
+    html = _html(Report(assignment=scored_assignment))
+    for key in ("resultadosparticipacion", "resultadosarea"):
+        assert 'class="report-legend"' in _slice(html, key)
+
+
+def test_stats_rows_print_the_highest_possible_score(scored_assignment):
+    html = _html(Report(assignment=scored_assignment))
+    dims = _slice(html, "resultadosdimension")
+    # Condiciones peligrosas e inseguras: items 1 and 3, so 2 × 4 = 8.
+    assert "<dt>Máx. posible</dt><dd>8</dd>" in dims
+    assert "Máx. posible" in _slice(html, "resultadosfinal")
 
 
 def test_empty_assignment_shows_empty_states(company, nom035_survey):

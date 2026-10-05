@@ -7,6 +7,7 @@
     <div><dt>Mediana</dt><dd>{{ row.median|default_if_none:"—" }}</dd></div>
     <div><dt>Mín</dt><dd>{{ row.minimum|default_if_none:"—" }}</dd></div>
     <div><dt>Máx</dt><dd>{{ row.maximum|default_if_none:"—" }}</dd></div>
+    <div><dt>Máx. posible</dt><dd>{{ row.scale_max }}</dd></div>
   </dl>
   <div class="report-stats-strip">{% if row.n %}{% range_strip row.strip_bands row.scale_max row.strip_points %}{% endif %}</div>
 </div>
