@@ -3,6 +3,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError, transaction
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -145,9 +146,21 @@ class AdminReportEditView(AdminMixin, View):
         form = ReportForm(request.POST, instance=report)
         formset = SignatoryFormSet(request.POST, instance=report, prefix="signatories")
         if form.is_valid() and formset.is_valid():
-            report = form.save()
-            formset.instance = report
-            formset.save()  # see forms.py for ORDER → order
+            try:
+                with transaction.atomic():
+                    report = form.save()
+                    formset.instance = report
+                    formset.save()  # see forms.py for ORDER → order
+            except IntegrityError:
+                if report.pk is not None:
+                    raise
+                # Another request created this assignment's report first.
+                messages.error(
+                    request,
+                    "El reporte se guardó desde otra sesión; revísalo antes de "
+                    "editarlo de nuevo.",
+                )
+                return redirect(self._detail_url())
             messages.success(request, "Reporte guardado.")
             return redirect(self._detail_url())
         return render(
@@ -166,6 +179,9 @@ class AdminReportEditView(AdminMixin, View):
 class AdminPublishView(AdminMixin, View):
     def post(self, request, reference_code, assignment_id):
         report = self.report(self.assignment())
+        if report.status == Report.Status.PUBLISHED:
+            # A repeated click: the report is already what was asked for.
+            return redirect("reports:admin_detail", reference_code, assignment_id)
         if report.pk is None:
             problems = publishing.blockers(report)
         else:

@@ -128,3 +128,10 @@ def test_detail_page_links_the_pdf(
         resp.content.decode()
     )
     assert "Descargar PDF" in resp.content.decode()
+
+
+def test_static_fetcher_refuses_path_traversal():
+    with pytest.raises(ValueError):
+        pdf.static_fetcher(f"{pdf.BASE_URL}static/../config/settings.py")
+    with pytest.raises(ValueError):
+        pdf.static_fetcher(f"{pdf.BASE_URL}static/css/../../config/settings.py")

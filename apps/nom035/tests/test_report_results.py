@@ -1,4 +1,6 @@
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 
 from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
@@ -133,8 +135,38 @@ def test_report_results_sin_area_and_deleted_user(
     assert data.areas[0].n == 6
 
 
+def _populate(company, assignment, make_user_with_profile, make_area, per_area):
+    for name in ("Operaciones", "Ventas", "Dirección"):
+        area = make_area(company, name=name)
+        for i in range(per_area):
+            user = make_user_with_profile(
+                email=f"{name[:3].lower()}{i}-{company.pk}@x.mx",
+                company=company,
+                area=area,
+            )
+            make_score(
+                assignment,
+                user,
+                final_ndr=c.NDR_ALTO if i % 2 else c.NDR_BAJO,
+                guia1_event=i == 0,
+                guia1_positive=i == 0,
+                groups=[_cat(cfg.CAT_AMBIENTE, 12, c.NDR_ALTO)],
+            )
+
+
+def _query_count(assignment):
+    with CaptureQueriesContext(connection) as ctx:
+        report_results(assignment)
+    return len(ctx.captured_queries)
+
+
 def test_report_results_query_count_does_not_grow(
-    two_areas, make_user_with_profile, django_assert_max_num_queries
+    make_company, make_user_with_profile, make_area, nom035_survey
 ):
-    with django_assert_max_num_queries(20):
-        report_results(two_areas["assignment"])
+    counts = []
+    for per_area in (1, 4):  # 3 vs 12 respondents across three áreas
+        company = make_company()
+        assignment = make_assignment(company, nom035_survey, variant="large")
+        _populate(company, assignment, make_user_with_profile, make_area, per_area)
+        counts.append(_query_count(assignment))
+    assert counts[0] == counts[1]

@@ -44,7 +44,9 @@ components. Registered as `apps.reports` (label `reports`, admin heading
   site root.
 - `forms.py` — `ReportForm` and `SignatoryFormSet` (rows keep the order shown;
   an untouched blank row is skipped).
-- `admin.py` — `Report` with its signatories inline; status and snapshot read-only.
+- `admin.py` — `Report` with its signatories inline; status and snapshot
+  read-only. A published report is frozen there too: every field is read-only
+  and its signatories cannot be added, changed or deleted.
 
 Templates are in `templates/reports/`: the list, detail and form pages,
 `_document.html` (the registry loop, with the TOC right after the portada —
@@ -77,7 +79,9 @@ the results partials and the shared statistics row, `_stats.html`).
   `fill` attributes — see `apps/core/CLAUDE.md`, Charts), collapses
   `minmax()` grid tracks (`.report-stats` is flex in the wide layout), and
   ignores `background-size`, flex `margin-top: auto` (the cover foot is
-  absolutely positioned), the `translate` property and `position: sticky`. Check a layout change in the PDF, not only on screen.
+  absolutely positioned), the `translate` property (`report-print.css` gives
+  the range strip's `-translate-x-*` tick labels an equivalent `transform`) and
+  `position: sticky`. Check a layout change in the PDF, not only on screen.
 - **Fonts.** Source Serif 4 and Source Sans 3 variable TTFs in `static/fonts/`
   (OFL). One `@font-face` per weight, each with a single `font-weight`:
   WeasyPrint rejects the range form and silently falls back to a system font. A

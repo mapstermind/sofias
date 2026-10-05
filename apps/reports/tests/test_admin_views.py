@@ -191,3 +191,146 @@ def test_invalid_edit_rerenders_without_saving(admin_client, urls):
     resp = admin_client.post(urls["edit"], _form_data(headcount_in_person="-1"))
     assert resp.status_code == 200
     assert Report.objects.count() == 0
+
+
+READY = dict(
+    issued_in="CDMX",
+    activities_summary="A",
+    evaluator_name="S",
+    evaluator_license="1",
+    conclusions="C",
+)
+
+
+def _published(scored_assignment, make_user):
+    from apps.reports import publishing
+
+    report = Report.objects.create(assignment=scored_assignment, **READY)
+    ReportSignatory.objects.create(report=report, title="RH", name="Ana", order=1)
+    assert publishing.publish(report, make_user(email="pub@x.mx")) == []
+    return report
+
+
+def test_unpublish_form_asks_for_confirmation(
+    admin_client, urls, scored_assignment, make_user
+):
+    _published(scored_assignment, make_user)
+    body = admin_client.get(urls["detail"]).content.decode()
+    assert (
+        "onsubmit=\"return confirm('¿Despublicar el reporte? El contenido congelado"
+        " se descartará y la empresa dejará de verlo hasta que se publique de"
+        " nuevo.')\"" in body
+    )
+
+
+def test_double_publish_is_a_silent_success(admin_client, urls):
+    admin_client.post(urls["edit"], _form_data())
+    admin_client.post(urls["publish"])
+    resp = admin_client.post(urls["publish"], follow=True)
+    body = resp.content.decode()
+    assert "ya está publicado" not in body
+    assert body.count("Reporte publicado.") <= 1
+    assert Report.objects.get().status == Report.Status.PUBLISHED
+
+
+def test_first_save_after_a_concurrent_create_does_not_fail(
+    admin_client, urls, scored_assignment, monkeypatch
+):
+    """Another request inserted the row between this one's lookup and its save."""
+    from apps.reports import views
+
+    original = views.AdminMixin.report
+
+    def stale_report(self, assignment):
+        report = original(self, assignment)
+        Report.objects.create(assignment=assignment, issued_in="Otra")
+        return report
+
+    monkeypatch.setattr(views.AdminMixin, "report", stale_report)
+    resp = admin_client.post(urls["edit"], _form_data())
+    assert resp.status_code == 302
+    assert resp["Location"] == urls["detail"]
+    assert Report.objects.count() == 1
+
+
+def test_list_counts_the_frozen_respondents_once_published(
+    client,
+    make_user_with_profile,
+    bootstrap_groups,
+    scored_assignment,
+    make_user,
+):
+    from apps.nom035.tests.factories import make_score
+
+    report = _published(scored_assignment, make_user)
+    frozen = report.snapshot["responded"]
+    exec_user = make_user_with_profile(
+        email="ex@x.mx", company=scored_assignment.company
+    )
+    exec_user.groups.add(bootstrap_groups[ROLES[1].name])
+    client.force_login(exec_user)
+    url = reverse("reports:exec_list")
+    assert f"{frozen} cuestionarios valorados" in client.get(url).content.decode()
+    make_score(scored_assignment, make_user_with_profile(email="late@x.mx"))
+    body = client.get(url).content.decode()
+    assert f"{frozen} cuestionarios valorados" in body
+    assert f"{frozen + 1} cuestionarios" not in body
+
+
+def test_admin_list_counts_the_frozen_respondents_once_published(
+    admin_client, urls, scored_assignment, make_user, make_user_with_profile
+):
+    from apps.nom035.tests.factories import make_score
+
+    report = _published(scored_assignment, make_user)
+    frozen = report.snapshot["responded"]
+    make_score(scored_assignment, make_user_with_profile(email="late@x.mx"))
+    body = admin_client.get(urls["list"]).content.decode()
+    assert f"{frozen} cuestionarios valorados" in body
+
+
+# ── Django admin ────────────────────────────────────────────────────────────
+
+
+def test_django_admin_report_list_requires_login(client):
+    resp = client.get(reverse("admin:reports_report_changelist"))
+    assert resp.status_code == 302
+    assert "login" in resp["Location"]
+
+
+def test_django_admin_cannot_edit_a_published_report(
+    staff_client, scored_assignment, make_user
+):
+    report = _published(scored_assignment, make_user)
+    url = reverse("admin:reports_report_change", args=[report.pk])
+    page = staff_client.get(url)
+    assert page.status_code == 200
+    staff_client.post(
+        url,
+        {
+            "assignment": scored_assignment.pk,
+            "conclusions": "Cambiado",
+            "issued_in": "Otro",
+            "signatories-TOTAL_FORMS": "1",
+            "signatories-INITIAL_FORMS": "1",
+            "signatories-MIN_NUM_FORMS": "0",
+            "signatories-MAX_NUM_FORMS": "1000",
+            "signatories-0-id": report.signatories.get().pk,
+            "signatories-0-report": report.pk,
+            "signatories-0-title": "X",
+            "signatories-0-name": "Cambiado",
+            "signatories-0-order": "1",
+            "signatories-0-DELETE": "on",
+        },
+    )
+    report.refresh_from_db()
+    assert report.conclusions == "C"
+    assert report.issued_in == "CDMX"
+    assert report.signatories.get().name == "Ana"
+
+
+def test_django_admin_edits_a_draft_report(staff_client, scored_assignment):
+    report = Report.objects.create(assignment=scored_assignment, **READY)
+    page = staff_client.get(reverse("admin:reports_report_change", args=[report.pk]))
+    assert page.status_code == 200
+    assert 'name="conclusions"' in page.content.decode()

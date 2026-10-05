@@ -79,8 +79,13 @@ A report has two states.
   `published_by`. The published report renders only from the snapshot, so later
   submissions or a `recompute_nom035_scores` run never change it. Its fields
   cannot be edited: the edit page redirects back with *Despublica el reporte para
-  editarlo.* *Despublicar* discards the snapshot and returns it to Borrador;
-  executives lose access until it is published again.
+  editarlo.* — the Django admin shows a published report and its signatories
+  read-only as well. Clicking *Publicar* again on a published report changes
+  nothing and says nothing. *Despublicar* first asks the browser to confirm
+  (*¿Despublicar el reporte? El contenido congelado se descartará y la empresa
+  dejará de verlo hasta que se publique de nuevo.*), then discards the snapshot
+  and returns the report to Borrador; executives lose access until it is
+  published again.
 
 *Publicar* is refused, with one Spanish message per unmet condition, while any
 of these holds:
@@ -104,7 +109,7 @@ guard as the admin results route:
 
 | Route | Purpose |
 |---|---|
-| `empresas/<reference_code>/reportes/` | The company's NOM-035 assignments, labelled by their answers' date range (`assignment_label`), each with its report state: *Sin iniciar*, *Borrador*, *Publicado* |
+| `empresas/<reference_code>/reportes/` | The company's NOM-035 assignments, labelled by their answers' date range (`assignment_label`), each with its report state: *Sin iniciar*, *Borrador*, *Publicado*, and its count of scored questionnaires — the frozen count once published |
 | `empresas/<reference_code>/reportes/<assignment>/` | The report — live while a draft, frozen once published — under a sticky action bar: *Descargar PDF*, then *Editar* and *Publicar* on a draft or *Despublicar* on a published report |
 | `…/editar/` | One form: lugar de emisión, principales actividades, headcount presencial / home office / híbrido, evaluator and cédula, signatories (ordered rows, addable and removable), additional recommendations, conclusiones |
 | `…/publicar/`, `…/despublicar/` | POST only |
@@ -115,7 +120,7 @@ company (a viewer with no company is sent to profile setup):
 
 | Route | Purpose |
 |---|---|
-| `tablero-empresa/reportes/` | Published reports only |
+| `tablero-empresa/reportes/` | Published reports only, each with its frozen count of scored questionnaires |
 | `tablero-empresa/reportes/<assignment>/` | The frozen report, with *Descargar PDF* |
 | `tablero-empresa/reportes/<assignment>/pdf/` | Its PDF |
 

@@ -26,7 +26,12 @@
         <li class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div class="min-w-0">
             <p class="text-sm font-medium text-gray-900">{{ row.option.label }}</p>
+            {# A published report counts its frozen respondents, not today's. #}
+            {% if row.report.status == "published" %}{% with count=row.report.snapshot.responded %}
+            <p class="mt-1 text-xs text-gray-500">{{ count }} cuestionario{{ count|pluralize }} valorado{{ count|pluralize }}</p>
+            {% endwith %}{% else %}
             <p class="mt-1 text-xs text-gray-500">{{ row.option.scored_count }} cuestionario{{ row.option.scored_count|pluralize }} valorado{{ row.option.scored_count|pluralize }}</p>
+            {% endif %}
           </div>
           <div class="flex items-center justify-between gap-4 sm:justify-end">
             {% if not is_admin_view %}

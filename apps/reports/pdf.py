@@ -8,6 +8,7 @@ static finders. Nothing else is fetched: no network, no request to the app.
 import mimetypes
 
 from django.contrib.staticfiles import finders
+from django.core.exceptions import SuspiciousFileOperation
 from django.template.loader import render_to_string
 from django.utils import timezone
 from weasyprint import HTML
@@ -25,7 +26,10 @@ def static_fetcher(url: str) -> dict:
     if not url.startswith(_STATIC):
         raise ValueError(f"El PDF solo carga archivos estáticos: {url}")
     relative = url[len(_STATIC) :].split("?")[0].split("#")[0]
-    path = finders.find(relative) if relative else None
+    try:
+        path = finders.find(relative) if relative else None
+    except SuspiciousFileOperation as exc:
+        raise ValueError(f"Ruta de archivo estático no válida: {url}") from exc
     if path is None:
         raise ValueError(f"Archivo estático no encontrado: {url}")
     with open(path, "rb") as fh:

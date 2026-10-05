@@ -111,3 +111,17 @@ body {
   color: #4338CA;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Range-strip tick labels ────────────────────────────────────────────── */
+
+/* The strip centres or end-anchors its tick labels with Tailwind's
+   `-translate-x-*` classes, which set the `translate` property WeasyPrint
+   ignores; `transform` gives the same shift. A start-anchored label carries
+   neither class and stays put. */
+.report-sheet .-translate-x-1\/2 {
+  transform: translateX(-50%);
+}
+
+.report-sheet .-translate-x-full {
+  transform: translateX(-100%);
+}

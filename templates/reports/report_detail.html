@@ -31,7 +31,8 @@
          class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Descargar PDF</a>
       {% if is_admin_view %}
       {% if report.status == "published" %}
-        <form method="post" action="{% url 'reports:admin_unpublish' company.reference_code report.assignment.pk %}">
+        <form method="post" action="{% url 'reports:admin_unpublish' company.reference_code report.assignment.pk %}"
+              onsubmit="return confirm('¿Despublicar el reporte? El contenido congelado se descartará y la empresa dejará de verlo hasta que se publique de nuevo.')">
           {% csrf_token %}
           <button type="submit" class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Despublicar</button>
         </form>
