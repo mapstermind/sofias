@@ -1,1 +1,2 @@
-<span class="report-badge report-badge--{{ level }}">{{ label }}</span>
+{# tier="dom" draws the badge in the dominio tier of the palette. #}
+<span class="report-badge report-badge--{% if tier %}{{ tier }}-{% endif %}{{ level }}">{{ label }}</span>

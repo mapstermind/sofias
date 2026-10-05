@@ -199,3 +199,39 @@ def test_summaries_hold_no_interactive_content(client, setup, make_user_with_pro
     assert not {"a", "button", "input", "select", "textarea"} & set(parser.nested)
     assert parser.tabindexes == 0
     assert "data-tooltip" not in body
+
+
+def test_dominio_rows_draw_in_the_dominio_tier(client, setup, make_user_with_profile):
+    from apps.nom035 import _nom035_scoring as cfg
+    from apps.nom035.models import GroupScore
+
+    for i in range(6):
+        user = make_user_with_profile(email=f"d{i}@x.mx", company=setup["company"])
+        sub = SurveySubmission.objects.create(
+            assignment=setup["assignment"],
+            user=user,
+            status=SurveySubmission.Status.IN_PROGRESS,
+        )
+        score = SubmissionScore.objects.create(
+            submission=sub, final_score=60, final_ndr=c.NDR_BAJO
+        )
+        GroupScore.objects.create(
+            submission_score=score,
+            level=c.LEVEL_CATEGORIA,
+            key=cfg.CAT_AMBIENTE,
+            score=6,
+            ndr=c.NDR_BAJO,
+        )
+        GroupScore.objects.create(
+            submission_score=score,
+            level=c.LEVEL_DOMINIO,
+            key=cfg.DOM_CONDICIONES,
+            score=12,
+            ndr=c.NDR_MUY_ALTO,
+        )
+    client.force_login(setup["exec"])
+    body = client.get(reverse("core:company_results")).content.decode()
+    assert 'fill="#7A1010"' in body  # dominio Muy alto column
+    assert 'fill="#22C55E"' in body  # categoría Bajo column unchanged
+    assert "bg-[#7A1010]" in body  # dominio legend swatch
+    assert "Dominios:" in body

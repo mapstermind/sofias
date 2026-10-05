@@ -74,8 +74,19 @@ body {
   margin: 0;
 }
 
-.report-section--resultados,
-.report-section--anexo {
+/* Page breaks. Which sections start a page is declared per section in
+   apps/reports/sections.py (break_before); the table of contents ends its own.
+   Repeated groups — 5.4 categorías, 5.5 categoría groups, 5.6 dominio groups —
+   each start a page after the first. */
+.report-break-before {
+  break-before: page;
+}
+
+.report-break-after {
+  break-after: page;
+}
+
+.report-page-group + .report-page-group {
   break-before: page;
 }
 

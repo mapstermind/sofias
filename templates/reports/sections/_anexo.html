@@ -54,4 +54,4 @@
 {% include "reports/sections/_threshold_table.html" with first="Categoría" rows=c.method.categorias levels=c.method.levels %}
 
 <h4 class="report-h4">Calificación por dominio</h4>
-{% include "reports/sections/_threshold_table.html" with first="Dominio" rows=c.method.dominios levels=c.method.levels %}
+{% include "reports/sections/_threshold_table.html" with first="Dominio" rows=c.method.dominios levels=c.method.levels tier="dom" %}

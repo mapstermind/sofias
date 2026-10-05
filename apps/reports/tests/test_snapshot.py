@@ -56,3 +56,14 @@ def test_data_for_reads_snapshot_when_published(scored_assignment):
     assert data_for(report) == live
     report.status = Report.Status.DRAFT
     assert data_for(report) != live
+
+
+def test_load_defaults_missing_palette(scored_assignment):
+    raw = json.loads(json.dumps(dump(build_report_data(scored_assignment))))
+    for cat in raw["categoria_distribution"]:
+        cat.pop("palette", None)
+        for dom in cat["children"]:
+            dom.pop("palette", None)
+    data = load(raw)
+    assert data.categoria_distribution[0].palette == "ndr"
+    assert data.categoria_distribution[0].children[0].palette == "dom"

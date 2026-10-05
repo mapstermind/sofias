@@ -131,10 +131,17 @@ class Slice:
     color: str
 
 
-def _ndr_slices(counts) -> tuple[Slice, ...]:
+# Color-key prefixes: the risk palette's two tiers. Categorías and the final
+# score draw in "ndr-<level>"; dominios in the deeper "dom-<level>". The chart
+# and badge palettes in apps/core map both.
+PALETTE_NDR = "ndr"
+PALETTE_DOMINIO = "dom"
+
+
+def _ndr_slices(counts, palette=PALETTE_NDR) -> tuple[Slice, ...]:
     """Shared by DistributionRow and ParticipationRow: one Slice per (level, count)."""
     return tuple(
-        Slice(level, c.NDR_LABELS[level], count, f"ndr-{level}")
+        Slice(level, c.NDR_LABELS[level], count, f"{palette}-{level}")
         for level, count in counts
     )
 
@@ -145,11 +152,12 @@ class DistributionRow:
     label: str
     n: int
     counts: tuple[tuple[str, int], ...]
+    palette: str = PALETTE_NDR
     children: tuple["DistributionRow", ...] = ()
 
     @property
     def slices(self) -> tuple[Slice, ...]:
-        return _ndr_slices(self.counts)
+        return _ndr_slices(self.counts, self.palette)
 
 
 @dataclass(frozen=True)
@@ -305,20 +313,24 @@ def _hide_until_safe(entries, by_area, visible):
         hidden += n
 
 
-def _distribution(key, label, ndrs, children=()) -> DistributionRow:
+def _distribution(
+    key, label, ndrs, children=(), palette=PALETTE_NDR
+) -> DistributionRow:
     counted = Counter(ndrs)
     return DistributionRow(
         key=key,
         label=label,
         n=len(ndrs),
         counts=tuple((level, counted[level]) for level in c.NDR_ORDER),
+        palette=palette,
         children=tuple(children),
     )
 
 
 def _stats(key, label, values, *, level, variant, scale_max, children=()) -> StatsRow:
+    palette = PALETTE_DOMINIO if level == c.LEVEL_DOMINIO else PALETTE_NDR
     bands = tuple(
-        (upper, f"ndr-{ndr}", c.NDR_LABELS[ndr])
+        (upper, f"{palette}-{ndr}", c.NDR_LABELS[ndr])
         for upper, ndr in cfg.thresholds_for(level, key, variant)
     )
     return StatsRow(
@@ -374,7 +386,12 @@ def _valuation(assignment, scores):
                 cfg.group_label(cat),
                 ndrs(c.LEVEL_CATEGORIA, cat),
                 [
-                    _distribution(d, cfg.group_label(d), ndrs(c.LEVEL_DOMINIO, d))
+                    _distribution(
+                        d,
+                        cfg.group_label(d),
+                        ndrs(c.LEVEL_DOMINIO, d),
+                        palette=PALETTE_DOMINIO,
+                    )
                     for d in doms
                 ],
             )

@@ -480,3 +480,23 @@ def test_participation_secondary_rule_breaks_ties_between_equally_sized_rows(
 
     hidden = sum(r.responded for r in results.participation if r.suppressed)
     assert hidden == 0 or hidden >= c.MIN_GROUP_SIZE
+
+
+def test_dominio_rows_use_the_dominio_palette(scored_large):
+    results = results_for(scored_large, ResultsQuery(), suppress_small_groups=True)
+    cat = results.categoria_distribution[0]
+    assert {s.color.split("-")[0] for s in cat.slices} == {"ndr"}
+    assert {s.color.split("-")[0] for s in cat.children[0].slices} == {"dom"}
+    cat_stats = results.categoria_stats[0]
+    assert all(band[1].startswith("ndr-") for band in cat_stats.strip_bands)
+    assert all(band[1].startswith("dom-") for band in cat_stats.children[0].strip_bands)
+    assert all(s.color.startswith("ndr-") for s in results.final_distribution.slices)
+
+
+def test_empty_dominio_row_keeps_the_dominio_palette(scored_large):
+    results = results_for(scored_large, ResultsQuery(), suppress_small_groups=True)
+    empty = [
+        d for cat in results.categoria_distribution for d in cat.children if d.n == 0
+    ]
+    assert empty
+    assert all(s.color.startswith("dom-") for s in empty[0].slices)

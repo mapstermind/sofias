@@ -190,7 +190,7 @@
                     <span class="flex-1 border-b border-dotted border-gray-300 transition-colors group-hover:border-gray-400"></span>
                     <span class="shrink-0 flex items-center gap-2">
                       <span class="text-sm tabular-nums text-gray-500 transition-colors group-hover:text-gray-900">{{ dom.score }}</span>
-                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ dom.ndr|ndr_badge }}">{{ dom.ndr_label }}</span>
+                      <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ dom.ndr|ndr_badge:"dominio" }}">{{ dom.ndr_label }}</span>
                     </span>
                   </summary>
                   <ul class="mt-1 mb-2 ml-4 space-y-0.5 border-l border-gray-100 pl-3">
@@ -211,7 +211,7 @@
                   <span class="flex-1 border-b border-dotted border-gray-300 transition-colors group-hover:border-gray-400"></span>
                   <span class="shrink-0 flex items-center gap-2">
                     <span class="text-sm tabular-nums text-gray-500 transition-colors group-hover:text-gray-900">{{ dom.score }}</span>
-                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ dom.ndr|ndr_badge }}">{{ dom.ndr_label }}</span>
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ dom.ndr|ndr_badge:"dominio" }}">{{ dom.ndr_label }}</span>
                   </span>
                 </div>
               {% endif %}

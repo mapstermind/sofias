@@ -86,3 +86,49 @@ def test_panel_shows_scores_and_hierarchy(
     assert "Ambiente de trabajo" in body
     assert "Trabajos peligrosos" in body  # dimensión label rendered
     assert "Se requiere" not in body  # no action sentence on the card
+
+
+def test_dominio_badges_use_the_dominio_tier(
+    client, bootstrap_groups, make_user_with_profile, make_company, survey
+):
+    from apps.nom035 import _nom035_scoring as cfg
+    from apps.nom035.models import GroupScore
+
+    company = make_company()
+    admin = make_user_with_profile(email="admin3@x.mx", company=company)
+    admin.groups.add(bootstrap_groups["Admins"])
+    employee = make_user_with_profile(email="emp3@x.mx", company=company)
+    assignment = SurveyAssignment.objects.create(
+        company=company,
+        survey=survey,
+        variant=SurveyAssignment.Variant.LARGE,
+        status=SurveyAssignment.Status.ACTIVE,
+    )
+    sub = SurveySubmission.objects.create(
+        assignment=assignment, user=employee, status=SurveySubmission.Status.IN_PROGRESS
+    )
+    score = SubmissionScore.objects.create(
+        submission=sub, final_score=60, final_ndr=c.NDR_BAJO
+    )
+    GroupScore.objects.create(
+        submission_score=score,
+        level=c.LEVEL_CATEGORIA,
+        key=cfg.CAT_AMBIENTE,
+        score=6,
+        ndr=c.NDR_BAJO,
+    )
+    GroupScore.objects.create(
+        submission_score=score,
+        level=c.LEVEL_DOMINIO,
+        key=cfg.DOM_CONDICIONES,
+        score=12,
+        ndr=c.NDR_ALTO,
+    )
+
+    client.force_login(admin)
+    body = client.get(
+        reverse("core:company_employee_detail", args=[employee.id])
+    ).content.decode()
+    assert "bg-[#B5531F]" in body  # dominio Alto, solid
+    assert "bg-green-50" in body  # categoría Bajo keeps the tinted badge
+    assert "bg-[#4A8039]" not in body  # no categoría badge in the dominio tier

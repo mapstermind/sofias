@@ -116,3 +116,18 @@ def test_every_color_key_has_a_hex():
     from apps.core.templatetags.charts import _COLORS, _HEX
 
     assert _HEX.keys() == _COLORS.keys()
+
+
+def test_dominio_keys_have_classes_and_hexes():
+    from apps.core.templatetags.charts import _COLORS, _HEX
+
+    expected = {
+        "nulo": "#9CA3AF",
+        "bajo": "#4A8039",
+        "medio": "#CA9429",
+        "alto": "#B5531F",
+        "muy_alto": "#7A1010",
+    }
+    for level, hex_ in expected.items():
+        assert _COLORS[f"dom-{level}"] == (f"fill-[{hex_}]", f"bg-[{hex_}]")
+        assert _HEX[f"dom-{level}"] == hex_

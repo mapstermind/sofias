@@ -1,9 +1,12 @@
-{# Thresholds: a row per key (`rows` of (name, bands)), a column per NDR level. #}
+{% comment %}
+  Thresholds: a row per key (`rows` of (name, bands)), a column per NDR level.
+  tier="dom" colors the level headers in the dominio tier.
+{% endcomment %}
 <table class="report-table report-table--stack">
   <thead>
     <tr>
       <th scope="col">{{ first }}</th>
-      {% for level, label in levels %}<th scope="col" class="report-level--{{ level }}">{{ label }}</th>{% endfor %}
+      {% for level, label in levels %}<th scope="col" class="report-level--{% if tier %}{{ tier }}-{% endif %}{{ level }}">{{ label }}</th>{% endfor %}
     </tr>
   </thead>
   <tbody>
