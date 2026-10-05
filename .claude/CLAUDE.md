@@ -150,6 +150,14 @@ The server must be built with **ICU** (the standard PGDG/Ubuntu packages are): t
 Spanish-text columns declare the `es-MX-x-icu` collation, so migrations fail without
 it. Check with `psql -c "select 1 from pg_collation where collname = 'es-MX-x-icu'"`.
 
+## PDF rendering setup
+
+The report PDF is rendered by WeasyPrint, which needs Pango:
+
+```bash
+sudo apt install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0
+```
+
 ## Environment Variables
 
 Configuration is loaded from `.env` at the project root via `python-dotenv`. Key variables:
