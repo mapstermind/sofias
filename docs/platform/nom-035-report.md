@@ -127,7 +127,9 @@ Administrador, **F** = fixed text.
 
 1. **Portada** — *Reporte de resultados*, *Guías de referencia*,
    *NOM-035-STPS-2018* on three lines; the company's `legal_name`; lugar de
-   emisión and the publication date (the current date on a draft); the provider.
+   emisión and the publication date (the current date on a draft); the company's
+   `name` as the implementing business (*Implementación externa y apoyo
+   logístico*).
 2. **Datos del centro de trabajo** (G) — razón social, domicilio, RFC, centro de
    trabajo, actividad principal.
 3. **Objetivo** (F) — placeholder text until the expert supplies it.
@@ -159,7 +161,8 @@ Administrador, **F** = fixed text.
    workers at that level, then the recommendations-matrix text for that dominio
    and level (G); followed by the additional recommendations (A).
 9. **Conclusiones** (A).
-10. **Responsables** — the client's signatories, the provider, the evaluator and
+10. **Responsables** — the client's signatories, the implementing business (the
+    company's `name`), the evaluator and
     their cédula, and the confidentiality notice (F).
 11. **Anexo** — glossary and Ley Federal del Trabajo articles 43 and 473–475 (F),
     and *Método utilizado* (G from the scoring constants, for the applied guía
@@ -233,7 +236,8 @@ appears only where a risk level is meant.
   brand indigo `#4338CA` only for navigational structure — section numbers,
   table of contents, running header.
 - **Cover.** Typographic only: the title on three lines, the razón social as the
-  largest element, place and date, provider at the foot. No risk colors.
+  largest element, place and date, the company's `name` at the foot. No risk
+  colors.
 
 Chart placement reuses the dashboard's template tags and geometry
 (`apps/core/templatetags/charts.py`, `apps/core/charts.py`) unchanged, through
@@ -300,7 +304,8 @@ A WeasyPrint failure surfaces as a logged 500.
 | | `additional_recommendations`, `conclusions` | text |
 | `reports.ReportSignatory` | `report`, `title`, `name`, `order` | the client's signatories |
 
-The provider's identity, the confidentiality notice, the recommendations matrix
+The confidentiality notice (with the company's `name` filled in at render),
+the recommendations matrix
 (keyed by the engine's dominio keys, covering both variants), the glossary, the
 Ley Federal del Trabajo articles and the Objetivo placeholder are constants in
 `apps/reports`.
@@ -314,7 +319,7 @@ Ley Federal del Trabajo articles and the Objetivo placeholder are constants in
 | `apps/reports/snapshot.py` | building the snapshot from the aggregates |
 | `apps/reports/sections.py` | the section registry |
 | `apps/reports/text.py` | generated sentences |
-| `apps/reports/content.py` | recommendations matrix, provider, confidentiality notice, glossary, LFT, Objetivo |
+| `apps/reports/content.py` | recommendations matrix, confidentiality notice, glossary, LFT, Objetivo |
 | `apps/reports/pdf.py` | `render_report_pdf`, the static URL fetcher |
 | `apps/reports/views.py`, `urls.py`, `forms.py` | pages, publish/unpublish, the edit form and signatory formset |
 | `templates/reports/` | `base_report.html`, report page, section partials |
@@ -346,8 +351,7 @@ model metadata.
   Reason: The report's structure is expected to be revised; data can be
   re-rendered through new templates.
 - Decision: Facts are stored where they stay true — industry and work centre on
-  `Company`; headcount, signatories and evaluator on `Report`; provider identity
-  in code.
+  `Company`; headcount, signatories and evaluator on `Report`.
   Reason: Round-specific facts on `Company` would rewrite older reports.
 - Decision: Only the Ejecutivo principal reads reports, through
   `can_view_insights`.
@@ -360,8 +364,11 @@ model metadata.
   footers and page numbers, without shipping a browser.
 - Decision: Reuse the dashboard's chart tags and geometry, not its partials.
   Reason: The dashboard and the report can evolve independently.
-- Decision: Recommendations matrix, fixed text and provider identity are code
-  constants.
+- Decision: Where the template names the implementing business, the report
+  prints the client company's `name`.
+  Reason: Decided with the product owner; the platform already shows that name
+  everywhere.
+- Decision: Recommendations matrix and fixed text are code constants.
   Reason: They are consultancy content shared by every report, revised by
   developers.
 

@@ -694,7 +694,7 @@ In `CompanyAdmin` nothing else is needed: with no `fields`/`fieldsets` declared,
 
 **Interfaces:**
 - Produces (in `apps/reports/content.py`):
-  - `PROVIDER_NAME: str`, `CONFIDENTIALITY_NOTICE: str`, `OBJECTIVE_PLACEHOLDER: str`
+  - `CONFIDENTIALITY_NOTICE: str` (a `str.format` template with a `{company}` field), `OBJECTIVE_PLACEHOLDER: str`
   - `RECOMMENDATIONS: dict[str, dict[str, str]]` — `{dominio_key: {ndr_level: text}}` for levels `medio`, `alto`, `muy_alto`
   - `GLOSSARY: tuple[tuple[str, str], ...]` — `(term, definition)`
   - `LFT_ARTICLES: tuple[tuple[str, str], ...]` — `(heading, text)`; article 43's fractions joined with `\n`
@@ -735,8 +735,9 @@ def test_matrix_covers_every_dominio_of_both_variants():
 
 
 def test_fixed_text_is_present():
-    assert content.PROVIDER_NAME
-    assert content.PROVIDER_NAME in content.CONFIDENTIALITY_NOTICE
+    assert "{company}" in content.CONFIDENTIALITY_NOTICE
+    assert "NOMBRE NEGOCIO" not in content.CONFIDENTIALITY_NOTICE
+    assert content.CONFIDENTIALITY_NOTICE.format(company="Acme").count("Acme") >= 1
     assert content.OBJECTIVE_PLACEHOLDER
     terms = [term for term, _ in content.GLOSSARY]
     assert "Violencia laboral" in terms
@@ -764,8 +765,7 @@ Then `grep -rn "action_text\|_ACTION_TEXT" apps templates docs/platform` and upd
   - `RECOMMENDATIONS` — the table *"Recomendaciones según Riesgo Identificado"*: one entry per row, keyed by the engine's dominio constant (`cfg.DOM_CONDICIONES`, `cfg.DOM_CARGA`, `cfg.DOM_CONTROL`, `cfg.DOM_JORNADA`, `cfg.DOM_INTERFERENCIA`, `cfg.DOM_LIDERAZGO`, `cfg.DOM_RELACIONES`, `cfg.DOM_VIOLENCIA`, `cfg.DOM_RECONOCIMIENTO`, `cfg.DOM_PERTENENCIA`); column 3 → `c.NDR_MEDIO`, column 4 → `c.NDR_ALTO`, column 5 → `c.NDR_MUY_ALTO`. Fix only evident typos (`trabajo‑familia` non-breaking hyphen → `trabajo-familia`) and keep the wording otherwise.
   - `GLOSSARY` — every bold term from *"Acontecimiento traumático severo"* through *"Violencia laboral"*, in document order, term without the trailing colon.
   - `LFT_ARTICLES` — articles 43 (intro + fractions I–VI, one per line), 473, 474, 475.
-  - `CONFIDENTIALITY_NOTICE` — the paragraph under *"Política de Confidencialidad/Manejo de Datos y Aviso de Privacidad"* plus the following paragraph about the STPS procedures, with `NOMBRE NEGOCIO` replaced by `{PROVIDER_NAME}` via an f-string.
-  - `PROVIDER_NAME = "SOFIA-S"` — confirm with the user at handoff (Open item A).
+  - `CONFIDENTIALITY_NOTICE` — the paragraph under *"Política de Confidencialidad/Manejo de Datos y Aviso de Privacidad"* plus the following paragraph about the STPS procedures, with `NOMBRE NEGOCIO` replaced by the literal `{company}` field (a plain string, filled with `str.format(company=...)` at render).
   - `OBJECTIVE_PLACEHOLDER = "Texto del objetivo pendiente de definir por la persona responsable de la evaluación."`
 
 Module docstring:
@@ -798,6 +798,7 @@ own action criteria live in apps/nom035 (`action_text`).
 ```python
 @dataclass(frozen=True)
 class CompanyFacts:
+    name: str
     legal_name: str
     address: str
     rfc: str
@@ -970,6 +971,7 @@ from apps.nom035.results import (
 
 @dataclass(frozen=True)
 class CompanyFacts:
+    name: str
     legal_name: str
     address: str
     rfc: str
@@ -1024,6 +1026,7 @@ def build_report_data(assignment) -> ReportData:
     )
     return ReportData(
         company=CompanyFacts(
+            name=company.name,
             legal_name=company.legal_name,
             address=company.address,
             rfc=company.rfc,
@@ -1754,7 +1757,7 @@ def _anexo(ctx):
 
 REGISTRY = (
     Section("portada", "", _T + "_portada.html",
-            lambda ctx: {"provider": content.PROVIDER_NAME}),
+            lambda ctx: {"provider": ctx.data.company.name}),
     Section("datos", "Datos del centro de trabajo", _T + "_datos.html"),
     Section("objetivo", "Objetivo", _T + "_objetivo.html",
             lambda ctx: {"objective": content.OBJECTIVE_PLACEHOLDER}),
@@ -1768,8 +1771,8 @@ REGISTRY = (
             lambda ctx: {"recommendations": text.recommendations(ctx.data)}),
     Section("conclusiones", "Conclusiones", _T + "_conclusiones.html"),
     Section("responsables", "Responsables", _T + "_responsables.html",
-            lambda ctx: {"provider": content.PROVIDER_NAME,
-                         "notice": content.CONFIDENTIALITY_NOTICE}),
+            lambda ctx: {"provider": ctx.data.company.name,
+                         "notice": content.CONFIDENTIALITY_NOTICE.format(company=ctx.data.company.name)}),
     Section("anexo", "Anexo", _T + "_anexo.html", _anexo),
 )
 ```
