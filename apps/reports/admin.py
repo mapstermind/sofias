@@ -12,5 +12,5 @@ class ReportSignatoryInline(admin.TabularInline):
 class ReportAdmin(admin.ModelAdmin):
     list_display = ("assignment", "status", "published_at")
     list_filter = ("status",)
-    readonly_fields = ("snapshot", "published_at", "published_by")
+    readonly_fields = ("status", "snapshot", "published_at", "published_by")
     inlines = [ReportSignatoryInline]

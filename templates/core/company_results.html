@@ -7,6 +7,11 @@
   <span class="text-gray-300 select-none">|</span>
   <a href="{% if is_admin_view %}{% url 'core:company_dashboard_for' company.reference_code %}{% else %}{% url 'core:company_dashboard' %}{% endif %}"
      class="text-sm text-gray-400 hover:text-gray-600 transition-colors">&larr; Regresa al tablero</a>
+  {% if is_admin_view %}
+    <span class="text-gray-300 select-none">|</span>
+    <a href="{% url 'reports:admin_list' company.reference_code %}"
+       class="text-sm text-gray-400 hover:text-gray-600 transition-colors">Reporte</a>
+  {% endif %}
 {% endblock %}
 
 {% block content %}

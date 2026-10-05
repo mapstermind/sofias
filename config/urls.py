@@ -26,6 +26,7 @@ admin.site.index_title = "Panel de administración"
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include(("apps.core.urls", "core"))),
+    path("", include(("apps.reports.urls", "reports"))),
     path("cuentas/", include(("apps.accounts.urls", "accounts"))),
     path("encuestas/", include(("apps.surveys.urls", "surveys"))),
 ]
