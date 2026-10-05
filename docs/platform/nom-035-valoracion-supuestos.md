@@ -11,7 +11,8 @@ canalización de la Guía I— se transcribieron de la fuente única de verdad
 (`docs/internal/Guias de Referencia.md`) y se consideran resueltos;
 su detalle vive en `docs/platform/nom-035-analytics.md`. La página de
 **Resultados** de cada empresa se describe en
-`docs/platform/nom-035-results-dashboard.md`. Aquí quedan únicamente los
+`docs/platform/nom-035-results-dashboard.md`, y el **Reporte de resultados**
+descargable, en `docs/platform/nom-035-report.md`. Aquí quedan únicamente los
 **puntos abiertos**.
 
 > 🟡 = por validar. Última actualización: 2026-10-04.
@@ -92,3 +93,32 @@ vista completa revelaría a quienes quedaron fuera.
   valoración.
 - **Lo que necesitamos:** confirmar que estos tres resultados son la lectura
   correcta de la Guía I para la empresa.
+
+## 5. Reporte: grupos pequeños también para Administración 🟡
+
+- **Supuesto actual:** el Reporte de resultados se calcula **siempre** con la
+  regla de grupos pequeños del punto 2, también en la vista previa de
+  Administración. Así existe una sola versión del reporte y quien lo redacta ve
+  exactamente las cifras que recibirá la empresa. Solo afecta a lo que se
+  muestra **por área** (participación, distribuciones y Guía I por área).
+- **Lo que necesitamos:** confirmar si el reporte entregado debería mostrar
+  **todos los grupos sin ocultar**, como creemos que corresponde. Si es así,
+  falta decidir quién lo recibe y si el Ejecutivo principal seguiría viendo la
+  versión con grupos ocultos.
+
+## 6. Reporte: texto del Objetivo 🟡
+
+- **Supuesto actual:** la sección **Objetivo** es un texto fijo, igual para todos
+  los reportes, y por ahora es un texto provisional.
+- **Lo que necesitamos:** el texto definitivo, y confirmar si basta con un texto
+  fijo o si debe cambiar según el tamaño de la empresa y las guías aplicadas
+  (Guía I con Guía II o con Guía III).
+
+## 7. Reporte: cómo describir la calificación final 🟡
+
+- **Supuesto actual:** el reporte resume la calificación final agrupando niveles:
+  *"De los N colaboradores evaluados, el X % presentó niveles de riesgo Nulo o
+  Bajo; el Y % restante, Medio, Alto o Muy alto."*
+- **Lo que necesitamos:** confirmar si es preferible describir el porcentaje de
+  **cada nivel por separado**, sin agruparlos (por ejemplo, *"48 % Nulo, 28 %
+  Bajo, 14 % Medio, 8 % Alto y 2 % Muy alto"*).
