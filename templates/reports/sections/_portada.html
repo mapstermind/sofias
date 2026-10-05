@@ -1,0 +1,13 @@
+<div class="report-cover">
+  <h1 class="report-cover-title">
+    <span class="report-cover-line">Reporte de resultados</span>
+    <span class="report-cover-line">Guías de referencia</span>
+    <span class="report-cover-line">NOM-035-STPS-2018</span>
+  </h1>
+  <p class="report-cover-company">{{ data.company.legal_name|default:data.company.name }}</p>
+  <p class="report-cover-place">{% if ctx.report.issued_in %}{{ ctx.report.issued_in }}, {% endif %}{{ ctx.issued_on|date:"j \d\e F \d\e Y"|lower }}</p>
+  <div class="report-cover-foot">
+    <p class="report-small">Implementación externa y apoyo logístico</p>
+    <p class="report-cover-provider">{{ c.provider }}</p>
+  </div>
+</div>

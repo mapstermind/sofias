@@ -1,0 +1,15 @@
+{% comment %}
+  The report body: every section of the registry, in order. Shared by the
+  screen and the PDF; the page around it (sheet, action bar, paged media) is
+  the caller's.
+{% endcomment %}
+{% for s in sections %}
+  <section id="sec-{{ s.key|slugify }}" class="report-section report-section--{{ s.key|slugify }}">
+    {% include s.template with s=s data=s.context.data ctx=s.context.ctx c=s.context %}
+    {% for child in s.children %}
+      <section id="sec-{{ child.key|slugify }}" class="report-subsection">
+        {% include child.template with s=child data=child.context.data ctx=child.context.ctx c=child.context %}
+      </section>
+    {% endfor %}
+  </section>
+{% endfor %}

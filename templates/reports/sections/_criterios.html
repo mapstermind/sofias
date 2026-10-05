@@ -1,0 +1,10 @@
+<h2 class="report-h2"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h2>
+<p class="report-prose">Criterios para la toma de acciones de la NOM-035-STPS-2018, para cada nivel de riesgo que alcanzó al menos un colaborador en la calificación final, en una categoría o en un dominio.</p>
+{% for level, label, text in c.criteria %}
+  <div class="report-criterion report-criterion--{{ level }}">
+    {% include "reports/_badge.html" with level=level label=label %}
+    <p class="report-prose">{{ text }}</p>
+  </div>
+{% empty %}
+  <p class="report-small">Sin cuestionarios calificados.</p>
+{% endfor %}

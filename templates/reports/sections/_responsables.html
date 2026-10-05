@@ -1,0 +1,20 @@
+<h2 class="report-h2"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h2>
+{% if ctx.signatories %}
+  <h3 class="report-h3">Responsables de la empresa</h3>
+  <dl class="report-people">
+    {% for person in ctx.signatories %}
+      <div class="report-person"><dt class="report-small">{{ person.title }}</dt><dd>{{ person.name }}</dd></div>
+    {% endfor %}
+  </dl>
+{% endif %}
+<h3 class="report-h3">Implementación externa y apoyo logístico</h3>
+<dl class="report-people">
+  <div class="report-person"><dt class="report-small">Empresa</dt><dd>{{ c.provider }}</dd></div>
+  {% if ctx.report.evaluator_name %}
+    <div class="report-person"><dt class="report-small">Responsable de la evaluación</dt><dd>{{ ctx.report.evaluator_name }}</dd></div>
+  {% endif %}
+  {% if ctx.report.evaluator_license %}
+    <div class="report-person"><dt class="report-small">Cédula profesional</dt><dd>{{ ctx.report.evaluator_license }}</dd></div>
+  {% endif %}
+</dl>
+<div class="report-notice report-small">{{ c.notice|linebreaks }}</div>

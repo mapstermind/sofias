@@ -1,0 +1,19 @@
+<nav class="report-toc" aria-label="Contenido">
+  <h2 class="report-h2">Contenido</h2>
+  <ol class="report-toc-list">
+    {% for s in sections %}{% if s.number %}
+      <li class="report-toc-item">
+        <a class="report-toc-link" href="#sec-{{ s.key|slugify }}"><span class="report-num">{{ s.number }}</span> {{ s.title }}<span class="report-toc-page"></span></a>
+        {% if s.children %}
+          <ol class="report-toc-list">
+            {% for child in s.children %}{% if child.number %}
+              <li class="report-toc-item report-toc-item--child">
+                <a class="report-toc-link" href="#sec-{{ child.key|slugify }}"><span class="report-num">{{ child.number }}</span> {{ child.title }}<span class="report-toc-page"></span></a>
+              </li>
+            {% endif %}{% endfor %}
+          </ol>
+        {% endif %}
+      </li>
+    {% endif %}{% endfor %}
+  </ol>
+</nav>
