@@ -2,7 +2,8 @@
 
 The **NOM-035 valuation engine**: turns submitted survey answers into scores and a
 Nivel de Riesgo (NDR), and provides the reads `apps/core` presents — the company
-results page and the employee valuation card. This app
+results page and the employee valuation card — and the one `apps/reports` freezes
+into the results report. This app
 is **NOM-035-specific by design** — a future instrument gets its own app, not a
 generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-processing-apps.md`).
 
@@ -13,7 +14,9 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
   NDR), and `MIN_GROUP_SIZE` (5) for the results page's small-group rule.
 - `_nom035_scoring.py` — the scoring **configuration as data**, keyed by
   `surveys.Question.code`: the Categoría→Dominio→Dimensión taxonomy, the inverted-item
-  set, the NDR threshold tables, and the "Necesidad de acción" text. All transcribed
+  set, the NDR threshold tables, and `action_text(ndr)` — the norm's verbatim
+  "Necesidad de acción" criteria per level (identical in Guía II and III), which
+  the report's *Criterios de acción* section prints. All transcribed
   from `docs/internal/Guias de Referencia.md` (the single source of
   truth). No config DB tables; change the config by editing here and re-running the
   recompute command.
@@ -41,10 +44,18 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
   carries no numbers — keep the rule here, never in a template. Its query count
   is fixed regardless of respondents (`tests/test_results.py` caps it). See
   `docs/platform/nom-035-results-dashboard.md`.
-- `report_results(assignment)` in `results.py` — the NOM-035 report's read: the whole
-  assignment (`WHOLE_ASSIGNMENT`, small groups always hidden), per-dominio dimensión
-  stats (`DimensionGroup`, one neutral band `NEUTRAL_BAND_LABEL`) and per-área
-  distributions (`AreaResults`, hidden by the participation table's visibility).
+- `report_results(assignment) -> ReportResults` in `results.py` — the NOM-035
+  report's read (`apps/reports/snapshot.py` is its only caller): `Results` for the
+  whole assignment (`WHOLE_ASSIGNMENT`, small groups always hidden), `registered`
+  (activated members), per-dominio dimensión stats (`DimensionGroup`, rows carrying
+  one neutral band `NEUTRAL_BAND_LABEL` up to the highest possible score) and
+  per-área final and categoría distributions plus Guía I counts (`AreaResults`,
+  `suppressed` with no numbers wherever the participation table hides the área).
+  `period_span(first, last)` formats the application span ("3 feb – 10 mar 2026",
+  "" when nothing was answered) and `local_date` converts a timestamp to a local
+  date; both serve the survey selector and the report's *Selección de la
+  población*. The report's dataclasses round-trip through JSON in
+  `apps/reports/snapshot.py`, so a field added here changes the snapshot's shape.
 - `management/commands/recompute_nom035_scores.py` — backfill/refresh.
 
 ## Conventions & gotchas

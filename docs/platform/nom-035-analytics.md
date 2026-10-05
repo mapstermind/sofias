@@ -17,8 +17,10 @@ Results are presented in two places, both readable only by roles holding
 `can_view_insights`: the company-level **Resultados** page, described in
 [`nom-035-results-dashboard.md`](./nom-035-results-dashboard.md), and the
 **"Valoración de resultados"** card on the employee-detail page, described under
-[Presentation](#presentation). Employees never see their own results. The
-platform surfaces no prescriptive "necesidad de acción" verdict anywhere.
+[Presentation](#presentation). Employees never see their own results. No page
+attaches a "necesidad de acción" verdict to a worker, an área or the company; the
+[results report](./nom-035-report.md) prints the norm's action criteria, in its
+*Criterios de acción* section, for every level at least one worker reached.
 
 NDR levels follow the official NOM-035 tables, which define thresholds only at the
 **dominio, categoría and final** levels. Dimensión organizes items within the
@@ -58,8 +60,10 @@ seed pattern), keyed by the stable `surveys.Question.code` (`g1-1…g1-15`,
 - **Threshold tables** — per-variant band tables mapping a summed score to an NDR
   level (`{Nulo, Bajo, Medio, Alto, Muy alto}`) at the **final, categoría, and
   dominio** levels.
-- **Action text** — the canonical "Necesidad de acción según NOM-035" string for
-  each NDR level, transcribed with the tables; no page displays it.
+- **Action text** — the norm's "Necesidad de acción" criteria for each NDR level
+  (identical in Guía II and Guía III), transcribed verbatim with the tables. The
+  results report's *Criterios de acción* section prints it (see
+  [`nom-035-report.md`](./nom-035-report.md)).
 - **Guía I section codes** — the trigger question and the three section groupings
   the clinical-referral rule counts over.
 
@@ -283,7 +287,8 @@ badges — gated on `can_view_insights`.
 **Out of scope:** company-level presentation — the results page, its filters,
 charts and small-group rule, in scope for
 [`nom-035-results-dashboard.md`](./nom-035-results-dashboard.md); the
-downloadable/static PDF report (Iniciativa 2); an employee-facing self-view of
+results report and its PDF, in scope for
+[`nom-035-report.md`](./nom-035-report.md); an employee-facing self-view of
 results; any operator UI for authoring scoring configuration; a second survey
 instrument; and automatic generation of the Plan Bianual de Prevención.
 
