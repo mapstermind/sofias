@@ -1,0 +1,12 @@
+{% load charts %}
+<div class="report-stats">
+  <span class="report-stats-label">{{ row.label }}</span>
+  <dl class="report-stats-figures">
+    <div><dt>n</dt><dd>{{ row.n }}</dd></div>
+    <div><dt>Prom.</dt><dd>{{ row.mean|default_if_none:"—" }}</dd></div>
+    <div><dt>Mediana</dt><dd>{{ row.median|default_if_none:"—" }}</dd></div>
+    <div><dt>Mín</dt><dd>{{ row.minimum|default_if_none:"—" }}</dd></div>
+    <div><dt>Máx</dt><dd>{{ row.maximum|default_if_none:"—" }}</dd></div>
+  </dl>
+  <div class="report-stats-strip">{% if row.n %}{% range_strip row.strip_bands row.scale_max row.strip_points %}{% endif %}</div>
+</div>

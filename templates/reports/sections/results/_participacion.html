@@ -1,1 +1,27 @@
+{% load charts %}
 <h3 class="report-h3"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h3>
+{% if not data.final_distribution %}
+  <p class="report-small">Aún no hay cuestionarios valorados en esta encuesta.</p>
+{% else %}
+  <table class="report-table report-table--stack">
+    <thead>
+      <tr><th scope="col">Área</th><th scope="col">Registrados</th><th scope="col">Respondieron</th><th scope="col">Participación</th><th scope="col">Distribución</th></tr>
+    </thead>
+    <tbody>
+      {% for row in data.participation %}
+        <tr>
+          <th scope="row">{{ row.label }}</th>
+          <td data-label="Registrados" class="report-cell-num">{{ row.registered|default_if_none:"—" }}</td>
+          <td data-label="Respondieron" class="report-cell-num">{{ row.responded }}</td>
+          <td data-label="Participación" class="report-cell-num">{% if row.participation is not None %}{{ row.participation }} %{% else %}—{% endif %}</td>
+          <td data-label="Distribución" class="report-cell-chart">
+            {% if row.suppressed %}{% include "reports/sections/results/_suppressed.html" %}{% elif row.counts %}{% level_columns row.slices size="sm" %}{% else %}—{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">Esta empresa no tiene áreas registradas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="report-small">Registrados: miembros activados del área. La distribución es la de la calificación final.</p>
+{% endif %}

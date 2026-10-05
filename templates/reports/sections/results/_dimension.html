@@ -1,1 +1,12 @@
 <h3 class="report-h3"><span class="report-num">{{ s.number }}</span> {{ s.title }}</h3>
+{% if not data.final_distribution %}
+  <p class="report-small">Aún no hay cuestionarios valorados en esta encuesta.</p>
+{% else %}
+  {% for g in data.dimensions %}
+    <h4 class="report-h4">{{ g.label }}</h4>
+    {% for row in g.rows %}
+      {% include "reports/sections/results/_stats.html" with row=row %}
+    {% endfor %}
+  {% endfor %}
+  <p class="report-small">La norma no publica umbrales por dimensión: la franja gris va de 0 a la calificación más alta posible y no indica un nivel de riesgo.</p>
+{% endif %}

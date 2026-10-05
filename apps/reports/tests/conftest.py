@@ -38,6 +38,7 @@ def scored_assignment(company, make_user_with_profile, make_area, nom035_survey)
                     (c.LEVEL_CATEGORIA, cfg.CAT_AMBIENTE, 12, ndr),
                     (c.LEVEL_DOMINIO, cfg.DOM_CONDICIONES, 12, ndr),
                     (c.LEVEL_DOMINIO, cfg.DOM_LIDERAZGO, 18, c.NDR_MUY_ALTO),
+                    (c.LEVEL_DIMENSION, "cond_peligrosas_inseguras", 5, ""),
                 ],
             )
     make_score(

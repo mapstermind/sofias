@@ -1,0 +1,5 @@
+<ul class="report-legend" aria-label="Niveles de riesgo">
+  {% for level, label in legend %}
+    <li class="report-legend-item"><span class="report-swatch report-swatch--{{ level }}" aria-hidden="true"></span>{{ label }}</li>
+  {% endfor %}
+</ul>

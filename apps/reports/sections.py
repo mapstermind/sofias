@@ -216,6 +216,53 @@ def _anexo(ctx):
     }
 
 
+# ── Results builders ─────────────────────────────────────────────────────────
+
+LEGEND = tuple((lvl, c.NDR_LABELS[lvl]) for lvl in c.NDR_ORDER)
+
+
+def _finding(fn, rows) -> dict:
+    """The section's generated sentence; "" while nothing is scored."""
+    return {"finding": fn(rows) if rows else ""}
+
+
+def _final(ctx):
+    return {
+        **_finding(text.final_sentence, ctx.data.final_distribution),
+        "legend": LEGEND,
+    }
+
+
+def _paired(dists, stats) -> list[dict]:
+    """Each distribution row with the statistics row of the same key."""
+    by_key = {s.key: s for s in stats}
+    return [{"dist": d, "stats": by_key.get(d.key)} for d in dists]
+
+
+def _categoria(ctx):
+    data = ctx.data
+    return {
+        **_finding(text.categoria_sentence, data.categoria_distribution),
+        "rows": _paired(data.categoria_distribution, data.categoria_stats),
+        "legend": LEGEND,
+    }
+
+
+def _dominio(ctx):
+    data = ctx.data
+    stats = [s for cat in data.categoria_stats for s in cat.children]
+    groups = [
+        {"label": cat.label, "rows": _paired(cat.children, stats)}
+        for cat in data.categoria_distribution
+    ]
+    rows = [d for cat in data.categoria_distribution for d in cat.children]
+    return {
+        **_finding(text.dominio_sentence, rows),
+        "groups": groups,
+        "legend": LEGEND,
+    }
+
+
 # ── The registry ─────────────────────────────────────────────────────────────
 
 _R = _T + "results/"
@@ -225,9 +272,16 @@ RESULTS_CHILDREN = (
     Section(
         "resultados.participacion", "Participación por área", _R + "_participacion.html"
     ),
-    Section("resultados.final", "Calificación final", _R + "_final.html"),
-    Section("resultados.categoria", "Resultados por categoría", _R + "_categoria.html"),
-    Section("resultados.dominio", "Resultados por dominio", _R + "_dominio.html"),
+    Section("resultados.final", "Calificación final", _R + "_final.html", _final),
+    Section(
+        "resultados.categoria",
+        "Resultados por categoría",
+        _R + "_categoria.html",
+        _categoria,
+    ),
+    Section(
+        "resultados.dominio", "Resultados por dominio", _R + "_dominio.html", _dominio
+    ),
     Section("resultados.dimension", "Resultados por dimensión", _R + "_dimension.html"),
     Section("resultados.area", "Resultados por área", _R + "_area.html"),
     Section("resultados.guia1", "Guía I", _R + "_guia1.html"),

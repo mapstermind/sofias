@@ -329,6 +329,111 @@
 .report-criterion--alto { border-left-color: #F97316; }
 .report-criterion--muy_alto { border-left-color: #EF4444; }
 
+/* ── Results charts ─────────────────────────────────────────────────────── */
+
+/* Chart markup comes from the shared components (templates/components/charts/);
+   these classes only place it on the sheet. */
+.report-chart {
+  margin: 0 0 1rem;
+  break-inside: avoid;
+}
+
+.report-group {
+  margin: 0 0 1.5rem;
+  break-inside: avoid;
+}
+
+.report-group--nested {
+  padding-left: 0.75rem;
+  border-left: 1px solid #E5E7EB;
+}
+
+.report-group-label {
+  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.375rem;
+}
+
+.report-cell-chart {
+  min-width: 0;
+}
+
+/* A statistics row: label, the five figures, the range strip. One column on a
+   phone; label and figures side by side above the strip from 768px. */
+.report-stats {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  margin: 0 0 0.5rem;
+  border-bottom: 1px solid #E5E7EB;
+  break-inside: avoid;
+}
+
+.report-stats-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.report-stats-figures {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-stats-figures dt {
+  color: #4B5563;
+}
+
+.report-stats-figures dd {
+  margin: 0;
+  font-weight: 600;
+  color: #111827;
+}
+
+.report-stats-strip {
+  min-width: 0;
+}
+
+/* The NDR legend that closes the final, categoría and dominio sections. */
+.report-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  list-style: none;
+  margin: 0.75rem 0;
+  padding: 0;
+  font-size: 0.75rem;
+  color: #4B5563;
+}
+
+.report-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.report-swatch {
+  display: inline-block;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.report-swatch--nulo { background: #D1D5DB; }
+.report-swatch--bajo { background: #22C55E; }
+.report-swatch--medio { background: #F59E0B; }
+.report-swatch--alto { background: #F97316; }
+.report-swatch--muy_alto { background: #EF4444; }
+
 /* ── People, glossary, notice ───────────────────────────────────────────── */
 
 .report-people {
@@ -375,6 +480,19 @@
 
   .report-people {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .report-stats {
+    grid-template-columns: minmax(0, 14rem) minmax(0, 16rem);
+    align-items: center;
+  }
+
+  .report-stats-strip {
+    grid-column: 1 / -1;
+  }
+
+  .report-cell-chart {
+    width: 40%;
   }
 
   .report-table--stack thead {
