@@ -37,6 +37,20 @@ would show an admin a link `apps.surveys.views._respondent_company` refuses.
 
 **Convention:** each view that accepts an optional `reference_code` shows the caller's own company when it's absent, or an arbitrary company (admin-only, `can_manage_surveys`) when present. The list/detail views are heavily optimized to avoid N+1 — prefetch/annotate maps are built up front; preserve that pattern when editing.
 
+## Page chrome: back-to-top button
+
+`templates/base_app.html` renders `templates/_back_to_top.html` inside
+`{% block back_to_top %}` on every signed-in page: a "Volver arriba" button whose
+ring shows scroll progress. It sits in the side gutter beside the
+`container_width` column when there is room and in the bottom-right corner
+otherwise, appears after one viewport of scroll, lifts above the footer, and is
+hidden in print. A page opts out by overriding the block with nothing — the
+survey form does, because its phone bar owns that corner. Behaviour is
+`static/ts/back_to_top.ts` (**run `npm run build:js` and commit
+`static/js/back_to_top.js` when touching it**); `tests/test_back_to_top.py` pins
+the server-rendered half. Clicking it focuses `<main id="main" tabindex="-1">`,
+so keep those attributes.
+
 ## Template filters (`templatetags/valuation_extras.py`)
 
 `ndr_badge`, `ndr_bar`, `ndr_fill` and `ndr_scale` — the single source of truth
@@ -91,5 +105,5 @@ python manage.py seed_nom035_survey   # seed (idempotent) the NOM-035 survey
 - Authorization is permission-based, not group-name-based (except the `Admins` group, checked by name in a few places). Run `bootstrap_groups` (in `apps/accounts`) before these views behave correctly.
 - Per-employee progress goes through `_progress_entry`, which delegates to `apps.surveys.visibility.progress_for_modules` so `answered`/`total` count only the questions a respondent's gate answers leave visible — that is what makes a completed survey read 100%. `_variant_question_count` is still used, but only as the *nominal* total, to derive the `not_applicable` figure the UI shows. Never compute progress from `_variant_question_count` alone.
 - The employee list needs answer **values** (not just counts) to evaluate gates: one `values_list` sweep over `Answer` plus one module prefetch per assignment, both reused across every member. Preserve that pattern — a per-member query here is an N+1 in a page that renders the whole company. Search and filtering narrow the profile queryset **before** the per-member loop, so the loop only walks what will be rendered, and `user__groups` is prefetched on it because every card's metadata line prints the Rol. The whole arrangement is pinned by an invariance test in `tests/test_views.py`: a roster of 3 colaboradores and one of 30 must cost the same number of queries, so a dropped prefetch fails the suite rather than the page.
-- `tests/` covers views and the seed (`test_views.py`, `test_seed_nom035.py`), the results page (`test_results_views.py`, `test_results_query.py`, `test_dashboard_results_card.py`), the chart geometry and components (`test_charts.py`, `test_chart_components.py`) and phone-width layout (`test_responsive.py`).
+- `tests/` covers views and the seed (`test_views.py`, `test_seed_nom035.py`), the results page (`test_results_views.py`, `test_results_query.py`, `test_dashboard_results_card.py`), the chart geometry and components (`test_charts.py`, `test_chart_components.py`), phone-width layout (`test_responsive.py`) and the back-to-top button (`test_back_to_top.py`).
 - User-facing strings/URLs are Spanish.
