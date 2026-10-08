@@ -7,16 +7,16 @@
     {% endfor %}
     {% for m in strip.markers %}
       {% if m.lane == "above" %}
-        <line x1="{{ m.x }}%" x2="{{ m.x }}%" y1="15" y2="24" class="stroke-gray-400" stroke="#9CA3AF" stroke-width="1"></line>
-        <text x="{{ m.x }}%" y="11" text-anchor="{{ m.anchor }}" class="fill-gray-700 text-[10px]" fill="#374151" font-size="10" font-family="'Source Sans 3', ui-sans-serif, system-ui, sans-serif">{{ m.label }} {{ m.display }}</text>
+        <line x1="{{ m.x }}%" x2="{{ m.x }}%" y1="15" y2="24" class="stroke-neutral-400" stroke="#9CA3AF" stroke-width="1"></line>
+        <text x="{{ m.x }}%" y="11" text-anchor="{{ m.anchor }}" class="fill-neutral-700 text-[10px]" fill="#374151" font-size="10" font-family="'Figtree', ui-sans-serif, system-ui, sans-serif">{{ m.label }} {{ m.display }}</text>
       {% else %}
-        <line x1="{{ m.x }}%" x2="{{ m.x }}%" y1="34" y2="43" class="stroke-gray-400" stroke="#9CA3AF" stroke-width="1"></line>
-        <text x="{{ m.x }}%" y="55" text-anchor="{{ m.anchor }}" class="fill-gray-700 text-[10px]" fill="#374151" font-size="10" font-family="'Source Sans 3', ui-sans-serif, system-ui, sans-serif">{{ m.label }} {{ m.display }}</text>
+        <line x1="{{ m.x }}%" x2="{{ m.x }}%" y1="34" y2="43" class="stroke-neutral-400" stroke="#9CA3AF" stroke-width="1"></line>
+        <text x="{{ m.x }}%" y="55" text-anchor="{{ m.anchor }}" class="fill-neutral-700 text-[10px]" fill="#374151" font-size="10" font-family="'Figtree', ui-sans-serif, system-ui, sans-serif">{{ m.label }} {{ m.display }}</text>
       {% endif %}
-      <circle cx="{{ m.x }}%" cy="29" r="5" class="fill-gray-900 stroke-white" fill="#111827" stroke="#FFFFFF" stroke-width="2"></circle>
+      <circle cx="{{ m.x }}%" cy="29" r="5" class="fill-neutral-900 stroke-white" fill="#111827" stroke="#FFFFFF" stroke-width="2"></circle>
     {% endfor %}
   </svg>
-  <div class="relative h-3 text-[10px] leading-none text-gray-400" aria-hidden="true">
+  <div class="relative h-3 text-[10px] leading-none text-neutral-500" aria-hidden="true">
     {% for t in strip.ticks %}
       <span class="absolute top-0{% if t.anchor == 'middle' %} -translate-x-1/2{% elif t.anchor == 'end' %} -translate-x-full{% endif %}" style="left: {{ t.x }}%">{{ t.display }}</span>
     {% endfor %}

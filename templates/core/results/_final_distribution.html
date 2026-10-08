@@ -1,14 +1,14 @@
 {% load charts %}
-<section class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-  <h3 class="text-base font-semibold text-gray-900">Calificación final — distribución</h3>
-  <p class="mt-1 text-xs text-gray-500">Porcentaje de cuestionarios en cada nivel, en una escala de 0 a 100 %.</p>
+<section class="mt-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+  <h3 class="text-base font-semibold text-neutral-900">Calificación final — distribución</h3>
+  <p class="mt-1 text-xs text-neutral-500">Porcentaje de cuestionarios en cada nivel, en una escala de 0 a 100 %.</p>
   <div class="mt-4 hidden gap-2 md:grid md:grid-cols-[12rem_minmax(0,1fr)_4rem]">
     <span></span>{% include "core/results/_ndr_columns.html" %}<span></span>
   </div>
   {% with row=results.final_distribution %}
     <div class="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:grid-cols-[12rem_minmax(0,1fr)_4rem]">
-      <span class="text-sm font-medium text-gray-900">{{ row.label }}</span>
-      <span class="text-xs text-gray-500 md:order-last md:text-right">n = {{ row.n }}</span>
+      <span class="text-sm font-medium text-neutral-900">{{ row.label }}</span>
+      <span class="text-xs text-neutral-500 md:order-last md:text-right">n = {{ row.n }}</span>
       <div class="col-span-2 min-w-0 md:col-span-1">{% level_columns row.slices names="phone" size="lg" %}</div>
     </div>
   {% endwith %}

@@ -8,12 +8,12 @@ main and footer share it so they stay aligned. Omit it for the standard width.
 Any width a view passes must be safelisted in static/css/main.css — Tailwind only
 scans templates/, so a class named in Python is never compiled otherwise.
 {% endcomment %}
-<header class="bg-white border-b border-gray-200">
+<header class="bg-white border-b border-neutral-200">
   <div class="mx-auto {{ container_width|default:"max-w-5xl" }} px-4 py-4 flex items-center justify-between gap-3">
     <div class="flex min-w-0 items-center gap-3">
       <a href="{% url 'core:home' %}" class="flex shrink-0 items-center gap-2">
-        <img src="{% static 'img/logo.svg' %}" alt="Logo SOFIA-S" class="h-8 mt-2 mb-3 w-auto">
-        <span class="hidden text-xl font-semibold text-gray-900 sm:inline">SOFIA-S</span>
+        {% include "_logo.html" with css_class="h-8 mt-2 mb-3 w-auto text-primary-700" %}
+        <span class="hidden text-xl font-semibold text-neutral-900 sm:inline">{{ brand.name }}</span>
       </a>
       {% comment %}
       The back link is desktop-only. A phone goes back by swiping, and the logo
@@ -34,7 +34,7 @@ scans templates/, so a class named in Python is never compiled otherwise.
       the visitor out — so the action names itself instead.
       {% endcomment %}
       <button type="submit"
-              class="group flex w-28 items-center justify-end text-sm text-gray-500 transition-colors hover:text-gray-700">
+              class="group flex w-28 items-center justify-end text-sm text-neutral-500 transition-colors hover:text-neutral-700">
         <span class="sm:hidden">Cerrar sesión</span>
         <span class="hidden sm:inline sm:group-hover:hidden">
           {% include "_avatar.html" with person=request.user size="size-8" text="text-xs" only %}

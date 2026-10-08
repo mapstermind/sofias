@@ -41,7 +41,7 @@ def test_static_fetcher_serves_static_files():
 
 def test_url_fetcher_serves_static_files_and_refuses_the_rest():
     fetcher = pdf.ReportURLFetcher()
-    response = fetcher.fetch(f"{pdf.BASE_URL}static/fonts/SourceSans3-Variable.ttf")
+    response = fetcher.fetch(f"{pdf.BASE_URL}static/fonts/SourceSerif4-Variable.ttf")
     assert response.content_type == "font/ttf"
     assert len(response.read()) > 100_000
     with pytest.raises(ValueError):
@@ -135,3 +135,36 @@ def test_static_fetcher_refuses_path_traversal():
         pdf.static_fetcher(f"{pdf.BASE_URL}static/../config/settings.py")
     with pytest.raises(ValueError):
         pdf.static_fetcher(f"{pdf.BASE_URL}static/css/../../config/settings.py")
+
+
+def test_report_html_paints_the_default_palette(scored_assignment):
+    html = pdf.report_html(Report(assignment=scored_assignment))
+    assert '<html lang="es" data-palette="petrol">' in html
+
+
+def test_report_html_paints_a_chosen_palette(scored_assignment):
+    html = pdf.report_html(Report(assignment=scored_assignment), palette="slate")
+    assert 'data-palette="slate"' in html
+
+
+def test_report_html_ignores_an_unknown_palette(scored_assignment):
+    html = pdf.report_html(Report(assignment=scored_assignment), palette="durazno")
+    assert 'data-palette="petrol"' in html
+
+
+def test_the_report_sets_data_in_figtree_and_prose_in_source_serif():
+    css = "".join(
+        pdf.static_fetcher(f"{pdf.BASE_URL}static/css/{name}")["string"].decode()
+        for name in ("report.css", "report-wide.css", "report-print.css")
+    )
+    assert "Source Sans" not in css
+    assert '"Figtree"' in css and '"Source Serif 4"' in css
+
+
+def test_no_chart_label_names_a_font_the_report_does_not_bundle():
+    """WeasyPrint draws chart <text> from its font-family attribute, not the stylesheet."""
+    from pathlib import Path
+
+    charts = Path(__file__).resolve().parents[3] / "templates/components/charts"
+    for template in charts.glob("*.html"):
+        assert "Source Sans" not in template.read_text(), template.name

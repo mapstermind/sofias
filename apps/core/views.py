@@ -6,16 +6,25 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
 from apps.accounts.demographics import AGE_BANDS
 from apps.accounts.models import Company, CompanyArea, CompanyLocation, UserProfile
 from apps.accounts.roles import ROLES, labels_for_names
 from apps.core import roster
+from apps.core.brand import COOKIE as PALETTE_COOKIE
+from apps.core.brand import palette_slugs
 from apps.core.query_params import SEX_SLUGS_TO_LABELS
 from apps.core.results_query import filter_pills, parse_results_query, results_url
 from apps.nom035 import constants as nom035_constants
-from apps.nom035.results import assignment_options, results_for, select_assignment
+from apps.nom035.results import (
+    NOM035_SURVEY_KEY,
+    assignment_options,
+    results_for,
+    select_assignment,
+)
+from apps.nom035.scoring import answer_score
 from apps.responses.models import Answer, SurveySubmission
 from apps.surveys.models import Module, SurveyAssignment
 from apps.surveys.visibility import progress_for_modules
@@ -533,11 +542,21 @@ class EmployeeDetailView(LoginRequiredMixin, View):
             for assignment in assignments:
                 answers_by_qid = answers_by_aid.get(assignment.id, {})
 
+                # A NOM-035 frequency answer carries its 0–4 score, so the page
+                # can place it on the risk scale (some items score in reverse).
+                scored = assignment.survey.key == NOM035_SURVEY_KEY
                 modules_with_answers = [
                     {
                         "module": module,
+                        "scored": scored,
                         "items": [
-                            {"question": q, "answer": answers_by_qid.get(q.id)}
+                            {
+                                "question": q,
+                                "answer": (answer := answers_by_qid.get(q.id)),
+                                "score": answer_score(q.code, answer.value)
+                                if scored and answer and q.question_type == "likert"
+                                else None,
+                            }
                             for q in module.questions.all()
                         ],
                     }
@@ -677,3 +696,27 @@ class CompanyResultsFragmentView(CompanyResultsView):
     """The results body alone, swapped into the page by results_dashboard.ts."""
 
     template_name = "core/results/_body.html"
+
+
+class PaletteSwitchView(View):
+    """Remembers the palette a visitor picked and returns them to the page.
+
+    Temporary: it exists while the client compares the candidate palettes, and
+    goes with the losing one. The cookie only changes the visitor's own view.
+    """
+
+    def post(self, request):
+        target = request.POST.get("next", "")
+        if not url_has_allowed_host_and_scheme(
+            target,
+            allowed_hosts={request.get_host()},
+            require_https=request.is_secure(),
+        ):
+            target = "/"
+        response = redirect(target)
+        chosen = request.POST.get("paleta")
+        if chosen in palette_slugs():
+            response.set_cookie(
+                PALETTE_COOKIE, chosen, max_age=60 * 60 * 24 * 365, samesite="Lax"
+            )
+        return response

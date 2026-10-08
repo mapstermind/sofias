@@ -1586,6 +1586,79 @@ class TestEmployeeDetailView:
         assert prog["percent"] == 33
         assert prog["status"] == "in_progress"
 
+    def test_answer_breakdown_orders_nom035_answers_by_risk(
+        self, client, make_user, make_company, make_user_with_profile, nom035_survey
+    ):
+        """The real page: a reversed NOM-035 item's "Siempre" sits at the high-risk end."""
+        from apps.surveys.models import Module, Question
+
+        module = Module.objects.create(
+            survey=nom035_survey, key="g3-ambiente", title="Ambiente", order=0
+        )
+        question = Question.objects.create(
+            module=module,
+            code="g3-2",
+            question_type="likert",
+            text="Mi trabajo me exige hacer mucho esfuerzo físico",
+            config={
+                "labels": [
+                    "Siempre",
+                    "Casi siempre",
+                    "Algunas veces",
+                    "Casi nunca",
+                    "Nunca",
+                ]
+            },
+            order=0,
+        )
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        assignment = SurveyAssignment.objects.create(
+            company=company, survey=nom035_survey, variant="large"
+        )
+        submission = SurveySubmission.objects.create(
+            assignment=assignment, user=emp, status=SurveySubmission.Status.IN_PROGRESS
+        )
+        Answer.objects.create(submission=submission, question=question, value=1)
+
+        viewer = self._make_viewer(make_user, company, "can_view_submissions")
+        client.force_login(viewer)
+        html = client.get(self._url(emp.id)).content.decode()
+
+        assert 'aria-label="Siempre, puntaje 4 de 4"' in html
+        assert "Menor → mayor riesgo" in html
+
+    def test_answer_breakdown_renders_frequency_answers_as_a_scale(
+        self,
+        client,
+        make_user,
+        make_company,
+        make_user_with_profile,
+        survey_with_questions,
+    ):
+        """The real page, with the view's dict rows: a frequency answer and its module key."""
+        company = make_company()
+        emp = self._make_employee(make_user_with_profile, company)
+        likert = next(
+            q for q in survey_with_questions["questions"] if q.question_type == "likert"
+        )
+        assignment = SurveyAssignment.objects.create(
+            company=company, survey=survey_with_questions["survey"], variant="small"
+        )
+        submission = SurveySubmission.objects.create(
+            assignment=assignment, user=emp, status=SurveySubmission.Status.IN_PROGRESS
+        )
+        Answer.objects.create(submission=submission, question=likert, value=4)
+
+        viewer = self._make_viewer(make_user, company, "can_view_submissions")
+        client.force_login(viewer)
+        response = client.get(self._url(emp.id))
+
+        assert response.status_code == 200
+        html = response.content.decode()
+        assert 'aria-label="Casi siempre, opción 4 de 5, de Nunca a Siempre"' in html
+        assert "Nunca → Siempre" in html  # the module's scale key
+
     def test_completed_gated_survey_reads_100_percent(
         self, client, make_user, make_company, make_user_with_profile, gated_survey
     ):

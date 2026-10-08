@@ -1,6 +1,6 @@
 {% load valuation_extras %}
-<div class="grid grid-cols-5 text-center text-[11px] leading-tight text-gray-500" aria-hidden="true">
+<div class="grid grid-cols-5 text-center text-[11px] leading-tight text-neutral-500" aria-hidden="true">
   {% for level, label in ndr_levels %}
-    <span class="flex items-center justify-center gap-1"><span class="size-2 shrink-0 rounded-sm {{ level|ndr_bar }}"></span>{{ label }}</span>
+    <span class="flex items-center justify-center gap-1"><span class="size-2.5 shrink-0 rounded-xs {{ level|ndr_bar }}"></span>{{ label }}</span>
   {% endfor %}
 </div>

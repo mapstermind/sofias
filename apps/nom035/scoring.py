@@ -9,6 +9,21 @@ def likert_item_score(value: int, *, inverted: bool) -> int:
     return (5 - value) if inverted else (value - 1)
 
 
+def answer_score(code: str, value) -> int | None:
+    """The 0–4 NOM-035 score of one stored frequency answer, or None off the 1–5 scale.
+
+    For presenting a single answer: the employee detail page orders its answer
+    strip by this, so a reversed item's "Siempre" sits at the high-risk end.
+    """
+    try:
+        value = int(value)
+    except (TypeError, ValueError):
+        return None
+    if not 1 <= value <= 5:
+        return None
+    return likert_item_score(value, inverted=cfg.is_inverted(code))
+
+
 def classify(bands: list[tuple[float, str]], score: int) -> str:
     """Return the NDR level for `score`. `bands` is ascending by upper bound."""
     for upper, level in bands:

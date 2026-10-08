@@ -11,7 +11,7 @@ Include with `only`:
     <div class="min-w-0 flex-1">
       <div class="rounded-full {{ step.bar }} {% if step.active %}h-2{% else %}h-1{% endif %}"></div>
       {% if show_labels %}
-        <p class="mt-2 text-[10px] leading-tight uppercase tracking-wide {% if step.active %}font-semibold text-gray-900{% else %}text-gray-400{% endif %}">
+        <p class="mt-2 text-[10px] leading-tight uppercase tracking-wide {% if step.active %}font-semibold text-neutral-900{% else %}text-neutral-500{% endif %}">
           {{ step.label }}
         </p>
       {% endif %}

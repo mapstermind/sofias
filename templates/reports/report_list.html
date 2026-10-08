@@ -1,50 +1,50 @@
 {% extends "base_app.html" %}
 
-{% block title %}Reportes | {{ company.name }} | SOFIA-S{% endblock %}
+{% block title %}Reportes | {{ company.name }} | {{ brand.name }}{% endblock %}
 
 {% block header_nav %}
-  <span class="text-gray-300 select-none">|</span>
+  <span class="text-neutral-300 select-none">|</span>
   <a href="{% if is_admin_view %}{% url 'core:company_dashboard_for' company.reference_code %}{% else %}{% url 'core:company_dashboard' %}{% endif %}"
-     class="text-sm text-gray-400 hover:text-gray-600 transition-colors">&larr; Regresa al tablero</a>
+     class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">&larr; Regresa al tablero</a>
 {% endblock %}
 
 {% block content %}
   <div class="mb-5">
-    <h1 class="text-2xl font-bold text-gray-900">Reportes de resultados</h1>
-    <p class="mt-1 text-sm text-gray-500">{{ company.name }}</p>
+    <h1 class="text-2xl font-bold text-neutral-900">Reportes de resultados</h1>
+    <p class="mt-1 text-sm text-neutral-500">{{ company.name }}</p>
   </div>
 
   {% include "reports/_messages.html" %}
 
   {% if not rows %}
-    <div class="rounded-2xl border border-dashed border-gray-300 bg-white px-8 py-12 text-center">
-      <p class="text-sm text-gray-500">{% if is_admin_view %}Esta empresa aún no tiene encuestas NOM-035 asignadas.{% else %}Aún no hay reportes publicados.{% endif %}</p>
+    <div class="rounded-2xl border border-dashed border-neutral-300 bg-white px-8 py-12 text-center">
+      <p class="text-sm text-neutral-500">{% if is_admin_view %}Esta empresa aún no tiene encuestas NOM-035 asignadas.{% else %}Aún no hay reportes publicados.{% endif %}</p>
     </div>
   {% else %}
-    <ul class="divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <ul class="divide-y divide-neutral-100 rounded-2xl border border-neutral-200 bg-white shadow-sm">
       {% for row in rows %}
         <li class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div class="min-w-0">
-            <p class="text-sm font-medium text-gray-900">{{ row.option.label }}</p>
+            <p class="text-sm font-medium text-neutral-900">{{ row.option.label }}</p>
             {# A published report counts its frozen respondents, not today's. #}
             {% if row.report.status == "published" %}{% with count=row.report.snapshot.responded %}
-            <p class="mt-1 text-xs text-gray-500">{{ count }} cuestionario{{ count|pluralize }} valorado{{ count|pluralize }}</p>
+            <p class="mt-1 text-xs text-neutral-500">{{ count }} cuestionario{{ count|pluralize }} valorado{{ count|pluralize }}</p>
             {% endwith %}{% else %}
-            <p class="mt-1 text-xs text-gray-500">{{ row.option.scored_count }} cuestionario{{ row.option.scored_count|pluralize }} valorado{{ row.option.scored_count|pluralize }}</p>
+            <p class="mt-1 text-xs text-neutral-500">{{ row.option.scored_count }} cuestionario{{ row.option.scored_count|pluralize }} valorado{{ row.option.scored_count|pluralize }}</p>
             {% endif %}
           </div>
           <div class="flex items-center justify-between gap-4 sm:justify-end">
             {% if not is_admin_view %}
-              <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Publicado</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-success-100 px-3 py-1 text-xs font-medium text-success-800 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Publicado</span>
             {% elif not row.report %}
-              <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600">Sin iniciar</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Sin iniciar</span>
             {% elif row.report.status == "published" %}
-              <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">Publicado</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-success-100 px-3 py-1 text-xs font-medium text-success-800 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Publicado</span>
             {% else %}
-              <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">Borrador</span>
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-warning-100 px-3 py-1 text-xs font-medium text-warning-800 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Borrador</span>
             {% endif %}
             <a href="{% if is_admin_view %}{% url 'reports:admin_detail' company.reference_code row.option.assignment.pk %}{% else %}{% url 'reports:exec_detail' row.option.assignment.pk %}{% endif %}"
-               class="text-sm font-semibold text-indigo-600 hover:text-indigo-700">Abrir &rarr;</a>
+               class="text-sm font-semibold text-primary-600 hover:text-primary-700">Abrir &rarr;</a>
           </div>
         </li>
       {% endfor %}

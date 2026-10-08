@@ -6,14 +6,17 @@
    single-class so no rule wins on specificity.
 
    Serif (Source Serif 4) carries prose: findings, Administrador text, fixed
-   text. Sans (Source Sans 3) carries data: headings, tables, figures. Ink
-   #111827, secondary #4B5563, rules #E5E7EB; indigo #4338CA marks navigation
-   only (section numbers, contents). The NDR palette appears only where a risk
-   level is meant. This file is the phone layout; report-wide.css widens it from
+   text. Sans (Figtree, the app's face) carries data: headings, tables,
+   figures. Colors come from the active palette's variables (static/css/main.css,
+   docs/platform/design-system.md): ink neutral-900, secondary neutral-600,
+   rules neutral-200; primary-600 marks navigation only (section numbers,
+   contents). The NDR palette is fixed hex and appears only where a risk level
+   is meant. This file is the phone layout; report-wide.css widens it from
    768px and in the PDF. */
 
 /* ── Fonts ──────────────────────────────────────────────────────────────── */
-/* Bundled variable fonts (SIL OFL, static/fonts/OFL.txt). One face per weight
+/* Bundled variable fonts (SIL OFL: static/fonts/OFL.txt for Source Serif 4,
+   static/fonts/figtree/OFL.txt for Figtree). One face per weight
    the report uses, each a single weight value: WeasyPrint rejects the range
    form and would fall back to a system font. */
 
@@ -39,29 +42,29 @@
 }
 
 @font-face {
-  font-family: "Source Sans 3";
-  src: url("../fonts/SourceSans3-Variable.ttf") format("truetype");
+  font-family: "Figtree";
+  src: url("../fonts/figtree/Figtree-VariableFont_wght.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
 }
 
 @font-face {
-  font-family: "Source Sans 3";
-  src: url("../fonts/SourceSans3-Variable.ttf") format("truetype");
+  font-family: "Figtree";
+  src: url("../fonts/figtree/Figtree-VariableFont_wght.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
 }
 
 @font-face {
-  font-family: "Source Sans 3";
-  src: url("../fonts/SourceSans3-Variable.ttf") format("truetype");
+  font-family: "Figtree";
+  src: url("../fonts/figtree/Figtree-VariableFont_wght.ttf") format("truetype");
   font-weight: 600;
   font-style: normal;
 }
 
 @font-face {
-  font-family: "Source Sans 3";
-  src: url("../fonts/SourceSans3-Variable.ttf") format("truetype");
+  font-family: "Figtree";
+  src: url("../fonts/figtree/Figtree-VariableFont_wght.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
 }
@@ -70,11 +73,11 @@
 
 .report-sheet {
   background: #ffffff;
-  color: #111827;
+  color: var(--brand-neutral-900);
   max-width: 52rem;
   margin: 0 auto;
   padding: 1rem;
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 1rem;
   line-height: 1.5;
   overflow-wrap: break-word;
@@ -95,7 +98,7 @@
   font-size: 1.0625rem;
   line-height: 1.65;
   max-width: 65ch;
-  color: #111827;
+  color: var(--brand-neutral-900);
   margin: 0 0 1rem;
 }
 
@@ -109,57 +112,57 @@
   line-height: 1.45;
   font-weight: 600;
   max-width: 65ch;
-  color: #111827;
+  color: var(--brand-neutral-900);
   margin: 0 0 1.25rem;
   break-inside: avoid;
 }
 
 .report-h2 {
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 1.5rem;
   line-height: 1.25;
   font-weight: 700;
-  color: #111827;
+  color: var(--brand-neutral-900);
   margin: 0 0 1.25rem;
   break-after: avoid;
 }
 
 .report-h3 {
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 1.1875rem;
   line-height: 1.3;
   font-weight: 600;
-  color: #111827;
+  color: var(--brand-neutral-900);
   margin: 2rem 0 0.75rem;
   break-after: avoid;
 }
 
 .report-h4 {
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 1rem;
   line-height: 1.4;
   font-weight: 600;
-  color: #111827;
+  color: var(--brand-neutral-900);
   margin: 1.5rem 0 0.5rem;
   break-after: avoid;
 }
 
 .report-num {
-  color: #4338CA;
+  color: var(--brand-primary-600);
   font-variant-numeric: tabular-nums;
   margin-right: 0.375rem;
 }
 
 .report-small {
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 0.8125rem;
   line-height: 1.5;
-  color: #4B5563;
+  color: var(--brand-neutral-600);
   margin: 0 0 0.5rem;
 }
 
 .report-figure {
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -176,11 +179,11 @@
 }
 
 .report-cover-title {
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 1.25rem;
   line-height: 1.35;
   font-weight: 600;
-  color: #4B5563;
+  color: var(--brand-neutral-600);
   margin: 0 0 3rem;
 }
 
@@ -193,28 +196,28 @@
   font-size: 2.25rem;
   line-height: 1.15;
   font-weight: 600;
-  color: #111827;
+  color: var(--brand-neutral-900);
   margin: 0 0 1rem;
 }
 
 .report-cover-place {
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 1rem;
-  color: #4B5563;
+  color: var(--brand-neutral-600);
   margin: 0;
 }
 
 .report-cover-foot {
   margin-top: auto;
   padding-top: 3rem;
-  border-top: 1px solid #E5E7EB;
+  border-top: 1px solid var(--brand-neutral-200);
 }
 
 .report-cover-provider {
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--brand-neutral-900);
   margin: 0;
 }
 
@@ -242,27 +245,27 @@
 .report-toc-link {
   display: flex;
   gap: 0.25rem;
-  color: #111827;
+  color: var(--brand-neutral-900);
   text-decoration: none;
 }
 
 /* Page numbers: the PDF stylesheet fills this with target-counter(). */
 .report-toc-page {
   margin-left: auto;
-  color: #4338CA;
+  color: var(--brand-primary-600);
   font-variant-numeric: tabular-nums;
 }
 
 /* ── Tables ─────────────────────────────────────────────────────────────── */
 
 .report-table {
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 0.875rem;
   line-height: 1.4;
   width: 100%;
   border-collapse: collapse;
   margin: 0 0 1.5rem;
-  color: #111827;
+  color: var(--brand-neutral-900);
 }
 
 .report-table thead {
@@ -274,13 +277,13 @@
   text-align: left;
   vertical-align: top;
   padding: 0.5rem 0.75rem 0.5rem 0;
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid var(--brand-neutral-200);
 }
 
 .report-table thead th {
   font-weight: 600;
-  color: #4B5563;
-  border-bottom: 1px solid #111827;
+  color: var(--brand-neutral-600);
+  border-bottom: 1px solid var(--brand-neutral-900);
 }
 
 .report-table th {
@@ -291,7 +294,7 @@
 .report-table tfoot td {
   font-weight: 600;
   border-bottom: 0;
-  border-top: 1px solid #111827;
+  border-top: 1px solid var(--brand-neutral-900);
 }
 
 .report-table tr {
@@ -300,7 +303,7 @@
 
 .report-table--facts th {
   width: 35%;
-  color: #4B5563;
+  color: var(--brand-neutral-600);
   font-weight: 400;
 }
 
@@ -343,7 +346,7 @@
 .report-table--stack tr {
   display: block;
   padding: 0.5rem 0;
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid var(--brand-neutral-200);
 }
 
 .report-table--stack th,
@@ -355,7 +358,7 @@
 
 .report-table--stack td::before {
   content: attr(data-label) ": ";
-  color: #4B5563;
+  color: var(--brand-neutral-600);
 }
 
 /* ── Risk levels ────────────────────────────────────────────────────────── */
@@ -367,7 +370,7 @@
   display: inline-block;
   border-radius: 9999px;
   padding: 0.125rem 0.5rem;
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 0.75rem;
   line-height: 1.25rem;
   font-weight: 500;
@@ -380,6 +383,25 @@
 .report-badge--alto { background: #FFF7ED; color: #C2410C; border: 1px solid rgba(234, 88, 12, 0.2); }
 .report-badge--muy_alto { background: #FEF2F2; color: #B91C1C; border: 1px solid rgba(220, 38, 38, 0.2); }
 
+/* Every badge opens with a squircle marker, the shape of the legend swatches:
+   the level's swatch color on a tinted badge, the ink on a solid one. */
+.report-badge::before {
+  content: "";
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-right: 0.375rem;
+  border-radius: 2px;
+  vertical-align: 0.05em;
+  background: currentColor;
+}
+
+.report-badge--nulo::before { background: #D1D5DB; }
+.report-badge--bajo::before { background: #22C55E; }
+.report-badge--medio::before { background: #F59E0B; }
+.report-badge--alto::before { background: #F97316; }
+.report-badge--muy_alto::before { background: #EF4444; }
+
 /* Dominio badges are solid, so they read as a different family from the
    tinted categoría badges. Dark ink on the light Nulo and Medio. */
 .report-badge--dom-nulo { background: #9CA3AF; color: #111827; border: 1px solid #9CA3AF; }
@@ -390,7 +412,7 @@
 
 /* An action criterion or recommendation: left rule in the level's color. */
 .report-criterion {
-  border-left: 4px solid #E5E7EB;
+  border-left: 4px solid var(--brand-neutral-200);
   padding: 0.25rem 0 0.25rem 1rem;
   margin: 0 0 1.25rem;
   break-inside: avoid;
@@ -423,14 +445,14 @@
 
 .report-group--nested {
   padding-left: 0.75rem;
-  border-left: 1px solid #E5E7EB;
+  border-left: 1px solid var(--brand-neutral-200);
 }
 
 .report-group-label {
-  font-family: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--brand-neutral-900);
   margin: 0 0 0.375rem;
 }
 
@@ -446,14 +468,14 @@
   gap: 0.5rem;
   padding: 0.5rem 0;
   margin: 0 0 0.5rem;
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid var(--brand-neutral-200);
   break-inside: avoid;
 }
 
 .report-stats-label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #111827;
+  color: var(--brand-neutral-900);
 }
 
 .report-stats-figures {
@@ -467,13 +489,13 @@
 }
 
 .report-stats-figures dt {
-  color: #4B5563;
+  color: var(--brand-neutral-600);
 }
 
 .report-stats-figures dd {
   margin: 0;
   font-weight: 600;
-  color: #111827;
+  color: var(--brand-neutral-900);
 }
 
 .report-stats-strip {
@@ -489,7 +511,7 @@
   margin: 0.75rem 0;
   padding: 0;
   font-size: 0.75rem;
-  color: #4B5563;
+  color: var(--brand-neutral-600);
 }
 
 .report-legend-item {
@@ -520,7 +542,7 @@
 
 .report-legend-heading {
   font-weight: 600;
-  color: #111827;
+  color: var(--brand-neutral-900);
 }
 
 /* ── People, glossary, notice ───────────────────────────────────────────── */
@@ -557,5 +579,5 @@
 .report-notice {
   max-width: 65ch;
   padding-top: 1rem;
-  border-top: 1px solid #E5E7EB;
+  border-top: 1px solid var(--brand-neutral-200);
 }

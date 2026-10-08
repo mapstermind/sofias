@@ -8,18 +8,18 @@
   <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 z-10">
     <!-- Icon -->
     <div class="flex justify-center mb-4">
-      <div class="rounded-full bg-indigo-50 p-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <div class="rounded-full bg-primary-50 p-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
     </div>
-    <h2 class="text-lg font-semibold text-gray-900 text-center mb-2">Progreso guardado</h2>
-    <p class="text-sm text-gray-600 text-center">
+    <h2 class="text-lg font-semibold text-neutral-900 text-center mb-2">Progreso guardado</h2>
+    <p class="text-sm text-neutral-600 text-center">
       Tus respuestas han sido guardadas. Puedes continuar respondiendo ahora o en otro momento — tu progreso estará aquí cuando regreses.
     </p>
     {% if pending_count %}
-    <p class="mt-3 text-sm font-medium text-amber-700 text-center">
+    <p class="mt-3 text-sm font-medium text-warning-800 text-center">
       {% if pending_count == 1 %}Te falta 1 pregunta por responder.{% else %}Te faltan {{ pending_count }} preguntas por responder.{% endif %}
     </p>
     {% endif %}
@@ -27,11 +27,11 @@
       <button
         type="button"
         onclick="document.getElementById('progress-saved-modal').style.display='none'"
-        class="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white text-center hover:bg-indigo-500 transition-colors">
+        class="flex-1 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white text-center hover:bg-primary-500 transition-colors">
         Continuar respondiendo
       </button>
       <a href="{% url 'core:home' %}"
-         class="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 text-center hover:bg-gray-50 transition-colors">
+         class="flex-1 rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-700 text-center hover:bg-neutral-50 transition-colors">
         Ir al inicio
       </a>
     </div>

@@ -35,7 +35,7 @@ class EmailRequestForm(forms.Form):
                 "autofocus": True,
                 "placeholder": "tucorreo@ejemplo.com",
                 "autocomplete": "email",
-                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-indigo-500",
+                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -49,7 +49,7 @@ class EmailPasswordLoginForm(forms.Form):
                 "autofocus": True,
                 "placeholder": "tucorreo@ejemplo.com",
                 "autocomplete": "email",
-                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-indigo-500",
+                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -59,7 +59,7 @@ class EmailPasswordLoginForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "autocomplete": "current-password",
-                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-indigo-500",
+                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -108,7 +108,7 @@ class SetupAccessCodeLoginForm(forms.Form):
                 "autofocus": True,
                 "placeholder": "tucorreo@ejemplo.com",
                 "autocomplete": "email",
-                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-indigo-500",
+                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -119,7 +119,7 @@ class SetupAccessCodeLoginForm(forms.Form):
                 "inputmode": "numeric",
                 "autocomplete": "one-time-code",
                 "placeholder": "123-456-789",
-                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest focus:border-indigo-500 focus:ring-indigo-500",
+                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-center text-2xl tracking-widest focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -143,7 +143,7 @@ class RequiredPasswordChangeForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "autocomplete": "new-password",
-                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-indigo-500",
+                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -153,7 +153,7 @@ class RequiredPasswordChangeForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "autocomplete": "new-password",
-                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-indigo-500",
+                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -191,7 +191,7 @@ class OTPVerifyForm(forms.Form):
                 "inputmode": "numeric",
                 "autocomplete": "one-time-code",
                 "placeholder": "000000",
-                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-2xl tracking-widest focus:border-indigo-500 focus:ring-indigo-500",
+                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-center text-2xl tracking-widest focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -204,16 +204,16 @@ class OTPVerifyForm(forms.Form):
 
 
 _TEXT_CLASSES = (
-    "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm "
-    "focus:border-indigo-500 focus:ring-indigo-500"
+    "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm "
+    "focus:border-primary-500 focus:ring-primary-500"
 )
 _SELECT_CLASSES = (
-    "block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm "
-    "focus:border-indigo-500 focus:ring-indigo-500"
+    "block w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-sm "
+    "focus:border-primary-500 focus:ring-primary-500"
 )
 _DATE_SELECT_CLASSES = (
-    "block w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm "
-    "focus:border-indigo-500 focus:ring-indigo-500"
+    "block w-full rounded-lg border border-neutral-300 bg-white px-3 py-3 text-sm "
+    "focus:border-primary-500 focus:ring-primary-500"
 )
 
 
@@ -226,7 +226,7 @@ class ProfileActivationForm(forms.Form):
             attrs={
                 "autofocus": True,
                 "placeholder": "XXXXX",
-                "class": "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm uppercase tracking-widest focus:border-indigo-500 focus:ring-indigo-500",
+                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm uppercase tracking-widest focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )

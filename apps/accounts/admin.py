@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -78,10 +79,10 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
         ("Fechas importantes", {"fields": ("last_login", "date_joined")}),
-        ("Acceso SOFIA-S", {"fields": ("must_change_password",)}),
+        (f"Acceso {settings.BRAND['name']}", {"fields": ("must_change_password",)}),
     )
     add_fieldsets = UserAdmin.add_fieldsets + (
-        ("Acceso SOFIA-S", {"fields": ("must_change_password",)}),
+        (f"Acceso {settings.BRAND['name']}", {"fields": ("must_change_password",)}),
     )
 
     def get_queryset(self, request):

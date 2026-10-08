@@ -1,16 +1,16 @@
 {% extends "base_app.html" %}
 {% load survey_extras valuation_extras %}
 
-{% block title %}{{ employee_profile.user.get_full_name }} — {{ company.name }} | SOFIA-S{% endblock %}
+{% block title %}{{ employee_profile.user.get_full_name }} — {{ company.name }} | {{ brand.name }}{% endblock %}
 
 {% block header_nav %}
-  <span class="text-gray-300 select-none">|</span>
+  <span class="text-neutral-300 select-none">|</span>
   {% if is_admin_view %}
-    <a href="{% url 'core:company_employee_list_for' company.reference_code %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+    <a href="{% url 'core:company_employee_list_for' company.reference_code %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">
       &larr; Colaboradores
     </a>
   {% else %}
-    <a href="{% url 'core:company_employee_list' %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+    <a href="{% url 'core:company_employee_list' %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">
       &larr; Colaboradores
     </a>
   {% endif %}
@@ -23,59 +23,59 @@
 <div class="flex flex-col lg:flex-row gap-4 mb-8">
 
   {# Identity #}
-  <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5" style="flex: 2">
+  <div class="bg-white rounded-2xl border border-neutral-200 shadow-sm px-6 py-5" style="flex: 2">
     <div class="flex items-center gap-4">
       {% include "_avatar.html" with person=emp only %}
       <div class="min-w-0">
-        <h1 class="text-xl font-bold text-gray-900 truncate">
+        <h1 class="text-xl font-bold text-neutral-900 truncate">
           {% if emp.get_full_name %}
             {{ emp.get_full_name }}
           {% else %}
-            <span class="text-gray-400 font-normal italic">Sin nombre</span>
+            <span class="text-neutral-500 font-normal italic">Sin nombre</span>
           {% endif %}
         </h1>
-        <p class="mt-0.5 text-sm text-gray-500 truncate">{{ emp.email }}</p>
+        <p class="mt-0.5 text-sm text-neutral-500 truncate">{{ emp.email }}</p>
       </div>
     </div>
 
     <dl class="mt-6 space-y-4">
       <div class="min-w-0">
-        <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Cargo</dt>
-        <dd class="mt-1 text-sm font-medium text-gray-900">
+        <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Cargo</dt>
+        <dd class="mt-1 text-sm font-medium text-neutral-900">
           {% if employee_profile.position %}
             {{ employee_profile.position }}
           {% else %}
-            <span class="text-gray-400 font-normal italic">Sin asignar</span>
+            <span class="text-neutral-500 font-normal italic">Sin asignar</span>
           {% endif %}
         </dd>
       </div>
       <div class="min-w-0">
-        <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Área</dt>
-        <dd class="mt-1 text-sm font-medium text-gray-900">
+        <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Área</dt>
+        <dd class="mt-1 text-sm font-medium text-neutral-900">
           {% if employee_profile.area %}
             {{ employee_profile.area.name }}
           {% else %}
-            <span class="text-gray-400 font-normal italic">Sin asignar</span>
+            <span class="text-neutral-500 font-normal italic">Sin asignar</span>
           {% endif %}
         </dd>
       </div>
       <div class="min-w-0">
-        <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Localidad</dt>
-        <dd class="mt-1 text-sm font-medium text-gray-900">
+        <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Localidad</dt>
+        <dd class="mt-1 text-sm font-medium text-neutral-900">
           {% if employee_profile.location %}
             {{ employee_profile.location.name }}
           {% else %}
-            <span class="text-gray-400 font-normal italic">Sin asignar</span>
+            <span class="text-neutral-500 font-normal italic">Sin asignar</span>
           {% endif %}
         </dd>
       </div>
       <div class="min-w-0">
-        <dt class="text-xs font-medium text-gray-400 uppercase tracking-wide">Estado de cuenta</dt>
+        <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Estado de cuenta</dt>
         <dd class="mt-1">
           {% if employee_profile.is_activated %}
-            <span class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Activado</span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-medium text-success-800 ring-1 ring-inset ring-success-600/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Activado</span>
           {% else %}
-            <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 ring-1 ring-inset ring-gray-500/20">No activado</span>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-500 ring-1 ring-inset ring-neutral-500/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">No activado</span>
           {% endif %}
         </dd>
       </div>
@@ -86,45 +86,45 @@
   <div class="flex flex-col gap-4" style="flex: 2">
     {% if survey_progress %}
       {% for prog in survey_progress %}
-        <div class="flex h-full items-center gap-5 bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5">
+        <div class="flex h-full items-center gap-5 bg-white rounded-2xl border border-neutral-200 shadow-sm px-6 py-5">
           <div class="relative size-24 shrink-0">
             <svg viewBox="0 0 100 100" class="size-24 -rotate-90" role="img"
                  aria-label="{{ prog.percent }} por ciento — {{ prog.answered }} de {{ prog.total }} preguntas respondidas">
-              <circle cx="50" cy="50" r="44" fill="none" stroke-width="9" class="stroke-gray-100"></circle>
+              <circle cx="50" cy="50" r="44" fill="none" stroke-width="9" class="stroke-neutral-100"></circle>
               <circle cx="50" cy="50" r="44" fill="none" stroke-width="9" stroke-linecap="round"
-                      class="{% if prog.status == 'completed' %}stroke-green-500{% elif prog.status == 'in_progress' %}stroke-indigo-500{% else %}stroke-gray-200{% endif %}"
+                      class="{% if prog.status == 'completed' %}stroke-primary-700{% elif prog.status == 'in_progress' %}stroke-primary-500{% else %}stroke-neutral-200{% endif %}"
                       style="stroke-dasharray: {% widthratio prog.percent 100 276 %} 276"></circle>
             </svg>
             <div class="absolute inset-0 flex items-center justify-center">
-              <span class="text-xl font-bold tabular-nums text-gray-900">{{ prog.percent }}%</span>
+              <span class="text-xl font-bold tabular-nums text-neutral-900">{{ prog.percent }}%</span>
             </div>
           </div>
 
           <div class="min-w-0">
             <p>
-              <span class="text-sm font-medium text-gray-900">{{ prog.assignment.survey.title }}</span>
-              <span class="text-xs font-semibold text-gray-500">({{ prog.assignment.get_variant_display }})</span>
+              <span class="text-sm font-medium text-neutral-900">{{ prog.assignment.survey.title }}</span>
+              <span class="text-xs font-semibold text-neutral-500">({{ prog.assignment.get_variant_display }})</span>
             </p>
             <div class="mt-2">
               {% if prog.status == "completed" %}
-                <span class="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Completada</span>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-800 ring-1 ring-inset ring-success-600/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Completada</span>
               {% elif prog.status == "in_progress" %}
-                <span class="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">En progreso</span>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">En progreso</span>
               {% else %}
-                <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500 ring-1 ring-inset ring-gray-500/20">Sin iniciar</span>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500 ring-1 ring-inset ring-neutral-500/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Sin iniciar</span>
               {% endif %}
             </div>
-            <p class="mt-2 text-xs text-gray-500 tabular-nums">
+            <p class="mt-2 text-xs text-neutral-500 tabular-nums">
               {{ prog.answered }} de {{ prog.total }} respondidas{% if prog.not_applicable %}
-                <span class="text-gray-400">({{ prog.not_applicable }} no aplica{{ prog.not_applicable|pluralize:"n" }})</span>
+                <span class="text-neutral-500">({{ prog.not_applicable }} no aplica{{ prog.not_applicable|pluralize:"n" }})</span>
               {% endif %}
             </p>
           </div>
         </div>
       {% endfor %}
     {% else %}
-      <div class="flex h-full items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-8 text-center">
-        <p class="text-sm text-gray-500">No hay encuestas asignadas a esta empresa.</p>
+      <div class="flex h-full items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white px-6 py-8 text-center">
+        <p class="text-sm text-neutral-500">No hay encuestas asignadas a esta empresa.</p>
       </div>
     {% endif %}
   </div>
@@ -133,17 +133,17 @@
 {# ── Valoración de resultados (can_view_insights only) ────────────────────── #}
 {% if perms.accounts.can_view_insights %}
 <section class="mb-8">
-  <h2 class="text-base font-semibold text-gray-900 mb-4">Valoración de resultados</h2>
+  <h2 class="text-base font-semibold text-neutral-900 mb-4">Valoración de resultados</h2>
 
   {% if valuation %}
     {# Final risk #}
-    <div class="rounded-2xl border border-gray-200 bg-white px-6 py-5">
+    <div class="rounded-2xl border border-neutral-200 bg-white px-6 py-5">
       <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
         <div class="min-w-0">
-          <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">Nivel de riesgo final</p>
+          <p class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Nivel de riesgo final</p>
           <p class="mt-1 flex items-baseline gap-2">
-            <span class="text-2xl font-bold text-gray-900">{{ valuation.final_ndr_label }}</span>
-            <span class="text-sm tabular-nums text-gray-400">{{ valuation.final_score }} puntos</span>
+            <span class="text-2xl font-bold text-neutral-900">{{ valuation.final_ndr_label }}</span>
+            <span class="text-sm tabular-nums text-neutral-500">{{ valuation.final_score }} puntos</span>
           </p>
         </div>
         <div class="w-full sm:max-w-sm">
@@ -153,22 +153,22 @@
     </div>
 
     {% if valuation.guia1_positive %}
-      <div class="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5 shrink-0 text-amber-600" aria-hidden="true">
+      <div class="mt-4 flex items-start gap-3 rounded-2xl border border-danger-200 bg-danger-50 px-6 py-4">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5 shrink-0 text-danger-600" aria-hidden="true">
           <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.515 2.625H3.72c-1.345 0-2.188-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/>
         </svg>
-        <p class="text-sm font-medium text-amber-800">Usuario positivo a un acontecimiento traumático severo.</p>
+        <p class="text-sm font-medium text-danger-800">Usuario positivo a un acontecimiento traumático severo.</p>
       </div>
     {% endif %}
 
     {# One card per categoría #}
     <div class="mt-4 grid gap-4 md:grid-cols-2 md:[&>*:last-child:nth-child(odd)]:col-span-2">
       {% for cat in valuation.categories %}
-        <div class="flex flex-col rounded-2xl border border-gray-200 bg-white px-6 py-5">
+        <div class="flex flex-col rounded-2xl border border-neutral-200 bg-white px-6 py-5">
           <div class="flex items-start justify-between gap-3">
-            <h3 class="text-sm font-semibold text-gray-900">{{ cat.label }}</h3>
+            <h3 class="text-sm font-semibold text-neutral-900">{{ cat.label }}</h3>
             <span class="shrink-0 flex items-center gap-2">
-              <span class="text-sm tabular-nums text-gray-500">{{ cat.score }}</span>
+              <span class="text-sm tabular-nums text-neutral-500">{{ cat.score }}</span>
               <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ cat.ndr|ndr_badge }}">{{ cat.ndr_label }}</span>
             </span>
           </div>
@@ -182,35 +182,35 @@
             {% for dom in cat.domains %}
               {% if dom.dimensions %}
                 <details class="group/dim">
-                  <summary class="group flex cursor-pointer list-none items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md transition-colors hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 [&::-webkit-details-marker]:hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-3 shrink-0 self-center text-gray-400 transition-transform group-open/dim:rotate-90" aria-hidden="true">
+                  <summary class="group flex cursor-pointer list-none items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 [&::-webkit-details-marker]:hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-3 shrink-0 self-center text-neutral-500 transition-transform group-open/dim:rotate-90" aria-hidden="true">
                       <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd"/>
                     </svg>
-                    <span class="shrink-0 text-sm text-gray-700 transition-colors group-hover:text-gray-900">{{ dom.label }}</span>
-                    <span class="flex-1 border-b border-dotted border-gray-300 transition-colors group-hover:border-gray-400"></span>
+                    <span class="shrink-0 text-sm text-neutral-700 transition-colors group-hover:text-neutral-900">{{ dom.label }}</span>
+                    <span class="flex-1 border-b border-dotted border-neutral-300 transition-colors group-hover:border-neutral-400"></span>
                     <span class="shrink-0 flex items-center gap-2">
-                      <span class="text-sm tabular-nums text-gray-500 transition-colors group-hover:text-gray-900">{{ dom.score }}</span>
+                      <span class="text-sm tabular-nums text-neutral-500 transition-colors group-hover:text-neutral-900">{{ dom.score }}</span>
                       <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ dom.ndr|ndr_badge:"dominio" }}">{{ dom.ndr_label }}</span>
                     </span>
                   </summary>
-                  <ul class="mt-1 mb-2 ml-4 space-y-0.5 border-l border-gray-100 pl-3">
+                  <ul class="mt-1 mb-2 ml-4 space-y-0.5 border-l border-neutral-100 pl-3">
                     {% for dim in dom.dimensions %}
-                      <li class="flex items-baseline gap-2 text-xs text-gray-500">
+                      <li class="flex items-baseline gap-2 text-xs text-neutral-500">
                         <span class="shrink-0">{{ dim.label }}</span>
-                        <span class="flex-1 border-b border-dotted border-gray-200"></span>
+                        <span class="flex-1 border-b border-dotted border-neutral-200"></span>
                         <span class="shrink-0 tabular-nums">{{ dim.score }}</span>
                       </li>
                     {% endfor %}
                   </ul>
                 </details>
               {% else %}
-                <div class="group flex items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md transition-colors hover:bg-gray-50">
+                <div class="group flex items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md transition-colors hover:bg-neutral-50">
                   {# Aligns with the disclosure rows above, which lead with a chevron. #}
                   <span class="size-3 shrink-0 self-center" aria-hidden="true"></span>
-                  <span class="shrink-0 text-sm text-gray-700 transition-colors group-hover:text-gray-900">{{ dom.label }}</span>
-                  <span class="flex-1 border-b border-dotted border-gray-300 transition-colors group-hover:border-gray-400"></span>
+                  <span class="shrink-0 text-sm text-neutral-700 transition-colors group-hover:text-neutral-900">{{ dom.label }}</span>
+                  <span class="flex-1 border-b border-dotted border-neutral-300 transition-colors group-hover:border-neutral-400"></span>
                   <span class="shrink-0 flex items-center gap-2">
-                    <span class="text-sm tabular-nums text-gray-500 transition-colors group-hover:text-gray-900">{{ dom.score }}</span>
+                    <span class="text-sm tabular-nums text-neutral-500 transition-colors group-hover:text-neutral-900">{{ dom.score }}</span>
                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset {{ dom.ndr|ndr_badge:"dominio" }}">{{ dom.ndr_label }}</span>
                   </span>
                 </div>
@@ -221,8 +221,8 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="rounded-2xl border border-dashed border-gray-300 bg-white px-8 py-12 text-center">
-      <p class="text-sm text-gray-500">La valoración se genera al completar la encuesta.</p>
+    <div class="rounded-2xl border border-dashed border-neutral-300 bg-white px-8 py-12 text-center">
+      <p class="text-sm text-neutral-500">La valoración se genera al completar la encuesta.</p>
     </div>
   {% endif %}
 </section>
@@ -231,31 +231,31 @@
 {# ── Submissions / answers (can_view_submissions only) ───────────────────── #}
 {% if submissions_data is not None %}
 <section class="mb-8">
-  <h2 class="text-base font-semibold text-gray-900 mb-4">Respuestas</h2>
+  <h2 class="text-base font-semibold text-neutral-900 mb-4">Respuestas</h2>
 
   {% if submissions_data %}
     <div class="space-y-4">
       {% for item in submissions_data %}
-        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
 
           {# Assignment header #}
-          <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+          <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between gap-4">
             <div class="min-w-0">
-              <p class="font-medium text-gray-900 truncate">{{ item.assignment.survey.title }}</p>
-              <p class="text-xs font-semibold text-gray-700 mt-0.5">({{ item.assignment.get_variant_display }})</p>
+              <p class="font-medium text-neutral-900 truncate">{{ item.assignment.survey.title }}</p>
+              <p class="text-xs font-semibold text-neutral-700 mt-0.5">({{ item.assignment.get_variant_display }})</p>
             </div>
             {% if not item.submission %}
-              <span class="shrink-0 inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 ring-1 ring-inset ring-gray-500/20">Sin iniciar</span>
+              <span class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-500 ring-1 ring-inset ring-neutral-500/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Sin iniciar</span>
             {% elif item.submission.status == "completed" %}
-              <span class="shrink-0 inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Completada</span>
+              <span class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2.5 py-0.5 text-xs font-medium text-success-800 ring-1 ring-inset ring-success-600/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Completada</span>
             {% else %}
-              <span class="shrink-0 inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">En progreso</span>
+              <span class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2.5 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">En progreso</span>
             {% endif %}
           </div>
 
           {% if not item.submission %}
             <div class="px-6 py-8 text-center">
-              <p class="text-sm text-gray-400 italic">Este colaborador aún no ha iniciado esta encuesta.</p>
+              <p class="text-sm text-neutral-500 italic">Este colaborador aún no ha iniciado esta encuesta.</p>
             </div>
           {% else %}
             <div class="px-6 py-5 space-y-6">
@@ -263,9 +263,21 @@
               {# Questions grouped by module #}
               {% for mod in item.modules %}
                 <div>
-                  <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 border-b border-gray-100 pb-2">
-                    {{ mod.module.title }}
-                  </h3>
+                  <div class="mb-3 flex items-end justify-between gap-3 border-b border-neutral-100 pb-2">
+                    <h3 class="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                      {{ mod.module.title }}
+                    </h3>
+                    {% with likert_qa=mod.items|first_of_type:"likert" %}
+                      {% if likert_qa %}
+                        {# The direction of the squircle strips below: risk when the engine scored them, else the options' order. #}
+                        {% if mod.scored %}
+                          <p class="shrink-0 text-xs text-neutral-500" aria-hidden="true">Menor → mayor riesgo</p>
+                        {% else %}{% with pairs=likert_qa.question|likert_pairs %}
+                          <p class="shrink-0 text-xs text-neutral-500" aria-hidden="true">{{ pairs.0.1 }} → {{ pairs|last|last }}</p>
+                        {% endwith %}{% endif %}
+                      {% endif %}
+                    {% endwith %}
+                  </div>
                   <div class="space-y-4">
                     {% for qa in mod.items %}
                       {% include "core/_answer_row.html" %}
@@ -281,8 +293,8 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="rounded-2xl border border-dashed border-gray-300 bg-white px-8 py-12 text-center">
-      <p class="text-sm text-gray-500">No hay encuestas asignadas a esta empresa.</p>
+    <div class="rounded-2xl border border-dashed border-neutral-300 bg-white px-8 py-12 text-center">
+      <p class="text-sm text-neutral-500">No hay encuestas asignadas a esta empresa.</p>
     </div>
   {% endif %}
 </section>

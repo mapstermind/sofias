@@ -21,3 +21,156 @@
    templates/base_centered.html). They are chosen in Python by name, so no scan
    can see them. */
 @source inline("max-w-5xl max-w-6xl");
+
+/* ── Figtree ────────────────────────────────────────────────────────────────
+   Variable TrueType, weights 300–900 (SIL OFL, static/fonts/figtree/OFL.txt).
+   base.html preloads the upright file. */
+@font-face {
+  font-family: "Figtree";
+  src: url("../fonts/figtree/Figtree-VariableFont_wght.ttf") format("truetype");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Figtree";
+  src: url("../fonts/figtree/Figtree-Italic-VariableFont_wght.ttf") format("truetype");
+  font-weight: 300 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ── Tokens ─────────────────────────────────────────────────────────────────
+   Templates name these scales (`text-primary-600`, `bg-neutral-50`), never a
+   Tailwind hue. `inline` makes each utility read its variable where it is used,
+   so the `[data-palette]` attribute base.html sets on <html> repaints the page.
+   See docs/platform/design-system.md. */
+@theme inline {
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --color-primary-50: var(--brand-primary-50);
+  --color-primary-100: var(--brand-primary-100);
+  --color-primary-200: var(--brand-primary-200);
+  --color-primary-300: var(--brand-primary-300);
+  --color-primary-400: var(--brand-primary-400);
+  --color-primary-500: var(--brand-primary-500);
+  --color-primary-600: var(--brand-primary-600);
+  --color-primary-700: var(--brand-primary-700);
+  --color-primary-800: var(--brand-primary-800);
+  --color-primary-900: var(--brand-primary-900);
+  --color-accent-100: var(--brand-accent-100);
+  --color-accent-200: var(--brand-accent-200);
+  --color-accent-300: var(--brand-accent-300);
+  --color-accent-500: var(--brand-accent-500);
+  --color-accent-700: var(--brand-accent-700);
+  --color-neutral-50: var(--brand-neutral-50);
+  --color-neutral-100: var(--brand-neutral-100);
+  --color-neutral-200: var(--brand-neutral-200);
+  --color-neutral-300: var(--brand-neutral-300);
+  --color-neutral-400: var(--brand-neutral-400);
+  --color-neutral-500: var(--brand-neutral-500);
+  --color-neutral-600: var(--brand-neutral-600);
+  --color-neutral-700: var(--brand-neutral-700);
+  --color-neutral-800: var(--brand-neutral-800);
+  --color-neutral-900: var(--brand-neutral-900);
+  --color-series-1: var(--brand-series-1);
+  --color-series-2: var(--brand-series-2);
+}
+
+/* ── Status ─────────────────────────────────────────────────────────────────
+   Success, warning and danger, for messages, field errors and state pills.
+   Status is not brand, so these are the same in every palette; they are muted
+   to sit beside either one. Never a risk level: the NOM-035 ramp is
+   valuation_extras.py's. Steps mirror Tailwind's: 50 fill, 100 hover fill,
+   200 border, 500 icon, 600 text, 800 text on a tint. */
+@theme {
+  --color-success-50: #EEF7F1;
+  --color-success-100: #DCEFE3;
+  --color-success-200: #B9DCC6;
+  --color-success-500: #3F9463;
+  --color-success-600: #2F7D4F;
+  --color-success-800: #1D5032;
+  --color-warning-50: #FBF4E6;
+  --color-warning-100: #F6E7C8;
+  --color-warning-200: #EBD3A6;
+  --color-warning-500: #B7791F;
+  --color-warning-600: #8A5A12;
+  --color-warning-800: #5E3D0C;
+  --color-danger-50: #FBEEEC;
+  --color-danger-100: #F7DCD8;
+  --color-danger-200: #EDC3BE;
+  --color-danger-500: #C9574E;
+  --color-danger-600: #B3423A;
+  --color-danger-800: #7F2E28;
+}
+
+/* ── Palettes ───────────────────────────────────────────────────────────────
+   Same variables, different values. `:root` carries the default so a page
+   without the attribute still renders. static/css/report.css reads these too.
+   apps/core/tests/test_design_tokens.py checks every declared text/background
+   pair in both palettes against WCAG AA. */
+/* Petróleo */
+:root,
+[data-palette="petrol"] {
+  --brand-primary-50: #EEF5F7;
+  --brand-primary-100: #D4E7EC;
+  --brand-primary-200: #AACFD9;
+  --brand-primary-300: #77B0C0;
+  --brand-primary-400: #458EA3;
+  --brand-primary-500: #2B7389;
+  --brand-primary-600: #1F5D71;
+  --brand-primary-700: #1A4C5D;
+  --brand-primary-800: #173E4C;
+  --brand-primary-900: #13323D;
+  --brand-accent-100: #E3E8FD;
+  --brand-accent-200: #C9D2FC;
+  --brand-accent-300: #B3C0FB;
+  --brand-accent-500: #6B79D9;
+  --brand-accent-700: #444C97;
+  --brand-neutral-50: #F6F8F8;
+  --brand-neutral-100: #EDF1F2;
+  --brand-neutral-200: #DDE3E5;
+  --brand-neutral-300: #C5CED1;
+  --brand-neutral-400: #8A979B;
+  --brand-neutral-500: #6B777B;
+  --brand-neutral-600: #525D61;
+  --brand-neutral-700: #3E474A;
+  --brand-neutral-800: #2A3133;
+  --brand-neutral-900: #1A1F21;
+  /* Chart series that are not a risk level: the sex and age profiles. */
+  --brand-series-1: #1F5D71;
+  --brand-series-2: #6B79D9;
+}
+
+/* Pizarra */
+[data-palette="slate"] {
+  --brand-primary-50: #F3F5F8;
+  --brand-primary-100: #E3E7EE;
+  --brand-primary-200: #C8D0DC;
+  --brand-primary-300: #A3AFC2;
+  --brand-primary-400: #7787A2;
+  --brand-primary-500: #5D6C87;
+  --brand-primary-600: #47546C;
+  --brand-primary-700: #3A455A;
+  --brand-primary-800: #2F3849;
+  --brand-primary-900: #252C3A;
+  --brand-accent-100: #F5EDD3;
+  --brand-accent-200: #EEDFB6;
+  --brand-accent-300: #E5D09A;
+  --brand-accent-500: #B8974A;
+  --brand-accent-700: #6F5A2E;
+  --brand-neutral-50: #FAF8F5;
+  --brand-neutral-100: #F3F0EB;
+  --brand-neutral-200: #E7E2DA;
+  --brand-neutral-300: #D3CCC1;
+  --brand-neutral-400: #999082;
+  --brand-neutral-500: #7A7367;
+  --brand-neutral-600: #5C564C;
+  --brand-neutral-700: #443F37;
+  --brand-neutral-800: #2E2A25;
+  --brand-neutral-900: #1D1A17;
+  /* Peach cannot carry a series (it sits in the amber Medio band), so the
+     second series is a lighter slate. */
+  --brand-series-1: #47546C;
+  --brand-series-2: #7787A2;
+}

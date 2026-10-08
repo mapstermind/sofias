@@ -1,0 +1,34 @@
+{% comment %}
+A frequency (likert) answer: its label, then one squircle per option, the
+answer's filled. One color, so it shows where the answer sits and never labels
+the person.
+
+Takes `pairs` (likert_pairs), `value` (the stored option, a position in the
+list) and `score`. With a score (an instrument engine scored the item; NOM-035
+gives 0–4) the squares run from the lowest score to the highest and the answer
+fills its score's square: NOM-035 reverses the scoring on some items, so the
+same "Siempre" can sit at either end. Without one, the squares follow the
+question's own option order. The stored value is never printed: it is a
+position, not a score.
+{% endcomment %}
+{% with first=pairs|first last=pairs|last %}
+{% for v, label in pairs %}{% if v == value %}
+{% if score is not None and score != "" %}
+<span class="inline-flex items-center gap-2.5 whitespace-nowrap" role="img"
+      aria-label="{{ label }}, puntaje {{ score }} de {{ pairs|length|add:"-1" }}">
+  <span class="text-sm text-neutral-800" aria-hidden="true">{{ label }}</span>
+  <span class="inline-flex gap-0.5" aria-hidden="true">
+    {% for step in pairs %}<span data-step="{% if forloop.counter0 == score %}on{% else %}off{% endif %}" class="size-2.5 rounded-xs {% if forloop.counter0 == score %}bg-primary-600{% else %}bg-neutral-300{% endif %}"></span>{% endfor %}
+  </span>
+</span>
+{% else %}
+<span class="inline-flex items-center gap-2.5 whitespace-nowrap" role="img"
+      aria-label="{{ label }}, opción {{ v }} de {{ pairs|length }}, de {{ first.1 }} a {{ last.1 }}">
+  <span class="text-sm text-neutral-800" aria-hidden="true">{{ label }}</span>
+  <span class="inline-flex gap-0.5" aria-hidden="true">
+    {% for step, step_label in pairs %}<span data-step="{% if step == value %}on{% else %}off{% endif %}" class="size-2.5 rounded-xs {% if step == value %}bg-primary-600{% else %}bg-neutral-300{% endif %}"></span>{% endfor %}
+  </span>
+</span>
+{% endif %}
+{% endif %}{% endfor %}
+{% endwith %}

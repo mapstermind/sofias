@@ -15,12 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
 # Django's default chrome names the framework; operators should see the product.
-admin.site.site_header = "Administración SOFIA-S"
-admin.site.site_title = "SOFIA-S"
+admin.site.site_header = f"Administración {settings.BRAND['name']}"
+admin.site.site_title = settings.BRAND["name"]
 admin.site.index_title = "Panel de administración"
 
 urlpatterns = [

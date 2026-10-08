@@ -64,11 +64,11 @@
 .report-table--stack td {
   display: table-cell;
   padding: 0.5rem 0.75rem 0.5rem 0;
-  border-bottom: 1px solid #E5E7EB;
+  border-bottom: 1px solid var(--brand-neutral-200);
 }
 
 .report-table--stack thead th {
-  border-bottom: 1px solid #111827;
+  border-bottom: 1px solid var(--brand-neutral-900);
 }
 
 .report-table--stack td::before {

@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.views import View
 
 from apps.accounts.models import Company
+from apps.core.brand import active_palette
 from apps.nom035.results import NOM035_SURVEY_KEY, assignment_options
 from apps.reports import publishing
 from apps.reports.forms import ReportForm, SignatoryFormSet
@@ -203,11 +204,12 @@ class AdminUnpublishView(AdminMixin, View):
         return redirect("reports:admin_detail", reference_code, assignment_id)
 
 
-def _pdf_response(report):
+def _pdf_response(request, report):
     from apps.reports import pdf  # WeasyPrint loads only when a PDF is asked for
 
     response = HttpResponse(
-        pdf.render_report_pdf(report), content_type="application/pdf"
+        pdf.render_report_pdf(report, active_palette(request)),
+        content_type="application/pdf",
     )
     response["Content-Disposition"] = f'attachment; filename="{pdf.filename(report)}"'
     return response
@@ -215,7 +217,7 @@ def _pdf_response(report):
 
 class AdminReportPdfView(AdminMixin, View):
     def get(self, request, reference_code, assignment_id):
-        return _pdf_response(self.report(self.assignment()))
+        return _pdf_response(request, self.report(self.assignment()))
 
 
 class ExecutiveMixin(LoginRequiredMixin):
@@ -289,4 +291,4 @@ class ExecutiveReportPdfView(ExecutiveMixin, View):
         company = self.own_company()
         if company is None:
             return redirect("accounts:setup_profile")
-        return _pdf_response(self.published(company))
+        return _pdf_response(request, self.published(company))

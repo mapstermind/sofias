@@ -85,12 +85,24 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "apps.core.context_processors.brand",
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+
+# Brand: the product's name, logo and palettes, defined once. The palettes are the
+# `[data-palette]` blocks in static/css/main.css. See docs/platform/design-system.md.
+BRAND = {
+    "name": "SOFIA-S",
+    "short_name": "SOFIA",
+    "meaning": "Sistema de Obtención, Filtrado e Inteligencia Analítica de Sondeos",
+    "logo": "img/logo.svg",
+}
+BRAND_PALETTES = (("petrol", "Petróleo"), ("slate", "Pizarra"))
+BRAND_PALETTE_DEFAULT = "petrol"
 
 
 # Database
