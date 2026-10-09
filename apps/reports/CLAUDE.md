@@ -88,8 +88,10 @@ the results partials and the shared statistics row, `_stats.html`).
   absolutely positioned), the `translate` property (`report-print.css` gives
   the range strip's `-translate-x-*` tick labels an equivalent `transform`) and
   `position: sticky`. Check a layout change in the PDF, not only on screen.
-- **Fonts.** Source Serif 4 and Source Sans 3 variable TTFs in `static/fonts/`
-  (OFL). One `@font-face` per weight, each with a single `font-weight`:
+- **Fonts.** Source Serif 4 (`static/fonts/`) and Figtree
+  (`static/fonts/figtree/`) variable TTFs (OFL). The chart components'
+  `<text>` elements name Figtree in their `font-family` attribute, which is what
+  WeasyPrint reads. One `@font-face` per weight, each with a single `font-weight`:
   WeasyPrint rejects the range form and silently falls back to a system font. A
   new weight needs its own `@font-face`. `_write_pdf` passes one
   `FontConfiguration` to `write_pdf`.

@@ -40,3 +40,19 @@ def likert_pairs(question):
     if not labels:
         labels = LIKERT_DEFAULT_LABELS
     return list(enumerate(labels, start=1))
+
+
+@register.filter
+def first_of_type(items, question_type):
+    """The first answer row whose question is `question_type`, or None.
+
+    The employee detail page reads a module's scale key ("Siempre → Nunca") from
+    its first frequency question, so the key follows that question's own labels.
+    A row is a dict (`{"question": …, "answer": …}`, as the view builds it) or an
+    object with those attributes.
+    """
+    for qa in items:
+        question = qa["question"] if isinstance(qa, dict) else qa.question
+        if question.question_type == question_type:
+            return qa
+    return None

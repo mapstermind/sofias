@@ -3,30 +3,30 @@
 {% block title %}¡Gracias! — {{ survey.title }}{% endblock %}
 
 {% block header_nav %}
-  <span class="text-gray-300 select-none">|</span>
-  <a href="{% url 'core:home' %}" class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+  <span class="text-neutral-300 select-none">|</span>
+  <a href="{% url 'core:home' %}" class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">
     &larr; Inicio
   </a>
 {% endblock %}
 
 {% block content %}
 <div class="flex justify-center">
-  <div class="max-w-md w-full text-center bg-white rounded-2xl shadow-sm border border-gray-200 px-10 py-14">
+  <div class="max-w-md w-full text-center bg-white rounded-2xl shadow-sm border border-neutral-200 px-10 py-14">
 
-    <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-      <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+    <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success-100">
+      <svg class="h-8 w-8 text-success-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
       </svg>
     </div>
 
-    <h1 class="text-2xl font-bold text-gray-900">¡Gracias!</h1>
-    <p class="mt-3 text-gray-500 text-sm leading-relaxed">
-      Tu respuesta a <span class="font-medium text-gray-700">{{ survey.title }}</span> ha sido registrada.
+    <h1 class="text-2xl font-bold text-neutral-900">¡Gracias!</h1>
+    <p class="mt-3 text-neutral-500 text-sm leading-relaxed">
+      Tu respuesta a <span class="font-medium text-neutral-700">{{ survey.title }}</span> ha sido registrada.
     </p>
 
     <div class="mt-8 flex items-center justify-center">
       <a href="{% url 'core:home' %}"
-        class="inline-block rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors">
+        class="inline-block rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 transition-colors">
         Ir al inicio
       </a>
     </div>

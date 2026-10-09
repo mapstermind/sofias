@@ -650,3 +650,13 @@ class TestPendingPanelShell:
         html = response.content.decode()
         expected = len(survey_with_questions["questions"])
         assert html.count('class="question-label ') == expected
+
+
+@pytest.mark.django_db
+def test_the_survey_form_never_shows_the_palette_switch(
+    client, active_assignment, settings
+):
+    """Its phone bar spans the bottom edge, where the switch would sit."""
+    settings.DEBUG = True
+    html = client.get(_survey_url(active_assignment.pk)).content.decode()
+    assert "data-palette-switch" not in html

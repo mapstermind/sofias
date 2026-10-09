@@ -43,3 +43,20 @@ def test_guia1_positive_section_thresholds():
     assert (
         guia1_positive(event=True, section_ii=0, section_iii=2, section_iv=1) is False
     )
+
+
+def test_answer_score_follows_each_items_direction():
+    """g3-1 (a safe workspace) scores Siempre→0; g3-2 (heavy physical effort) Siempre→4."""
+    from apps.nom035.scoring import answer_score
+
+    assert answer_score("g3-1", 1) == 0
+    assert answer_score("g3-1", 5) == 4
+    assert answer_score("g3-2", 1) == 4
+    assert answer_score("g3-2", 5) == 0
+
+
+def test_answer_score_is_none_for_a_value_off_the_scale():
+    from apps.nom035.scoring import answer_score
+
+    for value in (0, 6, None, "x"):
+        assert answer_score("g3-1", value) is None

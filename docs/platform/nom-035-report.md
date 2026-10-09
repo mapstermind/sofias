@@ -283,13 +283,15 @@ Nulo and Medio. Every block of colored marks closes with the legend of its
 tier; 5.5's is headed *Dominios*.
 
 - **Type.** Source Serif 4 for prose (findings, Administrador text, fixed
-  text); Source Sans 3 for data (headings, tables, charts, figures). Body
-  measure about 65 characters; sentence case; no all-caps labels. Both families
-  are bundled under `static/fonts/` (SIL Open Font License, `OFL.txt`) so
-  screen and PDF match.
-- **Color.** White sheet, ink `#111827`, secondary `#4B5563`, rules `#E5E7EB`;
-  brand indigo `#4338CA` only for navigational structure — section numbers,
-  table of contents, running header.
+  text); Figtree, the application's typeface, for data (headings, tables,
+  charts, figures). Body measure about 65 characters; sentence case; no
+  all-caps labels. Both families are bundled under `static/fonts/` (SIL Open
+  Font License) so screen and PDF match.
+- **Color.** White sheet; ink, secondary text and rules from the active
+  palette's `neutral-900`, `neutral-600` and `neutral-200`; the palette's
+  `primary-600` only for navigational structure — section numbers, table of
+  contents, running header (see [design-system.md](design-system.md)). The PDF
+  is painted in the palette of whoever downloads it.
 - **Cover.** Typographic only: the title on three lines, the razón social as the
   largest element, place and date, the company's `name` at the foot. No risk
   colors.
@@ -413,7 +415,7 @@ reference material in `docs/internal/report-references/`.
 | `apps/reports/views.py`, `urls.py`, `forms.py`, `admin.py` | pages, publish/unpublish, the edit form and signatory formset, the Django admin |
 | `templates/reports/` | the list, detail and form pages, `_document.html`, `base_report.html`, `report_pdf.html`, `sections/` partials |
 | `static/css/report.css`, `report-wide.css`, `report-print.css` | the report's plain CSS |
-| `static/fonts/` | Source Serif 4 and Source Sans 3 variable TTFs, `OFL.txt` |
+| `static/fonts/` | Source Serif 4 variable TTF and `OFL.txt`; `figtree/` holds Figtree |
 | `docs/internal/report-references/` | the report template and the risk-interpretation note the fixed text and sentences follow |
 
 `apps/reports` is registered as `apps.reports` (label `reports`, *Reportes* in
@@ -469,7 +471,7 @@ the admin) with Spanish model metadata.
 - Decision: The report is styled by plain CSS — `report.css`, `report-wide.css`
   and the PDF-only `report-print.css` — and charts carry hex `fill` attributes;
   the PDF also loads `output.css` for the chart components' layout. Fonts are
-  the Source Serif 4 and Source Sans 3 variable TTFs, declared with one
+  the Source Serif 4 and Figtree variable TTFs, declared with one
   `@font-face` per weight.
   Reason: WeasyPrint ignores Tailwind's `fill-*` utilities, matches no width
   media query, and rejects a `font-weight` range; bundled fonts keep the PDF

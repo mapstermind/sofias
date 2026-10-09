@@ -161,7 +161,7 @@ function applyVisibility(form: HTMLFormElement): void {
 
 const PENDING_LIMIT = 6;
 const HIGHLIGHT_MS = 1500;
-const RING_CLASSES = ["ring-2", "ring-amber-400", "ring-offset-2"];
+const RING_CLASSES = ["ring-2", "ring-warning-500", "ring-offset-2"];
 
 /** Question cards the respondent can see and answer, in document order. A card
  *  carrying no field name is not answerable, so it belongs to neither side of
@@ -256,8 +256,8 @@ function pendingItem(card: HTMLElement): HTMLLIElement {
   const button = document.createElement("button");
   button.type = "button";
   button.className =
-    "w-full text-left text-xs text-gray-700 rounded-md px-2 py-1.5 " +
-    "line-clamp-2 cursor-pointer hover:bg-amber-50 hover:text-amber-900 " +
+    "w-full text-left text-xs text-neutral-700 rounded-md px-2 py-1.5 " +
+    "line-clamp-2 cursor-pointer hover:bg-warning-50 hover:text-warning-800 " +
     "transition-colors";
   // textContent, never innerHTML: question text is authored data.
   button.textContent = questionLabel(card);

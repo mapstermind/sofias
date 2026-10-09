@@ -1,0 +1,5 @@
+{% load brand %}{% comment %}
+The only place the logo is drawn. It is inlined so it takes the text color of
+its context: pass `css_class` with a size and a `text-*` color. Replacing the
+logo means replacing the file `settings.BRAND["logo"]` names.
+{% endcomment %}{% brand_logo css_class %}

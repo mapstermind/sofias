@@ -9,18 +9,18 @@ be listed in `@source inline(...)` in static/css/main.css; one written into the
 block here is scanned like any other template class.
 {% endcomment %}
 
-{% block body_class %}min-h-screen bg-gray-100{% endblock %}
+{% block body_class %}min-h-screen bg-neutral-100{% endblock %}
 
 {% block body %}
 <div class="flex-1 flex items-center justify-center px-4 py-12">
 <div class="w-full {% block container_width %}{{ container_width|default:"max-w-sm" }}{% endblock %}">
 
   <div class="mb-8 flex flex-col items-center text-center">
-    <img src="{% static 'img/logo.svg' %}" alt="Logo SOFIA-S" class="mb-6 h-8 w-auto">
+    {% include "_logo.html" with css_class="mb-6 h-8 w-auto text-primary-700" %}
     {% block card_header %}{% endblock %}
   </div>
 
-  <div class="bg-white rounded-2xl shadow-sm border border-gray-200 px-8 py-10">
+  <div class="bg-white rounded-2xl shadow-sm border border-neutral-200 px-8 py-10">
     {% block card_body %}{% endblock %}
   </div>
 

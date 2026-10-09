@@ -21,7 +21,10 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
   truth). No config DB tables; change the config by editing here and re-running the
   recompute command.
 - `scoring.py` — pure functions: `likert_item_score`, `classify`, `guia1_positive`,
-  and `score_submission(submission) -> ScoreResult`.
+  and `score_submission(submission) -> ScoreResult`. `answer_score(code, value)`
+  is the 0–4 score of one stored frequency answer (None off the 1–5 scale); the
+  employee detail page in `apps/core` uses it to place each answer on the risk
+  scale, so a reversed item's "Siempre" reads as high risk.
 - `services.py` — `materialize(submission)`: upserts the result rows in a transaction.
 - `models.py` — `SubmissionScore` (one per submission, with `guia1_positive` and
   `guia1_event`) and `GroupScore` (per

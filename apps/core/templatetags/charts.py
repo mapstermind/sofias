@@ -10,14 +10,20 @@ compiles them.
 Each color key also has a hex, emitted as the mark's SVG `fill` attribute. On
 screen the class wins (CSS beats presentation attributes); WeasyPrint draws
 inline SVG without the page's stylesheets, so the PDF report paints from the
-attribute.
+attribute. Risk levels and Guía I are fixed colors with a fixed hex (`_HEX`).
+Series that are not a level (sex, age) and the empty baseline follow the
+palette: their classes name palette tokens, and their hex is that token's value
+in the active palette (`_PALETTE_TOKENS`, read through `brand.palette_hex`), so
+the tags take the template context to learn which palette is active.
 """
 
 from dataclasses import asdict
 
 from django import template
+from django.conf import settings
 
 from apps.core import charts
+from apps.core.brand import palette_hex, palette_slugs
 from apps.core.templatetags.valuation_extras import ndr_bar, ndr_fill
 from apps.nom035 import constants as c
 
@@ -29,15 +35,25 @@ _COLORS = {
         f"dom-{level}": (ndr_fill(level, "dominio"), ndr_bar(level, "dominio"))
         for level in c.NDR_ORDER
     },
-    "sex-female": ("fill-violet-600", "bg-violet-600"),
-    "sex-male": ("fill-sky-600", "bg-sky-600"),
-    "age": ("fill-indigo-500", "bg-indigo-500"),
-    "none": ("fill-gray-300", "bg-gray-300"),
-    "guia1-none": ("fill-gray-300", "bg-gray-300"),
-    "guia1-event": ("fill-amber-500", "bg-amber-500"),
-    "guia1-positive": ("fill-red-500", "bg-red-500"),
+    "sex-female": ("fill-series-1", "bg-series-1"),
+    "sex-male": ("fill-series-2", "bg-series-2"),
+    "age": ("fill-series-1", "bg-series-1"),
+    "none": ("fill-neutral-300", "bg-neutral-300"),
+    "guia1-none": ("fill-neutral-300", "bg-neutral-300"),
+    "guia1-event": ("fill-[#CA9429]", "bg-[#CA9429]"),
+    "guia1-positive": ("fill-[#7A1010]", "bg-[#7A1010]"),
 }
-_FALLBACK = ("fill-gray-300", "bg-gray-300")
+_FALLBACK = ("fill-neutral-300", "bg-neutral-300")
+_FALLBACK_TOKEN = "neutral-300"
+
+# Keys whose hex is a palette token's value in the active palette.
+_PALETTE_TOKENS = {
+    "sex-female": "series-1",
+    "sex-male": "series-2",
+    "age": "series-1",
+    "none": "neutral-300",
+    "guia1-none": "neutral-300",
+}
 
 _HEX = {
     "ndr-nulo": "#D1D5DB",
@@ -50,15 +66,9 @@ _HEX = {
     "dom-medio": "#CA9429",
     "dom-alto": "#B5531F",
     "dom-muy_alto": "#7A1010",
-    "sex-female": "#7C3AED",
-    "sex-male": "#0284C7",
-    "age": "#6366F1",
-    "none": "#D1D5DB",
-    "guia1-none": "#D1D5DB",
-    "guia1-event": "#F59E0B",
-    "guia1-positive": "#EF4444",
+    "guia1-event": "#CA9429",
+    "guia1-positive": "#7A1010",
 }
-_FALLBACK_HEX = "#D1D5DB"
 
 UNITS = {
     "cuestionario": ("cuestionario", "cuestionarios"),
@@ -66,15 +76,26 @@ UNITS = {
 }
 
 
-def _paint(mark) -> dict:
+def _tokens(context) -> dict[str, str]:
+    """The active palette's token values; the default palette's for a missing or unknown slug."""
+    slug = context.get("palette")
+    return palette_hex(
+        slug if slug in palette_slugs() else settings.BRAND_PALETTE_DEFAULT
+    )
+
+
+def _paint(mark, tokens) -> dict:
     fill, swatch = _COLORS.get(mark.color, _FALLBACK)
-    hex_ = _HEX.get(mark.color, _FALLBACK_HEX)
+    hex_ = (
+        _HEX.get(mark.color) or tokens[_PALETTE_TOKENS.get(mark.color, _FALLBACK_TOKEN)]
+    )
     return {**asdict(mark), "fill": fill, "swatch": swatch, "hex": hex_}
 
 
-@register.inclusion_tag("components/charts/stacked_bar.html")
-def stacked_bar(items, unit="cuestionario", legend=False, label=""):
-    segments = [_paint(s) for s in charts.stacked_segments(items, UNITS[unit])]
+@register.inclusion_tag("components/charts/stacked_bar.html", takes_context=True)
+def stacked_bar(context, items, unit="cuestionario", legend=False, label=""):
+    tokens = _tokens(context)
+    segments = [_paint(s, tokens) for s in charts.stacked_segments(items, UNITS[unit])]
     return {
         "segments": segments,
         "legend": legend,
@@ -82,23 +103,24 @@ def stacked_bar(items, unit="cuestionario", legend=False, label=""):
     }
 
 
-@register.inclusion_tag("components/charts/column_chart.html")
-def column_chart(items, unit="persona", label=""):
-    cols = [_paint(col) for col in charts.columns(items, UNITS[unit])]
+@register.inclusion_tag("components/charts/column_chart.html", takes_context=True)
+def column_chart(context, items, unit="persona", label=""):
+    tokens = _tokens(context)
+    cols = [_paint(col, tokens) for col in charts.columns(items, UNITS[unit])]
     return {
         "cols": cols,
         "aria_label": label or "; ".join(col["description"] for col in cols),
     }
 
 
-@register.inclusion_tag("components/charts/range_strip.html")
-def range_strip(bands, scale_max, points, label=""):
+@register.inclusion_tag("components/charts/range_strip.html", takes_context=True)
+def range_strip(context, bands, scale_max, points, label=""):
     strip = charts.range_strip(bands, scale_max, points)
     if strip is None:
         return {"strip": None}
     return {
         "strip": {
-            "bands": [_paint(b) for b in strip.bands],
+            "bands": [_paint(b, _tokens(context)) for b in strip.bands],
             "markers": [asdict(m) for m in strip.markers],
             "ticks": [asdict(t) for t in strip.ticks],
         },
@@ -110,8 +132,10 @@ def range_strip(bands, scale_max, points, label=""):
     }
 
 
-@register.inclusion_tag("components/charts/level_columns.html")
-def level_columns(items, unit="cuestionario", names="always", size="md", label=""):
+@register.inclusion_tag("components/charts/level_columns.html", takes_context=True)
+def level_columns(
+    context, items, unit="cuestionario", names="always", size="md", label=""
+):
     """One column per item on a fixed 0–100 % scale, each with its percent and count.
 
     `names="phone"` keeps the item names for screen readers but shows them only
@@ -119,8 +143,9 @@ def level_columns(items, unit="cuestionario", names="always", size="md", label="
     plot height: "sm", "md" or "lg".
     """
     singular, plural = UNITS[unit]
+    tokens = _tokens(context)
     cols = [
-        {**_paint(col), "unit": singular if col.value == 1 else plural}
+        {**_paint(col, tokens), "unit": singular if col.value == 1 else plural}
         for col in charts.level_columns(items, UNITS[unit])
     ]
     return {

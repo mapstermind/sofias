@@ -58,11 +58,29 @@ _DOMINIO_FILL = {
 }
 
 
+# Every badge opens with a small squircle marker, the shape of the legend
+# swatches. On a tinted badge it takes the level's bar color, so the badge and
+# the chart legend show the same mark; on a solid dominio badge the bar color is
+# the background, so it takes the ink. Spelled out for Tailwind's scan.
+_MARKER = (
+    "inline-flex items-center gap-1.5 before:size-2 before:shrink-0 before:rounded-xs"
+)
+_MARKER_COLOR = {
+    c.NDR_NULO: "before:bg-gray-300",
+    c.NDR_BAJO: "before:bg-green-500",
+    c.NDR_MEDIO: "before:bg-amber-500",
+    c.NDR_ALTO: "before:bg-orange-500",
+    c.NDR_MUY_ALTO: "before:bg-red-500",
+}
+
+
 @register.filter
 def ndr_badge(ndr, tier=""):
     """Tailwind classes for a colored NDR badge (pill); `tier="dominio"` for a dominio."""
-    table = _DOMINIO_BADGE if tier == DOMINIO else _BADGE
-    return table.get(ndr, _NEUTRAL_BADGE)
+    if tier == DOMINIO:
+        return f"{_DOMINIO_BADGE.get(ndr, _NEUTRAL_BADGE)} {_MARKER} before:bg-current"
+    marker = _MARKER_COLOR.get(ndr, "before:bg-current")
+    return f"{_BADGE.get(ndr, _NEUTRAL_BADGE)} {_MARKER} {marker}"
 
 
 @register.filter

@@ -7,8 +7,8 @@ from django.forms.formsets import ORDERING_FIELD_NAME
 from apps.reports.models import Report, ReportSignatory
 
 INPUT_CLASS = (
-    "block w-full rounded-lg border border-gray-300 px-4 py-3 text-sm "
-    "focus:border-indigo-500 focus:ring-indigo-500"
+    "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm "
+    "focus:border-primary-500 focus:ring-primary-500"
 )
 
 
