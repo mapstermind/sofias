@@ -80,11 +80,40 @@ only caller; pass a size and a `text-*` color. See
 `docs/platform/design-system.md`; `tests/test_brand.py` and
 `tests/test_design_tokens.py` cover this.
 
+## Components (`forms.py`, `templatetags/icons.py`, `styleguide.py`)
+
+`forms.SofiaFormRenderer` is `settings.FORM_RENDERER`: every Django form in the
+project draws through `templates/forms/form.html` and `templates/forms/field.html`
+(label, help, control, errors; *(opcional)* on an optional field unless the field
+sets `shown_as_required = True`). The control's look comes from the `field`
+wrapper in `main.css`, so widget `attrs` carry no styling classes —
+`test_design_tokens.py` fails one that does. `django.forms` is in
+`INSTALLED_APPS` so the `TemplatesSetting` renderer finds Django's widget
+templates; none is overridden, which is what leaves the admin untouched.
+
+`{% icon "name" "classes" label="…" %}` (`{% load icons %}`) inlines
+`templates/icons/<name>.svg` (Heroicons outline, copied in). `ICON_DIR` is also
+read by the styleguide. An unknown name raises under `DEBUG`, renders nothing
+otherwise.
+
+`StyleguideView` (`core:styleguide`, `/estilos/`) renders
+`core/styleguide.html` from `styleguide.py`'s demo form and swatches. It 404s
+unless `brand.can_switch_palette(user)`. When a component changes, update the
+page too: `tests/test_styleguide.py` checks every class and icon appears.
+
+`templates/components/_alert.html` and `templates/_messages.html` (included by
+`base_app.html` and `base_centered.html`) draw alerts and Django messages;
+`static/ts/dismiss.ts` closes a message and `static/ts/busy_submit.ts` (loaded by
+`base.html`) marks a `data-loading` form's submit button busy. **Run
+`npm run build:js` and commit `static/js/` when touching them**; no Python test
+covers their behaviour. See `docs/platform/design-system.md`.
+
 ## Template filters (`templatetags/valuation_extras.py`)
 
 `ndr_badge`, `ndr_bar`, `ndr_fill` and `ndr_scale` — the single source of truth
 for NDR→Tailwind-color mapping (Nulo/Bajo/Medio/Alto/Muy alto), used by the
 employee card (`employee_detail.html`) and the results page's charts and legends.
+`ndr_badge` returns the tone and the `pill-marker`; the template supplies `pill`.
 `ndr_fill` is the SVG `fill-*` class for chart marks. `ndr_badge`, `ndr_bar` and
 `ndr_fill` take an optional tier: `{{ level|ndr_badge:"dominio" }}` selects the
 deeper dominio palette (solid badges), which every dominio-level mark uses;
@@ -140,5 +169,5 @@ python manage.py seed_nom035_survey   # seed (idempotent) the NOM-035 survey
 - Authorization is permission-based, not group-name-based (except the `Admins` group, checked by name in a few places). Run `bootstrap_groups` (in `apps/accounts`) before these views behave correctly.
 - Per-employee progress goes through `_progress_entry`, which delegates to `apps.surveys.visibility.progress_for_modules` so `answered`/`total` count only the questions a respondent's gate answers leave visible — that is what makes a completed survey read 100%. `_variant_question_count` is still used, but only as the *nominal* total, to derive the `not_applicable` figure the UI shows. Never compute progress from `_variant_question_count` alone.
 - The employee list needs answer **values** (not just counts) to evaluate gates: one `values_list` sweep over `Answer` plus one module prefetch per assignment, both reused across every member. Preserve that pattern — a per-member query here is an N+1 in a page that renders the whole company. Search and filtering narrow the profile queryset **before** the per-member loop, so the loop only walks what will be rendered, and `user__groups` is prefetched on it because every card's metadata line prints the Rol. The whole arrangement is pinned by an invariance test in `tests/test_views.py`: a roster of 3 colaboradores and one of 30 must cost the same number of queries, so a dropped prefetch fails the suite rather than the page.
-- `tests/` covers views and the seed (`test_views.py`, `test_seed_nom035.py`), the results page (`test_results_views.py`, `test_results_query.py`, `test_dashboard_results_card.py`), the chart geometry and components (`test_charts.py`, `test_chart_components.py`), phone-width layout (`test_responsive.py`), the back-to-top button (`test_back_to_top.py`), and the brand, palette switch and design tokens (`test_brand.py`, `test_design_tokens.py`).
+- `tests/` covers views and the seed (`test_views.py`, `test_seed_nom035.py`), the results page (`test_results_views.py`, `test_results_query.py`, `test_dashboard_results_card.py`), the chart geometry and components (`test_charts.py`, `test_chart_components.py`), phone-width layout (`test_responsive.py`), the back-to-top button (`test_back_to_top.py`), the brand, palette switch and design tokens (`test_brand.py`, `test_design_tokens.py`), and the components (`test_components_css.py`, `test_form_renderer.py`, `test_icons.py`, `test_alerts.py`, `test_styleguide.py`).
 - User-facing strings/URLs are Spanish.

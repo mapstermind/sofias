@@ -56,14 +56,10 @@ def test_categoria_tier_is_the_default():
 
 
 def test_every_badge_carries_a_squircle_marker():
-    """The marker is a 2px-radius square, the same shape as the legend swatches."""
+    """`pill-marker` draws a 2px-radius square, the shape of the legend swatches."""
     for tier in ("", "dominio"):
         for level in (*c.NDR_ORDER, "nonsense"):
-            badge = ndr_badge(level, tier)
-            assert "before:size-2" in badge and "before:rounded-xs" in badge, (
-                level,
-                tier,
-            )
+            assert "pill-marker" in ndr_badge(level, tier).split(), (level, tier)
 
 
 def test_a_tinted_badge_marker_takes_the_level_bar_color():
@@ -75,4 +71,4 @@ def test_a_tinted_badge_marker_takes_the_level_bar_color():
 def test_a_solid_badge_marker_takes_the_text_color():
     """On a solid dominio badge the bar color is the background, so the marker uses the ink."""
     for level in c.NDR_ORDER:
-        assert "before:bg-current" in ndr_badge(level, "dominio")
+        assert "before:bg-" not in ndr_badge(level, "dominio")

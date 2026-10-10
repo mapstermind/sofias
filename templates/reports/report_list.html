@@ -14,14 +14,13 @@
     <p class="mt-1 text-sm text-neutral-500">{{ company.name }}</p>
   </div>
 
-  {% include "reports/_messages.html" %}
 
   {% if not rows %}
-    <div class="rounded-2xl border border-dashed border-neutral-300 bg-white px-8 py-12 text-center">
+    <div class="card shadow-none border-dashed border-neutral-300 px-8 py-12 text-center">
       <p class="text-sm text-neutral-500">{% if is_admin_view %}Esta empresa aún no tiene encuestas NOM-035 asignadas.{% else %}Aún no hay reportes publicados.{% endif %}</p>
     </div>
   {% else %}
-    <ul class="divide-y divide-neutral-100 rounded-2xl border border-neutral-200 bg-white shadow-sm">
+    <ul class="card divide-y divide-neutral-100">
       {% for row in rows %}
         <li class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div class="min-w-0">
@@ -35,13 +34,13 @@
           </div>
           <div class="flex items-center justify-between gap-4 sm:justify-end">
             {% if not is_admin_view %}
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-success-100 px-3 py-1 text-xs font-medium text-success-800 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Publicado</span>
+              <span class="pill pill-marker bg-success-100 text-success-800">Publicado</span>
             {% elif not row.report %}
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Sin iniciar</span>
+              <span class="pill pill-marker bg-neutral-100 text-neutral-600">Sin iniciar</span>
             {% elif row.report.status == "published" %}
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-success-100 px-3 py-1 text-xs font-medium text-success-800 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Publicado</span>
+              <span class="pill pill-marker bg-success-100 text-success-800">Publicado</span>
             {% else %}
-              <span class="inline-flex items-center gap-1.5 rounded-full bg-warning-100 px-3 py-1 text-xs font-medium text-warning-800 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Borrador</span>
+              <span class="pill pill-marker bg-warning-100 text-warning-800">Borrador</span>
             {% endif %}
             <a href="{% if is_admin_view %}{% url 'reports:admin_detail' company.reference_code row.option.assignment.pk %}{% else %}{% url 'reports:exec_detail' row.option.assignment.pk %}{% endif %}"
                class="text-sm font-semibold text-primary-600 hover:text-primary-700">Abrir &rarr;</a>

@@ -154,9 +154,7 @@ STATUS_LABELS = (
     "No activado",
     "Sin activar",
 )
-PILL = re.compile(
-    r'<span class="([^"]*\brounded-full\b[^"]*\btext-xs\b[^"]*)">\s*([^<{]+)'
-)
+PILL = re.compile(r'<span class="([^"]*\bpill\b[^"]*)">\s*([^<{]+)')
 
 
 def test_status_pills_carry_the_squircle_marker():
@@ -166,10 +164,41 @@ def test_status_pills_carry_the_squircle_marker():
             if not text.strip().startswith(STATUS_LABELS):
                 continue
             found += 1
-            if "before:rounded-xs" not in classes or "before:bg-current" not in classes:
+            if "pill-marker" not in classes.split():
                 missing.append(f"{path.relative_to(REPO_ROOT)}: {text.strip()}")
     assert found >= 20, f"only {found} status pills found; did the markup change?"
     assert not missing, "\n".join(missing)
+
+
+HAND_PILL = re.compile(
+    r'<span class="(?=[^"]*(?<![\w:-])rounded-full\b)(?=[^"]*(?<![\w:-])text-xs\b)'
+    r'(?=[^"]*(?<![\w:-])px-)'
+)
+
+
+def test_no_template_hand_rolls_a_pill():
+    hits = [
+        str(path.relative_to(REPO_ROOT))
+        for path in REPO_ROOT.glob("templates/**/*.html")
+        if HAND_PILL.search(path.read_text())
+    ]
+    assert not hits, "use the pill class:\n" + "\n".join(hits)
+
+
+# A hand-made card: a white box with a 16px radius and a border, instead of `card`.
+HAND_CARD = re.compile(
+    r'class="(?=[^"]*(?<![\w:-])rounded-2xl\b)(?=[^"]*(?<![\w:-])bg-white\b)'
+    r'(?=[^"]*(?<![\w:-])border(?:-2)?(?=[\s"]))[^"]*"'
+)
+
+
+def test_no_template_hand_rolls_a_card():
+    hits = [
+        f"{path.relative_to(REPO_ROOT)}: {match.group(0)}"
+        for path in REPO_ROOT.glob("templates/**/*.html")
+        for match in HAND_CARD.finditer(path.read_text())
+    ]
+    assert not hits, "use the card class:\n" + "\n".join(hits)
 
 
 # Status scales are fixed (the same in every palette) and declared in @theme.
@@ -205,3 +234,61 @@ def test_answer_values_carry_no_status_color():
     """A "No" to a psychosocial question is not an error; answers are neutral pills."""
     html = (REPO_ROOT / "templates/core/_answer_row.html").read_text()
     assert not re.search(r"\b(?:green|red|success|warning|danger)-\d", html)
+
+
+def test_danger_button_meets_wcag_aa():
+    steps = _status("danger")
+    for step in ("600", "800"):
+        assert _ratio(WHITE, steps[step]) >= 4.5, f"white on danger-{step}"
+
+
+# A widget `attrs` class or a module constant of classes that styles a control.
+# Forms render through templates/forms/field.html, whose `field` wrapper styles
+# every control; a widget keeps only real extras (centered OTP digits).
+WIDGET_STYLE = re.compile(
+    r'(?:"class":\s*|_CLASS\w*\s*=\s*\(?\s*)"([^"]*)"', re.MULTILINE
+)
+CONTROL_STYLE = re.compile(r"\b(?:border|rounded(?:-\w+)?|p[xy]?-\d+(?:\.\d)?)\b")
+
+
+def test_no_form_styles_its_controls():
+    hits = [
+        f"{path.relative_to(REPO_ROOT)}: {classes}"
+        for path in sorted(REPO_ROOT.glob("apps/*/forms.py"))
+        for classes in WIDGET_STYLE.findall(path.read_text())
+        if CONTROL_STYLE.search(classes)
+    ]
+    assert not hits, "forms render through the field template:\n" + "\n".join(hits)
+
+
+# The class value of each <a> and <button> tag.
+CONTROL_TAG = re.compile(r'<(?:a|button)\b[^>]*?\bclass="([^"]*)"', re.DOTALL)
+FILL = re.compile(r"(?<![\w:-])bg-(primary|danger|success)-600\b")
+
+
+def _control_classes():
+    for path in sorted(REPO_ROOT.glob("templates/**/*.html")):
+        for classes in CONTROL_TAG.findall(path.read_text()):
+            yield path.relative_to(REPO_ROOT), classes
+
+
+def test_no_template_hand_rolls_a_button():
+    """A filled link or button with a hover on its own scale is a button: use `btn`."""
+    hits = [
+        f"{path}: {classes}"
+        for path, classes in _control_classes()
+        if (fill := FILL.search(classes))
+        and f"hover:bg-{fill.group(1)}-" in classes
+        and "btn" not in classes.split()
+    ]
+    assert not hits, "use btn btn-primary / btn-danger:\n" + "\n".join(hits)
+
+
+def test_links_and_buttons_take_the_keyboard_focus_ring():
+    """`focus:ring` shows on a mouse click too; the base focus-visible rule draws the ring."""
+    hits = [
+        f"{path}: {classes}"
+        for path, classes in _control_classes()
+        if re.search(r"(?<![\w-])focus:(?:ring|outline-none)", classes)
+    ]
+    assert not hits, "drop focus:ring / focus:outline-none:\n" + "\n".join(hits)

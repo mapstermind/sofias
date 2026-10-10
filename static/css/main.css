@@ -10,7 +10,8 @@
 @import "tailwindcss" source(none);
 
 @source "../../templates";
-/* Form widgets carry their classes in `attrs={"class": ...}`. */
+/* A form widget may carry extra classes in `attrs={"class": ...}` (the login
+   code's large centered digits); the field template styles the rest. */
 @source "../../apps/**/forms.py";
 /* Template tags assemble class names by hand — the NDR badge and bar palettes,
    keyed by risk level. */
@@ -173,4 +174,98 @@
      second series is a lighter slate. */
   --brand-series-1: #47546C;
   --brand-series-2: #7787A2;
+}
+
+/* ── Focus ──────────────────────────────────────────────────────────────────
+   One keyboard focus ring for every interactive element, so no template has to
+   draw its own. `focus-visible` only: a mouse click draws nothing. */
+@layer base {
+  :where(a, button, summary, [role="button"], input[type="checkbox"], input[type="radio"]):focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
+}
+
+/* ── Components ─────────────────────────────────────────────────────────────
+   The single-element patterns: buttons, the form control, the card and the
+   pill. Patterns with structure are partials (templates/components/,
+   templates/forms/). Utilities sit in a later layer, so a call site adds layout
+   (`w-full sm:w-auto`, `mt-4`) on top without a specificity fight. The
+   styleguide at /estilos/ shows every class in every state. */
+@layer components {
+  .btn {
+    @apply inline-flex h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium whitespace-nowrap transition-colors duration-150 ease-out;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500;
+    @apply disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50;
+  }
+  .btn > svg {
+    @apply size-5 shrink-0;
+  }
+  .btn-sm {
+    @apply h-9 px-3;
+  }
+  /* `enabled:` keeps a disabled button from reacting to hover; a link has no
+     disabled state, so it gets the plain hover. */
+  .btn-primary {
+    @apply bg-primary-600 text-white enabled:hover:bg-primary-700;
+  }
+  a.btn-primary {
+    @apply hover:bg-primary-700;
+  }
+  .btn-secondary {
+    @apply border border-neutral-300 bg-white text-neutral-800 enabled:hover:bg-neutral-50;
+  }
+  a.btn-secondary {
+    @apply hover:bg-neutral-50;
+  }
+  .btn-text {
+    @apply px-3 text-primary-700 enabled:hover:bg-primary-50;
+  }
+  a.btn-text {
+    @apply hover:bg-primary-50;
+  }
+  /* The status scales stop at 800, so that is the hover. */
+  .btn-danger {
+    @apply bg-danger-600 text-white enabled:hover:bg-danger-800;
+  }
+  a.btn-danger {
+    @apply hover:bg-danger-800;
+  }
+  /* static/ts/busy_submit.ts sets aria-busy on a submitter once its form is sent. */
+  .btn[aria-busy="true"] {
+    @apply pointer-events-none cursor-progress;
+  }
+  .btn[aria-busy="true"]::before {
+    content: "";
+    @apply size-4 shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none;
+  }
+
+  /* A text control. Fields drawn by the form renderer get it from their `field`
+     wrapper; `control` is for an input outside a Django form. 16px text keeps
+     iOS Safari from zooming in on focus. A text field keeps its ring on click on
+     purpose: it matches :focus-visible on click in every browser anyway. */
+  .control,
+  .field :is(input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"]), select, textarea) {
+    @apply block min-h-11 w-full rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-base text-neutral-900 placeholder:text-neutral-500;
+    @apply focus:border-primary-500 focus:ring-2 focus:ring-primary-500 focus:outline-hidden;
+    @apply aria-invalid:border-danger-600 aria-invalid:focus:ring-danger-600;
+    @apply disabled:bg-neutral-50 disabled:text-neutral-500;
+  }
+  .field :is(input[type="checkbox"], input[type="radio"]) {
+    @apply size-5 shrink-0 accent-primary-600;
+  }
+
+  .card {
+    @apply rounded-xl border border-neutral-200 bg-white shadow-sm;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  /* The squircle that opens a status pill; it takes the pill's ink unless a
+     `before:bg-*` utility names another color. */
+  .pill-marker::before {
+    content: "";
+    @apply size-2 shrink-0 rounded-xs bg-current;
+  }
 }

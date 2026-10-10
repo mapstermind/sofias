@@ -2,7 +2,9 @@
 
 ## Status
 
-Current — implemented in `static/css/main.css` and `apps/core` (`brand.py`, `context_processors.py`, `templatetags/brand.py`).
+Current — implemented in `static/css/main.css`, `apps/core` (`brand.py`, `context_processors.py`,
+`forms.py`, `styleguide.py`, `templatetags/brand.py`, `templatetags/icons.py`) and the partials in
+`templates/components/`, `templates/forms/` and `templates/icons/`.
 
 ## What this does
 
@@ -21,6 +23,12 @@ it. Everyone else sees the default palette and no switch.
 Every template expresses color through the token scales: `text-primary-600`, `bg-neutral-50`,
 `bg-accent-100`. None names a Tailwind hue such as `indigo` or `gray`. Changing a palette's
 values, or replacing both palettes with the client's final choice, is an edit to one CSS file.
+
+Each recurring pattern has one definition. A button, a form control, a card and a pill are
+component classes (`btn btn-primary`, `control`, `card`, `pill`). Every Django form draws its
+fields through one field template, alerts and Django's messages through one partial, and icons
+through one tag. A styleguide page at `/estilos/` shows every component in every state, in
+whichever palette is active.
 
 ## Why we're building it
 
@@ -45,8 +53,10 @@ be compared live on the real screens rather than in a mock-up.
   Figtree as Tailwind's `--font-sans`. The results report uses Figtree for headings, tables and
   figures and keeps Source Serif 4 for prose. Its `@font-face` rules declare one face per weight,
   because WeasyPrint rejects the range form.
-- **Type scale.** Base 16px. Steps 14 / 16 / 20 / 25 / 31 / 39. Weights: 400 body, 500 labels and
-  buttons, 600–700 headings. Line height 1.5 for body, 1.2–1.3 for headings.
+- **Type scale.** Tailwind's default steps: 12 (`text-xs`), 14 (`text-sm`), 16 (`text-base`), 18
+  (`text-lg`), 20 (`text-xl`), 24 (`text-2xl`) and 30 (`text-3xl`). Field text is 16px. Weights:
+  400 body, 500 labels and buttons, 600–700 headings. Line height 1.5 for body, 1.2–1.3 for
+  headings.
 - **Color tokens.** `static/css/main.css` declares `primary-50…900`, `accent-100…700`,
   `neutral-50…900` and the chart tokens `series-1` and `series-2` in an `@theme inline` block. Each maps to a `--brand-*` CSS variable.
   Each palette assigns those variables under `[data-palette="<slug>"]`, and `:root` carries the
@@ -87,8 +97,8 @@ be compared live on the real screens rather than in a mock-up.
     both, the age profile `series-1`. A chart's empty baseline is `neutral-300`. The chart tags
     read each series' hex for the active palette from `main.css`, because the PDF paints a chart
     mark from its `fill` attribute rather than from a stylesheet.
-  - Legend swatches, and the markers that open risk-level badges and status pills, are
-    2px-radius squircles (`rounded-xs`), never dots. A tinted risk badge's marker takes its
+  - Legend swatches, and the markers that open risk-level badges and status pills
+    (`pill-marker`), are 2px-radius squircles (`rounded-xs`), never dots. A tinted risk badge's marker takes its
     level's bar color, so the badge and the chart legend show the same mark; a solid dominio
     badge's marker, and every status pill's (*Publicado*, *Borrador*, *Completada*, *Sin
     activar*…), takes the pill's ink. Pills that hold a value rather than a state (answers,
@@ -124,23 +134,100 @@ be compared live on the real screens rather than in a mock-up.
   ramp. The chart labels' hex `fill` attributes, which only the PDF reads.
 - **Language.** `base.html` declares `<html lang="es">`.
 
+- **Components.** The patterns that repeat across pages, each defined once:
+  - **Component classes** in an `@layer components` block of `main.css`, built with `@apply` from
+    the tokens. Utilities sit in a later layer, so a call site adds layout (`w-full sm:w-auto`,
+    `mt-4`) on top of them.
+    - **Buttons:** `btn` plus one variant. `btn-primary` (`primary-600` fill, white text, hover
+      `primary-700`) is the one main action of a view. `btn-secondary` (white, `neutral-300`
+      border, `neutral-800` text, hover `neutral-50`) is every other action: *Cancelar*,
+      *Descargar PDF*, *Filtros*. `btn-text` (no box, `primary-700` text, hover `primary-50`) is an
+      action inside a row or a dialog: *Limpiar filtros*, a close button. `btn-danger`
+      (`danger-600` fill, white text, hover `danger-800`) undoes or removes: *Despublicar*. Buttons
+      have an 8px radius, weight 500 and 14px text, and are 44px tall; `btn-sm` is 36px, for dense
+      desktop rows. A leading icon is 20px. A disabled button is at half opacity and ignores hover.
+      A busy button (`aria-busy="true"`) shows a spinner and ignores clicks;
+      `static/ts/busy_submit.ts` sets it on the submit button of a form carrying `data-loading`
+      (the login code request, publish and unpublish, the report form) and clears it when the
+      back button restores the page from the browser's cache. A submit another handler cancelled, such as the unpublish confirmation, is left
+      alone. Under `prefers-reduced-motion` the spinner does not spin.
+    - **The form control:** white, a `neutral-300` border, an 8px radius, 44px tall, 16px text.
+      Focus draws a `primary-500` border and ring, keeping a transparent outline that
+      high-contrast modes paint; `aria-invalid="true"` draws them in
+      `danger-600`; disabled is `neutral-50` with `neutral-500` text. Fields drawn by the form
+      renderer get these styles from their `field` wrapper; `control` is for an input outside a
+      Django form, such as the roster search.
+    - **The card:** `card` is white, with a `neutral-200` border, `shadow-sm` and a 12px radius.
+      Padding is set where it is used. An empty state is a card with `shadow-none border-dashed
+      border-neutral-300`.
+    - **The pill:** `pill` is the shape (full radius, 12px text, weight 500). `pill-marker` adds the
+      squircle marker in the pill's ink, or in the color a `before:bg-*` utility names. The tone is
+      a utility.
+  - **Keyboard focus.** A base rule draws a 2px `primary-500` outline with a 2px offset on
+    `:focus-visible` for every link, button, summary, checkbox and radio, so no template draws its
+    own and a mouse click draws nothing.
+  - **Form fields.** `settings.FORM_RENDERER` is `apps.core.forms.SofiaFormRenderer`, which draws
+    every Django form through `templates/forms/form.html` (the form's errors, a hidden field's included, as a danger alert,
+    hidden fields, then the fields in a `space-y-6` stack) and every field through
+    `templates/forms/field.html`, in this order:
+    1. the label (14px, weight 500, `neutral-800`), with a quiet *(opcional)* after it when the
+       field is not required;
+    2. the help text (14px, `neutral-600`), above the control;
+    3. the control;
+    4. every error, each with an `exclamation-circle` icon, in `danger-600`.
+
+    Django points the control's `aria-describedby` at the help and error ids, and sets
+    `aria-invalid`. A multi-widget (the date of birth) is a `fieldset` with a `legend`, its parts
+    stacked on a phone and side by side from `sm`. A checkbox sits before its label in a 44px row.
+    A field that is `required=False` for a widget's sake but validated as required sets
+    `shown_as_required = True` to drop *(opcional)*. Widget `attrs` carry no styling classes, only
+    real extras such as the large centered digits of a login code. A page that lays fields out
+    itself (the report form's grid and signatory rows) places each with
+    `{{ field.as_field_group }}`. The Django admin keeps its own markup.
+  - **Alerts.** `templates/components/_alert.html` takes `tone` (`success`, `info`, `warning`,
+    `danger`), an optional `title`, and `body` or `items`. It draws a 50 fill, a 200 border and a
+    12px radius, the tone's icon in its 500 and the text in its 800. `info` takes `primary`.
+    `danger` is `role="alert"`, the rest `role="status"`. An inline alert is never dismissible.
+  - **Messages.** `templates/_messages.html` draws Django's messages as dismissible alerts at the
+    top of every page; `base_app.html` and `base_centered.html` include it. `error` maps to
+    `danger` and `debug` to `info`. The close button (*Cerrar aviso*) is wired by
+    `static/ts/dismiss.ts`, loaded on every page, which moves focus to the next message or to
+    `#main`, which both layouts have. Without
+    JavaScript a message stays. Nothing hides on a timer.
+  - **Icons.** `{% icon "name" "classes" %}` (`{% load icons %}`) inlines
+    `templates/icons/<name>.svg`: Heroicons v2 outline, 24px, MIT (the `LICENSE` sits beside
+    them), copied in rather than installed, and only the icons in use. An icon is `aria-hidden`
+    unless it gets `label="…"`, which makes it an image with that name. An unknown name raises
+    under `DEBUG` and renders nothing otherwise. An icon-only button carries its own
+    `aria-label`.
+  - **The styleguide.** `/estilos/` (`StyleguideView`) shows, in the active palette: the color
+    scales with their hex values, the type sizes in use, every button variant and size (default,
+    disabled, busy), a demo form (`apps/core/styleguide.py`) empty and with errors, every alert
+    tone, the status pills and risk badges, cards, and every icon by name. It is shown to whoever
+    may switch palettes (`brand.can_switch_palette`); everyone else gets a 404.
+  - **The three-places rule.** A pattern that appears in three or more places with no component
+    gets one proposed before its markup is copied again.
+
 **Out of scope:**
 
-- **Component partials and a styleguide page.** Buttons, fields, alerts, tables and dialogs as
-  reusable partials come in a later extension of this doc. This doc fixes their colors and type,
-  not their markup.
+- **Navigation, tables, the dialog, empty and error pages, pagination.** The top bar's responsive
+  collapse and user menu, tables on a phone, a shared `<dialog>` component, the empty-state and
+  loading patterns, the 404 and 500 pages, and pagination are not components yet; each page keeps
+  its own markup for them.
 - **Page-by-page layout and copy changes.** Pages keep their current structure; only their tokens
   change.
 - **Dark mode.** The token layer makes it a later addition of one more variable block.
 - **The Django admin.** It keeps Django's own styling.
 - **Final name, logo and palette.** They stay placeholders until the client confirms them.
-- **An icon set.** None is adopted yet; the few inline icons stay as they are.
 
 ## Phone shape
 
-Nothing in this doc sets a layout. The palette switch is a small pill fixed to the bottom-left
-corner, clear of the back-to-top control at bottom-right. The survey form does not render it,
-because the form's phone bar spans the whole bottom edge.
+Nothing in this doc sets a page layout. The palette switch is a small pill fixed to the
+bottom-left corner, clear of the back-to-top control at bottom-right. The survey form does not
+render it, because the form's phone bar spans the whole bottom edge. Buttons and controls are
+44px tall, the tap target on a phone; a button that should span the phone's width says so at the
+call site (`w-full sm:w-auto`). The styleguide is one column, with its button and pill rows
+wrapping.
 
 ## Key decisions
 
@@ -170,6 +257,23 @@ because the form's phone bar spans the whole bottom edge.
 - Decision: The palette switch is a cookie read by a context processor, not a per-company or
   per-user setting.
   Reason: The switch exists only for the decision period and must not need a migration.
+- Decision: Single-element patterns are CSS component classes; patterns with structure are
+  partials or Django's form renderer.
+  Reason: A button is sometimes a link and sometimes a submit carrying `name`, `value`, `form` or
+  `data-*` attributes, which an `{% include %}` cannot pass through.
+- Decision: Help text sits between the label and the control.
+  Reason: It is read before typing, and a phone keyboard cannot cover it.
+- Decision: Optional fields are marked *(opcional)*; required ones carry no mark.
+  Reason: Nearly every field is required, so a mark on each would be noise.
+- Decision: Cards have a 12px radius, one step above the 8px controls inside them.
+  Reason: The radius ladder (8 controls, 12 cards, full pills) reads as one family.
+- Decision: Field text is 16px.
+  Reason: iOS Safari zooms in on focus below 16px.
+- Decision: Messages never hide on a timer, and inline alerts cannot be dismissed.
+  Reason: A timed message fails slow readers, and a dismissed error is still an error.
+- Decision: Heroicons are copied in as SVG files, not installed.
+  Reason: The app uses about ten icons; a file per icon needs no npm dependency, and the tag
+  inlines it so it takes the text color.
 
 ## Enforcement
 
@@ -181,6 +285,15 @@ because the form's phone bar spans the whole bottom edge.
   fills, 500 icons on the 50 fill) alongside the palettes.
 - A contrast test reads both palette blocks from `static/css/main.css` and fails when any declared
   text/background pair falls below WCAG AA: 4.5:1 for text, 3:1 for UI boundaries and chart marks.
+- Guards fail a link or button that hand-rolls a filled button (a `primary`, `danger` or
+  `success` 600 fill with a hover on the same scale and no `btn`), a link or button that draws a
+  click ring (`focus:ring`, `focus:outline-none`), a hand-made pill or white `rounded-2xl` card,
+  a status pill without `pill-marker`, and a widget `attrs` class in `apps/**/forms.py` that styles
+  the control (border, radius or padding).
+- Tests cover the component classes in the built CSS, the field template (order, every error,
+  *(opcional)*, the ARIA wiring, the fieldset, the admin left alone), the icon tag, each alert
+  tone and messages on both layouts, and the styleguide's access and contents. The busy and
+  dismiss scripts have no test runner and are checked in the browser.
 - Tests cover the context processor and the switch: cookie validation and the fallback, the
   switch rendered for admins only and never on the survey form, the return-address check, and
   `lang="es"`.

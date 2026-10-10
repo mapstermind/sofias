@@ -4,19 +4,22 @@ from dataclasses import replace
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
+from django.views.generic import TemplateView
 
 from apps.accounts.demographics import AGE_BANDS
 from apps.accounts.models import Company, CompanyArea, CompanyLocation, UserProfile
 from apps.accounts.roles import ROLES, labels_for_names
-from apps.core import roster
+from apps.core import roster, styleguide
 from apps.core.brand import COOKIE as PALETTE_COOKIE
-from apps.core.brand import palette_slugs
+from apps.core.brand import active_palette, can_switch_palette, palette_slugs
 from apps.core.query_params import SEX_SLUGS_TO_LABELS
 from apps.core.results_query import filter_pills, parse_results_query, results_url
+from apps.core.templatetags.icons import ICON_DIR
 from apps.nom035 import constants as nom035_constants
 from apps.nom035.results import (
     NOM035_SURVEY_KEY,
@@ -720,3 +723,36 @@ class PaletteSwitchView(View):
                 PALETTE_COOKIE, chosen, max_age=60 * 60 * 24 * 365, samesite="Lax"
             )
         return response
+
+
+class StyleguideView(TemplateView):
+    """Every component in every state, in the active palette (/estilos/).
+
+    Shown to whoever may switch palettes — Admins, superusers, or anyone under
+    DEBUG — so the client can compare the palettes on the components. Everyone
+    else gets a 404, which does not advertise the page.
+    """
+
+    template_name = "core/styleguide.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_switch_palette(request.user):
+            raise Http404
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        invalid = styleguide.DemoForm(data={"maternal_last_name": "Ruiz"})
+        invalid.is_valid()
+        return super().get_context_data(
+            form=styleguide.DemoForm(),
+            invalid_form=invalid,
+            swatches=styleguide.palette_swatches(active_palette(self.request)),
+            status_swatches=styleguide.status_swatches(),
+            icons=sorted(p.stem for p in ICON_DIR.glob("*.svg")),
+            blocker_examples=styleguide.BLOCKER_EXAMPLES,
+            ndr_levels=[
+                (level, nom035_constants.NDR_LABELS[level])
+                for level in nom035_constants.NDR_ORDER
+            ],
+            **kwargs,
+        )

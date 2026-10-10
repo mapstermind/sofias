@@ -1,4 +1,5 @@
 {% extends "base_app.html" %}
+{% load icons %}
 {% load static %}
 
 {% block title %}Colaboradores — {{ company.name }} | {{ brand.name }}{% endblock %}
@@ -54,28 +55,23 @@
   back to nombre.
   {% endcomment %}
   <div class="sticky top-0 z-20 -mx-4 bg-neutral-100 px-4 pt-1 pb-3">
-    <form method="get" id="roster-filters" class="rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm">
+    <form method="get" id="roster-filters" class="card p-3">
       <div class="flex flex-wrap items-center gap-2">
         <div class="relative w-full flex-1 sm:w-auto sm:min-w-48">
           <label for="roster-q" class="sr-only">Buscar por nombre o correo</label>
           <input type="search" name="q" id="roster-q" value="{{ roster_query.raw_q }}"
                  placeholder="Buscar por nombre o correo"
-                 class="w-full rounded-lg border border-neutral-300 py-2 pl-4 pr-11 text-sm placeholder:text-neutral-500 focus:border-primary-500 focus:ring-primary-500">
+                 class="control pr-11">
           <button type="submit" name="orden" value="{{ roster_query.order }}" aria-label="Buscar"
-                  class="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-neutral-500 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-600 transition-colors">
-            <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <circle cx="9" cy="9" r="6"></circle>
-              <path d="M13.5 13.5 18 18" stroke-linecap="round"></path>
-            </svg>
+                  class="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-neutral-500 hover:text-primary-700 transition-colors">
+            {% icon "magnifying-glass" "size-4" %}
           </button>
         </div>
 
         <button type="button" id="roster-filter-open"
                 aria-haspopup="dialog" aria-controls="roster-filter-modal"
-                class="inline-flex shrink-0 items-center gap-2 rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-semibold text-neutral-700 shadow-sm hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 transition-colors">
-          <svg class="size-4 text-neutral-500" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-            <path d="M3 5h14M5.5 10h9M8.5 15h3"></path>
-          </svg>
+                class="btn btn-secondary shrink-0">
+          {% icon "funnel" "size-4 text-neutral-500" %}
           Filtros
           {% if active_filter_count %}
             <span id="roster-filter-count" class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-semibold text-white">{{ active_filter_count }}</span>
@@ -84,7 +80,7 @@
 
         {% if roster_query.is_narrowed %}
           <a href="{{ clear_url }}"
-             class="shrink-0 rounded-lg px-2 py-2 text-sm font-medium text-neutral-500 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 transition-colors">
+             class="btn btn-text shrink-0">
             Limpiar filtros
           </a>
         {% endif %}
@@ -94,15 +90,15 @@
         <span id="roster-orden-label" class="shrink-0 text-xs font-medium text-neutral-500">Ordenar por</span>
         <div role="group" aria-labelledby="roster-orden-label" class="inline-flex min-w-0 rounded-lg bg-neutral-100 p-0.5">
           <button type="submit" name="orden" value="nombre" aria-pressed="{% if roster_query.order == 'nombre' %}true{% else %}false{% endif %}"
-                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-600 {% if roster_query.order == 'nombre' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
+                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors {% if roster_query.order == 'nombre' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
             Nombre
           </button>
           <button type="submit" name="orden" value="progreso" aria-pressed="{% if roster_query.order == 'progreso' %}true{% else %}false{% endif %}"
-                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-600 {% if roster_query.order == 'progreso' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
+                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors {% if roster_query.order == 'progreso' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
             Progreso
           </button>
           <button type="submit" name="orden" value="activacion" aria-pressed="{% if roster_query.order == 'activacion' %}true{% else %}false{% endif %}"
-                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary-600 {% if roster_query.order == 'activacion' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
+                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors {% if roster_query.order == 'activacion' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
             Activación
           </button>
         </div>
@@ -126,10 +122,8 @@
           <div class="flex items-start justify-between gap-4 px-5 pt-5">
             <h2 id="roster-filter-title" class="text-lg font-bold text-neutral-900">Filtros</h2>
             <button type="button" id="roster-filter-close" aria-label="Cerrar"
-                    class="-mr-1 -mt-1 rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-600 transition-colors">
-              <svg class="size-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                <path d="m5 5 10 10M15 5 5 15"></path>
-              </svg>
+                    class="btn btn-text btn-sm -mr-2 -mt-1 px-2 text-neutral-500">
+              {% icon "x-mark" "size-5" %}
             </button>
           </div>
 
@@ -159,11 +153,11 @@
 
           <div class="flex items-center justify-between gap-3 border-t border-neutral-100 px-5 py-4">
             <a href="{{ clear_url }}"
-               class="rounded-lg px-2 py-2 text-sm font-medium text-neutral-500 hover:text-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 transition-colors">
+               class="btn btn-text">
               Limpiar filtros
             </a>
             <button type="submit" id="roster-filter-apply" name="orden" value="{{ roster_query.order }}"
-                    class="rounded-lg bg-primary-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 transition-colors">
+                    class="btn btn-primary">
               Aplicar filtros
             </button>
           </div>
@@ -183,7 +177,7 @@
     <div class="space-y-3">
       {% for item in members %}
         {% with profile=item.profile user=item.profile.user %}
-          <article class="rounded-2xl border border-neutral-200 {% if profile.is_activated %}bg-white{% else %}bg-neutral-50{% endif %} p-4 shadow-sm sm:p-5">
+          <article class="card {% if not profile.is_activated %}bg-neutral-50 {% endif %}p-4 sm:p-5">
             <div class="flex gap-4">
               {% include "_avatar.html" with person=user only %}
 
@@ -192,7 +186,7 @@
                   <div class="min-w-0">
                     <h2 class="truncate font-semibold text-neutral-900">
                       <a href="{% if is_admin_view %}{% url 'core:company_employee_detail_for' company.reference_code user.id %}{% else %}{% url 'core:company_employee_detail' user.id %}{% endif %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}"
-                         class="rounded-sm hover:text-primary-700 hover:underline focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 transition-colors">
+                         class="rounded-sm hover:text-primary-700 hover:underline transition-colors">
                         {{ user.get_full_name|default:user.email }}
                       </a>
                     </h2>
@@ -203,10 +197,10 @@
 
                   <div class="flex shrink-0 items-center gap-2">
                     {% if item.is_self %}
-                      <span class="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20">Tú</span>
+                      <span class="pill bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">Tú</span>
                     {% endif %}
                     {% if not profile.is_activated %}
-                      <span class="inline-flex items-center gap-1.5 rounded-full bg-warning-50 px-2 py-0.5 text-xs font-medium text-warning-800 ring-1 ring-inset ring-warning-600/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Sin activar</span>
+                      <span class="pill pill-marker bg-warning-50 text-warning-800 ring-1 ring-inset ring-warning-600/20">Sin activar</span>
                     {% endif %}
                   </div>
                 </div>
@@ -255,10 +249,10 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="rounded-2xl border border-dashed border-neutral-300 bg-white px-8 py-16 text-center">
+    <div class="card shadow-none border-dashed border-neutral-300 px-8 py-16 text-center">
       {% if roster_query.is_narrowed %}
         <p class="text-sm text-neutral-600">Ningún colaborador coincide con la búsqueda.</p>
-        <a href="{{ clear_url }}" class="mt-3 inline-block text-sm font-semibold text-primary-600 hover:text-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 rounded-sm">
+        <a href="{{ clear_url }}" class="btn btn-secondary mt-3">
           Limpiar filtros
         </a>
       {% else %}

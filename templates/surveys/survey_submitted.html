@@ -1,4 +1,5 @@
 {% extends "base_app.html" %}
+{% load icons %}
 
 {% block title %}¡Gracias! — {{ survey.title }}{% endblock %}
 
@@ -11,12 +12,10 @@
 
 {% block content %}
 <div class="flex justify-center">
-  <div class="max-w-md w-full text-center bg-white rounded-2xl shadow-sm border border-neutral-200 px-10 py-14">
+  <div class="card max-w-md w-full text-center px-10 py-14">
 
     <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success-100">
-      <svg class="h-8 w-8 text-success-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-      </svg>
+      {% icon "check" "size-8 text-success-600" %}
     </div>
 
     <h1 class="text-2xl font-bold text-neutral-900">¡Gracias!</h1>
@@ -26,7 +25,7 @@
 
     <div class="mt-8 flex items-center justify-center">
       <a href="{% url 'core:home' %}"
-        class="inline-block rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 transition-colors">
+        class="btn btn-primary">
         Ir al inicio
       </a>
     </div>

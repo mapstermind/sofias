@@ -1,5 +1,5 @@
 {% load charts %}
-<section class="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+<section class="card p-5">
   <h3 class="text-base font-semibold text-neutral-900">Perfil de quienes respondieron — sexo</h3>
   {% if query.sex_slug %}<p class="mt-1 text-xs text-neutral-500">Sin filtro de sexo</p>{% endif %}
   <div class="mt-4">{% stacked_bar results.sex unit="persona" legend=True %}</div>

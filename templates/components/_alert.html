@@ -1,0 +1,21 @@
+{% load icons %}
+{% comment %}
+A message box in one tone: success, info, warning or danger. Takes `tone`, an
+optional `title`, and `body` (one sentence) or `items` (a list). `dismissible`
+adds a close button that static/ts/dismiss.ts wires up; an inline alert is never
+dismissible, because the problem it reports is still there. Info takes the
+primary scale: information is not a status.
+{% endcomment %}
+<div {% if tone == "danger" %}role="alert"{% else %}role="status"{% endif %} data-alert
+     class="flex items-start gap-3 rounded-xl border px-4 py-3 text-sm {% if tone == "success" %}border-success-200 bg-success-50 text-success-800{% elif tone == "warning" %}border-warning-200 bg-warning-50 text-warning-800{% elif tone == "danger" %}border-danger-200 bg-danger-50 text-danger-800{% else %}border-primary-200 bg-primary-50 text-primary-800{% endif %}">
+  {% if tone == "success" %}{% icon "check-circle" "size-5 shrink-0 text-success-500" %}{% elif tone == "warning" %}{% icon "exclamation-triangle" "size-5 shrink-0 text-warning-500" %}{% elif tone == "danger" %}{% icon "exclamation-circle" "size-5 shrink-0 text-danger-500" %}{% else %}{% icon "information-circle" "size-5 shrink-0 text-primary-500" %}{% endif %}
+  <div class="min-w-0 flex-1 pt-px">
+    {% if title %}<p class="font-semibold">{{ title }}</p>{% endif %}
+    {% if items %}<ul class="{% if title %}mt-1 {% endif %}list-disc space-y-1 pl-5">{% for item in items %}<li>{{ item }}</li>{% endfor %}</ul>{% elif body %}<p{% if title %} class="mt-1"{% endif %}>{{ body }}</p>{% endif %}
+  </div>
+  {% if dismissible %}
+    <button type="button" class="btn btn-text btn-sm -my-2 -mr-2 px-2 text-current" data-dismiss>
+      {% icon "x-mark" "size-5" label="Cerrar aviso" %}
+    </button>
+  {% endif %}
+</div>

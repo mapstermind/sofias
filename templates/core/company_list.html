@@ -12,7 +12,7 @@
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {% for company in companies %}
         <a href="{% url 'core:company_dashboard_for' company.reference_code %}"
-           class="block bg-white rounded-2xl border border-neutral-200 shadow-sm px-6 py-5 hover:border-primary-300 hover:shadow-md transition-all">
+           class="card block px-6 py-5 hover:border-primary-300 hover:shadow-md transition-all">
 
           <h2 class="font-semibold text-neutral-900 truncate">{{ company.name }}</h2>
           <p class="mt-0.5 text-xs text-neutral-500 truncate">{{ company.legal_name }}</p>
@@ -36,7 +36,7 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="rounded-2xl border border-dashed border-neutral-300 bg-white px-8 py-16 text-center">
+    <div class="card shadow-none border-dashed border-neutral-300 px-8 py-16 text-center">
       <p class="text-sm text-neutral-500">No hay empresas creadas aún.</p>
     </div>
   {% endif %}

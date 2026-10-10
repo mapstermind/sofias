@@ -1,0 +1,36 @@
+{% load icons %}
+{% comment %}
+One field, as `{{ field.as_field_group }}` and forms/form.html draw it: label,
+help, the control, then every error. The control takes its look from the
+`field` wrapper (static/css/main.css), never from widget classes. An optional
+field says "(opcional)"; a field that is `required=False` only for a widget's
+sake but validated as required sets `shown_as_required = True` to drop it.
+Django 6 points the control's aria-describedby at `<id>_helptext` and
+`<id>_error`, so those ids are kept.
+{% endcomment %}
+{% if field.is_hidden %}{{ field }}{% else %}
+{% with optional=field.field.required|yesno:",1" %}
+<div class="field">
+  {% if field.widget_type == "checkbox" %}
+    <label for="{{ field.id_for_label }}" class="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-neutral-800">{{ field }}<span>{{ field.label }}</span></label>
+    {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="mt-1 pl-8 text-sm text-neutral-600">{{ field.help_text|safe }}</p>{% endif %}
+  {% else %}
+    {% if field.use_fieldset %}
+      <fieldset class="m-0 min-w-0 border-0 p-0"{% if field.aria_describedby %} aria-describedby="{{ field.aria_describedby }}"{% endif %}>
+      <legend class="mb-1.5 p-0 text-sm font-medium text-neutral-800">{{ field.label }}{% if optional and not field.field.shown_as_required %} <span class="font-normal text-neutral-500">(opcional)</span>{% endif %}</legend>
+    {% else %}
+      <label for="{{ field.id_for_label }}" class="mb-1.5 block text-sm font-medium text-neutral-800">{{ field.label }}{% if optional and not field.field.shown_as_required %} <span class="font-normal text-neutral-500">(opcional)</span>{% endif %}</label>
+    {% endif %}
+    {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="mb-2 text-sm text-neutral-600">{{ field.help_text|safe }}</p>{% endif %}
+    {# A multi-widget's parts stack on a phone: three selects across 328px truncate a month name. #}
+    {% if field.use_fieldset %}<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">{{ field }}</div>{% else %}{{ field }}{% endif %}
+  {% endif %}
+  {% if field.errors %}
+    <div id="{{ field.auto_id }}_error" class="mt-2 space-y-1">
+      {% for error in field.errors %}<p class="flex items-start gap-1.5 text-sm text-danger-600">{% icon "exclamation-circle" "mt-0.5 size-4 shrink-0" %}<span>{{ error }}</span></p>{% endfor %}
+    </div>
+  {% endif %}
+  {% if field.use_fieldset %}</fieldset>{% endif %}
+</div>
+{% endwith %}
+{% endif %}

@@ -20,5 +20,6 @@ urlpatterns = [
     path("empresas/<str:reference_code>/resultados/", views.CompanyResultsView.as_view(), name="company_results_for"),
     path("empresas/<str:reference_code>/resultados/fragmento/", views.CompanyResultsFragmentView.as_view(), name="company_results_fragment_for"),
     path("paleta/", views.PaletteSwitchView.as_view(), name="palette_switch"),
+    path("estilos/", views.StyleguideView.as_view(), name="styleguide"),
     path("que-es-sofia/", TemplateView.as_view(template_name="core/about.html"), name="about"),
 ]

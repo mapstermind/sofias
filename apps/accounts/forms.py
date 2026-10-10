@@ -29,13 +29,12 @@ class UserCSVImportForm(forms.Form):
 
 class EmailRequestForm(forms.Form):
     email = forms.EmailField(
-        label="Tu correo electrónico",
+        label="Correo electrónico",
         widget=forms.EmailInput(
             attrs={
                 "autofocus": True,
                 "placeholder": "tucorreo@ejemplo.com",
                 "autocomplete": "email",
-                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -43,13 +42,12 @@ class EmailRequestForm(forms.Form):
 
 class EmailPasswordLoginForm(forms.Form):
     email = forms.EmailField(
-        label="Tu correo electrónico",
+        label="Correo electrónico",
         widget=forms.EmailInput(
             attrs={
                 "autofocus": True,
                 "placeholder": "tucorreo@ejemplo.com",
                 "autocomplete": "email",
-                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -59,7 +57,6 @@ class EmailPasswordLoginForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "autocomplete": "current-password",
-                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -102,13 +99,12 @@ class EmailPasswordLoginForm(forms.Form):
 
 class SetupAccessCodeLoginForm(forms.Form):
     email = forms.EmailField(
-        label="Tu correo electrónico",
+        label="Correo electrónico",
         widget=forms.EmailInput(
             attrs={
                 "autofocus": True,
                 "placeholder": "tucorreo@ejemplo.com",
                 "autocomplete": "email",
-                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -119,7 +115,7 @@ class SetupAccessCodeLoginForm(forms.Form):
                 "inputmode": "numeric",
                 "autocomplete": "one-time-code",
                 "placeholder": "123-456-789",
-                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-center text-2xl tracking-widest focus:border-primary-500 focus:ring-primary-500",
+                "class": "text-center text-2xl tracking-widest",
             }
         ),
     )
@@ -143,7 +139,6 @@ class RequiredPasswordChangeForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "autocomplete": "new-password",
-                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -153,7 +148,6 @@ class RequiredPasswordChangeForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "autocomplete": "new-password",
-                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm focus:border-primary-500 focus:ring-primary-500",
             }
         ),
     )
@@ -191,7 +185,7 @@ class OTPVerifyForm(forms.Form):
                 "inputmode": "numeric",
                 "autocomplete": "one-time-code",
                 "placeholder": "000000",
-                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-center text-2xl tracking-widest focus:border-primary-500 focus:ring-primary-500",
+                "class": "text-center text-2xl tracking-widest",
             }
         ),
     )
@@ -203,30 +197,17 @@ class OTPVerifyForm(forms.Form):
         return code
 
 
-_TEXT_CLASSES = (
-    "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm "
-    "focus:border-primary-500 focus:ring-primary-500"
-)
-_SELECT_CLASSES = (
-    "block w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-sm "
-    "focus:border-primary-500 focus:ring-primary-500"
-)
-_DATE_SELECT_CLASSES = (
-    "block w-full rounded-lg border border-neutral-300 bg-white px-3 py-3 text-sm "
-    "focus:border-primary-500 focus:ring-primary-500"
-)
-
-
 class ProfileActivationForm(forms.Form):
     reference_code = forms.CharField(
         label="Código de referencia de la empresa",
+        help_text="El código de 5 caracteres proporcionado por tu administrador.",
         min_length=5,
         max_length=5,
         widget=forms.TextInput(
             attrs={
                 "autofocus": True,
                 "placeholder": "XXXXX",
-                "class": "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm uppercase tracking-widest focus:border-primary-500 focus:ring-primary-500",
+                "class": "uppercase tracking-widest",
             }
         ),
     )
@@ -237,17 +218,13 @@ class ProfileActivationForm(forms.Form):
         label="Nombre(s)",
         max_length=150,
         error_messages={"required": "Escribe tu nombre."},
-        widget=forms.TextInput(
-            attrs={"autocomplete": "given-name", "class": _TEXT_CLASSES}
-        ),
+        widget=forms.TextInput(attrs={"autocomplete": "given-name"}),
     )
     paternal_last_name = forms.CharField(
         label="Apellido paterno",
         max_length=150,
         error_messages={"required": "Escribe tu apellido paterno."},
-        widget=forms.TextInput(
-            attrs={"autocomplete": "family-name", "class": _TEXT_CLASSES}
-        ),
+        widget=forms.TextInput(attrs={"autocomplete": "family-name"}),
     )
     # Optional: not everyone has two surnames, and requiring it would block a
     # foreign-national employee at the activation gate for no analytical gain.
@@ -258,20 +235,17 @@ class ProfileActivationForm(forms.Form):
         widget=forms.TextInput(
             attrs={
                 "autocomplete": "off",
-                "placeholder": "Opcional",
-                "class": _TEXT_CLASSES,
             }
         ),
     )
     position = forms.CharField(
         label="Cargo",
+        help_text="El puesto que ocupas en tu empresa.",
         max_length=255,
         required=False,
         widget=forms.TextInput(
             attrs={
                 "autocomplete": "organization-title",
-                "placeholder": "Opcional",
-                "class": _TEXT_CLASSES,
             }
         ),
     )
@@ -282,7 +256,7 @@ class ProfileActivationForm(forms.Form):
             "required": "Selecciona tu sexo.",
             "invalid_choice": "Selecciona una opción válida.",
         },
-        widget=forms.Select(attrs={"class": _SELECT_CLASSES}),
+        widget=forms.Select(),
     )
     # `required=False` with a presence check in `clean_date_of_birth`, not
     # `required=True`: `SelectDateWidget` only renders the "Día/Mes/Año"
@@ -297,22 +271,24 @@ class ProfileActivationForm(forms.Form):
     area = forms.ModelChoiceField(
         queryset=CompanyArea.objects.none(),
         label="Área",
+        help_text="El área de tu empresa a la que perteneces.",
         empty_label="Selecciona tu área",
         error_messages={
             "required": "Selecciona el área a la que perteneces.",
             "invalid_choice": "Selecciona un área válida de tu empresa.",
         },
-        widget=forms.Select(attrs={"class": _SELECT_CLASSES}),
+        widget=forms.Select(),
     )
     location = forms.ModelChoiceField(
         queryset=CompanyLocation.objects.none(),
         label="Localidad",
+        help_text="La localidad en la que trabajas.",
         empty_label="Selecciona tu localidad",
         error_messages={
             "required": "Selecciona la localidad en la que trabajas.",
             "invalid_choice": "Selecciona una localidad válida de tu empresa.",
         },
-        widget=forms.Select(attrs={"class": _SELECT_CLASSES}),
+        widget=forms.Select(),
     )
 
     def __init__(self, *args, company, **kwargs):
@@ -336,8 +312,10 @@ class ProfileActivationForm(forms.Form):
                 today.year - MIN_ACTIVATION_AGE, today.year - MAX_ACTIVATION_AGE - 1, -1
             ),
             empty_label=("Año", "Mes", "Día"),
-            attrs={"class": _DATE_SELECT_CLASSES},
         )
+        # Validated as required in `clean_date_of_birth`, so the field template
+        # must not mark it "(opcional)".
+        self.fields["date_of_birth"].shown_as_required = True
 
         self.fields["area"].queryset = CompanyArea.objects.filter(
             company=company, is_active=True
