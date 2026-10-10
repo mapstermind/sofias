@@ -256,7 +256,7 @@ function pendingItem(card: HTMLElement): HTMLLIElement {
   const button = document.createElement("button");
   button.type = "button";
   button.className =
-    "w-full text-left text-xs text-neutral-700 rounded-md px-2 py-1.5 " +
+    "w-full text-left text-sm text-neutral-700 rounded-md px-2 py-1.5 " +
     "line-clamp-2 cursor-pointer hover:bg-warning-50 hover:text-warning-800 " +
     "transition-colors";
   // textContent, never innerHTML: question text is authored data.

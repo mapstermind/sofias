@@ -1,6 +1,6 @@
 {% load charts %}
 <section class="card p-5">
   <h3 class="text-base font-semibold text-neutral-900">Perfil de quienes respondieron — edad</h3>
-  {% if query.age_slugs %}<p class="mt-1 text-xs text-neutral-500">Sin filtro de edad</p>{% endif %}
+  {% if query.age_slugs %}<p class="mt-1 text-sm text-neutral-500">Sin filtro de edad</p>{% endif %}
   <div class="mt-2">{% column_chart results.age unit="persona" %}</div>
 </section>

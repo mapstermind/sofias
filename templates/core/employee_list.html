@@ -39,7 +39,7 @@
   {% endif %}
 
   <div class="mb-5">
-    <h1 class="text-2xl font-bold text-neutral-900">Colaboradores</h1>
+    <h1 class="text-xl font-bold text-neutral-900">Colaboradores</h1>
     <p class="mt-1 text-sm text-neutral-500">{{ company.name }}</p>
   </div>
 
@@ -221,11 +221,11 @@
                 {% for prog in item.survey_progress %}
                   <div>
                     <div class="mb-1 flex items-baseline justify-between gap-3">
-                      <span class="min-w-0 truncate text-xs text-neutral-500">
+                      <span class="min-w-0 truncate text-sm text-neutral-500">
                         {{ prog.assignment.survey.title }}
                         <span class="text-neutral-500">({{ prog.assignment.get_variant_display }})</span>
                       </span>
-                      <span class="shrink-0 text-xs text-neutral-500 tabular-nums">
+                      <span class="shrink-0 text-sm text-neutral-500 tabular-nums">
                         <span class="font-semibold text-neutral-900">{{ prog.percent }}%</span>
                         <span aria-hidden="true">·</span>
                         {{ prog.answered }}/{{ prog.total }}

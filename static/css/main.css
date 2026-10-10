@@ -105,6 +105,29 @@
   --color-danger-800: #7F2E28;
 }
 
+/* ── Type scale ─────────────────────────────────────────────────────────────
+   Tailwind's size classes with the scale's values, in rem so a reader's own
+   text-size setting scales every step. A class names a role: xs a label on a
+   graphic or badge (never a sentence), sm secondary text, base body copy and
+   the survey's questions and answers, lg a section heading, xl a page title,
+   2xl a stat number. See docs/platform/design-system.md (Type scale). */
+@theme {
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.4;
+  --text-xl: 1.5625rem;
+  --text-xl--line-height: 1.25;
+  --text-2xl: 1.9375rem;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 2.4375rem;
+  --text-3xl--line-height: 1.15;
+}
+
 /* ── Palettes ───────────────────────────────────────────────────────────────
    Same variables, different values. `:root` carries the default so a page
    without the attribute still renders. static/css/report.css reads these too.
