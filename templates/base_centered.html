@@ -12,7 +12,7 @@ block here is scanned like any other template class.
 {% block body_class %}min-h-screen bg-neutral-100{% endblock %}
 
 {% block body %}
-<div class="flex-1 flex items-center justify-center px-4 py-12">
+<main id="main" tabindex="-1" class="flex-1 flex items-center justify-center px-4 py-12 focus:outline-none">
 <div class="w-full {% block container_width %}{{ container_width|default:"max-w-sm" }}{% endblock %}">
 
   <div class="mb-8 flex flex-col items-center text-center">
@@ -20,13 +20,14 @@ block here is scanned like any other template class.
     {% block card_header %}{% endblock %}
   </div>
 
-  <div class="bg-white rounded-2xl shadow-sm border border-neutral-200 px-8 py-10">
+  <div class="card px-8 py-10">
+    {% include "_messages.html" %}
     {% block card_body %}{% endblock %}
   </div>
 
   {% block card_footer %}{% endblock %}
 
 </div>
-</div>
+</main>
 {% include "_footer.html" %}
 {% endblock %}

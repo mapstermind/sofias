@@ -1,7 +1,7 @@
 {% if results %}
   {% include "core/results/_group_line.html" %}
   {% if results.empty %}
-    <div class="mt-6 rounded-2xl border border-dashed border-neutral-300 bg-white px-6 py-10 text-center">
+    <div class="card shadow-none mt-6 border-dashed border-neutral-300 px-6 py-10 text-center">
       {% if results.filtered %}
         <p class="text-sm text-neutral-500">Ningún cuestionario coincide con los filtros.</p>
       {% else %}
@@ -16,7 +16,7 @@
       {% include "core/results/_age_profile.html" %}
     </div>
     {% if results.suppressed %}
-      <div class="mt-4 rounded-2xl border border-neutral-200 bg-white px-6 py-8 text-center">
+      <div class="card mt-4 px-6 py-8 text-center">
         {% include "core/results/_suppressed.html" %}
       </div>
     {% else %}

@@ -1,0 +1,9 @@
+{% comment %}
+A whole form, as `{{ form }}` draws it: the form's own errors as an alert,
+hidden fields, then every visible field through forms/field.html. `errors` is
+Django's: the non-field errors plus any hidden field's, which have nowhere else
+to show.
+{% endcomment %}
+{% if errors %}<div class="mb-6">{% include "components/_alert.html" with tone="danger" items=errors only %}</div>{% endif %}
+{% for field in form.hidden_fields %}{{ field }}{% endfor %}
+<div class="space-y-6">{% for field in form.visible_fields %}{{ field.as_field_group }}{% endfor %}</div>

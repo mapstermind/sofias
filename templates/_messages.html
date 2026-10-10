@@ -1,0 +1,13 @@
+{% comment %}
+Django's messages, once per page: base_app.html and base_centered.html include
+this above their content. Each is a dismissible alert; nothing hides on a timer.
+{% endcomment %}
+{% if messages %}
+  <div class="mb-6 space-y-3" data-messages>
+    {% for message in messages %}
+      {% if message.level_tag == "error" %}{% include "components/_alert.html" with tone="danger" body=message dismissible=True only %}
+      {% elif message.level_tag == "debug" %}{% include "components/_alert.html" with tone="info" body=message dismissible=True only %}
+      {% else %}{% include "components/_alert.html" with tone=message.level_tag body=message dismissible=True only %}{% endif %}
+    {% endfor %}
+  </div>
+{% endif %}

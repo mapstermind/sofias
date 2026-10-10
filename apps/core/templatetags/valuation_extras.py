@@ -58,13 +58,12 @@ _DOMINIO_FILL = {
 }
 
 
-# Every badge opens with a small squircle marker, the shape of the legend
-# swatches. On a tinted badge it takes the level's bar color, so the badge and
-# the chart legend show the same mark; on a solid dominio badge the bar color is
-# the background, so it takes the ink. Spelled out for Tailwind's scan.
-_MARKER = (
-    "inline-flex items-center gap-1.5 before:size-2 before:shrink-0 before:rounded-xs"
-)
+# Every badge opens with the pill's squircle marker (`pill-marker`, main.css),
+# the shape of the legend swatches. On a tinted badge it takes the level's bar
+# color, so the badge and the chart legend show the same mark; on a solid
+# dominio badge the bar color is the background, so it keeps the ink. The
+# template supplies the `pill` shape. Spelled out for Tailwind's scan.
+_MARKER = "pill-marker"
 _MARKER_COLOR = {
     c.NDR_NULO: "before:bg-gray-300",
     c.NDR_BAJO: "before:bg-green-500",
@@ -78,7 +77,7 @@ _MARKER_COLOR = {
 def ndr_badge(ndr, tier=""):
     """Tailwind classes for a colored NDR badge (pill); `tier="dominio"` for a dominio."""
     if tier == DOMINIO:
-        return f"{_DOMINIO_BADGE.get(ndr, _NEUTRAL_BADGE)} {_MARKER} before:bg-current"
+        return f"{_DOMINIO_BADGE.get(ndr, _NEUTRAL_BADGE)} {_MARKER}"
     marker = _MARKER_COLOR.get(ndr, "before:bg-current")
     return f"{_BADGE.get(ndr, _NEUTRAL_BADGE)} {_MARKER} {marker}"
 

@@ -6,22 +6,17 @@ from django.forms.formsets import ORDERING_FIELD_NAME
 
 from apps.reports.models import Report, ReportSignatory
 
-INPUT_CLASS = (
-    "block w-full rounded-lg border border-neutral-300 px-4 py-3 text-sm "
-    "focus:border-primary-500 focus:ring-primary-500"
-)
-
 
 def _text(**attrs):
-    return forms.TextInput(attrs={"class": INPUT_CLASS, **attrs})
+    return forms.TextInput(attrs=attrs)
 
 
 def _number():
-    return forms.NumberInput(attrs={"class": INPUT_CLASS, "min": 0})
+    return forms.NumberInput(attrs={"min": 0})
 
 
 def _textarea():
-    return forms.Textarea(attrs={"class": INPUT_CLASS, "rows": 5})
+    return forms.Textarea(attrs={"rows": 5})
 
 
 class ReportForm(forms.ModelForm):

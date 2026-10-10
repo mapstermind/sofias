@@ -1,0 +1,13 @@
+{% comment %}One color scale on the styleguide: `scale` and its `steps` as (token, hex).{% endcomment %}
+<div>
+  <p class="text-sm font-medium text-neutral-800">{{ scale }}</p>
+  <ul class="mt-2 grid grid-cols-5 gap-2 sm:grid-cols-10">
+    {% for token, hex in steps %}
+      <li class="min-w-0">
+        <span class="block h-10 rounded-lg ring-1 ring-inset ring-neutral-900/10" style="background-color: {{ hex }}"></span>
+        <span class="mt-1 block truncate text-xs text-neutral-700">{{ token|cut:scale|cut:"-" }}</span>
+        <span class="block truncate text-xs text-neutral-500">{{ hex }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+</div>

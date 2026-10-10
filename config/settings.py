@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Django's own widget templates, for the TemplatesSetting renderer below.
+    "django.forms",
     "apps.accounts",
     "apps.core",
     "apps.surveys",
@@ -90,6 +92,10 @@ TEMPLATES = [
         },
     },
 ]
+
+# Every form draws its fields through templates/forms/field.html. See
+# docs/platform/design-system.md (Components).
+FORM_RENDERER = "apps.core.forms.SofiaFormRenderer"
 
 WSGI_APPLICATION = "config.wsgi.application"
 

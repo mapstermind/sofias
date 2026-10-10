@@ -1,3 +1,4 @@
+{% load icons %}
 <!-- Progress saved modal -->
 <div id="progress-saved-modal"
      class="fixed inset-0 z-50 items-center justify-center p-4"
@@ -9,9 +10,7 @@
     <!-- Icon -->
     <div class="flex justify-center mb-4">
       <div class="rounded-full bg-primary-50 p-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
+        {% icon "check" "size-7 text-primary-500" %}
       </div>
     </div>
     <h2 class="text-lg font-semibold text-neutral-900 text-center mb-2">Progreso guardado</h2>
@@ -27,11 +26,11 @@
       <button
         type="button"
         onclick="document.getElementById('progress-saved-modal').style.display='none'"
-        class="flex-1 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-medium text-white text-center hover:bg-primary-500 transition-colors">
+        class="btn btn-primary flex-1">
         Continuar respondiendo
       </button>
       <a href="{% url 'core:home' %}"
-         class="flex-1 rounded-lg border border-neutral-300 px-4 py-2.5 text-sm font-medium text-neutral-700 text-center hover:bg-neutral-50 transition-colors">
+         class="btn btn-secondary flex-1">
         Ir al inicio
       </a>
     </div>

@@ -1,0 +1,145 @@
+{% extends "base_app.html" %}
+{% load icons valuation_extras %}
+
+{% block title %}Estilos | {{ brand.name }}{% endblock %}
+
+{% comment %}
+Every component in every state, drawn with the real classes and partials, in
+the active palette: flip the palette switch to compare. Shown to whoever may
+switch palettes (StyleguideView). Hover and keyboard focus cannot be frozen in a
+static page, so they are tried live. See docs/platform/design-system.md.
+{% endcomment %}
+
+{% block content %}
+  <div class="mb-10">
+    <h1 class="text-2xl font-bold text-neutral-900">Estilos</h1>
+    <p class="mt-1 max-w-prose text-sm text-neutral-600">
+      Los componentes de {{ brand.name }} con la paleta activa. Cambia de paleta con el selector de la esquina para compararlas.
+    </p>
+  </div>
+
+  <div class="space-y-12">
+
+    <section aria-labelledby="sg-color">
+      <h2 id="sg-color" class="text-lg font-semibold text-neutral-900">Color</h2>
+      <p class="mt-1 text-sm text-neutral-600">Las escalas de la paleta activa y las de estado, que son iguales en las dos paletas.</p>
+      <div class="mt-4 space-y-4">
+        {% for scale, steps in swatches %}
+          {% include "core/_styleguide_scale.html" %}
+        {% endfor %}
+        {% for scale, steps in status_swatches %}
+          {% include "core/_styleguide_scale.html" %}
+        {% endfor %}
+      </div>
+    </section>
+
+    <section aria-labelledby="sg-type">
+      <h2 id="sg-type" class="text-lg font-semibold text-neutral-900">Tipografía</h2>
+      <p class="mt-1 text-sm text-neutral-600">Figtree en los tamaños que usa la aplicación.</p>
+      <dl class="card mt-4 divide-y divide-neutral-100">
+        <div class="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-baseline sm:gap-6"><dt class="w-28 shrink-0 text-xs text-neutral-500">30 · negrita</dt><dd class="text-3xl font-bold text-neutral-900">Resultados de la empresa</dd></div>
+        <div class="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-baseline sm:gap-6"><dt class="w-28 shrink-0 text-xs text-neutral-500">24 · negrita</dt><dd class="text-2xl font-bold text-neutral-900">Editar reporte</dd></div>
+        <div class="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-baseline sm:gap-6"><dt class="w-28 shrink-0 text-xs text-neutral-500">20 · seminegrita</dt><dd class="text-xl font-semibold text-neutral-900">Valoración de resultados</dd></div>
+        <div class="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-baseline sm:gap-6"><dt class="w-28 shrink-0 text-xs text-neutral-500">18 · seminegrita</dt><dd class="text-lg font-semibold text-neutral-900">Personal por modalidad</dd></div>
+        <div class="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-baseline sm:gap-6"><dt class="w-28 shrink-0 text-xs text-neutral-500">16 · normal</dt><dd class="max-w-prose text-base text-neutral-700">El cuestionario identifica los factores de riesgo psicosocial en el centro de trabajo.</dd></div>
+        <div class="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-baseline sm:gap-6"><dt class="w-28 shrink-0 text-xs text-neutral-500">14 · media</dt><dd class="text-sm font-medium text-neutral-800">Correo electrónico</dd></div>
+        <div class="flex flex-col gap-1 px-5 py-4 sm:flex-row sm:items-baseline sm:gap-6"><dt class="w-28 shrink-0 text-xs text-neutral-500">12 · normal</dt><dd class="text-xs text-neutral-500">Actualizado hace 5 minutos</dd></div>
+      </dl>
+    </section>
+
+    <section aria-labelledby="sg-buttons">
+      <h2 id="sg-buttons" class="text-lg font-semibold text-neutral-900">Botones</h2>
+      <p class="mt-1 text-sm text-neutral-600">Pasa el cursor y recorre con Tab para ver el estado activo y el foco.</p>
+      <div class="card mt-4 space-y-6 p-5">
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" class="btn btn-primary">Publicar</button>
+          <button type="button" class="btn btn-secondary">Descargar PDF</button>
+          <button type="button" class="btn btn-text">Limpiar filtros</button>
+          <button type="button" class="btn btn-danger">Despublicar</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" class="btn btn-primary btn-sm">Publicar</button>
+          <button type="button" class="btn btn-secondary btn-sm">Descargar PDF</button>
+          <button type="button" class="btn btn-text btn-sm">Limpiar filtros</button>
+          <button type="button" class="btn btn-danger btn-sm">Despublicar</button>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" class="btn btn-secondary">{% icon "funnel" %}Filtros</button>
+          <button type="button" class="btn btn-primary" aria-busy="true">Enviando código</button>
+          <button type="button" class="btn btn-primary" disabled>Publicar</button>
+          <button type="button" class="btn btn-secondary" disabled>Descargar PDF</button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="sg-fields">
+      <h2 id="sg-fields" class="text-lg font-semibold text-neutral-900">Campos</h2>
+      <p class="mt-1 text-sm text-neutral-600">El mismo formulario vacío y con errores.</p>
+      <div class="mt-4 grid gap-6 lg:grid-cols-2">
+        <div class="card p-5 sm:p-6">{{ form }}</div>
+        <div class="card p-5 sm:p-6">{{ invalid_form }}</div>
+      </div>
+      <div class="card mt-6 p-5 sm:p-6">
+        <label for="sg-search" class="mb-1.5 block text-sm font-medium text-neutral-800">Fuera de un formulario de Django</label>
+        <input id="sg-search" type="search" class="control" placeholder="Busca por nombre o correo">
+      </div>
+    </section>
+
+    <section aria-labelledby="sg-alerts">
+      <h2 id="sg-alerts" class="text-lg font-semibold text-neutral-900">Avisos</h2>
+      <div class="mt-4 space-y-3">
+        {% include "components/_alert.html" with tone="success" body="Reporte publicado." dismissible=True %}
+        {% include "components/_alert.html" with tone="info" body="Te enviamos un código a tu correo." dismissible=True %}
+        {% include "components/_alert.html" with tone="warning" title="Para publicar falta:" items=blocker_examples %}
+        {% include "components/_alert.html" with tone="danger" body="Correo o contraseña inválidos." %}
+      </div>
+    </section>
+
+    <section aria-labelledby="sg-pills">
+      <h2 id="sg-pills" class="text-lg font-semibold text-neutral-900">Etiquetas</h2>
+      <div class="card mt-4 space-y-4 p-5">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="pill pill-marker bg-success-100 text-success-800">Publicado</span>
+          <span class="pill pill-marker bg-warning-100 text-warning-800">Borrador</span>
+          <span class="pill pill-marker bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">En progreso</span>
+          <span class="pill pill-marker bg-neutral-100 text-neutral-500 ring-1 ring-inset ring-neutral-500/20">Sin iniciar</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          {% for level, label in ndr_levels %}<span class="pill ring-1 ring-inset {{ level|ndr_badge }}">{{ label }}</span>{% endfor %}
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          {% for level, label in ndr_levels %}<span class="pill ring-1 ring-inset {{ level|ndr_badge:"dominio" }}">{{ label }}</span>{% endfor %}
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="pill bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">Sí</span>
+          <span class="pill bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">No</span>
+          <span class="pill bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">Tú</span>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="sg-cards">
+      <h2 id="sg-cards" class="text-lg font-semibold text-neutral-900">Tarjetas</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <div class="card px-6 py-5">
+          <p class="text-sm text-neutral-600">Colaboradores registrados</p>
+          <p class="mt-1 text-3xl font-bold text-neutral-900">128</p>
+        </div>
+        <div class="card shadow-none border-dashed border-neutral-300 px-6 py-5 text-center">
+          <p class="text-sm text-neutral-600">Aún no hay reportes para esta empresa.</p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="sg-icons">
+      <h2 id="sg-icons" class="text-lg font-semibold text-neutral-900">Íconos</h2>
+      <p class="mt-1 text-sm text-neutral-600">Heroicons, contorno de 24 px. Solo los que usa la aplicación.</p>
+      <ul class="card mt-4 grid grid-cols-2 gap-4 p-5 sm:grid-cols-4">
+        {% for name in icons %}
+          <li class="flex min-w-0 items-center gap-3 text-sm text-neutral-700">{% icon name "size-6 shrink-0 text-neutral-800" %}<span class="truncate">{{ name }}</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+
+  </div>
+{% endblock %}

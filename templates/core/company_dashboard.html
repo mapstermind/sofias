@@ -1,4 +1,5 @@
 {% extends "base_app.html" %}
+{% load icons %}
 
 {% block title %}{{ company.name }} | {{ brand.name }}{% endblock %}
 
@@ -20,7 +21,7 @@
   <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
     {% if perms.accounts.can_manage_employees %}
       <a href="{% if is_admin_view %}{% url 'core:company_employee_list_for' company.reference_code %}{% else %}{% url 'core:company_employee_list' %}{% endif %}"
-         class="group flex h-full flex-col justify-between bg-white rounded-2xl border-2 border-primary-100 shadow-sm px-6 py-5 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
+         class="card group flex h-full flex-col justify-between border-2 border-primary-100 px-6 py-5 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
         <div>
           <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Colaboradores registrados</dt>
           <dd class="mt-1 text-3xl font-bold text-neutral-900">
@@ -31,7 +32,7 @@
         <p class="mt-3 text-xs font-semibold text-primary-600 group-hover:text-primary-700">Ver colaboradores &rarr;</p>
       </a>
     {% else %}
-      <div class="flex h-full flex-col justify-center bg-white rounded-2xl border border-neutral-200 shadow-sm px-6 py-5">
+      <div class="card flex h-full flex-col justify-center px-6 py-5">
         <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Colaboradores registrados</dt>
         <dd class="mt-1 text-3xl font-bold text-neutral-900">
           {{ activated_count }}
@@ -39,7 +40,7 @@
         </dd>
       </div>
     {% endif %}
-    <div class="flex h-full flex-col justify-center bg-white rounded-2xl border border-neutral-200 shadow-sm px-6 py-5">
+    <div class="card flex h-full flex-col justify-center px-6 py-5">
       <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Tasa<br>de registro</dt>
       {% if registration_rate is not None %}
         <dd class="mt-1 text-3xl font-bold text-neutral-900">
@@ -53,16 +54,16 @@
         <dd class="mt-1 text-sm text-neutral-500 italic">Sin datos</dd>
       {% endif %}
     </div>
-    <div class="flex h-full flex-col justify-center bg-white rounded-2xl border border-neutral-200 shadow-sm px-6 py-5">
+    <div class="card flex h-full flex-col justify-center px-6 py-5">
       <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Encuestas<br>asignadas</dt>
       <dd class="mt-1 text-3xl font-bold text-neutral-900">{{ assignment_data|length }}</dd>
     </div>
-    <div class="flex h-full flex-col justify-center bg-white rounded-2xl border border-neutral-200 shadow-sm px-6 py-5">
+    <div class="card flex h-full flex-col justify-center px-6 py-5">
       <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Código de referencia</dt>
       <dd class="mt-1 text-3xl font-bold font-mono tracking-widest text-neutral-900">{{ company.reference_code }}</dd>
     </div>
     <button type="button" onclick="document.getElementById('cochran-modal').classList.remove('hidden')"
-            class="group text-left w-full h-full flex flex-col justify-between bg-white rounded-2xl border-2 border-primary-100 shadow-sm px-6 py-5 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
+            class="card group text-left w-full h-full flex flex-col justify-between border-2 border-primary-100 px-6 py-5 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
       <div>
         <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Mínimo representativo</dt>
         {% if representative_minimum is not None %}
@@ -72,9 +73,7 @@
         {% endif %}
       </div>
       <span class="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary-600 group-hover:text-primary-700">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-3.5 shrink-0" aria-hidden="true">
-          <path fill-rule="evenodd" d="M4 3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H4Zm0 2h12v3H4V5Zm2 5a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H6Zm4 0a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H10Zm4 0a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H14Zm-8 3a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H6Zm4 0a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H10Zm4 0a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2H14Z" clip-rule="evenodd"/>
-        </svg>
+        {% icon "calculator" "size-3.5 shrink-0" %}
         Ver fórmula &rarr;
       </span>
     </button>
@@ -84,11 +83,9 @@
   <div id="cochran-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="document.getElementById('cochran-modal').classList.add('hidden')"></div>
     <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
-      <button type="button" onclick="document.getElementById('cochran-modal').classList.add('hidden')"
+      <button type="button" aria-label="Cerrar" onclick="document.getElementById('cochran-modal').classList.add('hidden')"
               class="absolute top-4 right-4 text-neutral-500 hover:text-neutral-600 transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-          <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/>
-        </svg>
+        {% icon "x-mark" "size-5" %}
       </button>
       <h2 class="text-base font-semibold text-neutral-900">Fórmula de Cochran</h2>
       <p class="mt-3 text-sm text-neutral-600 leading-relaxed">
@@ -112,7 +109,7 @@
         {% for item in assignment_data %}
           <div class="flex gap-3">
             {# Progress card — 75% #}
-            <div class="bg-white rounded-2xl border border-neutral-200 shadow-sm px-6 py-5" style="flex: 3">
+            <div class="card px-6 py-5" style="flex: 3">
               <div class="flex items-start justify-between gap-4">
                 <div class="min-w-0">
                   <p class="font-medium text-neutral-900 truncate">
@@ -150,23 +147,23 @@
             {% if can_take_surveys %}
               {% if item.assignment.status == "active" and not item.user_completed %}
                 <a href="{% url 'surveys:survey_detail' item.assignment.id %}"
-                   class="flex flex-col justify-between bg-white rounded-2xl border border-neutral-200 shadow-sm px-5 py-5 hover:border-primary-300 hover:shadow-md transition-all" style="flex: 1">
+                   class="card flex flex-col justify-between px-5 py-5 hover:border-primary-300 hover:shadow-md transition-all" style="flex: 1">
                   <div class="flex items-start justify-between gap-2">
                     <p class="text-sm font-medium text-neutral-700 leading-snug">Mi respuesta</p>
-                    <span class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Activa</span>
+                    <span class="pill pill-marker shrink-0 bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">Activa</span>
                   </div>
                   <p class="mt-3 text-xs text-neutral-500">
                     {% if item.assignment.due_date %}Fecha límite: <span class="font-medium text-neutral-600">{{ item.assignment.due_date|date:"d/m/Y" }}</span>{% else %}Sin fecha límite{% endif %}
                   </p>
                 </a>
               {% else %}
-                <div class="relative group flex flex-col justify-between bg-white rounded-2xl border border-neutral-200 shadow-sm px-5 py-5 cursor-default opacity-60 select-none" style="flex: 1">
+                <div class="card relative group flex flex-col justify-between px-5 py-5 cursor-default opacity-60 select-none" style="flex: 1">
                   <div class="flex items-start justify-between gap-2">
                     <p class="text-sm font-medium text-neutral-700 leading-snug">Mi respuesta</p>
                     {% if item.user_completed %}
-                      <span class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-success-50 px-2 py-0.5 text-xs font-medium text-success-800 ring-1 ring-inset ring-success-600/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Completada</span>
+                      <span class="pill pill-marker shrink-0 bg-success-50 text-success-800 ring-1 ring-inset ring-success-600/20">Completada</span>
                     {% else %}
-                      <span class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500 ring-1 ring-inset ring-neutral-500/20 before:size-2 before:shrink-0 before:rounded-xs before:bg-current">Cerrada</span>
+                      <span class="pill pill-marker shrink-0 bg-neutral-100 text-neutral-500 ring-1 ring-inset ring-neutral-500/20">Cerrada</span>
                     {% endif %}
                   </div>
                   <p class="mt-3 text-xs text-neutral-500">
@@ -184,7 +181,7 @@
         {% endfor %}
       </div>
     {% else %}
-      <div class="rounded-2xl border border-dashed border-neutral-300 bg-white px-8 py-12 text-center">
+      <div class="card shadow-none border-dashed border-neutral-300 px-8 py-12 text-center">
         <p class="text-sm text-neutral-500">No hay encuestas asignadas a esta empresa.</p>
       </div>
     {% endif %}
@@ -195,7 +192,7 @@
     <section class="mt-8">
       <h2 class="text-base font-semibold text-neutral-900 mb-4">Valoración de resultados</h2>
       <a href="{{ results_url }}"
-         class="group flex flex-col gap-3 rounded-2xl border-2 border-primary-100 bg-white px-6 py-5 shadow-sm transition-all hover:border-primary-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
+         class="card group flex flex-col gap-3 border-2 border-primary-100 px-6 py-5 transition-all hover:border-primary-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
         <div>
           {% if latest_scored_count is None %}
             <p class="text-sm text-neutral-500">Esta empresa aún no tiene encuestas NOM-035 asignadas.</p>
@@ -208,12 +205,12 @@
       </a>
       {% if is_admin_view %}
         <a href="{% url 'reports:admin_list' company.reference_code %}"
-           class="mt-3 flex items-center justify-between rounded-2xl border border-neutral-200 bg-white px-6 py-4 text-sm font-semibold text-primary-600 shadow-sm transition-all hover:border-primary-300 hover:text-primary-700">
+           class="card mt-3 flex items-center justify-between px-6 py-4 text-sm font-semibold text-primary-600 transition-all hover:border-primary-300 hover:text-primary-700">
           Reporte de resultados <span aria-hidden="true">&rarr;</span>
         </a>
       {% else %}
         <a href="{% url 'reports:exec_list' %}"
-           class="group mt-3 flex flex-col gap-3 rounded-2xl border-2 border-primary-100 bg-white px-6 py-5 shadow-sm transition-all hover:border-primary-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
+           class="card group mt-3 flex flex-col gap-3 border-2 border-primary-100 px-6 py-5 transition-all hover:border-primary-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p class="text-sm font-semibold text-neutral-900">Reporte de resultados</p>
             <p class="mt-1 text-sm text-neutral-500">Consulta y descarga los reportes publicados.</p>
