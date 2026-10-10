@@ -53,10 +53,29 @@ be compared live on the real screens rather than in a mock-up.
   Figtree as Tailwind's `--font-sans`. The results report uses Figtree for headings, tables and
   figures and keeps Source Serif 4 for prose. Its `@font-face` rules declare one face per weight,
   because WeasyPrint rejects the range form.
-- **Type scale.** Tailwind's default steps: 12 (`text-xs`), 14 (`text-sm`), 16 (`text-base`), 18
-  (`text-lg`), 20 (`text-xl`), 24 (`text-2xl`) and 30 (`text-3xl`). Field text is 16px. Weights:
-  400 body, 500 labels and buttons, 600–700 headings. Line height 1.5 for body, 1.2–1.3 for
-  headings.
+- **Type scale.** Tailwind's size classes carry the scale's values, declared as `--text-*`
+  tokens in `main.css`. The sizes are in `rem`, so a reader who raises their browser's or phone's
+  text size scales every step. Each class names a role:
+
+  | Class | Size | Line height | Role |
+  |---|---|---|---|
+  | `text-xs` | 13px | 1.4 | A label on a graphic or a badge: a pill, a legend entry, a chart caption, a stat's caption, a count |
+  | `text-sm` | 14px | 1.5 | Secondary text: table cells, metadata, dates, help, errors, field labels |
+  | `text-base` | 16px | 1.5 | Body copy, form controls, the survey's questions and answers |
+  | `text-lg` | 20px | 1.4 | Section headings, modal titles |
+  | `text-xl` | 25px | 1.25 | Page titles (`h1`) |
+  | `text-2xl` | 31px | 1.2 | Stat numbers, the 6-digit login code |
+  | `text-3xl` | 39px | 1.15 | Not used by a page |
+
+  `text-xs` is never a sentence. Weights: 400 body, 500 labels and buttons, 600–700 headings.
+  The styleguide lists the seven steps with their roles.
+- **The survey's type.** Questions, answers, instructions and the modals' text are 16px. Errors,
+  the progress and *Pendientes* panels, and the side panel's headings are 14px. A question is 16px at weight 600 in `neutral-900`, and its answers are
+  16px in `neutral-800`: on a page holding many questions, a question stands out by weight, not
+  size, so a module stays short to scroll. Answer rows keep their 44px minimum. The likert labels
+  under the radios on desktop are 14px. The survey's text, number and date inputs are `control`.
+  The 9-digit setup code on *Primer ingreso* is 25px, so its eleven characters fit the login card
+  at 360px.
 - **Color tokens.** `static/css/main.css` declares `primary-50…900`, `accent-100…700`,
   `neutral-50…900` and the chart tokens `series-1` and `series-2` in an `@theme inline` block. Each maps to a `--brand-*` CSS variable.
   Each palette assigns those variables under `[data-palette="<slug>"]`, and `:root` carries the
@@ -156,7 +175,7 @@ be compared live on the real screens rather than in a mock-up.
       high-contrast modes paint; `aria-invalid="true"` draws them in
       `danger-600`; disabled is `neutral-50` with `neutral-500` text. Fields drawn by the form
       renderer get these styles from their `field` wrapper; `control` is for an input outside a
-      Django form, such as the roster search.
+      Django form, such as the roster search, the results filter and the survey's typed answers.
     - **The card:** `card` is white, with a `neutral-200` border, `shadow-sm` and a 12px radius.
       Padding is set where it is used. An empty state is a card with `shadow-none border-dashed
       border-neutral-300`.
@@ -271,6 +290,17 @@ wrapping.
   Reason: iOS Safari zooms in on focus below 16px.
 - Decision: Messages never hide on a timer, and inline alerts cannot be dismissed.
   Reason: A timed message fails slow readers, and a dismissed error is still an error.
+- Decision: Tailwind's size classes keep their names and take the scale's values; each use names
+  its role.
+  Reason: Shifting every class up a step would make a page title 31px, three lines or more on a
+  360px phone. Moving each use to its role keeps titles and figures their size and spends the
+  larger steps where reading needs them.
+- Decision: The survey's questions and answers are 16px, the question set apart by weight.
+  Reason: 16px is the floor for reading text on a phone, and the survey's modules hold dozens of
+  questions; larger questions would add screens of scrolling. A reader who needs larger text gets
+  it from their own text-size setting, which the `rem` sizes honor.
+- Decision: 13px is for a label on a graphic or a badge, never a sentence.
+  Reason: Small text that is read rather than glanced at is where readability fails first.
 - Decision: Heroicons are copied in as SVG files, not installed.
   Reason: The app uses about ten icons; a file per icon needs no npm dependency, and the tag
   inlines it so it takes the text color.
@@ -290,6 +320,12 @@ wrapping.
   click ring (`focus:ring`, `focus:outline-none`), a hand-made pill or white `rounded-2xl` card,
   a status pill without `pill-marker`, and a widget `attrs` class in `apps/**/forms.py` that styles
   the control (border, radius or padding).
+- A test checks each `--text-*` size and line height against the type scale. A guard fails a
+  `text-xs` element whose literal text reads as a sentence: five words or more, or ending in a
+  period. It reads the element's text past tags and template logic, counting a variable as one
+  word, and skips containers of blocks, whose children are separate labels. It is a heuristic;
+  classes TypeScript assembles are checked in review. The survey's tests check its question, answer and input
+  classes.
 - Tests cover the component classes in the built CSS, the field template (order, every error,
   *(opcional)*, the ARIA wiring, the fieldset, the admin left alone), the icon tag, each alert
   tone and messages on both layouts, and the styleguide's access and contents. The busy and

@@ -4,7 +4,7 @@
 
 {% block content %}
   <div class="mb-8">
-    <h1 class="text-2xl font-bold text-neutral-900">Mis encuestas</h1>
+    <h1 class="text-xl font-bold text-neutral-900">Mis encuestas</h1>
     <p class="mt-1 text-sm text-neutral-500">Encuestas asignadas a {{ company.name }}.</p>
   </div>
 
@@ -20,9 +20,9 @@
                 <span class="pill pill-marker shrink-0 bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">Activa</span>
               </div>
               {% if assignment.due_date %}
-                <p class="mt-4 text-xs text-neutral-500">Fecha límite: <span class="font-medium text-neutral-700">{{ assignment.due_date|date:"d/m/Y" }}</span></p>
+                <p class="mt-4 text-sm text-neutral-500">Fecha límite: <span class="font-medium text-neutral-700">{{ assignment.due_date|date:"d/m/Y" }}</span></p>
               {% else %}
-                <p class="mt-4 text-xs text-neutral-500">Sin fecha límite</p>
+                <p class="mt-4 text-sm text-neutral-500">Sin fecha límite</p>
               {% endif %}
             </a>
           {% else %}
@@ -36,12 +36,12 @@
                 {% endif %}
               </div>
               {% if assignment.due_date %}
-                <p class="mt-4 text-xs text-neutral-500">Fecha límite: <span class="font-medium text-neutral-700">{{ assignment.due_date|date:"d/m/Y" }}</span></p>
+                <p class="mt-4 text-sm text-neutral-500">Fecha límite: <span class="font-medium text-neutral-700">{{ assignment.due_date|date:"d/m/Y" }}</span></p>
               {% else %}
-                <p class="mt-4 text-xs text-neutral-500">Sin fecha límite</p>
+                <p class="mt-4 text-sm text-neutral-500">Sin fecha límite</p>
               {% endif %}
               <div class="pointer-events-none absolute inset-x-0 bottom-full mb-2 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 px-2">
-                <div class="rounded-lg bg-black px-3 py-2 text-xs text-white shadow-lg text-center max-w-xs">
+                <div class="rounded-lg bg-black px-3 py-2 text-sm text-white shadow-lg text-center max-w-xs">
                   Esta encuesta ha finalizado y no tiene acceso a ver sus respuestas.
                 </div>
               </div>

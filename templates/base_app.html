@@ -13,7 +13,7 @@ scans templates/, so a class named in Python is never compiled otherwise.
     <div class="flex min-w-0 items-center gap-3">
       <a href="{% url 'core:home' %}" class="flex shrink-0 items-center gap-2">
         {% include "_logo.html" with css_class="h-8 mt-2 mb-3 w-auto text-primary-700" %}
-        <span class="hidden text-xl font-semibold text-neutral-900 sm:inline">{{ brand.name }}</span>
+        <span class="hidden text-lg font-semibold text-neutral-900 sm:inline">{{ brand.name }}</span>
       </a>
       {% comment %}
       The back link is desktop-only. A phone goes back by swiping, and the logo

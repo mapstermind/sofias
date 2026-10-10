@@ -97,14 +97,14 @@
                       style="stroke-dasharray: {% widthratio prog.percent 100 276 %} 276"></circle>
             </svg>
             <div class="absolute inset-0 flex items-center justify-center">
-              <span class="text-xl font-bold tabular-nums text-neutral-900">{{ prog.percent }}%</span>
+              <span class="text-lg font-bold tabular-nums text-neutral-900">{{ prog.percent }}%</span>
             </div>
           </div>
 
           <div class="min-w-0">
             <p>
               <span class="text-sm font-medium text-neutral-900">{{ prog.assignment.survey.title }}</span>
-              <span class="text-xs font-semibold text-neutral-500">({{ prog.assignment.get_variant_display }})</span>
+              <span class="text-sm font-semibold text-neutral-500">({{ prog.assignment.get_variant_display }})</span>
             </p>
             <div class="mt-2">
               {% if prog.status == "completed" %}
@@ -115,7 +115,7 @@
                 <span class="pill pill-marker bg-neutral-100 text-neutral-500 ring-1 ring-inset ring-neutral-500/20">Sin iniciar</span>
               {% endif %}
             </div>
-            <p class="mt-2 text-xs text-neutral-500 tabular-nums">
+            <p class="mt-2 text-sm text-neutral-500 tabular-nums">
               {{ prog.answered }} de {{ prog.total }} respondidas{% if prog.not_applicable %}
                 <span class="text-neutral-500">({{ prog.not_applicable }} no aplica{{ prog.not_applicable|pluralize:"n" }})</span>
               {% endif %}
@@ -143,7 +143,7 @@
         <div class="min-w-0">
           <p class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Nivel de riesgo final</p>
           <p class="mt-1 flex items-baseline gap-2">
-            <span class="text-2xl font-bold text-neutral-900">{{ valuation.final_ndr_label }}</span>
+            <span class="text-xl font-bold text-neutral-900">{{ valuation.final_ndr_label }}</span>
             <span class="text-sm tabular-nums text-neutral-500">{{ valuation.final_score }} puntos</span>
           </p>
         </div>
@@ -192,7 +192,7 @@
                   </summary>
                   <ul class="mt-1 mb-2 ml-4 space-y-0.5 border-l border-neutral-100 pl-3">
                     {% for dim in dom.dimensions %}
-                      <li class="flex items-baseline gap-2 text-xs text-neutral-500">
+                      <li class="flex items-baseline gap-2 text-sm text-neutral-500">
                         <span class="shrink-0">{{ dim.label }}</span>
                         <span class="flex-1 border-b border-dotted border-neutral-200"></span>
                         <span class="shrink-0 tabular-nums">{{ dim.score }}</span>
@@ -239,7 +239,7 @@
           <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between gap-4">
             <div class="min-w-0">
               <p class="font-medium text-neutral-900 truncate">{{ item.assignment.survey.title }}</p>
-              <p class="text-xs font-semibold text-neutral-700 mt-0.5">({{ item.assignment.get_variant_display }})</p>
+              <p class="text-sm font-semibold text-neutral-700 mt-0.5">({{ item.assignment.get_variant_display }})</p>
             </div>
             {% if not item.submission %}
               <span class="pill pill-marker shrink-0 bg-neutral-100 text-neutral-500 ring-1 ring-inset ring-neutral-500/20">Sin iniciar</span>
@@ -261,7 +261,7 @@
               {% for mod in item.modules %}
                 <div>
                   <div class="mb-3 flex items-end justify-between gap-3 border-b border-neutral-100 pb-2">
-                    <h3 class="text-xs font-semibold text-neutral-500 uppercase tracking-wide">
+                    <h3 class="text-sm font-semibold text-neutral-500 uppercase tracking-wide">
                       {{ mod.module.title }}
                     </h3>
                     {% with likert_qa=mod.items|first_of_type:"likert" %}

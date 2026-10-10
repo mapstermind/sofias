@@ -292,3 +292,73 @@ def test_links_and_buttons_take_the_keyboard_focus_ring():
         if re.search(r"(?<![\w-])focus:(?:ring|outline-none)", classes)
     ]
     assert not hits, "drop focus:ring / focus:outline-none:\n" + "\n".join(hits)
+
+
+# The type scale: Tailwind's size classes with the scale's values. A class names
+# a role (see docs/platform/design-system.md, Type scale).
+TYPE_SCALE = {
+    "xs": ("0.8125rem", "1.4"),
+    "sm": ("0.875rem", "1.5"),
+    "base": ("1rem", "1.5"),
+    "lg": ("1.25rem", "1.4"),
+    "xl": ("1.5625rem", "1.25"),
+    "2xl": ("1.9375rem", "1.2"),
+    "3xl": ("2.4375rem", "1.15"),
+}
+
+
+@pytest.mark.parametrize("step", TYPE_SCALE)
+def test_the_type_scale_is_the_theme(step):
+    size, leading = TYPE_SCALE[step]
+    assert f"--text-{step}: {size};" in MAIN_CSS
+    assert f"--text-{step}--line-height: {leading};" in MAIN_CSS
+
+
+# An element sized text-xs at any breakpoint, and everything up to its closing tag.
+SMALL_ELEMENT = re.compile(
+    r'<(\w+)\b[^>]*\bclass="[^"]*(?<![\w-])(?:[\w-]+:)*text-xs\b[^"]*"[^>]*>(.*?)</\1>',
+    re.DOTALL,
+)
+
+
+# A container of blocks (a legend list, a stats row) sets the size for its
+# children, each a separate label; only an element that holds text is judged.
+BLOCK_CHILD = re.compile(r"<(?:div|p|ul|ol|li|dl|dt|dd|table|tr|section)\b")
+
+
+def _reading_text(markup):
+    """The words a reader sees: a variable counts as one word, tags and logic as none."""
+    text = re.sub(r"\{\{.*?\}\}", " X ", markup)
+    text = re.sub(r"\{%.*?%\}|\{#.*?#\}|<[^>]+>", " ", text)
+    return " ".join(text.split())
+
+
+def test_no_sentence_is_set_at_the_smallest_size():
+    """13px is for a label on a graphic or a badge; a sentence takes text-sm.
+
+    A heuristic: five words or more, or a period, counting a template variable
+    as one word. Classes TypeScript assembles are checked in review.
+    """
+    hits = [
+        f"{path.relative_to(REPO_ROOT)}: {text}"
+        for path in SCANNED
+        for _, markup in SMALL_ELEMENT.findall(path.read_text())
+        if not BLOCK_CHILD.search(markup)
+        and (text := _reading_text(markup))
+        and (len(text.split()) >= 5 or text.endswith("."))
+    ]
+    assert not hits, "use text-sm for a sentence:\n" + "\n".join(hits)
+
+
+@pytest.mark.parametrize(
+    "markup",
+    [
+        '<p class="text-xs">{% if a %}Te faltan preguntas por responder.{% endif %}</p>',
+        '<p class="mt-2 lg:text-xs">{% icon "x" %} Escribe un número entero.</p>',
+        '<p class="text-xs">Hay {{ n }} preguntas sin responder</p>',
+    ],
+)
+def test_the_small_text_guard_reads_past_tags_and_variables(markup):
+    _, inner = SMALL_ELEMENT.search(markup).groups()
+    text = _reading_text(inner)
+    assert len(text.split()) >= 5 or text.endswith(".")

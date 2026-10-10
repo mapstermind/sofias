@@ -10,7 +10,7 @@
 
 {% block content %}
   <div class="mb-5">
-    <h1 class="text-2xl font-bold text-neutral-900">Reportes de resultados</h1>
+    <h1 class="text-xl font-bold text-neutral-900">Reportes de resultados</h1>
     <p class="mt-1 text-sm text-neutral-500">{{ company.name }}</p>
   </div>
 
@@ -27,9 +27,9 @@
             <p class="text-sm font-medium text-neutral-900">{{ row.option.label }}</p>
             {# A published report counts its frozen respondents, not today's. #}
             {% if row.report.status == "published" %}{% with count=row.report.snapshot.responded %}
-            <p class="mt-1 text-xs text-neutral-500">{{ count }} cuestionario{{ count|pluralize }} valorado{{ count|pluralize }}</p>
+            <p class="mt-1 text-sm text-neutral-500">{{ count }} cuestionario{{ count|pluralize }} valorado{{ count|pluralize }}</p>
             {% endwith %}{% else %}
-            <p class="mt-1 text-xs text-neutral-500">{{ row.option.scored_count }} cuestionario{{ row.option.scored_count|pluralize }} valorado{{ row.option.scored_count|pluralize }}</p>
+            <p class="mt-1 text-sm text-neutral-500">{{ row.option.scored_count }} cuestionario{{ row.option.scored_count|pluralize }} valorado{{ row.option.scored_count|pluralize }}</p>
             {% endif %}
           </div>
           <div class="flex items-center justify-between gap-4 sm:justify-end">

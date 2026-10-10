@@ -660,3 +660,43 @@ def test_the_survey_form_never_shows_the_palette_switch(
     settings.DEBUG = True
     html = client.get(_survey_url(active_assignment.pk)).content.decode()
     assert "data-palette-switch" not in html
+
+
+class TestSurveyTypography:
+    """The survey is read by people who find devices hard: questions and answers are 16px.
+
+    See docs/platform/design-system.md (Type scale).
+    """
+
+    @pytest.fixture
+    def cards(self, client, active_assignment, survey_with_questions):
+        html = client.get(_survey_url(active_assignment.pk)).content.decode()
+        found = re.findall(r'<div class="question-card.*?</fieldset>', html, re.DOTALL)
+        assert len(found) == len(survey_with_questions["questions"])
+        return found
+
+    def test_a_question_is_body_size_and_bold(self, cards):
+        for card in cards:
+            legend = re.search(r'<legend class="([^"]*)"', card).group(1).split()
+            assert {"text-base", "font-semibold", "text-neutral-900"} <= set(legend)
+
+    def test_every_answer_label_is_body_size(self, cards):
+        for card in cards:
+            for label in re.findall(r"<label\b.*?</label>", card, re.DOTALL):
+                span = re.search(r'<span class="([^"]*)"', label).group(1).split()
+                assert "text-base" in span, span
+
+    def test_typed_answers_use_the_form_control(self, cards):
+        controls = [
+            tag
+            for card in cards
+            for tag in re.findall(r"<(?:input|textarea)\b[^>]*>", card)
+            if not re.search(r'type="(?:radio|checkbox)"', tag)
+        ]
+        assert len(controls) == 4  # text, integer, decimal, date
+        for tag in controls:
+            assert re.search(r'class="[^"]*\bcontrol\b', tag), tag
+
+    def test_nothing_in_a_question_is_set_at_the_smallest_size(self, cards):
+        for card in cards:
+            assert not re.search(r"(?<![\w:-])text-xs\b", card)

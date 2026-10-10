@@ -115,7 +115,7 @@ class SetupAccessCodeLoginForm(forms.Form):
                 "inputmode": "numeric",
                 "autocomplete": "one-time-code",
                 "placeholder": "123-456-789",
-                "class": "text-center text-2xl tracking-widest",
+                "class": "text-center text-xl tracking-widest",
             }
         ),
     )

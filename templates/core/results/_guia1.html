@@ -1,7 +1,7 @@
 {% load charts %}
 <section class="card mt-4 p-5">
   <h3 class="text-base font-semibold text-neutral-900">Guía I — acontecimientos traumáticos severos</h3>
-  <p class="mt-3 text-3xl font-bold text-neutral-900">{{ results.guia1.positive }}</p>
+  <p class="mt-3 text-2xl font-bold text-neutral-900">{{ results.guia1.positive }}</p>
   <p class="text-sm text-neutral-600">colaborador{{ results.guia1.positive|pluralize:"es" }} requiere{{ results.guia1.positive|pluralize:"n" }} valoración clínica</p>
   <div class="mt-4">{% stacked_bar results.guia1.slices legend=True %}</div>
 </section>
