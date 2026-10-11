@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load navigation static %}
 
 {% block body %}
 {% comment %}
@@ -8,44 +8,33 @@ main and footer share it so they stay aligned. Omit it for the standard width.
 Any width a view passes must be safelisted in static/css/main.css — Tailwind only
 scans templates/, so a class named in Python is never compiled otherwise.
 {% endcomment %}
-<header class="bg-white border-b border-neutral-200">
-  <div class="mx-auto {{ container_width|default:"max-w-5xl" }} px-4 py-4 flex items-center justify-between gap-3">
-    <div class="flex min-w-0 items-center gap-3">
-      <a href="{% url 'core:home' %}" class="flex shrink-0 items-center gap-2">
-        {% include "_logo.html" with css_class="h-8 mt-2 mb-3 w-auto text-primary-700" %}
-        <span class="hidden text-lg font-semibold text-neutral-900 sm:inline">{{ brand.name }}</span>
+{% comment %}
+One header row at every width: the logo, the company sections (a switcher
+below `lg`, tabs from `lg`, from `{% company_nav %}`), and the user menu. A
+page without sections (a respondent's, or any survey page) offers a named link
+to the viewer's surveys instead.
+Company context and back links belong to the page, in `page_context` below.
+{% endcomment %}
+<header class="border-b border-neutral-200 bg-white">
+  <div class="mx-auto flex h-14 items-center justify-between gap-3 px-4 lg:h-15 {{ container_width|default:"max-w-5xl" }}">
+    <div class="flex h-full min-w-0 items-center gap-3 lg:gap-6">
+      <a href="{% url 'core:home' %}" class="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-2">
+        {% include "_logo.html" with css_class="h-7 w-auto text-primary-700" %}
+        <span class="hidden text-lg font-semibold text-neutral-900 lg:inline">{{ brand.name }}</span>
       </a>
-      {% comment %}
-      The back link is desktop-only. A phone goes back by swiping, and the logo
-      is a link home for anyone who arrived from an emailed link with no history
-      behind them. Hiding it here rather than in each template keeps the five
-      header_nav blocks free of breakpoints.
-      {% endcomment %}
-      <div class="hidden min-w-0 items-center gap-3 sm:flex">
-        {% block header_nav %}{% endblock %}
-      </div>
+      {% company_nav %}
     </div>
-    <form method="post" action="{% url 'accounts:logout' %}" class="shrink-0">
-      {% csrf_token %}
-      {% comment %}
-      `w-28` holds the width steady while the avatar and the label swap, so the
-      header does not shift under the cursor. Below `sm:` there is no hover to
-      reveal anything, and a bare circle would invite a tap that silently logs
-      the visitor out — so the action names itself instead.
-      {% endcomment %}
-      <button type="submit"
-              class="group flex w-28 items-center justify-end text-sm text-neutral-500 transition-colors hover:text-neutral-700">
-        <span class="sm:hidden">Cerrar sesión</span>
-        <span class="hidden sm:inline sm:group-hover:hidden">
-          {% include "_avatar.html" with person=request.user size="size-8" text="text-xs" only %}
-        </span>
-        <span class="hidden sm:group-hover:inline">Cerrar sesión</span>
-      </button>
-    </form>
+    <div class="flex shrink-0 items-center gap-2">
+      {% if perms.accounts.can_take_assigned_surveys and not company and request.resolver_match.url_name != "employee_survey_list" %}
+        <a href="{% url 'core:employee_survey_list' %}" class="btn btn-text btn-sm">Mis encuestas</a>
+      {% endif %}
+      {% if request.user.is_authenticated %}{% include "_user_menu.html" %}{% endif %}
+    </div>
   </div>
 </header>
 
 <main id="main" tabindex="-1" class="flex-1 mx-auto w-full {{ container_width|default:"max-w-5xl" }} px-4 py-10 focus:outline-none">
+  {% block page_context %}{% include "_page_context.html" %}{% endblock %}
   {% include "_messages.html" %}
   {% block content %}{% endblock %}
 </main>

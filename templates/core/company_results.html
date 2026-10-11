@@ -3,16 +3,6 @@
 
 {% block title %}Resultados | {{ company.name }} | {{ brand.name }}{% endblock %}
 
-{% block header_nav %}
-  <span class="text-neutral-300 select-none">|</span>
-  <a href="{% if is_admin_view %}{% url 'core:company_dashboard_for' company.reference_code %}{% else %}{% url 'core:company_dashboard' %}{% endif %}"
-     class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">&larr; Regresa al tablero</a>
-  {% if is_admin_view %}
-    <span class="text-neutral-300 select-none">|</span>
-    <a href="{% url 'reports:admin_list' company.reference_code %}"
-       class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">Reporte</a>
-  {% endif %}
-{% endblock %}
 
 {% block content %}
   <div class="mb-5">
@@ -21,9 +11,7 @@
   </div>
 
   {% if not options %}
-    <div class="card shadow-none border-dashed border-neutral-300 px-8 py-12 text-center">
-      <p class="text-sm text-neutral-500">Esta empresa aún no tiene encuestas NOM-035 asignadas.</p>
-    </div>
+    {% include "components/_empty.html" with body="Esta empresa aún no tiene encuestas NOM-035 asignadas." icon="chart-bar" %}
   {% else %}
     <form method="get" action="{{ page_url }}" id="results-filters" data-fragment-url="{{ fragment_url }}"
           class="card p-3">

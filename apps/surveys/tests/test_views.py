@@ -700,3 +700,27 @@ class TestSurveyTypography:
     def test_nothing_in_a_question_is_set_at_the_smallest_size(self, cards):
         for card in cards:
             assert not re.search(r"(?<![\w:-])text-xs\b", card)
+
+
+class TestSurveyDialogs:
+    """The survey's dialogs open themselves from the page, never from inline script."""
+
+    @staticmethod
+    def _tag(html, dialog_id):
+        return re.search(r'<dialog\b[^>]*\bid="%s"[^>]*>' % dialog_id, html).group(0)
+
+    def test_the_confirm_dialog_opens_on_load_once_everything_is_answered(
+        self, client, active_assignment, survey_with_questions
+    ):
+        client.post(
+            _survey_url(active_assignment.pk),
+            _answers_for(survey_with_questions["questions"]),
+        )
+        html = client.get(
+            f"{_survey_url(active_assignment.pk)}?confirm=1"
+        ).content.decode()
+        assert "data-open-on-load" in self._tag(html, "submit-confirm-modal")
+
+    def test_the_confirm_dialog_stays_shut_otherwise(self, client, active_assignment):
+        html = client.get(_survey_url(active_assignment.pk)).content.decode()
+        assert "data-open-on-load" not in self._tag(html, "submit-confirm-modal")

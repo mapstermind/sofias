@@ -224,15 +224,81 @@ be compared live on the real screens rather than in a mock-up.
     disabled, busy), a demo form (`apps/core/styleguide.py`) empty and with errors, every alert
     tone, the status pills and risk badges, cards, and every icon by name. It is shown to whoever
     may switch palettes (`brand.can_switch_palette`); everyone else gets a 404.
+  - **Navigation.** Every signed-in page has one header row (`base_app.html`): the logo, the
+    company's sections, and the user menu. It is 56px on a phone and 60px from `lg`.
+    - **Sections.** `{% company_nav %}` (`apps/core/templatetags/navigation.py`) lists the
+      sections the viewer may open: *Tablero*, *Colaboradores*, *Resultados* and *Reportes*. Each
+      is offered only when the viewer holds the permissions its view checks, as an Administrador
+      on any company or as an executive on their own, so an Ejecutivo secundario sees two. A
+      child page lights its parent: an employee lights *Colaboradores*, a report or the report
+      form lights *Reportes*. The active section carries `aria-current="page"`. Fewer than two
+      sections render nothing.
+    - **Rendering.** The same list renders twice (`templates/_company_nav.html`). Below `lg` it
+      is a switcher: a `<details>` whose 44px summary names the current section and opens a
+      panel of 48px links, the current one tinted `primary-50` with a squircle marker. From
+      `lg` it is inline tabs: 14px links at weight 500, the active one `neutral-900` over a 2px
+      `primary-600` rule. The panel is a disclosure of links, not an ARIA menu.
+    - **The user menu** (`templates/_user_menu.html`). The avatar is the summary of a second
+      `<details>`, whose panel holds the viewer's name, role label and email, and a *Cerrar
+      sesión* button that posts to logout.
+    - **Pages without sections.** A respondent's pages and every survey page have no sections,
+      so the header offers *Mis encuestas* instead, except on that page itself.
+    - **Panel behaviour.** Both panels open and close without JavaScript.
+      `static/ts/disclosure.ts` closes an open one on Esc (returning focus to its summary) or on
+      a click outside, keeps one open at a time, and closes them when the back button restores
+      the page.
+    - **Page context.** Company context lives in the page, not the header. `base_app.html`
+      opens its content with `{% block page_context %}`, which by default shows an
+      Administrador *Empresas / {company}* (`_page_context.html`). A child page replaces it with
+      one back link, a `btn-text btn-sm` at every width: *← Colaboradores* (keeping the roster's
+      filters), *← Reportes*, *← Reporte*.
+  - **Dialogs.** Every dialog is a native `<dialog>` with the `dialog` class, opened with
+    `showModal()`, which supplies the focus trap, the inert page behind, Esc and the return of
+    focus to the opener.
+    - **Look.** `dialog` is white, with a 12px radius, 24px padding and `shadow-xl`, at most
+      28rem wide and `calc(100% − 2rem)` on a phone. Taller content scrolls inside it. The
+      backdrop is `neutral-900` at 40%. It fades and scales in over 150ms, and appears at once
+      under `prefers-reduced-motion`.
+    - **Structure.** Each template follows one shape: an optional 48px icon circle, a `text-lg`
+      title that the dialog names with `aria-labelledby`, the body, and an actions row
+      (`flex-col-reverse sm:flex-row sm:justify-end`), so the main action sits on top on a
+      phone and on the right on desktop.
+    - **Behaviour** (`static/ts/dialog.ts`). It reads data attributes, so no template carries
+      inline script: `data-dialog-open="<id>"` opens, `data-dialog-close` closes,
+      `data-open-on-load` opens when the page loads (the survey's confirmation and
+      saved-progress dialogs), a click on the backdrop closes, and `data-dialog-static` ignores
+      Esc and the backdrop (*Sesión expirada*, which only offers to sign in again).
+  - **Empty states.** `templates/components/_empty.html` takes `body`, and optionally `icon`,
+    `title`, `action_url` with `action_label`, and `compact`. It draws a dashed `neutral-300`
+    card holding:
+    - a 20px `neutral-500` icon on a 40px `neutral-100` tile
+    - a 16px title at weight 600
+    - the body at 14px in `neutral-600`
+    - a `btn-secondary` action
+
+    The empty roster offers *Limpiar filtros* when it is filtered.
+  - **Error pages.** `templates/404.html`, `403.html` and `500.html` extend `base_error.html`,
+    the centered card of the login screens. Each holds:
+    - the logo
+    - a `text-xl` title and one sentence (*No encontramos esta página*, *No tienes acceso a esta
+      página*, *No pudimos cargar esta página*)
+    - *Ir al inicio*
+    - the code as a `text-sm` footnote for support
+
+    Django renders the 404 and 403 pages with the request
+    context. The 500 page comes from `handler500 = "apps.core.views.server_error"`, which renders
+    with only the brand and the default palette and makes no database query, since the database
+    may be what failed.
   - **The three-places rule.** A pattern that appears in three or more places with no component
     gets one proposed before its markup is copied again.
 
 **Out of scope:**
 
-- **Navigation, tables, the dialog, empty and error pages, pagination.** The top bar's responsive
-  collapse and user menu, tables on a phone, a shared `<dialog>` component, the empty-state and
-  loading patterns, the 404 and 500 pages, and pagination are not components yet; each page keeps
-  its own markup for them.
+- **Tables and pagination.** No page has a table outside the report, and the list rows stack on a
+  phone, so there is no table component. Nothing paginates; paginating the roster is a feature of
+  its own, with its queries, addresses and filters.
+- **A loading skeleton.** The one asynchronous swap, the results filters, marks itself
+  `aria-busy`.
 - **Page-by-page layout and copy changes.** Pages keep their current structure; only their tokens
   change.
 - **Dark mode.** The token layer makes it a later addition of one more variable block.
@@ -247,6 +313,13 @@ render it, because the form's phone bar spans the whole bottom edge. Buttons and
 44px tall, the tap target on a phone; a button that should span the phone's width says so at the
 call site (`w-full sm:w-auto`). The styleguide is one column, with its button and pill rows
 wrapping.
+
+The header is one 56px row on a phone: the logo, the section switcher, the user menu. Its panels
+open below it; the section panel is 14rem wide and aligned to the switcher's left edge. The logo
+is a 44px target. Company context and
+back links sit at the top of the page, not in the header. A dialog keeps a 16px gutter on each
+side and scrolls inside itself when it is taller than 85% of the screen. Error pages are the
+centered login card.
 
 ## Key decisions
 
@@ -301,6 +374,19 @@ wrapping.
   it from their own text-size setting, which the `rem` sizes honor.
 - Decision: 13px is for a label on a graphic or a badge, never a sentence.
   Reason: Small text that is read rather than glanced at is where readability fails first.
+- Decision: The header is one row at every width: a section switcher on a phone, tabs from `lg`.
+  Reason: Stacked tabs take a fifth of a phone screen on every page. A collapsible menu hides
+  where you are. The switcher names the current section and reaches any other in two taps.
+- Decision: The sections come from one tag that mirrors the views' permission checks.
+  Reason: A section a viewer cannot open is never offered, and the switcher and the tabs cannot
+  disagree.
+- Decision: Company context and back links live in the page body.
+  Reason: The header holds only navigation, so it stays one row.
+- Decision: Every dialog is a native `<dialog>`, and the header's panels are `<details>`.
+  Reason: The browser supplies the focus trap, Esc, the inert background and focus restore, and
+  a `<details>` opens without JavaScript; the scripts only add polish.
+- Decision: The 500 page renders through its own view, without the request context.
+  Reason: Django renders it without context anyway, and the database may be what failed.
 - Decision: Heroicons are copied in as SVG files, not installed.
   Reason: The app uses about ten icons; a file per icon needs no npm dependency, and the tag
   inlines it so it takes the text color.
@@ -326,6 +412,13 @@ wrapping.
   word, and skips containers of blocks, whose children are separate labels. It is a heuristic;
   classes TypeScript assembles are checked in review. The survey's tests check its question, answer and input
   classes.
+- Tests check that each role is offered exactly the sections it may open, that every offered
+  section opens for that role, and which section each page lights. Only `base_app.html` draws a
+  `<header>`, and no template hand-rolls an overlay (`fixed inset-0`), opens a
+  dialog with inline script, or draws a dashed empty card outside the partial. Every `<dialog>`
+  names a title that exists. The survey opens its confirmation dialog on load only when asked.
+  The error pages render in Spanish with the brand, and the 500 page renders with no database
+  query.
 - Tests cover the component classes in the built CSS, the field template (order, every error,
   *(opcional)*, the ARIA wiring, the fieldset, the admin left alone), the icon tag, each alert
   tone and messages on both layouts, and the styleguide's access and contents. The busy and

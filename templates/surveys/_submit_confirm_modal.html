@@ -1,39 +1,30 @@
 {% load icons %}
-<!-- Submit confirmation modal -->
-<div id="submit-confirm-modal"
-     class="fixed inset-0 z-50 items-center justify-center p-4"
-     style="display:none">
-  <!-- Backdrop -->
-  <div class="absolute inset-0 bg-black/40"></div>
-  <!-- Dialog -->
-  <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 z-10">
+<dialog id="submit-confirm-modal" class="dialog" aria-labelledby="submit-confirm-modal-title"{% if show_confirm %} data-open-on-load{% endif %}>
     <!-- Icon -->
     <div class="flex justify-center mb-4">
       <div class="rounded-full bg-warning-50 p-3">
         {% icon "exclamation-triangle" "size-7 text-warning-500" %}
       </div>
     </div>
-    <h2 class="text-lg font-semibold text-neutral-900 text-center mb-2">¿Enviar tus respuestas?</h2>
+    <h2 id="submit-confirm-modal-title" class="text-lg font-semibold text-neutral-900 text-center mb-2">¿Enviar tus respuestas?</h2>
     <p class="text-base text-neutral-600 text-center">
       Ya respondiste todas las preguntas. Al enviar, tus respuestas quedarán registradas y
       <span class="font-medium text-neutral-900">no podrás editarlas después</span>.
       Tu progreso ya está guardado, así que puedes revisarlas antes de enviar.
     </p>
-    <div class="mt-6 flex flex-col sm:flex-row gap-3">
+    <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <button
+        type="button" data-dialog-close
+        class="btn btn-secondary">
+        Seguir editando
+      </button>
       <button
         type="submit"
         form="survey-form"
         name="confirm"
         value="1"
-        class="btn btn-primary flex-1">
+        class="btn btn-primary">
         Enviar respuestas
       </button>
-      <button
-        type="button"
-        onclick="document.getElementById('submit-confirm-modal').style.display='none'"
-        class="btn btn-secondary flex-1">
-        Seguir editando
-      </button>
     </div>
-  </div>
-</div>
+</dialog>

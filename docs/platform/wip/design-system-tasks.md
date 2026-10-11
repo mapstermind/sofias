@@ -1,248 +1,422 @@
-# Design system — the type scale
+# Design system — Phase 2b: navigation, dialogs, empty states, error pages
 
 ## What changes
 
-**What.**
-- The type scale becomes tokens in `static/css/main.css`. Tailwind's size classes keep their
-  names and take the scale's values: 13 / 14 / 16 / 20 / 25 / 31 / 39px, each with its own line
-  height.
-- Every use of a size class moves to the class that matches its role.
-- Sentence text leaves the smallest size.
-- The survey's questions, answers and inputs reach the 16px floor.
+**What.** The design system gains four patterns, and every existing template adopts them:
+
+- **Navigation:** one header row holding a section switcher on a phone and inline tabs from `lg`, plus a user menu.
+- **Dialogs:** the native `<dialog>`, styled by a `.dialog` class and driven by `dialog.ts`.
+- **Empty states:** one empty-state partial.
+- **Error pages:** branded 404, 403 and 500 pages.
 
 **Why.**
-- The app runs on Tailwind's defaults (12 / 14 / 16 / 18 / 20 / 24 / 30). 92 uses sit at 12px,
-  many of them sentences.
-- On the survey, the question, every answer option and the survey's own text inputs are 14px. That
-  is below the 16px floor for reading text on a phone, and below the size at which iOS zooms in on
-  a focused input.
-- Survey respondents often find devices hard to use, and executives scan the dashboards and
-  reports.
 
-**Live doc sections this makes wrong** (`docs/platform/design-system.md`):
-- *Scope → Type scale*: it lists Tailwind's default steps, and gains the scale, the line heights,
-  the roles and the survey floor.
-- *Scope → Components → The form control*: survey inputs become `control` too.
-- *Key decisions* and *Enforcement*: gain the entries under **Decisions** and **Tests**.
+- **Navigation.** There is no navigation today. Each page puts one desktop-only "← Regresa a…"
+  link in the header. An executive gets from Resultados to Reportes by going back through the
+  dashboard. On a phone there is no link at all, and the avatar's hover-to-log-out does nothing.
+- **Dialogs.** Five of the six dialogs are hand-made `div` overlays: no dialog role, no Esc, no
+  focus trap, and the page behind stays tabbable. Three of them sit on the survey.
+- **Empty states.** There are 11 of them, written five ways.
+- **Error pages.** No error templates exist, so production shows Django's bare English pages.
+
+The inventory found no `<table>` outside the report, and no list that paginates. The grid rows
+already stack on a phone, so tables need no component. Pagination of the roster is a behaviour
+change, with queries, URLs and filters, and belongs to its own feature.
+
+**Live doc sections this makes wrong:**
+
+- In `docs/platform/design-system.md`:
+  - *Out of scope → Navigation, tables, the dialog, empty and error pages, pagination*: everything
+    but pagination moves into Scope.
+  - *Scope → Components*: gains the four patterns.
+  - *Phone shape*, *Key decisions* and *Enforcement*: gain their entries.
+- In `docs/platform/responsive-layout.md`: the header's phone shape.
+- `apps/core/CLAUDE.md` (the back-to-top notes mention `base_app.html`'s header) and
+  `apps/surveys/CLAUDE.md` (its modals) describe markup that changes.
 
 **ADRs.** None touched.
 
 ## Design
 
-### The scale
+### Navigation
 
-Declared in the `@theme` block of `main.css` as `--text-<name>` and `--text-<name>--line-height`.
-Because the sizes are in `rem`, a reader who raises their browser's or phone's text size still
-scales every step.
+**Header.** `base_app.html` draws one white row with a `neutral-200` bottom border.
 
-| Class | Size | Line height | Role |
+- **On a phone** it is 56px tall: the logo (a link home), the section switcher, the user menu.
+- **From `lg`** it is the logo with the brand name, then the inline tabs, then the user menu.
+- **The `header_nav` block** and every header-level "Regresa a…" link go away.
+
+**The sections.** `{% company_nav %}` is an inclusion tag in `apps/core/templatetags/navigation.py`,
+rendering `templates/_company_nav.html`. It builds the list from the request's user and the page's
+context (`company`, `is_admin_view`). It renders nothing when fewer than two sections are open to
+the viewer.
+
+| Section | Admin URL (`is_admin_view`) | Own-company URL | Shown when the viewer has |
 |---|---|---|---|
-| `text-xs` | 13px | 1.4 | A label on a graphic or a badge: a pill, a legend entry, a chart caption, a count beside an icon |
-| `text-sm` | 14px | 1.5 | Secondary text: table cells, metadata, dates, help, errors, field labels |
-| `text-base` | 16px | 1.5 | Body copy, form controls, the survey's questions and answers |
-| `text-lg` | 20px | 1.4 | Section headings, modal titles |
-| `text-xl` | 25px | 1.25 | Page titles (`h1`) |
-| `text-2xl` | 31px | 1.2 | Stat numbers, the 6-digit login code |
-| `text-3xl` | 39px | 1.15 | Reserved: nothing uses it after the move |
+| Tablero | `core:company_dashboard_for` | `core:company_dashboard` | `can_view_dashboard` (admin: `can_manage_surveys`) |
+| Colaboradores | `core:company_employee_list_for` | `core:company_employee_list` | `can_manage_employees` (admin: `can_manage_surveys`) |
+| Resultados | `core:company_results_for` | `core:company_results` | `can_view_insights` |
+| Reportes | `reports:admin_list` | `reports:exec_list` | `can_view_insights` (admin: `can_manage_surveys` too) |
 
-### Moving uses to their role
+The checks mirror each view's own. The tests compare them against the views by requesting each
+link as each role.
 
-- **Page titles** (`text-2xl`, 24px, and the survey's `text-3xl` title, 30px): become `text-xl`
-  (25).
-- **Stat numbers** (`text-3xl`, 30px): become `text-2xl` (31).
-- **The five `text-xl` uses** (20px): each takes the class of its role.
-- **Section and modal headings** (`text-lg`): keep the class and grow from 18 to 20px.
-- **One use grows by design:**
-  - the login and setup codes' digits (`text-2xl` in `apps/accounts/forms.py`), 24 → 31
-- **Every `text-xs`** either stays (13px, a label on a graphic or badge) or moves to `text-sm`
-  (14px). A use moves when it is read as a sentence: help, explanations, dates, "actualizado…"
-  lines, card metadata, participation notes, errors.
-- **Pills** (`.pill`) stay at 13px.
-- **The styleguide's type section** lists the seven steps with their roles.
+**Active section.** The active section comes from `request.resolver_match.url_name`. A child page
+lights its parent:
 
-### The survey
+- `company_employee_detail*` lights Colaboradores.
+- `reports:admin_detail`, `admin_edit` and `exec_detail` light Reportes.
+- `company_results_fragment*` lights Resultados.
 
-| Element | Size | Weight and ink |
+The active section carries `aria-current="page"`.
+
+**How the sections render.**
+
+- **Phone switcher.** A `<details>` whose `<summary>` is a 44px button: the current section name
+  at 15px weight 600, then a chevron. It opens a panel (white, 12px radius, `shadow-lg`) of 48px
+  links at 16px. The current link is tinted `primary-50` in `primary-700` with a squircle marker.
+  It is a disclosure of links, not an ARIA menu. Hidden from `lg`.
+- **Desktop tabs.** A `<nav aria-label="Secciones de la empresa">` of 60px-tall links at 14px
+  weight 500 in `neutral-600`. The active tab is `neutral-900` with a 2px `primary-600` bottom
+  border. Shown from `lg`.
+
+**User menu.** The avatar is the `<summary>` of a second `<details>`. Its panel holds:
+
+- the full name, the role label (`apps/accounts/roles.py`) and the email
+- a *Cerrar sesión* `btn-text`, which posts to logout
+
+Without JS both panels open and close on their own. `static/ts/disclosure.ts` closes an open panel
+on Esc or a click outside, returns focus to its summary, and keeps only one panel open at a time.
+
+**Page context.** A `{% block page_context %}` sits in `base_app.html`, above the content. It holds
+a line, a back link, or nothing:
+
+- **Admin on a company page:** *Empresas / {company}* (`_page_context.html`).
+- **Executive:** nothing.
+- **Child pages:**
+  - employee detail: *← Colaboradores* (keeps the roster query string)
+  - a report: *← Reportes*
+  - the report form: *← Reporte*
+
+  Each is a `btn-text btn-sm`, visible at every width.
+
+**Respondents** (`can_take_assigned_surveys` without `can_view_dashboard`):
+
+- The header holds the logo, a *Mis encuestas* link (hidden on that page) and the user menu.
+- The survey's "← Inicio" goes away; *Mis encuestas* replaces it.
+
+### Dialogs
+
+**The `.dialog` class.** A component class for a native `<dialog>`, opened with `showModal()`:
+
+- 12px radius, white, `shadow-xl`, 24px padding.
+- `w-[calc(100%-2rem)] max-w-md`, `max-h-[85vh] overflow-y-auto`, centered.
+- `::backdrop` is `neutral-900` at 40%.
+- **Motion:** opening fades and scales from 96% over 150ms; under `prefers-reduced-motion` it
+  appears at once.
+
+**Convention, written in each template:**
+
+- Optional icon tile: a 48px tinted circle.
+- A `text-lg` title that the dialog names with `aria-labelledby`.
+- The body.
+- An actions row, `flex flex-col-reverse gap-3 sm:flex-row sm:justify-end`.
+- A close button, where there is one: `btn-text` with `aria-label="Cerrar"`.
+
+**`static/ts/dialog.ts`:**
+
+| Hook | Behaviour |
+|---|---|
+| `[data-dialog-open="<id>"]` | opens that dialog |
+| `[data-dialog-close]` | closes its dialog |
+| `<dialog data-open-on-load>` | opens on `DOMContentLoaded` |
+| a click on the backdrop | closes the dialog |
+| `data-dialog-static` | Esc and backdrop clicks do nothing, through `cancel` → `preventDefault` |
+
+Focus restore and the trap are the browser's.
+
+**Adopted by:**
+
+- **The survey's four modals.**
+  - *Instrucciones*: opened by its button; open on load on the first visit, as now.
+  - *Progreso guardado*: `data-open-on-load` when `show_saved`.
+  - *¿Enviar tus respuestas?*: `data-open-on-load` when `show_confirm`. Its `confirm=1` submit is
+    unchanged.
+  - *Sesión expirada*: `data-dialog-static`. `survey_progress.ts` calls `showModal()` on it.
+
+  The inline `style.display` scripts go away.
+- **The dashboard's Cochran formula.** Its inline `onclick` handlers go away.
+- **The roster filter dialog.** Already native, it takes `.dialog`. `roster_filters.ts` keeps its
+  logic.
+
+### Empty states
+
+**The partial.** `templates/components/_empty.html` takes:
+
+- `body`, required
+- `title`, `icon`, `action_url` and `action_label`, optional
+- `compact`, which uses less padding inside a grid
+
+**Look.** A `card shadow-none border-dashed border-neutral-300` box, centered:
+
+- **icon:** 20px `neutral-500`, on a 40px `neutral-100` tile with a 8px radius
+- **title:** 16px, weight 600, `neutral-900`
+- **body:** 14px `neutral-600`
+- **action:** `btn-secondary`
+
+**Adoption.** All 11 empty states use it, with their current copy. The roster's *Limpiar filtros*
+becomes the partial's action. Copy changes belong to the Phase 4 copy review.
+
+### Error pages
+
+**Templates.** `templates/404.html`, `403.html` and `500.html` extend `templates/base_error.html`,
+the centered layout of the login screens. Each holds:
+
+- the logo
+- a `text-xl` title and one sentence
+- a `btn-primary` *Ir al inicio*
+- a `text-sm neutral-500` line, "Error 404"
+
+
+| Page | Title | Sentence |
 |---|---|---|
-| Question (`legend`) | 16px (`text-base`) | 600, `neutral-900` |
-| Answer options (Sí/No, choices, likert rows) | 16px (`text-base`) | 400, `neutral-800` |
-| Likert labels under the radios, desktop | 14px (`text-sm`) | 400, `neutral-600` |
-| Help and an error under a question | 14px (`text-sm`) | the error in `danger-600`, with its icon |
-| Text, number and select inputs | 16px, through `control` | — |
-| Progress and pending-panel text | 14px (`text-sm`) | — |
+| 404 | No encontramos esta página | La dirección puede estar mal escrita, o la página ya no existe. |
+| 403 | No tienes acceso a esta página | Tu cuenta no tiene permiso para verla. Si la necesitas, pide acceso a tu administrador. |
+| 500 | No pudimos cargar esta página | Ocurrió un error en el servidor. Intenta de nuevo en unos minutos. |
 
-- **Questions stand out by weight, not size.** At 16px a question is a body-size line set apart by
-  its weight and ink.
-- **Answers add no height.** Answer rows keep their 44px minimum, so a larger size makes no row
-  taller.
-- **The cost.** Over the 80+ questions the survey grows by a few lines, not several screens.
-- **Survey inputs adopt `control`.** Their layout widths (`w-40`, `w-48`) stay as utilities, and
-  their `id`, `name` and `data-*` hooks are unchanged.
+**Rendering.**
+
+- **404 and 403** use Django's default handlers, which render with the request context.
+- **500** sets `handler500 = "apps.core.views.server_error"` in `config/urls.py`. It renders
+  `500.html` with `brand` (`settings.BRAND`) and the default palette, and makes no database query.
 
 ### Decisions
 
-- **The class names stay; their values change.** Each use moves to the class of its role, rather
-  than every heading growing a full step. A 31px page title wraps to three or more lines at 360px.
-- **The survey's question and answers are 16px.** That is the floor for phone reading text, and it
-  matches GOV.UK's body-size bold questions on pages that hold many questions. Larger text that a
-  reader needs comes from their own text-size setting, which the `rem` sizes honor.
-- **13px is for labels on a graphic or badge, never for a sentence.**
+- **One header row everywhere, with a switcher on a phone and tabs on desktop.** Stacked tabs take
+  a fifth of a phone screen. A hamburger hides where you are. The switcher names the current
+  section and reaches any other in two taps.
+- **The sections come from one tag that mirrors the views' permission checks.** A section a viewer
+  cannot open is never offered.
+- **Company context and back links live in the page body.** The header holds only navigation.
+- **Every dialog is a native `<dialog>`.** The browser supplies the focus trap, Esc, the inert
+  background and focus restore, which the hand-made overlays lacked.
+- **Disclosures are `<details>`.** They open and close without JS. JS adds only Esc, outside
+  clicks and one-at-a-time.
+- **The 500 page has its own view.** Django renders it without the request context, and the
+  database may be what failed.
+- **No table component and no pagination.** Nothing in the app needs either yet.
 
 ### Tests
 
-- **Theme.** A test reads the `@theme` block of `main.css` and checks each `--text-*` size and
-  line height against the table.
-- **Small text.** A guard fails when a `text-xs` element's own text reads as a sentence: five words
-  or more, or ending in a period. It is a heuristic; the doc says so.
-- **Survey.** The question form renders its legend with `text-base font-semibold`, its option
-  labels with `text-base`, and its inputs with `control`.
-- **Existing guards.** `test_responsive.py` and the design-token guards keep passing.
-- **By hand.** Every page at 360px and on desktop, in both palettes. On the survey, scroll a full
-  module on a phone.
+- **Navigation:**
+  - Each role sees exactly its sections, and every offered link answers 200 for that role.
+  - The active section carries `aria-current="page"` on each section page and child page.
+  - A respondent sees *Mis encuestas* and no sections.
+  - The switcher and the tabs render the same links.
+  - The user menu shows the role label and posts to logout.
+  - No template defines `header_nav`.
+- **Dialogs:**
+  - No `fixed inset-0` overlay is left in `templates/`.
+  - Every `<dialog>` names an `aria-labelledby` target that exists.
+  - The survey renders `data-open-on-load` on the confirm dialog only with `show_confirm`, and
+    the expired-session dialog carries `data-dialog-static`.
+- **Empty states:**
+  - The partial renders its icon tile, title, body and action.
+  - No hand-made dashed card is left.
+- **Error pages:**
+  - With `DEBUG` off, an unknown URL renders the Spanish 404 with the brand.
+  - A view raising `PermissionDenied` renders the 403.
+  - `server_error` renders with zero queries.
+- **Checked by hand:**
+  - the switcher, the user menu and every dialog, by keyboard and touch
+  - every changed page at 360px and on desktop, in both palettes
 
 ### Out of scope
 
-- The PDF report's stylesheet (`static/css/report*.css`).
-- The chart SVG label sizes, which are pixel attributes the PDF reads.
+- Pagination of the roster: a feature of its own.
+- A table component.
+- A loading skeleton: the one async swap already sets `aria-busy`.
+- Copy changes beyond the error pages, which are new.
+- The survey's phone bar.
 - The Django admin.
-- Layout, spacing and copy changes beyond what a size change forces.
 
 ---
 
-# Type Scale Implementation Plan
+# Phase 2b Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** The scale above as theme tokens, every size class on its role, no sentence at 13px, and the survey at the 16px floor.
+**Goal:** Navigation, dialogs, empty states and error pages as components, adopted everywhere.
 
-**Architecture:** `--text-*` values in the `@theme` block of `static/css/main.css` override Tailwind's defaults under the same class names; templates move between classes by role; two guards in `apps/core/tests/test_design_tokens.py` pin the theme and the small-text rule.
+**Architecture:** A `company_nav` inclusion tag builds the permitted sections once. `base_app.html` renders them two ways (`<details>` switcher below `lg`, tabs from `lg`). Native `<dialog>`s are driven by one `dialog.ts`. `<details>` panels are polished by one `disclosure.ts`. Partials handle empty states, and Django's error templates plus a `handler500` view handle errors.
 
-**Tech Stack:** Tailwind v4 CLI (`@theme`), Django templates, pytest.
+**Tech Stack:** Django 6 templates and tags, Tailwind v4, TypeScript via `tsc`, pytest-django.
 
 **Spec:** the brief above.
 
 ## Global Constraints
 
-- Sizes: xs 13/1.4 · sm 14/1.5 · base 16/1.5 · lg 20/1.4 · xl 25/1.25 · 2xl 31/1.2 · 3xl 39/1.15, in `rem` (÷16).
-- No layout, spacing or copy change beyond what a size change forces.
-- The PDF stylesheets, chart SVG `font-size` attributes and the admin are untouched.
-- After any change to `templates/` or `static/`: `npm run build:css`; after `static/ts/`: `npm run build:js`.
-- Never commit without asking.
+- Every user-facing string is Spanish; classes come from the tokens and components only.
+- Unprefixed classes describe the phone; the header is one row at every width.
+- No new dependency. Never commit without asking.
+- `npm run build:css` after templates/static; `npm run build:js` after `static/ts/`.
 
 ## Review Focus
 
-- A page title that wraps on a 360px phone at 25px (the login screen's long heading) must still read as one heading, not push the form below the fold by more than a line or two.
-- A `text-xs` string built from template variables (`{{ count }} respuestas`) has no literal words for the guard to count; check those by hand.
-- A `text-xs` set by TypeScript (`static/ts/survey_progress.ts`) is assembled as a string, which the guard cannot read; it is checked in review.
-- Dashboard stat numbers at 31px in a narrow card must not overflow at 360px (`test_responsive.py` does not see it).
-- The OTP digits at 31px with `tracking-widest` must fit a 6- and a 9-digit code in the card at 360px.
+- An admin viewing a company whose page context has no `company` (the company list, the styleguide) must render no sections and no context line, not crash.
+- The Ejecutivo secundario has two sections: the switcher still renders (two is enough) and never offers Resultados or Reportes.
+- A `<details>` panel open when the page is restored from the back/forward cache must not cover the page: `disclosure.ts` closes panels on `pageshow`.
+- The survey's confirm dialog submits its form with `confirm=1` from inside a `<dialog>`; the button must keep its `form=` / `name` / `value`.
+- `server_error` must render when the database is down: no context processor that queries, no `request.user` access.
 
 ---
 
-### Task 1: The scale as theme tokens
+### Task 1: The sections tag
+
+**Files:** Create `apps/core/templatetags/navigation.py`, `templates/_company_nav.html`; Test `apps/core/tests/test_navigation.py`.
+
+**Interfaces:** Produces `{% load navigation %}{% company_nav %}`, which takes context and reads `request`, `company`, `is_admin_view`. It renders the switcher and the tabs, or nothing. Python `sections(request, company, is_admin_view) -> list[dict(label, url, active)]`.
+
+- [x] **Step 1: Write the failing tests:**
+
+  ```python
+  @pytest.mark.parametrize("role, expected", [
+      ("Admins", ["Tablero", "Colaboradores", "Resultados", "Reportes"]),
+      ("Principal Exec", ["Tablero", "Colaboradores", "Resultados", "Reportes"]),
+      ("Secondary Exec", ["Tablero", "Colaboradores"]),
+  ])
+  def test_each_role_sees_its_sections(...)
+  ```
+
+  Each test builds the user with that group and a profile in `company`. It calls `sections()` with a `RequestFactory` request whose `resolver_match` is the dashboard's, and `is_admin_view` true for Admins only.
+
+  Also:
+  - `test_every_offered_section_opens_for_that_role`: GET each URL with that role's client and expect 200.
+  - `test_an_employee_gets_no_sections`.
+  - `test_a_child_page_lights_its_parent`, parametrized over `company_employee_detail` → Colaboradores, `reports:exec_detail` → Reportes, `company_results_fragment` → Resultados.
+  - `test_fewer_than_two_sections_render_nothing`.
+- [x] **Step 2: Run** `pytest apps/core/tests/test_navigation.py`. It should FAIL.
+- [x] **Step 3: Implement.** `sections()` holds a tuple of `(label, admin_url_name, own_url_name, admin_perms, own_perms, url_names_lit)`, per the brief's table. It keeps the rows whose perms the user has. It reverses with `company.reference_code` when `is_admin_view`, and marks one active when the `resolver_match` view name is in `url_names_lit`. The tag returns `[]` without a `company`.
+
+  `_company_nav.html` renders:
+  - **Below `lg`:** `<details class="lg:hidden relative" data-disclosure>`, whose summary is a `btn btn-secondary` showing the active label and a `chevron-down` icon. The panel holds 48px links, with the active one carrying `aria-current="page"`.
+  - **From `lg`:** a `<nav class="hidden lg:flex …" aria-label="Secciones de la empresa">` of tab links.
+
+  Add the `chevron-down` icon from heroicons@2.2.0.
+- [x] **Step 4: Run** `pytest -q`. It should PASS.
+
+### Task 2: Header, user menu, page context
 
 **Files:**
-- Modify: `static/css/main.css` (the plain `@theme` block)
-- Test: `apps/core/tests/test_design_tokens.py`
+- Modify `templates/base_app.html`.
+- Create `templates/_user_menu.html`, `templates/_page_context.html`, `static/ts/disclosure.ts`.
+- Modify every template with `{% block header_nav %}`.
+- Test `apps/core/tests/test_navigation.py`.
 
-- [x] **Step 1: Write the failing test:**
+**Interfaces:**
+- Consumes `{% company_nav %}`.
+- Produces `{% block page_context %}` in `base_app.html`. Its default includes `_page_context.html`, which shows *Empresas / {company}* when `is_admin_view` and `company`.
 
-```python
-TYPE_SCALE = {
-    "xs": ("0.8125rem", "1.4"),
-    "sm": ("0.875rem", "1.5"),
-    "base": ("1rem", "1.5"),
-    "lg": ("1.25rem", "1.4"),
-    "xl": ("1.5625rem", "1.25"),
-    "2xl": ("1.9375rem", "1.2"),
-    "3xl": ("2.4375rem", "1.15"),
-}
+- [x] **Step 1: Write the failing tests:**
+  - No template contains `block header_nav`.
+  - An admin on `/empresas/<code>/resultados/` sees `aria-current="page"` on Resultados and *Empresas* linked.
+  - An executive sees no *Empresas*.
+  - Employee detail renders *← Colaboradores* with the roster query string.
+  - A respondent on `/` (survey list) does not see *Mis encuestas*, but does on the survey form.
+  - The user menu shows the role label (`label_for_name`) and a logout form.
+- [x] **Step 2: Run** them. They should FAIL.
+- [x] **Step 3: Implement.**
+  - **Header:** one row of the logo, then `{% company_nav %}`, then the *Mis encuestas* link (respondents only, when `request.resolver_match.url_name != "employee_survey_list"`), then `_user_menu.html`.
+  - **User menu:** a `<details data-disclosure>` whose summary is the avatar. The panel holds the name, role label, email and the logout `<form>` with a `btn-text` button.
+  - **`base_app.html`:** add `{% block page_context %}{% include "_page_context.html" %}{% endblock %}` at the top of `<main>`.
+  - **Child pages:** override `page_context` with the back link (`btn btn-text btn-sm -ml-3`).
+  - **Remove:** every `header_nav` block, and the survey's "← Inicio".
+  - **The role label:** expose it to the template through a context processor value or a filter. Use a `role_label` filter in `navigation.py` that calls `labels_for_names(user.groups names)` and joins them.
+  - **`disclosure.ts`:**
+    - on Esc, close the open `details[data-disclosure][open]` and focus its summary
+    - on a click outside, close it
+    - on `toggle` to open, close the others
+    - on `pageshow`, close all
 
+    Load it in `base.html` with `defer`.
+- [x] **Step 4:** Run `npm run build:css && npm run build:js && pytest -q`. It should PASS.
 
-@pytest.mark.parametrize("step", TYPE_SCALE)
-def test_the_type_scale_is_the_theme(step):
-    size, leading = TYPE_SCALE[step]
-    assert f"--text-{step}: {size};" in MAIN_CSS
-    assert f"--text-{step}--line-height: {leading};" in MAIN_CSS
-```
-
-- [x] **Step 2: Run** `pytest apps/core/tests/test_design_tokens.py -k type_scale` — FAIL.
-- [x] **Step 3: Implement:** add the 14 declarations to the plain `@theme` block with a comment naming the roles and pointing at design-system.md. Run `npm run build:css`; confirm `output.css` has `--text-xl: 1.5625rem`.
-- [x] **Step 4: Run** `pytest -q` — PASS.
-
-### Task 2: Sizes on their roles
-
-**Files:**
-- Modify: every template using `text-2xl`, `text-3xl`, `text-xl` (inventory: 23 / 11 / 5 uses), `templates/core/styleguide.html` (type section)
-
-- [x] **Step 1:** List the uses: `grep -rn "text-\(xl\|2xl\|3xl\)" templates apps static/ts`.
-- [x] **Step 2:** Replace:
-  - every page-title `h1` `text-2xl` → `text-xl`, and the survey title `text-3xl` → `text-xl`
-  - every stat number `text-3xl` → `text-2xl`
-  - each `text-xl` by role: the header brand name and the survey module intro (`h3`) → `text-lg`; `employee_detail`'s two → whichever role they hold (read them)
-  - leave the `text-2xl` in `apps/accounts/forms.py` (login code digits)
-- [x] **Step 3:** Rewrite the styleguide's type section as seven rows, one per step: `13 · etiqueta`, `14 · secundario`, `16 · cuerpo`, `20 · sección`, `25 · título`, `31 · cifra`, `39 · reservado`, each with its class and a sample in the app's own copy.
-- [x] **Step 4:** `npm run build:css && pytest -q` — PASS (`test_responsive.py` included).
-
-### Task 3: Sentences leave 13px
+### Task 3: Dialogs
 
 **Files:**
-- Modify: templates and `static/ts/survey_progress.ts` with `text-xs` used for sentences
-- Test: `apps/core/tests/test_design_tokens.py`
+- Modify `static/css/main.css` (`.dialog`).
+- Create `static/ts/dialog.ts`.
+- Modify the four survey modals, `survey_detail.html`, `static/ts/survey_progress.ts`, `company_dashboard.html` and `employee_list.html`.
+- Test `apps/core/tests/test_dialogs.py`.
 
-- [x] **Step 1: Write the failing guard:**
+- [x] **Step 1: Write the failing tests:**
+  - No template contains `fixed inset-0`.
+  - Every `<dialog` in `templates/` has `aria-labelledby="X"`, and `id="X"` exists in the same file.
+  - The survey page with `?confirm=1` after answering everything (reuse the surveys test helpers) renders `id="submit-confirm-modal"` with `data-open-on-load`, and without it does not.
+  - `session-expired-modal` carries `data-dialog-static`.
+  - `.dialog` is compiled into `output.css`.
+- [x] **Step 2: Run** them. They should FAIL.
+- [x] **Step 3: Implement.**
+  - **`.dialog` in the components layer:**
+    ```css
+    .dialog {
+      @apply m-auto w-[calc(100%-2rem)] max-w-md max-h-[85vh] overflow-y-auto rounded-xl border-0 bg-white p-6 text-neutral-900 shadow-xl;
+    }
+    .dialog::backdrop {
+      background: color-mix(in srgb, var(--color-neutral-900) 40%, transparent);
+    }
+    .dialog[open] {
+      animation: dialog-in 150ms ease-out;
+    }
+    ```
+    Define `@keyframes dialog-in`, from `opacity: 0; scale: .96`. Under `prefers-reduced-motion` set `animation: none`.
+  - **`dialog.ts`:**
+    - delegated clicks for `[data-dialog-open]` and `[data-dialog-close]`
+    - a click whose target is the dialog element itself (the backdrop) closes it, unless static
+    - `cancel` → `preventDefault` on `[data-dialog-static]`
+    - on `DOMContentLoaded`, `showModal()` each `dialog[data-open-on-load]`
+  - **Each modal** becomes `<dialog id=… class="dialog" aria-labelledby=…>`, keeping its content.
+    - Buttons that hid it get `data-dialog-close`.
+    - Openers get `data-dialog-open`.
+    - The `{% if show_* %}<script>` blocks become `data-open-on-load` on the dialog.
+  - **`survey_progress.ts`:** `(modal as HTMLDialogElement).showModal()`.
+  - **Roster:** add `class="dialog"`, drop the duplicated utility classes, and keep `roster_filters.ts` working.
+- [x] **Step 4:** Run `npm run build:css && npm run build:js && pytest -q`. It should PASS.
 
-```python
-# An element sized text-xs and the text it holds directly, up to its first tag.
-SMALL_TEXT = re.compile(
-    r'class="(?=[^"]*(?<![\w:-])text-xs\b)[^"]*"[^>]*>\s*([^<{]+?)\s*(?=<|\{)', re.DOTALL
-)
+### Task 4: Empty states
 
+**Files:** Create `templates/components/_empty.html`; modify the 11 templates with dashed cards and the styleguide; Test `apps/core/tests/test_empty_states.py`.
 
-def test_no_sentence_is_set_at_the_smallest_size():
-    """13px is for a label on a graphic or a badge. A heuristic: five words or a period."""
-    hits = [
-        f"{path.relative_to(REPO_ROOT)}: {text}"
-        for path in SCANNED
-        for text in SMALL_TEXT.findall(path.read_text())
-        if len(text.split()) >= 5 or text.rstrip().endswith(".")
-    ]
-    assert not hits, "use text-sm for a sentence:\n" + "\n".join(hits)
-```
+- [x] **Step 1: Write the failing tests:**
+  - **The partial:** it renders the icon tile when given `icon`, the title, the body, and the action link with `btn-secondary`; `compact` uses the smaller padding.
+  - **Guard:** no template outside `components/_empty.html` and the styleguide contains `border-dashed`.
+  - **Roster:** the narrowed-empty roster renders *Limpiar filtros* through the partial.
+- [x] **Step 2: Run** them. They should FAIL.
+- [x] **Step 3: Implement** the partial per the brief, then replace each dashed card with an include carrying its current copy as `body`. Use icons where they fit: `users` for the roster, `document-text` for reports, `clipboard-document-list` for surveys, `chart-bar` for results. Download each from heroicons@2.2.0, and keep the icon-name test green.
+- [x] **Step 4:** Run `npm run build:css && pytest -q`. It should PASS.
 
-- [x] **Step 2: Run** — FAIL with the list.
-- [x] **Step 3:** For each of the 92 `text-xs` uses, read it in place and decide: a label on a graphic or badge stays; a sentence, date, note, help or error moves to `text-sm`. Uses the guard cannot see (built from variables, set in TS) are decided by the same rule.
-- [x] **Step 4:** `npm run build:css && npm run build:js && pytest -q` — PASS.
-
-### Task 4: The survey at the floor
+### Task 5: Error pages
 
 **Files:**
-- Modify: `templates/surveys/_question.html`, `templates/surveys/survey_detail.html`, the survey modals
-- Test: `apps/surveys/tests/test_views.py`
+- Create `templates/base_error.html`, `templates/404.html`, `templates/403.html`, `templates/500.html`.
+- Modify `apps/core/views.py` (`server_error`) and `config/urls.py` (`handler500`).
+- Test `apps/core/tests/test_error_pages.py`.
 
-- [x] **Step 1: Write the failing test:** GET the survey form for an employee (reuse the existing survey-detail fixture in that file) and assert:
-  - the question legend's class holds `text-base` and `font-semibold`
-  - every option label's text span holds `text-base`
-  - every survey `<input type="text|number|date">` and `<textarea>` carries `control`
-  - no `text-xs` appears inside a `question-card`
-- [x] **Step 2: Run** — FAIL.
-- [x] **Step 3: Implement** in `_question.html`:
-  - legend: `text-sm font-medium text-neutral-800` → `text-base font-semibold text-neutral-900`
-  - option spans: `text-sm text-neutral-700` → `text-base text-neutral-800`; likert `lg:text-xs lg:text-neutral-600` → `lg:text-sm lg:text-neutral-600`; rating numbers → `text-base`
-  - text/number/date inputs and textarea: their hand-made classes → `control` plus their width (`w-40`, `w-48`); keep `name`, `value`, `placeholder`, `step`
-  - the error line: `text-xs` → `text-sm`, with `{% icon "exclamation-circle" %}` as in `forms/field.html`
-  - in `survey_detail.html` and the modals: help and body text → `text-base` where it is instructions, progress and pending text → `text-sm`
-- [x] **Step 4:** `npm run build:css && pytest -q` — PASS.
+- [x] **Step 1: Write the failing tests.** All of them run with `DEBUG=False`.
+  - `client.get("/no-existe/")` returns 404, containing "No encontramos esta página" and `brand.name`.
+  - The styleguide as an employee returns 404 too.
+  - A view raising `PermissionDenied`, for example `core:company_list` as an executive (it raises `PermissionDenied`; check it), returns 403 with "No tienes acceso a esta página".
+  - `server_error(RequestFactory().get("/"))` returns 500 with "No pudimos cargar esta página", under `django_assert_num_queries(0)`.
+  - None of the three templates contains "SOFIA".
+- [x] **Step 2: Run** them. They should FAIL.
+- [x] **Step 3: Implement.**
+  - `base_error.html` mirrors `base_centered.html`'s card layout without `_messages.html`, and sets `data-palette` from `palette|default:"petrol"`.
+  - `server_error` renders `500.html` with `{"brand": settings.BRAND, "palette": settings.BRAND_PALETTE_DEFAULT}` through `render_to_string` with no request, status 500.
+  - `config/urls.py` sets `handler500 = "apps.core.views.server_error"`.
+- [x] **Step 4:** Run `npm run build:css && pytest -q`. It should PASS.
 
-### Task 5: Documentation
+### Task 6: Documentation
 
-**Files:**
-- Modify: `docs/platform/design-system.md`, `.claude/CLAUDE.md` (Design-system bullet), `apps/surveys/CLAUDE.md` if it describes question markup
-
-- [x] **Step 1:** `design-system.md`, present tense:
-  - *Type scale*: the table from the brief, the rem note, the 13px rule, and the survey floor
-  - *The form control*: survey inputs use it
-  - *Key decisions*: the three from the brief
-  - *Enforcement*: the theme test and the small-text heuristic, named as a heuristic
-- [x] **Step 2:** `.claude/CLAUDE.md`: one sentence. Size classes name a role (`text-xl` page title, `text-lg` section, `text-sm` secondary, `text-xs` only for a label on a graphic or badge), and the survey's questions and answers are `text-base`.
-- [x] **Step 3:** `pytest -q && ruff check . && ruff format --check .` — PASS.
+- [x] **Step 1:** In `docs/platform/design-system.md`, Scope → Components gains navigation, the dialog, empty states and error pages, per the brief, in present tense. Out of scope keeps pagination and the table component. Phone shape, Key decisions and Enforcement gain their entries.
+- [x] **Step 2:** `docs/platform/responsive-layout.md` gets the header's phone shape. `apps/core/CLAUDE.md` gets the nav tag, page context, dialog and disclosure scripts, and error pages. `apps/surveys/CLAUDE.md` says the survey's dialogs are native `<dialog>`s. The `.claude/CLAUDE.md` Design-system bullet gets one sentence on `company_nav`, `.dialog`, `_empty.html` and the error pages.
+- [x] **Step 3:** Run `pytest -q && ruff check . && ruff format --check .`. It should PASS.

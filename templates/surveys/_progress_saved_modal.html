@@ -1,19 +1,12 @@
 {% load icons %}
-<!-- Progress saved modal -->
-<div id="progress-saved-modal"
-     class="fixed inset-0 z-50 items-center justify-center p-4"
-     style="display:none">
-  <!-- Backdrop -->
-  <div class="absolute inset-0 bg-black/40"></div>
-  <!-- Dialog -->
-  <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 z-10">
+<dialog id="progress-saved-modal" class="dialog" aria-labelledby="progress-saved-modal-title"{% if show_saved %} data-open-on-load{% endif %}>
     <!-- Icon -->
     <div class="flex justify-center mb-4">
       <div class="rounded-full bg-primary-50 p-3">
         {% icon "check" "size-7 text-primary-500" %}
       </div>
     </div>
-    <h2 class="text-lg font-semibold text-neutral-900 text-center mb-2">Progreso guardado</h2>
+    <h2 id="progress-saved-modal-title" class="text-lg font-semibold text-neutral-900 text-center mb-2">Progreso guardado</h2>
     <p class="text-base text-neutral-600 text-center">
       Tus respuestas han sido guardadas. Puedes continuar respondiendo ahora o en otro momento — tu progreso estará aquí cuando regreses.
     </p>
@@ -22,17 +15,15 @@
       {% if pending_count == 1 %}Te falta 1 pregunta por responder.{% else %}Te faltan {{ pending_count }} preguntas por responder.{% endif %}
     </p>
     {% endif %}
-    <div class="mt-6 flex flex-col sm:flex-row gap-3">
-      <button
-        type="button"
-        onclick="document.getElementById('progress-saved-modal').style.display='none'"
-        class="btn btn-primary flex-1">
-        Continuar respondiendo
-      </button>
+    <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
       <a href="{% url 'core:home' %}"
-         class="btn btn-secondary flex-1">
+         class="btn btn-secondary">
         Ir al inicio
       </a>
+      <button
+        type="button" data-dialog-close
+        class="btn btn-primary">
+        Continuar respondiendo
+      </button>
     </div>
-  </div>
-</div>
+</dialog>

@@ -1,0 +1,14 @@
+{% load icons %}
+{% comment %}
+An empty state: a dashed box that says this space fills later. Takes `body`
+(one sentence), and optionally `icon` (a templates/icons/ name), `title`,
+`action_url` with `action_label`, and `compact` for an empty slot inside a grid.
+{% endcomment %}
+<div class="card shadow-none flex h-full flex-col items-center justify-center border-dashed border-neutral-300 px-6 text-center {% if compact %}py-8{% else %}py-12{% endif %}">
+  {% if icon %}
+    <span class="mb-3 flex size-10 items-center justify-center rounded-lg bg-neutral-100">{% icon icon "size-5 text-neutral-500" %}</span>
+  {% endif %}
+  {% if title %}<p class="text-base font-semibold text-neutral-900">{{ title }}</p>{% endif %}
+  <p class="max-w-prose text-sm text-neutral-600{% if title %} mt-1{% endif %}">{{ body }}</p>
+  {% if action_url %}<a href="{{ action_url }}" class="btn btn-secondary mt-4">{{ action_label }}</a>{% endif %}
+</div>

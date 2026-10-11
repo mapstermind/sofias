@@ -4,17 +4,8 @@
 
 {% block title %}{{ employee_profile.user.get_full_name }} — {{ company.name }} | {{ brand.name }}{% endblock %}
 
-{% block header_nav %}
-  <span class="text-neutral-300 select-none">|</span>
-  {% if is_admin_view %}
-    <a href="{% url 'core:company_employee_list_for' company.reference_code %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">
-      &larr; Colaboradores
-    </a>
-  {% else %}
-    <a href="{% url 'core:company_employee_list' %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">
-      &larr; Colaboradores
-    </a>
-  {% endif %}
+{% block page_context %}
+  <a href="{% if is_admin_view %}{% url 'core:company_employee_list_for' company.reference_code %}{% else %}{% url 'core:company_employee_list' %}{% endif %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="btn btn-text btn-sm -ml-3 mb-2">&larr; Colaboradores</a>
 {% endblock %}
 
 {% block content %}
@@ -124,9 +115,7 @@
         </div>
       {% endfor %}
     {% else %}
-      <div class="card shadow-none flex h-full items-center justify-center border-dashed border-neutral-300 px-6 py-8 text-center">
-        <p class="text-sm text-neutral-500">No hay encuestas asignadas a esta empresa.</p>
-      </div>
+      {% include "components/_empty.html" with body="No hay encuestas asignadas a esta empresa." compact=True %}
     {% endif %}
   </div>
 </div>
@@ -218,9 +207,7 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="card shadow-none border-dashed border-neutral-300 px-8 py-12 text-center">
-      <p class="text-sm text-neutral-500">La valoración se genera al completar la encuesta.</p>
-    </div>
+    {% include "components/_empty.html" with body="La valoración se genera al completar la encuesta." icon="chart-bar" %}
   {% endif %}
 </section>
 {% endif %}
@@ -290,9 +277,7 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="card shadow-none border-dashed border-neutral-300 px-8 py-12 text-center">
-      <p class="text-sm text-neutral-500">No hay encuestas asignadas a esta empresa.</p>
-    </div>
+    {% include "components/_empty.html" with body="No hay encuestas asignadas a esta empresa." icon="clipboard-document-list" %}
   {% endif %}
 </section>
 {% endif %}

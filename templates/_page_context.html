@@ -1,0 +1,8 @@
+{% comment %}
+The line above a company page's title: where an Administrador is among the
+companies. An executive is always in their own company, so they get nothing.
+Child pages override `page_context` with a back link to their list instead.
+{% endcomment %}
+{% if is_admin_view and company %}
+  <p class="mb-4 truncate text-sm text-neutral-600"><a href="{% url 'core:company_list' %}" class="font-medium text-primary-700 hover:underline">Empresas</a> / {{ company.name }}</p>
+{% endif %}

@@ -1,17 +1,9 @@
 {% load icons %}
-<!-- Instrucciones modal -->
-<div id="instrucciones-modal"
-     class="fixed inset-0 z-50 items-center justify-center p-4"
-     style="display:none"
-     onclick="if(event.target===this)this.style.display='none'">
-  <!-- Backdrop -->
-  <div class="absolute inset-0 bg-black/40"></div>
-  <!-- Dialog -->
-  <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 z-10">
+<dialog id="instrucciones-modal" class="dialog max-w-lg" aria-labelledby="instrucciones-modal-title"{% if show_instructions %} data-open-on-load{% endif %}>
     <div class="flex items-start justify-between mb-4">
-      <h2 class="text-lg font-semibold text-neutral-900">Instrucciones</h2>
-      <button type="button" aria-label="Cerrar" onclick="document.getElementById('instrucciones-modal').style.display='none'"
-              class="text-neutral-500 hover:text-neutral-600 transition-colors ml-4 shrink-0">
+      <h2 id="instrucciones-modal-title" class="text-lg font-semibold text-neutral-900">Instrucciones</h2>
+      <button type="button" aria-label="Cerrar" data-dialog-close
+              class="btn btn-text btn-sm -mt-1 -mr-2 ml-4 shrink-0 px-2 text-neutral-500">
         {% icon "x-mark" "size-5" %}
       </button>
     </div>
@@ -19,10 +11,9 @@
       {% include "surveys/_instrucciones_content.html" %}
     </div>
     <div class="mt-6 flex justify-end">
-      <button onclick="document.getElementById('instrucciones-modal').style.display='none'"
+      <button type="button" data-dialog-close
               class="btn btn-primary">
         Entendido
       </button>
     </div>
-  </div>
-</div>
+</dialog>

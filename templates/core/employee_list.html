@@ -4,19 +4,6 @@
 
 {% block title %}Colaboradores — {{ company.name }} | {{ brand.name }}{% endblock %}
 
-{% block header_nav %}
-  {% if is_admin_view %}
-    <span class="text-neutral-300 select-none">|</span>
-    <a href="{% url 'core:company_dashboard_for' company.reference_code %}" class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">
-      &larr; {{ company.name }}
-    </a>
-  {% else %}
-    <span class="text-neutral-300 select-none">|</span>
-    <a href="{% url 'core:company_dashboard' %}" class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">
-      &larr; {{ company.name }}
-    </a>
-  {% endif %}
-{% endblock %}
 
 {% block content %}
   {% comment %}
@@ -117,7 +104,7 @@
       view, not to this page.
       {% endcomment %}
       <dialog id="roster-filter-modal" aria-labelledby="roster-filter-title"
-              class="m-auto w-[calc(100%-2rem)] max-w-lg rounded-2xl border-0 bg-white p-0 text-neutral-900 shadow-2xl backdrop:bg-neutral-900/40">
+              class="dialog max-w-lg overflow-hidden p-0">
         <div class="flex max-h-[85vh] flex-col">
           <div class="flex items-start justify-between gap-4 px-5 pt-5">
             <h2 id="roster-filter-title" class="text-lg font-bold text-neutral-900">Filtros</h2>
@@ -249,16 +236,11 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="card shadow-none border-dashed border-neutral-300 px-8 py-16 text-center">
-      {% if roster_query.is_narrowed %}
-        <p class="text-sm text-neutral-600">Ningún colaborador coincide con la búsqueda.</p>
-        <a href="{{ clear_url }}" class="btn btn-secondary mt-3">
-          Limpiar filtros
-        </a>
-      {% else %}
-        <p class="text-sm text-neutral-600">Aún no hay colaboradores vinculados a {{ company.name }}.</p>
-      {% endif %}
-    </div>
+    {% if roster_query.is_narrowed %}
+      {% include "components/_empty.html" with body="Ningún colaborador coincide con la búsqueda." icon="users" action_url=clear_url action_label="Limpiar filtros" %}
+    {% else %}
+      {% with body="Aún no hay colaboradores vinculados a "|add:company.name|add:"." %}{% include "components/_empty.html" with body=body icon="users" %}{% endwith %}
+    {% endif %}
   {% endif %}
 
   <script src="{% static 'js/roster_filters.js' %}"></script>

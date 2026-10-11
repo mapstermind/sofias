@@ -320,8 +320,8 @@ function buildFieldData(name, form) {
 }
 function showSessionExpired() {
     const modal = document.getElementById("session-expired-modal");
-    if (modal)
-        modal.style.display = "flex";
+    if (modal instanceof HTMLDialogElement && !modal.open)
+        modal.showModal();
     document
         .querySelectorAll("#survey-form input, #survey-form textarea, #survey-form button")
         .forEach((el) => {
