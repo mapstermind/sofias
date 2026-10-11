@@ -31,3 +31,6 @@ urlpatterns = [
     path("cuentas/", include(("apps.accounts.urls", "accounts"))),
     path("encuestas/", include(("apps.surveys.urls", "surveys"))),
 ]
+
+# The 500 page renders without the request context; see apps.core.views.server_error.
+handler500 = "apps.core.views.server_error"

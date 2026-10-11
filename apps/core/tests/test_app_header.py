@@ -41,7 +41,7 @@ def dashboard(client, make_company, make_user_with_profile, bootstrap_groups):
 
 
 def test_the_header_renders_the_viewers_initials(dashboard):
-    """The circle stands in for the name the header used to print."""
+    """The avatar circle carries the viewer's initials."""
     header = _header(dashboard)
 
     assert "data-avatar" in header
@@ -49,18 +49,20 @@ def test_the_header_renders_the_viewers_initials(dashboard):
 
 
 def test_the_header_always_offers_a_way_to_sign_out(dashboard):
-    """Below `sm:` the label is the control; above it, hover reveals the label.
+    """The avatar opens a menu whose one action is a named logout button.
 
-    Either way the words are in the markup — a header that renders only a
-    circle would log a phone visitor out on a curious tap.
+    The words are in the markup at every width, so no phone visitor is logged
+    out by a curious tap on a bare circle.
     """
     header = _header(dashboard)
 
-    assert header.count("Cerrar sesión") == 2
+    assert header.count("Cerrar sesión") == 1
+    assert 'action="/cuentas/cerrar-sesion/"' in header
+    assert "data-disclosure" in header
 
 
 def test_the_company_name_is_the_page_title_not_a_header_crumb(dashboard):
-    """The label moved out of the header and into the content as an <h1>."""
+    """The company is named by the page's <h1>, not by the header."""
     header = _header(dashboard)
     content = dashboard[dashboard.index("<main") :]
 

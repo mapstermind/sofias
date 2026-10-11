@@ -3,12 +3,6 @@
 
 {% block title %}{{ survey.title }}{% endblock %}
 
-{% block header_nav %}
-  <span class="text-neutral-300 select-none">|</span>
-  <a href="{% url 'core:home' %}" class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">
-    &larr; Inicio
-  </a>
-{% endblock %}
 
 {# The phone bottom bar owns the corner, and respondents move forward, not up. #}
 {% block back_to_top %}{% endblock %}
@@ -66,7 +60,7 @@ what a respondent meets on reaching the end of the questions.
       {% endif %}
       <div class="flex gap-2 lg:flex-col">
         <button type="button"
-          onclick="document.getElementById('instrucciones-modal').style.display='flex'"
+          data-dialog-open="instrucciones-modal"
           class="btn btn-secondary shrink-0 lg:hidden">
           Instrucciones
         </button>
@@ -146,24 +140,6 @@ what a respondent meets on reaching the end of the questions.
 {% include "surveys/_progress_saved_modal.html" %}
 {% include "surveys/_submit_confirm_modal.html" %}
 {% include "surveys/_session_expired_modal.html" %}
-
-{% if show_instructions %}
-<script>
-  document.getElementById('instrucciones-modal').style.display = 'flex';
-</script>
-{% endif %}
-
-{% if show_saved %}
-<script>
-  document.getElementById('progress-saved-modal').style.display = 'flex';
-</script>
-{% endif %}
-
-{% if show_confirm %}
-<script>
-  document.getElementById('submit-confirm-modal').style.display = 'flex';
-</script>
-{% endif %}
 
 <script src="{% static 'js/survey_progress.js' %}"></script>
 

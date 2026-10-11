@@ -1,11 +1,13 @@
 import math
 from dataclasses import replace
 
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
-from django.http import Http404
+from django.http import Http404, HttpResponseServerError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
@@ -756,3 +758,16 @@ class StyleguideView(TemplateView):
             ],
             **kwargs,
         )
+
+
+def server_error(request):
+    """The 500 page (`handler500`), rendered without the request context.
+
+    Context processors may query the database, which may be what failed, so
+    the page gets only the brand and the default palette.
+    """
+    html = render_to_string(
+        "500.html",
+        {"brand": settings.BRAND, "palette": settings.BRAND_PALETTE_DEFAULT},
+    )
+    return HttpResponseServerError(html)

@@ -3,10 +3,8 @@
 
 {% block title %}Reporte | {{ company.name }} | {{ brand.name }}{% endblock %}
 
-{% block header_nav %}
-  <span class="text-neutral-300 select-none">|</span>
-  <a href="{% if is_admin_view %}{% url 'reports:admin_list' company.reference_code %}{% else %}{% url 'reports:exec_list' %}{% endif %}"
-     class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">&larr; Regresa a los reportes</a>
+{% block page_context %}
+  <a href="{% if is_admin_view %}{% url 'reports:admin_list' company.reference_code %}{% else %}{% url 'reports:exec_list' %}{% endif %}" class="btn btn-text btn-sm -ml-3 mb-2">&larr; Reportes</a>
 {% endblock %}
 
 {% block content %}

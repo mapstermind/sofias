@@ -59,11 +59,15 @@ written for.
   `rating`, `single_choice` and `multiple_choice` alike, so a question type added
   later inherits one pattern rather than inventing a sixth.
 
+- **The header.** Every signed-in page opens with one 56px header row: the logo, a
+  section switcher naming the current section, and the user menu, each a 44px
+  target. From `lg` the switcher becomes inline tabs. Company context and back links
+  sit at the top of the page instead. See `design-system.md` (Navigation).
+
 **Out of scope:**
 
-- **Touch-target sizing outside the survey form.** The roster filter bar, the
-  header controls and the dashboard cards are sized for reading rather than for a
-  thumb. An administrator reads those on a laptop and meets them rarely; a
+- **Touch-target sizing outside the survey form and the header.** The roster filter
+  bar and the dashboard cards are sized for reading rather than for a thumb. An administrator reads those on a laptop and meets them rarely; a
   respondent meets an answer control 87 times.
 - **Tablet-specific layouts.** There are two cases — phone and desktop — and the
   breakpoint between them is chosen per page. Nothing is designed for the middle.

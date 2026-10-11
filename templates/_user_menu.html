@@ -1,0 +1,22 @@
+{% load navigation %}
+{% comment %}
+The avatar opens the viewer's name, role and email, and the way out. A
+<details>, so it opens without JS; static/ts/disclosure.ts adds Esc and
+closing on an outside click.
+{% endcomment %}
+<details class="relative" data-disclosure>
+  <summary class="flex size-11 cursor-pointer list-none items-center justify-center rounded-full [&::-webkit-details-marker]:hidden" aria-label="Menú de {{ request.user.get_full_name|default:request.user.email }}">
+    {% include "_avatar.html" with person=request.user size="size-9" text="text-xs" only %}
+  </summary>
+  <div class="absolute right-0 z-40 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-neutral-200 bg-white p-1.5 shadow-lg">
+    <div class="border-b border-neutral-200 px-3 pt-2 pb-3">
+      <p class="truncate text-base font-semibold text-neutral-900">{{ request.user.get_full_name|default:request.user.email }}</p>
+      {% with role=request.user|role_label %}{% if role %}<p class="text-sm text-neutral-600">{{ role }}</p>{% endif %}{% endwith %}
+      <p class="truncate text-sm text-neutral-600">{{ request.user.email }}</p>
+    </div>
+    <form method="post" action="{% url 'accounts:logout' %}" class="pt-1.5">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-text w-full justify-start">Cerrar sesión</button>
+    </form>
+  </div>
+</details>

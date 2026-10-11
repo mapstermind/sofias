@@ -37,6 +37,25 @@ would show an admin a link `apps.surveys.views._respondent_company` refuses.
 
 **Convention:** each view that accepts an optional `reference_code` shows the caller's own company when it's absent, or an arbitrary company (admin-only, `can_manage_surveys`) when present. The list/detail views are heavily optimized to avoid N+1 — prefetch/annotate maps are built up front; preserve that pattern when editing.
 
+## Page chrome: header, navigation, dialogs, error pages
+
+`templates/base_app.html` draws one header row on every signed-in page: the logo,
+`{% company_nav %}` and the user menu (`_user_menu.html`). `company_nav` lives in
+`templatetags/navigation.py`: `sections(request, company, is_admin_view)` returns the
+sections the viewer may open, each guarded by the same permission codenames its view
+checks (`SECTIONS` declares them), with the one the current URL name belongs to marked
+active. When a view gains or changes a permission check, change its `Section` too;
+`tests/test_navigation.py` requests every offered link as each role. The tag reads
+`company` and `is_admin_view` from the page's context, so a company page must pass
+both. The `role_label` filter there gives the user menu the Spanish role. Pages put
+company context and back links in `{% block page_context %}`, never in the header.
+`static/ts/disclosure.ts` closes the header's `<details>` panels on Esc and on an
+outside click, and `static/ts/dialog.ts` opens and closes every `<dialog class="dialog">`
+from `data-dialog-*` attributes. `base.html` loads both. **Run `npm run build:js` and
+commit `static/js/` when touching them.** `templates/components/_empty.html` is the
+empty state. `404.html` and `403.html` render through Django's handlers;
+`views.server_error` is `handler500` and renders `500.html` with no database query.
+
 ## Page chrome: back-to-top button
 
 `templates/base_app.html` renders `templates/_back_to_top.html` inside
@@ -169,5 +188,5 @@ python manage.py seed_nom035_survey   # seed (idempotent) the NOM-035 survey
 - Authorization is permission-based, not group-name-based (except the `Admins` group, checked by name in a few places). Run `bootstrap_groups` (in `apps/accounts`) before these views behave correctly.
 - Per-employee progress goes through `_progress_entry`, which delegates to `apps.surveys.visibility.progress_for_modules` so `answered`/`total` count only the questions a respondent's gate answers leave visible — that is what makes a completed survey read 100%. `_variant_question_count` is still used, but only as the *nominal* total, to derive the `not_applicable` figure the UI shows. Never compute progress from `_variant_question_count` alone.
 - The employee list needs answer **values** (not just counts) to evaluate gates: one `values_list` sweep over `Answer` plus one module prefetch per assignment, both reused across every member. Preserve that pattern — a per-member query here is an N+1 in a page that renders the whole company. Search and filtering narrow the profile queryset **before** the per-member loop, so the loop only walks what will be rendered, and `user__groups` is prefetched on it because every card's metadata line prints the Rol. The whole arrangement is pinned by an invariance test in `tests/test_views.py`: a roster of 3 colaboradores and one of 30 must cost the same number of queries, so a dropped prefetch fails the suite rather than the page.
-- `tests/` covers views and the seed (`test_views.py`, `test_seed_nom035.py`), the results page (`test_results_views.py`, `test_results_query.py`, `test_dashboard_results_card.py`), the chart geometry and components (`test_charts.py`, `test_chart_components.py`), phone-width layout (`test_responsive.py`), the back-to-top button (`test_back_to_top.py`), the brand, palette switch and design tokens (`test_brand.py`, `test_design_tokens.py`), and the components (`test_components_css.py`, `test_form_renderer.py`, `test_icons.py`, `test_alerts.py`, `test_styleguide.py`).
+- `tests/` covers views and the seed (`test_views.py`, `test_seed_nom035.py`), the results page (`test_results_views.py`, `test_results_query.py`, `test_dashboard_results_card.py`), the chart geometry and components (`test_charts.py`, `test_chart_components.py`), phone-width layout (`test_responsive.py`), the back-to-top button (`test_back_to_top.py`), the brand, palette switch and design tokens (`test_brand.py`, `test_design_tokens.py`), and the components (`test_components_css.py`, `test_form_renderer.py`, `test_icons.py`, `test_alerts.py`, `test_styleguide.py`, `test_navigation.py`, `test_dialogs.py`, `test_empty_states.py`, `test_error_pages.py`).
 - User-facing strings/URLs are Spanish.

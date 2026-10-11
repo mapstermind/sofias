@@ -2,10 +2,8 @@
 
 {% block title %}Editar reporte | {{ company.name }} | {{ brand.name }}{% endblock %}
 
-{% block header_nav %}
-  <span class="text-neutral-300 select-none">|</span>
-  <a href="{% url 'reports:admin_detail' company.reference_code report.assignment.pk %}"
-     class="text-sm text-neutral-500 hover:text-neutral-600 transition-colors">&larr; Regresa al reporte</a>
+{% block page_context %}
+  <a href="{% url 'reports:admin_detail' company.reference_code report.assignment.pk %}" class="btn btn-text btn-sm -ml-3 mb-2">&larr; Reporte</a>
 {% endblock %}
 
 {% block content %}

@@ -1,19 +1,12 @@
 {% load icons %}
-<!-- Session expired modal -->
-<div id="session-expired-modal"
-     class="fixed inset-0 z-50 items-center justify-center p-4"
-     style="display:none">
-  <!-- Backdrop -->
-  <div class="absolute inset-0 bg-black/40"></div>
-  <!-- Dialog -->
-  <div class="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6 z-10">
+<dialog id="session-expired-modal" class="dialog" aria-labelledby="session-expired-modal-title" data-dialog-static>
     <!-- Icon -->
     <div class="flex justify-center mb-4">
       <div class="rounded-full bg-warning-50 p-3">
         {% icon "exclamation-triangle" "size-7 text-warning-500" %}
       </div>
     </div>
-    <h2 class="text-lg font-semibold text-neutral-900 text-center mb-2">Sesión expirada</h2>
+    <h2 id="session-expired-modal-title" class="text-lg font-semibold text-neutral-900 text-center mb-2">Sesión expirada</h2>
     <p class="text-base text-neutral-600 text-center">
       Tu sesión ha expirado por inactividad. Tu progreso guardado está a salvo — inicia sesión de nuevo para continuar.
     </p>
@@ -23,5 +16,4 @@
         Iniciar sesión de nuevo
       </a>
     </div>
-  </div>
-</div>
+</dialog>

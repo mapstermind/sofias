@@ -372,7 +372,7 @@ function buildFieldData(name: string, form: HTMLFormElement): URLSearchParams {
 
 function showSessionExpired(): void {
   const modal = document.getElementById("session-expired-modal");
-  if (modal) modal.style.display = "flex";
+  if (modal instanceof HTMLDialogElement && !modal.open) modal.showModal();
 
   document
     .querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLButtonElement>(

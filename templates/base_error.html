@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% comment %}
+The error pages' layout: the centered card of the login screens, with a title,
+one sentence, a way home, and the code as a footnote for support. The 500 page
+renders without a request (apps.core.views.server_error), so nothing here may
+need one: no messages, no palette switch, no user.
+{% endcomment %}
+
+{% block title %}{% block error_title %}{% endblock %} | {{ brand.name }}{% endblock %}
+{% block palette_switch %}{% endblock %}
+
+{% block body %}
+<main id="main" tabindex="-1" class="flex flex-1 items-center justify-center px-4 py-12 focus:outline-none">
+  <div class="w-full max-w-md">
+    <div class="mb-8 flex justify-center">
+      {% include "_logo.html" with css_class="h-8 w-auto text-primary-700" %}
+    </div>
+    <div class="card px-6 py-10 text-center sm:px-10">
+      <h1 class="text-xl font-bold text-neutral-900">{% block error_heading %}{% endblock %}</h1>
+      <p class="mx-auto mt-3 max-w-prose text-base text-neutral-600">{% block error_body %}{% endblock %}</p>
+      <div class="mt-8 flex flex-col-reverse justify-center gap-3 sm:flex-row">
+        <a href="/" class="btn btn-primary">Ir al inicio</a>
+      </div>
+      <p class="mt-8 text-sm text-neutral-500">{% block error_code %}{% endblock %}</p>
+    </div>
+  </div>
+</main>
+{% endblock %}

@@ -51,8 +51,6 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="card shadow-none border-dashed border-neutral-300 px-8 py-16 text-center">
-      <p class="text-sm text-neutral-500">No hay encuestas asignadas a tu empresa aún.</p>
-    </div>
+    {% include "components/_empty.html" with body="No hay encuestas asignadas a tu empresa aún." icon="clipboard-document-list" %}
   {% endif %}
 {% endblock %}
