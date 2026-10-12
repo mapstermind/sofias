@@ -81,11 +81,11 @@ A report has two states.
   cannot be edited: the edit page redirects back with *Despublica el reporte para
   editarlo.* — the Django admin shows a published report and its signatories
   read-only as well. Clicking *Publicar* again on a published report changes
-  nothing and says nothing. *Despublicar* first asks the browser to confirm
-  (*¿Despublicar el reporte? El contenido congelado se descartará y la empresa
-  dejará de verlo hasta que se publique de nuevo.*), then discards the snapshot
-  and returns the report to Borrador; executives lose access until it is
-  published again.
+  nothing and says nothing. *Despublicar* opens a dialog that asks to confirm
+  (*¿Despublicar el reporte?* — *El contenido congelado se descartará y la
+  empresa dejará de verlo hasta que se publique de nuevo.*); its own
+  *Despublicar* discards the snapshot and returns the report to Borrador, and
+  executives lose access until it is published again.
 
 *Publicar* is refused, with one Spanish message per unmet condition, while any
 of these holds:
@@ -125,10 +125,9 @@ company (a viewer with no company is sent to profile setup):
 | `tablero-empresa/reportes/<assignment>/pdf/` | Its PDF |
 
 A draft, a missing report, a non-NOM-035 assignment or another company's
-assignment is a 404. Entry points: a *Reporte de resultados* link on the
-Administrador's company dashboard and a *Reporte* link on the admin results
-page; a *Reporte de resultados* card on the Ejecutivo principal's company
-dashboard next to *Valoración de resultados*.
+assignment is a 404. Entry point: the *Reportes* section of the company
+navigation (`{% company_nav %}`, see `design-system.md`), offered to the
+Administrador on any company and to the Ejecutivo principal on their own.
 
 ### Report contents
 
@@ -161,6 +160,13 @@ from data, **A** = written by the Administrador, **F** = fixed text.
    4. *Resultados por categoría* — distribution and statistics per categoría.
    5. *Resultados por dominio* — distribution and statistics per dominio,
       grouped under its categoría.
+
+   Each subject is named once: the section's heading, a categoría's `h4` or a
+   dominio's label. Its two charts are captioned by what they show,
+   *Distribución por nivel* and *Calificación* (`report-caption`), and the
+   statistics row under them drops its own label (`_stats.html` with
+   `hide_label=True`). *Resultados por dimensión* lists several dimensiones
+   under one heading, so each of its statistics rows keeps its label.
    6. *Resultados por dimensión* — per dimensión, grouped under its dominio:
       the statistics row with a single neutral band up to the highest possible
       score. No level: the norm publishes no dimensión thresholds.

@@ -20,7 +20,12 @@ from apps.core import roster, styleguide
 from apps.core.brand import COOKIE as PALETTE_COOKIE
 from apps.core.brand import active_palette, can_switch_palette, palette_slugs
 from apps.core.query_params import SEX_SLUGS_TO_LABELS
-from apps.core.results_query import filter_pills, parse_results_query, results_url
+from apps.core.results_query import (
+    ResultsQuery,
+    filter_pills,
+    parse_results_query,
+    results_url,
+)
 from apps.core.templatetags.icons import ICON_DIR
 from apps.nom035 import constants as nom035_constants
 from apps.nom035.results import (
@@ -608,6 +613,73 @@ def _company_for(request, reference_code):
     return profile.company if profile is not None and profile.company_id else None
 
 
+def _results_filter_groups(query, areas, locations) -> list[dict]:
+    """The results page's filter dialog, in the roster's shape.
+
+    Localidad is left out when the company has one, as on the roster: one chip
+    that changes nothing is a control that has to be read before it can be
+    dismissed.
+    """
+
+    def group(key, label, multiple, options):
+        return {"key": key, "label": label, "multiple": multiple, "options": options}
+
+    groups = [
+        group(
+            "sexo",
+            "Sexo",
+            False,
+            [
+                {"value": slug, "label": label, "selected": slug == query.sex_slug}
+                for slug, label in SEX_SLUGS_TO_LABELS.items()
+            ],
+        ),
+        group(
+            "edad",
+            "Edad",
+            True,
+            [
+                {
+                    "value": band.slug,
+                    "label": band.label,
+                    "selected": band.slug in query.age_slugs,
+                }
+                for band in AGE_BANDS
+            ],
+        ),
+        group(
+            "area",
+            "Área",
+            True,
+            [
+                {
+                    "value": str(area.pk),
+                    "label": area.name,
+                    "selected": area.pk in query.area_ids,
+                }
+                for area in areas
+            ],
+        ),
+    ]
+    if len(locations) > 1:
+        groups.append(
+            group(
+                "localidad",
+                "Localidad",
+                True,
+                [
+                    {
+                        "value": str(loc.pk),
+                        "label": loc.name,
+                        "selected": loc.pk in query.location_ids,
+                    }
+                    for loc in locations
+                ],
+            )
+        )
+    return groups
+
+
 def _results_context(request, company, reference_code) -> dict:
     if reference_code is None:
         page_url = reverse("core:company_results")
@@ -654,10 +726,10 @@ def _results_context(request, company, reference_code) -> dict:
         "is_admin_view": reference_code is not None,
         "options": options,
         "selected": selected,
-        "areas": areas,
-        "locations": locations,
-        "age_bands": AGE_BANDS,
-        "sex_choices": list(SEX_SLUGS_TO_LABELS.items()),
+        "filter_groups": _results_filter_groups(query, areas, locations),
+        "clear_url": results_url(
+            page_url, ResultsQuery(assignment_id=query.assignment_id)
+        ),
         "query": query,
         "results": results,
         "pills": filter_pills(
@@ -667,8 +739,15 @@ def _results_context(request, company, reference_code) -> dict:
             location_names={loc.pk: loc.name for loc in locations},
         ),
         "participation_rows": participation_rows,
-        "active_filter_count": len(query.params())
-        - (1 if query.assignment_id is not None else 0),
+        # Dimensions in use, not values chosen, as on the roster.
+        "active_filter_count": sum(
+            (
+                bool(query.sex_slug),
+                bool(query.age_slugs),
+                bool(query.area_ids),
+                bool(query.location_ids),
+            )
+        ),
         "ndr_levels": [
             (level, nom035_constants.NDR_LABELS[level])
             for level in nom035_constants.NDR_ORDER

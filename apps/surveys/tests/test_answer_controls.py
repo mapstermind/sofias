@@ -101,3 +101,27 @@ def test_likert_options_carry_no_unprefixed_minimum_width(survey_with_questions)
     html = _render(question)
 
     assert "min-w-[72px]" not in html.replace("lg:min-w-[72px]", "")
+
+
+@pytest.mark.parametrize(
+    "question_type",
+    ["boolean", "single_choice", "multiple_choice", "rating", "likert"],
+)
+def test_every_option_is_an_answer_row(question_type, survey_with_questions):
+    """The `answer` row marks the chosen option, at every width."""
+    question = _question_of_type(survey_with_questions, question_type)
+
+    html = _render(question)
+
+    inputs = html.count('type="radio"') + html.count('type="checkbox"')
+    assert inputs and html.count('<label class="answer') == inputs
+
+
+def test_the_question_template_draws_no_focus_ring():
+    """Keyboard focus comes from the base rule."""
+    from pathlib import Path
+
+    from django.conf import settings
+
+    source = (Path(settings.BASE_DIR) / "templates/surveys/_question.html").read_text()
+    assert "focus:ring" not in source

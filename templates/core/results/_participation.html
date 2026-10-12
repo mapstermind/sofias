@@ -1,16 +1,16 @@
 {% load charts %}
-<section class="card mt-3 p-5">
+<section class="card p-5">
   <h3 class="text-base font-semibold text-neutral-900">Participación por área</h3>
-  <div class="mt-4 hidden items-end gap-4 border-b border-neutral-100 pb-2 text-xs font-medium uppercase tracking-wide text-neutral-500 md:grid md:grid-cols-[minmax(0,1.2fr)_5.5rem_6.5rem_6.5rem_minmax(0,2fr)]">
+  <div class="mt-4 hidden items-end gap-4 border-b border-neutral-100 pb-2 text-xs font-medium text-neutral-600 md:grid md:grid-cols-[minmax(0,1.2fr)_5.5rem_6.5rem_6.5rem_minmax(0,2fr)]">
     <span>Área</span><span class="text-right">Registrados</span><span class="text-right">Respondieron</span><span class="text-right">Participación</span>
-    <div class="normal-case tracking-normal"><span class="mb-1 block text-xs font-medium uppercase tracking-wide text-neutral-500">Distribución (final)</span>{% include "core/results/_ndr_columns.html" %}</div>
+    <div><span class="mb-1 block text-xs font-medium text-neutral-600">Distribución (final)</span>{% include "core/results/_ndr_columns.html" %}</div>
   </div>
   <ul class="divide-y divide-neutral-100">
     {% for item in participation_rows %}{% with row=item.row %}
       <li class="grid grid-cols-3 gap-x-4 gap-y-2 py-3 md:grid-cols-[minmax(0,1.2fr)_5.5rem_6.5rem_6.5rem_minmax(0,2fr)] md:items-center">
         <div class="col-span-3 min-w-0 md:col-span-1">
           {% if item.filter_url %}
-            <a href="{{ item.filter_url }}" data-results-link class="font-medium text-primary-700 hover:underline">{{ row.label }}</a>
+            <a href="{{ item.filter_url }}" data-results-link class="link">{{ row.label }}</a>
           {% else %}
             <span class="font-medium text-neutral-900">{{ row.label }}</span>
           {% endif %}

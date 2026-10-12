@@ -23,6 +23,10 @@ COMPONENTS = (
     "card",
     "pill",
     "pill-marker",
+    "card-link",
+    "link",
+    "chip",
+    "answer",
 )
 
 

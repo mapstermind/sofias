@@ -1,0 +1,8 @@
+{% comment %}
+The page's one h1, with an optional subtitle:
+{% include "components/_page_header.html" with title=… subtitle=… %}
+{% endcomment %}
+<div class="mb-6">
+  <h1 class="text-xl font-bold text-neutral-900">{{ title }}</h1>
+  {% if subtitle %}<p class="mt-1 text-sm text-neutral-600">{{ subtitle }}</p>{% endif %}
+</div>

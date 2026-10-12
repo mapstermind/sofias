@@ -29,7 +29,7 @@ what a respondent meets on reaching the end of the questions.
   <div class="w-full flex flex-col items-end gap-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh_-_3rem)] lg:overflow-y-auto lg:px-1">
     <!-- Below `lg:` the instructions live in the modal this page already
          carries, reached from the action bar. -->
-    <div class="hidden w-full rounded-lg bg-white border border-primary-200 shadow-sm p-4 lg:block">
+    <div class="card hidden w-full p-4 lg:block">
       <h2 class="text-sm font-semibold text-neutral-900 mb-2">Instrucciones</h2>
       <div class="text-base text-neutral-600 space-y-3 max-h-[45vh] overflow-y-auto">
         {% include "surveys/_instrucciones_content.html" %}
@@ -53,7 +53,7 @@ what a respondent meets on reaching the end of the questions.
           <span id="progress-count">{{ answered_count }}/{{ total_questions }}</span>
         </div>
         <div class="w-full bg-neutral-200 rounded-full h-2">
-          <div id="progress-bar" class="bg-primary-500 h-2 rounded-full transition-all"
+          <div id="progress-bar" class="bg-primary-600 h-2 rounded-full transition-all"
                style="width: {% widthratio answered_count total_questions 100 %}%"></div>
         </div>
       </div>
@@ -92,17 +92,14 @@ what a respondent meets on reaching the end of the questions.
      without it the bar covers the last question. -->
 <div class="max-w-2xl w-full mx-auto min-w-0 pb-40 lg:pb-0">
 
-  <div class="mb-8">
+  {# The page header's shape, with the description at body size: respondents read it. #}
+  <div class="mb-6">
     <h1 class="text-xl font-bold text-neutral-900">{{ survey.title }}</h1>
-    {% if survey.description %}
-      <p class="mt-2 text-neutral-600">{{ survey.description }}</p>
-    {% endif %}
+    {% if survey.description %}<p class="mt-2 text-base text-neutral-700">{{ survey.description }}</p>{% endif %}
   </div>
 
   {% if errors %}
-    <div class="mb-6 rounded-lg border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-800">
-      Favor de corregir las preguntas resaltadas abajo antes de enviar.
-    </div>
+    <div class="mb-6">{% include "components/_alert.html" with tone="danger" body="Favor de corregir las preguntas resaltadas abajo antes de enviar." %}</div>
   {% endif %}
 
   <form id="survey-form" method="post" novalidate data-autosave-url="{% url 'surveys:autosave_survey' assignment.id %}">
@@ -111,13 +108,13 @@ what a respondent meets on reaching the end of the questions.
     {% for module in modules %}
       <div class="module-card mb-8" data-module-key="{{ module.key }}" data-visible-when="{{ module.visible_when|as_json }}">
         {% if module.intro %}
-          <h3 class="text-lg font-semibold text-neutral-900 mb-3">{{ module.intro }}</h3>
+          <p class="mb-3 text-base font-semibold text-neutral-900">{{ module.intro }}</p>
         {% endif %}
         {% if module.title %}
           <div class="mb-4 border-b border-neutral-200 pb-2">
-            <h2 class="text-lg font-semibold text-neutral-700">{{ module.title }}</h2>
+            <h2 class="text-lg font-semibold text-neutral-900">{{ module.title }}</h2>
             {% if module.description %}
-              <p class="text-base text-neutral-500 mt-1">{{ module.description }}</p>
+              <p class="text-base text-neutral-600 mt-1">{{ module.description }}</p>
             {% endif %}
           </div>
         {% elif module.description %}

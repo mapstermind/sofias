@@ -119,6 +119,70 @@ def test_no_template_types_the_product_name():
     )
 
 
+def test_no_template_types_the_brand_meaning():
+    from django.conf import settings
+
+    meaning = settings.BRAND["meaning"]
+    hits = [
+        str(path.relative_to(REPO_ROOT))
+        for path in REPO_ROOT.glob("templates/**/*.html")
+        if meaning in path.read_text()
+    ]
+    assert not hits, "use {{ brand.meaning }}:\n" + "\n".join(hits)
+
+
+TEMPLATES = sorted(REPO_ROOT.glob("templates/**/*.html"))
+
+
+def _hits(pattern, exempt=()):
+    return [
+        f"{path.relative_to(REPO_ROOT)}: {match.group(0)}"
+        for path in TEMPLATES
+        if path.name not in exempt
+        for match in re.finditer(pattern, path.read_text())
+    ]
+
+
+def test_labels_are_never_all_caps():
+    """A tracked all-caps label is slower to read; labels are sentence case.
+
+    The avatar's initials are letters, not a label.
+    """
+    hits = _hits(r"(?<![\w-])uppercase\b", exempt={"_avatar.html"})
+    assert not hits, "write the label in sentence case:\n" + "\n".join(hits)
+
+
+def test_no_template_uses_black():
+    hits = _hits(r"(?<![\w-])(?:[\w-]+:)*(?:bg|text|border)-black\b")
+    assert not hits, "black is not a token; use neutral-900:\n" + "\n".join(hits)
+
+
+def test_no_template_lays_out_with_an_inline_style():
+    """Inline style is for computed widths and offsets, never for layout."""
+    hits = _hits(r'style="[^"]*\bflex\b')
+    assert not hits, "use grid or flex classes that stack on a phone:\n" + "\n".join(
+        hits
+    )
+
+
+def test_no_template_carries_an_inline_handler():
+    """Behaviour lives in static/ts/, wired by data attributes."""
+    hits = _hits(r"\son[a-z]+=")
+    assert not hits, "move the handler to static/ts/:\n" + "\n".join(hits)
+
+
+def test_no_input_draws_its_own_focus_ring():
+    hits = [
+        f"{path.relative_to(REPO_ROOT)}: {tag[:60]}"
+        for path in TEMPLATES
+        for tag in re.findall(r"<input\b[^>]*>", path.read_text(), re.DOTALL)
+        if "focus:ring" in tag
+    ]
+    assert not hits, "the base rule and the control classes draw focus:\n" + "\n".join(
+        hits
+    )
+
+
 # A legend swatch: an 8–10px square. Tailwind v4's `rounded-sm` is 4px, which
 # turns it into a dot; swatches are 2px-radius squircles (`rounded-xs`).
 DOT_SWATCH = re.compile(

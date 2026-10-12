@@ -10,8 +10,9 @@
       {% for r in g.rows %}
         <div class="report-group report-group--nested">
           <p class="report-group-label">{{ r.dist.label }}</p>
+          <p class="report-caption">Distribución por nivel</p>
           <div class="report-chart">{% level_columns r.dist.slices size="sm" %}</div>
-          {% if r.stats %}{% include "reports/sections/results/_stats.html" with row=r.stats %}{% endif %}
+          {% if r.stats %}<p class="report-caption">Calificación</p>{% include "reports/sections/results/_stats.html" with row=r.stats hide_label=True %}{% endif %}
         </div>
       {% endfor %}
       {% include "reports/sections/results/_legend.html" with legend=c.legend tier="dom" heading="Dominios" %}

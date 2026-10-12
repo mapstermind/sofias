@@ -1,31 +1,38 @@
 {% extends "base_centered.html" %}
+{% load icons %}
 
 {% block title %}Inicio Sesión | {{ brand.name }}{% endblock %}
 
+{% block brand_line %}
+  <p class="-mt-3 mb-6 text-sm text-neutral-600">{{ brand.meaning }}</p>
+{% endblock %}
+
 {% block card_header %}
-  <h1 class="text-xl font-bold text-neutral-900">Sistema de Obtención, Filtrado e Inteligencia Analítica de Sondeos</h1>
-  <div class="border-t border-neutral-200 my-3"></div>
   <h1 class="text-xl font-bold text-neutral-900">Inicio de sesión por correo</h1>
-  <p class="mt-2 text-sm text-neutral-500">
+  <p class="mt-2 text-sm text-neutral-600">
     Usa esta opción si puedes recibir correos de {{ brand.name }}. Te enviaremos un código a tu correo institucional.
   </p>
 {% endblock %}
 
 {% block card_footer %}
-  <div class="mt-6 w-full sm:w-[42rem] sm:max-w-[calc(100vw-2rem)] sm:-translate-x-1/2 sm:left-1/2 sm:relative">
-    <h2 class="text-center text-sm font-semibold text-neutral-700">Otras formas de ingresar</h2>
-    <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <a href="{% url 'accounts:setup_access_code_login' %}"
-        class="card block border-2 border-primary-200 px-4 py-4 text-left transition-colors hover:border-primary-400 hover:bg-primary-50">
-        <span class="block text-sm font-semibold text-primary-700">Primer ingreso</span>
-        <span class="mt-1 block text-base font-semibold text-neutral-900">Tengo un código temporal de acceso</span>
-        <span class="mt-1 block text-sm text-neutral-600">Usa esta opción si tu administrador o RH te entregó un código de 9 dígitos.</span>
+  <div class="mt-8">
+    <h2 class="text-center text-sm font-semibold text-neutral-800">Otras formas de ingresar</h2>
+    <div class="mt-3 space-y-3">
+      <a href="{% url 'accounts:setup_access_code_login' %}" class="card card-link group px-4 py-4">
+        <span class="min-w-0 flex-1">
+          <span class="block text-sm font-semibold text-primary-700">Primer ingreso</span>
+          <span class="mt-1 block text-base font-semibold text-neutral-900">Tengo un código temporal de acceso</span>
+          <span class="mt-1 block text-sm text-neutral-600">Usa esta opción si tu administrador o RH te entregó un código de 9 dígitos.</span>
+        </span>
+        {% icon "chevron-right" "size-5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600" %}
       </a>
-      <a href="{% url 'accounts:password_login' %}"
-        class="card block border-2 px-4 py-4 text-left transition-colors hover:border-neutral-400 hover:bg-neutral-50">
-        <span class="block text-sm font-semibold text-neutral-700">Ingresar con contraseña</span>
-        <span class="mt-1 block text-base font-semibold text-neutral-900">Ya creé mi contraseña</span>
-        <span class="mt-1 block text-sm text-neutral-600">Usa esta opción si ya hiciste tu primer ingreso y creaste una contraseña.</span>
+      <a href="{% url 'accounts:password_login' %}" class="card card-link group px-4 py-4">
+        <span class="min-w-0 flex-1">
+          <span class="block text-sm font-semibold text-neutral-700">Ingresar con contraseña</span>
+          <span class="mt-1 block text-base font-semibold text-neutral-900">Ya creé mi contraseña</span>
+          <span class="mt-1 block text-sm text-neutral-600">Usa esta opción si ya hiciste tu primer ingreso y creaste una contraseña.</span>
+        </span>
+        {% icon "chevron-right" "size-5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600" %}
       </a>
     </div>
   </div>

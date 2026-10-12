@@ -4,7 +4,7 @@
 
 {% block card_header %}
   <h1 class="text-xl font-bold text-neutral-900">Revisa tu correo electrónico</h1>
-  <p class="mt-2 text-sm text-neutral-500">
+  <p class="mt-2 text-sm text-neutral-600">
     Enviamos un código de 6 dígitos a <span class="font-medium text-neutral-700">{{ email }}</span>.
     Expira en {{ otp_expiry_minutes }} minutos.
   </p>
@@ -19,9 +19,9 @@
 {% endblock %}
 
 {% block card_footer %}
-  <p class="mt-6 text-center text-sm text-neutral-500">
+  <p class="mt-6 text-center text-sm text-neutral-600">
     ¿Correo electrónico incorrecto?
-    <a href="{% url 'accounts:request_otp' %}" class="font-medium text-primary-600 hover:text-primary-500">
+    <a href="{% url 'accounts:request_otp' %}" class="link">
       Usa una dirección diferente
     </a>
   </p>

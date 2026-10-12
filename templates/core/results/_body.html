@@ -3,7 +3,7 @@
   {% if results.empty %}
     <div class="mt-6">{% if results.filtered %}{% include "components/_empty.html" with body="Ningún cuestionario coincide con los filtros." icon="chart-bar" %}{% else %}{% include "components/_empty.html" with body="Esta encuesta aún no tiene cuestionarios contestados." icon="chart-bar" %}{% endif %}</div>
   {% else %}
-    <h2 class="mt-8 text-sm font-semibold uppercase tracking-wide text-neutral-500">Empresa</h2>
+    <h2 class="mt-10 mb-4 text-lg font-semibold text-neutral-900">Empresa</h2>
     {% include "core/results/_participation.html" %}
     <div class="mt-4 grid gap-4 lg:grid-cols-2">
       {% include "core/results/_sex_profile.html" %}
@@ -17,7 +17,7 @@
       {% include "core/results/_final_distribution.html" %}
       {% include "core/results/_final_stats.html" %}
       {% include "core/results/_guia1.html" %}
-      <h2 class="mt-10 text-sm font-semibold uppercase tracking-wide text-neutral-500">Por categoría</h2>
+      <h2 class="mt-10 mb-4 text-lg font-semibold text-neutral-900">Por categoría</h2>
       {% include "core/results/_categoria_distribution.html" %}
       {% include "core/results/_categoria_stats.html" %}
     {% endif %}

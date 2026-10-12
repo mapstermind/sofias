@@ -1,6 +1,10 @@
 {% load charts %}
+{% comment %}
+  One statistics row. A caller whose heading already names the row passes
+  hide_label=True, so the report names a subject once.
+{% endcomment %}
 <div class="report-stats">
-  <span class="report-stats-label">{{ row.label }}</span>
+  {% if not hide_label %}<span class="report-stats-label">{{ row.label }}</span>{% endif %}
   <dl class="report-stats-figures">
     <div><dt>n</dt><dd>{{ row.n }}</dd></div>
     <div><dt>Prom.</dt><dd>{{ row.mean|default_if_none:"—" }}</dd></div>

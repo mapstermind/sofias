@@ -302,7 +302,8 @@ class TestCompanyDashboardView:
         response = client.get(self.URL)
 
         assert response.status_code == 200
-        assert "Ver colaboradores".encode() in response.content
+        main = response.content.decode().split("<main", 1)[1]
+        assert 'href="/tablero-empresa/colaboradores/"' in main
 
     def test_summary_strip_hides_employee_action_without_permission(
         self, client, make_user, make_company
@@ -312,7 +313,8 @@ class TestCompanyDashboardView:
         response = self._login_with_company(client, make_user, company)
 
         assert response.status_code == 200
-        assert "Ver colaboradores".encode() not in response.content
+        main = response.content.decode().split("<main", 1)[1]
+        assert 'href="/tablero-empresa/colaboradores/"' not in main
 
     def test_take_survey_card_hidden_from_an_admin_viewing_a_company(
         self, client, make_user, active_assignment, bootstrap_groups
@@ -397,6 +399,18 @@ class TestEmployeeSurveyListView:
             profile.is_activated = True
             profile.save()
         return user
+
+    def test_a_closed_survey_explains_itself_in_text(
+        self, client, make_user, company, bootstrap_groups, survey
+    ):
+        """A hover tooltip can't be read on a phone, so the reason is plain text."""
+        SurveyAssignment.objects.create(
+            company=company, survey=survey, status=SurveyAssignment.Status.CLOSED
+        )
+        client.force_login(self._make_employee(make_user, bootstrap_groups, company))
+        html = client.get(self.URL).content.decode()
+        assert "La encuesta cerró; ya no puedes ver tus respuestas." in html
+        assert "bg-black" not in html
 
     def test_unauthenticated_redirects_to_login(self, client):
         response = client.get(self.URL)
@@ -1266,7 +1280,7 @@ class TestCompanyEmployeeListView:
 
         html = client.get(self.URL).content.decode()
 
-        assert "js/roster_filters.js" in html
+        assert "js/filter_dialog.js" in html
 
     def test_card_shows_the_role_label(
         self,

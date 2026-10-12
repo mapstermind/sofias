@@ -25,10 +25,7 @@
     {% firstof roster_url|add:"?orden="|add:roster_query.order as clear_url %}
   {% endif %}
 
-  <div class="mb-5">
-    <h1 class="text-xl font-bold text-neutral-900">Colaboradores</h1>
-    <p class="mt-1 text-sm text-neutral-500">{{ company.name }}</p>
-  </div>
+  {% include "components/_page_header.html" with title="Colaboradores" subtitle=company.name %}
 
   {# ── Bar ─────────────────────────────────────────────────────────────────── #}
   {% comment %}
@@ -44,7 +41,8 @@
   <div class="sticky top-0 z-20 -mx-4 bg-neutral-100 px-4 pt-1 pb-3">
     <form method="get" id="roster-filters" class="card p-3">
       <div class="flex flex-wrap items-center gap-2">
-        <div class="relative w-full flex-1 sm:w-auto sm:min-w-48">
+        {# The bar is sticky, so on a phone Filtros stays beside the search box and only Limpiar wraps. #}
+        <div class="relative min-w-36 flex-1 sm:min-w-48">
           <label for="roster-q" class="sr-only">Buscar por nombre o correo</label>
           <input type="search" name="q" id="roster-q" value="{{ roster_query.raw_q }}"
                  placeholder="Buscar por nombre o correo"
@@ -55,101 +53,31 @@
           </button>
         </div>
 
-        <button type="button" id="roster-filter-open"
-                aria-haspopup="dialog" aria-controls="roster-filter-modal"
-                class="btn btn-secondary shrink-0">
-          {% icon "funnel" "size-4 text-neutral-500" %}
-          Filtros
-          {% if active_filter_count %}
-            <span id="roster-filter-count" class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-semibold text-white">{{ active_filter_count }}</span>
-          {% endif %}
-        </button>
-
-        {% if roster_query.is_narrowed %}
-          <a href="{{ clear_url }}"
-             class="btn btn-text shrink-0">
-            Limpiar filtros
-          </a>
-        {% endif %}
+        {% include "components/_filter_buttons.html" with prefix="roster" count=active_filter_count narrowed=roster_query.is_narrowed clear_url=clear_url %}
       </div>
 
-      <div class="mt-3 flex items-center gap-2">
-        <span id="roster-orden-label" class="shrink-0 text-xs font-medium text-neutral-500">Ordenar por</span>
-        <div role="group" aria-labelledby="roster-orden-label" class="inline-flex min-w-0 rounded-lg bg-neutral-100 p-0.5">
+      {# On a phone the label sits above, so the three choices share the full width. #}
+      <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <span id="roster-orden-label" class="shrink-0 text-sm font-medium text-neutral-600">Ordenar por</span>
+        <div role="group" aria-labelledby="roster-orden-label" class="grid grid-cols-3 rounded-lg bg-neutral-100 p-0.5 sm:inline-flex">
           <button type="submit" name="orden" value="nombre" aria-pressed="{% if roster_query.order == 'nombre' %}true{% else %}false{% endif %}"
-                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors {% if roster_query.order == 'nombre' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
+                  class="min-h-10 rounded-md px-3 whitespace-nowrap text-sm font-medium transition-colors sm:min-h-8 {% if roster_query.order == 'nombre' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
             Nombre
           </button>
           <button type="submit" name="orden" value="progreso" aria-pressed="{% if roster_query.order == 'progreso' %}true{% else %}false{% endif %}"
-                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors {% if roster_query.order == 'progreso' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
+                  class="min-h-10 rounded-md px-3 whitespace-nowrap text-sm font-medium transition-colors sm:min-h-8 {% if roster_query.order == 'progreso' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
             Progreso
           </button>
           <button type="submit" name="orden" value="activacion" aria-pressed="{% if roster_query.order == 'activacion' %}true{% else %}false{% endif %}"
-                  class="min-w-0 truncate rounded-md px-3 py-1 text-xs font-medium transition-colors {% if roster_query.order == 'activacion' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
+                  class="min-h-10 rounded-md px-3 whitespace-nowrap text-sm font-medium transition-colors sm:min-h-8 {% if roster_query.order == 'activacion' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-500 hover:text-neutral-900{% endif %}">
             Activación
           </button>
         </div>
       </div>
 
       {# ── Filtros ───────────────────────────────────────────────────────────── #}
-      {% comment %}
-      A native dialog, and a child of the same form as the search box: *Aplicar
-      filtros* is then an ordinary submit and the whole narrowing lives in the
-      URL. Each choice is a real checkbox or radio worn as a pill, so picking
-      one needs no script and the keyboard reaches it by default. A dialog the
-      browser is not showing still submits the fields inside it, which is what
-      lets the chosen pills survive a reload.
-
-      Walk `filter_groups` blindly: a dimension added later is a change to the
-      view, not to this page.
-      {% endcomment %}
-      <dialog id="roster-filter-modal" aria-labelledby="roster-filter-title"
-              class="dialog max-w-lg overflow-hidden p-0">
-        <div class="flex max-h-[85vh] flex-col">
-          <div class="flex items-start justify-between gap-4 px-5 pt-5">
-            <h2 id="roster-filter-title" class="text-lg font-bold text-neutral-900">Filtros</h2>
-            <button type="button" id="roster-filter-close" aria-label="Cerrar"
-                    class="btn btn-text btn-sm -mr-2 -mt-1 px-2 text-neutral-500">
-              {% icon "x-mark" "size-5" %}
-            </button>
-          </div>
-
-          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
-            {% for group in filter_groups %}
-              {# Preflight leaves fieldset and legend with their browser defaults. #}
-              <fieldset class="m-0 min-w-0 border-0 p-0">
-                <legend class="m-0 p-0 text-sm font-semibold text-neutral-700">{{ group.label }}</legend>
-                <div class="mt-2 mb-3 flex flex-wrap gap-x-2 gap-y-3">
-                  {% for option in group.options %}
-                    {% with field_id="roster-pill-"|add:group.key|add:"-"|add:option.value %}
-                      <span>
-                        <input class="peer sr-only" id="{{ field_id }}"
-                               type="{% if group.multiple %}checkbox{% else %}radio{% endif %}"
-                               name="{{ group.key }}" value="{{ option.value }}"{% if option.selected %} checked{% endif %}>
-                        <label for="{{ field_id }}"
-                               class="cursor-pointer select-none rounded-full border border-neutral-300 bg-white px-3.5 py-1.5 text-sm text-neutral-700 transition-colors hover:border-neutral-400 hover:bg-neutral-50 peer-checked:border-primary-600 peer-checked:bg-primary-600 peer-checked:text-white peer-checked:hover:border-primary-700 peer-checked:hover:bg-primary-700 peer-focus-visible:ring-2 peer-focus-visible:ring-primary-600 peer-focus-visible:ring-offset-2">
-                          {{ option.label }}
-                        </label>
-                      </span>
-                    {% endwith %}
-                  {% endfor %}
-                </div>
-              </fieldset>
-            {% endfor %}
-          </div>
-
-          <div class="flex items-center justify-between gap-3 border-t border-neutral-100 px-5 py-4">
-            <a href="{{ clear_url }}"
-               class="btn btn-text">
-              Limpiar filtros
-            </a>
-            <button type="submit" id="roster-filter-apply" name="orden" value="{{ roster_query.order }}"
-                    class="btn btn-primary">
-              Aplicar filtros
-            </button>
-          </div>
-        </div>
-      </dialog>
+      {# Inside the form: a dialog the browser is not showing still submits its chips. #}
+      {% include "components/_filter_dialog.html" with prefix="roster" groups=filter_groups clear_url=clear_url apply_name="orden" apply_value=roster_query.order %}
     </form>
   </div>
 
@@ -243,5 +171,5 @@
     {% endif %}
   {% endif %}
 
-  <script src="{% static 'js/roster_filters.js' %}"></script>
+  <script src="{% static 'js/filter_dialog.js' %}"></script>
 {% endblock %}

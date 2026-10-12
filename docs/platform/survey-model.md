@@ -212,11 +212,12 @@ that guard only cleans up a display symptom — the boundary is enforced here.
 Admins hold no `can_take_assigned_surveys` and have no profile, so they cannot
 open a survey at all; there is no operator preview path today.
 
-The company dashboard's "Mi respuesta" card is gated on the viewer holding the
-permission **and** having a profile in the company on screen, rather than on the
-permission alone. A superuser satisfies every `perms.*` check a template makes
-regardless of group, so the permission by itself would offer an admin a card
-leading to a page the view turns them away from.
+The *Tu respuesta* strip on each of the company dashboard's survey cards is
+gated on the viewer holding the permission **and** having a profile in the
+company on screen, rather than on the permission alone. A superuser satisfies
+every `perms.*` check a template makes regardless of group, so the permission by
+itself would offer an admin a *Responder* button leading to a page the view
+turns them away from.
 
 ## The scoring boundary
 

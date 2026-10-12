@@ -52,7 +52,12 @@ Templates are in `templates/reports/`: the list, detail and form pages,
 `_document.html` (the registry loop, with the TOC right after the portada —
 shared by screen and PDF), `base_report.html` and `report_pdf.html` (the PDF
 document), and `sections/` (one partial per section; `sections/results/` holds
-the results partials and the shared statistics row, `_stats.html`).
+the results partials and the shared statistics row, `_stats.html`). A report
+names each subject once: where a heading already names the row, the caller
+captions the charts (`report-caption`: *Distribución por nivel*,
+*Calificación*) and includes `_stats.html` with `hide_label=True`. On the detail
+page *Despublicar* opens `<dialog id="unpublish-dialog">`, which holds the
+unpublish form.
 
 ## Conventions & gotchas
 

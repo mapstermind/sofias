@@ -24,8 +24,10 @@ Every template expresses color through the token scales: `text-primary-600`, `bg
 `bg-accent-100`. None names a Tailwind hue such as `indigo` or `gray`. Changing a palette's
 values, or replacing both palettes with the client's final choice, is an edit to one CSS file.
 
-Each recurring pattern has one definition. A button, a form control, a card and a pill are
-component classes (`btn btn-primary`, `control`, `card`, `pill`). Every Django form draws its
+Each recurring pattern has one definition. A button, a form control, a card, a link and a pill
+are component classes (`btn btn-primary`, `control`, `card`, `card-link`, `link`, `pill`,
+`chip`), and so is a survey's answer row (`answer`). Every page opens with one page-header
+partial and follows one heading ladder. Every Django form draws its
 fields through one field template, alerts and Django's messages through one partial, and icons
 through one tag. A styleguide page at `/estilos/` shows every component in every state, in
 whichever palette is active.
@@ -59,7 +61,7 @@ be compared live on the real screens rather than in a mock-up.
 
   | Class | Size | Line height | Role |
   |---|---|---|---|
-  | `text-xs` | 13px | 1.4 | A label on a graphic or a badge: a pill, a legend entry, a chart caption, a stat's caption, a count |
+  | `text-xs` | 13px | 1.4 | A label on a graphic or a badge: a pill, a legend entry, a chart caption, a count |
   | `text-sm` | 14px | 1.5 | Secondary text: table cells, metadata, dates, help, errors, field labels |
   | `text-base` | 16px | 1.5 | Body copy, form controls, the survey's questions and answers |
   | `text-lg` | 20px | 1.4 | Section headings, modal titles |
@@ -106,6 +108,16 @@ be compared live on the real screens rather than in a mock-up.
 - **Usage rules** (enforced where noted under **Enforcement**):
   - Color in templates comes from the token scales or the fixed colors below, never from a
     Tailwind hue name or an arbitrary hex value.
+  - **Headings.** A page's one `h1` is `text-xl` bold, from the page header (below). A page
+    section is an `h2` at `text-lg` weight 600 in `neutral-900`, 40px below what precedes it and
+    16px above its content. A card's title is an `h3` at `text-base` weight 600. Headings run in
+    order: nothing skips a level.
+  - **Labels are sentence case.** A label for a value (a stat's caption, a `dt`, a filter's
+    legend) is `text-sm` weight 500 in `neutral-600`. No label is set in capitals or tracked out;
+    only the avatar's initials are capitals.
+  - **Layout is classes.** An inline `style` carries only a computed value (a bar's width, a
+    tick's offset, a ring's dash), never layout. No template carries an inline `on*=` handler;
+    behaviour lives in `static/ts/`.
   - Page background `neutral-100`; cards white with a `neutral-200` border; headings and primary
     text `neutral-900`; body copy `neutral-700`; secondary text `neutral-600`. `neutral-500` is the
     lightest step used for text, for captions, hints and placeholders.
@@ -168,8 +180,8 @@ be compared live on the real screens rather than in a mock-up.
       A busy button (`aria-busy="true"`) shows a spinner and ignores clicks;
       `static/ts/busy_submit.ts` sets it on the submit button of a form carrying `data-loading`
       (the login code request, publish and unpublish, the report form) and clears it when the
-      back button restores the page from the browser's cache. A submit another handler cancelled, such as the unpublish confirmation, is left
-      alone. Under `prefers-reduced-motion` the spinner does not spin.
+      back button restores the page from the browser's cache. A submit another handler cancelled
+      is left alone. Under `prefers-reduced-motion` the spinner does not spin.
     - **The form control:** white, a `neutral-300` border, an 8px radius, 44px tall, 16px text.
       Focus draws a `primary-500` border and ring, keeping a transparent outline that
       high-contrast modes paint; `aria-invalid="true"` draws them in
@@ -182,6 +194,45 @@ be compared live on the real screens rather than in a mock-up.
     - **The pill:** `pill` is the shape (full radius, 12px text, weight 500). `pill-marker` adds the
       squircle marker in the pill's ink, or in the color a `before:bg-*` utility names. The tone is
       a utility.
+    - **The card link:** `card-link` makes a whole `card` a link or a button: a flex row whose
+      `neutral-200` border turns `primary-300` on hover, with no hover shadow. The call site adds
+      `group` and a trailing 20px `chevron-right` in `neutral-400` that turns `primary-600` on
+      hover, or another icon where the card opens something else (the dashboard's *Mínimo
+      representativo* opens the Cochran dialog behind a `calculator`). The card's own title says
+      where it goes; no "Ver …" text follows it. A card that leads nowhere is a plain `card`.
+    - **The link:** `link` is a link inside a sentence: weight 500, `primary-700`, underlined on
+      hover.
+    - **The chip:** `chip` is the label of a visually hidden checkbox or radio (`peer sr-only`,
+      just before it): a pill-shaped choice with a `neutral-300` border, 44px tall on a phone and
+      36px from `sm`, filled `primary-600` with white text when chosen, with the base rule's focus
+      outline when its input has keyboard focus. The roster's and the results page's filters are
+      chips. The removable filters above the results are chip-shaped links in `primary-50` with an
+      `x-mark`.
+    - **The filter bar:** a list a person narrows (the roster, the results page) has one bar: its
+      field (the search box, the survey picker), then *Filtros*, then *Limpiar filtros* while
+      anything is narrowed, all from `components/_filter_buttons.html`. *Filtros* carries a count
+      of the dimensions in use and opens `components/_filter_dialog.html`: a dialog of chips, one
+      group per dimension, over *Limpiar filtros* and *Aplicar filtros*. Both live inside the
+      page's GET form, so applying is a submit and the narrowing lives in the URL.
+      `static/ts/filter_dialog.ts` puts the chips back when the dialog is dismissed and lets a
+      chosen radio be un-chosen, which is how sexo returns to "either". On a phone the results
+      picker has its own row, its survey names being long; the roster's bar is sticky, so its
+      search keeps *Filtros* beside it.
+    - **The answer row:** `answer` is a survey option's `<label>` wrapping its input: a 44px row
+      with a `neutral-200` border, a `neutral-50` hover and a 20px radio or checkbox in
+      `primary-600`. The chosen row takes a `primary-600` border and a `primary-50` fill from
+      `:has(:checked)`, with no script, so a reload or the back button shows it too. It is a
+      selection, never a status: every answer is marked the same way. *Sí/No*, single and
+      multiple choice are rows, *Sí/No* side by side from `lg`. Likert and rating are rows on a
+      phone and five equal tiles from `lg`, the radio above its label.
+  - **The page header.** `templates/components/_page_header.html` takes `title` and an optional
+    `subtitle`: the page's one `h1` and a `text-sm` `neutral-600` line under it, 24px above the
+    content. The company pages, the report pages, *Mis encuestas* and the styleguide open with
+    it, and the survey draws the same shape with its description at body size. The dashboard sets
+    the company name beside a `primary-50` panel holding the *Código de referencia*: large
+    monospace, so 0/O and 1/I stay apart, with a *Copiar* button (`static/ts/copy.ts`, shown only
+    where the Clipboard API exists) and one line saying colaboradores type it to activate. Employee detail, the confirmation page and the centered screens draw their
+    title inside a card. The report sheet keeps its cover's own title.
   - **Keyboard focus.** A base rule draws a 2px `primary-500` outline with a 2px offset on
     `:focus-visible` for every link, button, summary, checkbox and radio, so no template draws its
     own and a mouse click draws nothing.
@@ -222,7 +273,8 @@ be compared live on the real screens rather than in a mock-up.
   - **The styleguide.** `/estilos/` (`StyleguideView`) shows, in the active palette: the color
     scales with their hex values, the type sizes in use, every button variant and size (default,
     disabled, busy), a demo form (`apps/core/styleguide.py`) empty and with errors, every alert
-    tone, the status pills and risk badges, cards, and every icon by name. It is shown to whoever
+    tone, the status pills and risk badges, cards, a card link, a link and chips, a likert
+    question's answer rows, a dialog, and every icon by name. It is shown to whoever
     may switch palettes (`brand.can_switch_palette`); everyone else gets a 404.
   - **Navigation.** Every signed-in page has one header row (`base_app.html`): the logo, the
     company's sections, and the user menu. It is 56px on a phone and 60px from `lg`.
@@ -268,6 +320,9 @@ be compared live on the real screens rather than in a mock-up.
       `data-open-on-load` opens when the page loads (the survey's confirmation and
       saved-progress dialogs), a click on the backdrop closes, and `data-dialog-static` ignores
       Esc and the backdrop (*Sesión expirada*, which only offers to sign in again).
+    - **Confirmations.** A destructive action asks inside a dialog that holds the form itself:
+      *Despublicar* on a report opens `unpublish-dialog`, whose own `btn-danger` submits. Without
+      JavaScript the dialog never opens, so nothing is undone unconfirmed.
   - **Empty states.** `templates/components/_empty.html` takes `body`, and optionally `icon`,
     `title`, `action_url` with `action_label`, and `compact`. It draws a dashed `neutral-300`
     card holding:
@@ -299,8 +354,8 @@ be compared live on the real screens rather than in a mock-up.
   its own, with its queries, addresses and filters.
 - **A loading skeleton.** The one asynchronous swap, the results filters, marks itself
   `aria-busy`.
-- **Page-by-page layout and copy changes.** Pages keep their current structure; only their tokens
-  change.
+- **Copy.** The wording of pages, buttons and messages is reviewed on its own, not as part of the
+  design system.
 - **Dark mode.** The token layer makes it a later addition of one more variable block.
 - **The Django admin.** It keeps Django's own styling.
 - **Final name, logo and palette.** They stay placeholders until the client confirms them.
@@ -320,6 +375,13 @@ is a 44px target. Company context and
 back links sit at the top of the page, not in the header. A dialog keeps a 16px gutter on each
 side and scrolls inside itself when it is taller than 85% of the screen. Error pages are the
 centered login card.
+
+The dashboard's stat cards sit two to a row on a phone and four from `lg`. Each survey on it is
+one card: its progress on top and, for a viewer who answers it, a *Tu respuesta* strip under a
+divider, its action full-width on a phone. A closed survey says why in a line of text, never in a
+hover tooltip. The survey's answers are full-width rows on a phone; likert and rating become five
+tiles from `lg`. Filter chips wrap. The footer stacks its three items, centered, on a phone, and
+spreads them across one row from `sm`.
 
 ## Key decisions
 
@@ -387,6 +449,19 @@ centered login card.
   a `<details>` opens without JavaScript; the scripts only add polish.
 - Decision: The 500 page renders through its own view, without the request context.
   Reason: Django renders it without context anyway, and the database may be what failed.
+- Decision: Labels are sentence case.
+  Reason: A tracked capitals label is slower to read and reads as template chrome.
+- Decision: A chosen survey answer marks its whole row in `primary`.
+  Reason: Respondents may struggle with devices, and a 20px dot is easy to miss; one color for
+  every answer keeps an answer from reading as right or wrong.
+- Decision: The dashboard does not repeat the header's navigation.
+  Reason: Every section is one tap away from every page. A dashboard card earns its place with a
+  figure, as *Cuestionarios valorados* does.
+- Decision: A report names a subject once and captions each chart by what it shows.
+  Reason: In the report every chart sits under its own heading, so a label on the chart repeats
+  it. The results page lists statistics rows together, so there each keeps its name.
+- Decision: A closed survey explains itself in text, not a tooltip.
+  Reason: A hover tooltip does not exist on a phone.
 - Decision: Heroicons are copied in as SVG files, not installed.
   Reason: The app uses about ten icons; a file per icon needs no npm dependency, and the tag
   inlines it so it takes the text color.
@@ -419,6 +494,12 @@ centered login card.
   names a title that exists. The survey opens its confirmation dialog on load only when asked.
   The error pages render in Spanish with the brand, and the 500 page renders with no database
   query.
+- Guards fail a template that writes a label in capitals (`uppercase`, outside the avatar),
+  uses black, lays out with an inline `style`, carries an inline `on*=` handler, draws a focus
+  ring on an `input`, or types the brand's meaning. A test renders each main page for the role
+  that sees it and fails a second `h1`. Tests check the dashboard's cards and *Tu respuesta*
+  strip, that every survey option is an `answer` row, that the report names each categoría,
+  dominio and the final score once, and that *Despublicar* is a dialog.
 - Tests cover the component classes in the built CSS, the field template (order, every error,
   *(opcional)*, the ARIA wiring, the fieldset, the admin left alone), the icon tag, each alert
   tone and messages on both layouts, and the styleguide's access and contents. The busy and

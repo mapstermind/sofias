@@ -17,6 +17,7 @@ block here is scanned like any other template class.
 
   <div class="mb-8 flex flex-col items-center text-center">
     {% include "_logo.html" with css_class="mb-6 h-8 w-auto text-primary-700" %}
+    {% block brand_line %}{% endblock %}
     {% block card_header %}{% endblock %}
   </div>
 

@@ -42,7 +42,7 @@ def test_published_is_readable_and_listed(exec_client, scored_assignment, make_u
     report = Report.objects.create(assignment=scored_assignment, **READY)
     publishing.publish(report, make_user(email="op@x.mx"))
     body = exec_client.get(reverse("reports:exec_list")).content.decode()
-    assert "Abrir" in body
+    assert f'href="{_detail(scored_assignment)}"' in body
     resp = exec_client.get(_detail(scored_assignment))
     assert resp.status_code == 200
     html = resp.content.decode()
@@ -80,7 +80,7 @@ def test_secondary_exec_is_403(
     assert client.get(reverse("reports:exec_list")).status_code == 403
 
 
-def test_dashboard_card_links_to_reports(exec_client):
+def test_the_header_offers_reports_from_the_dashboard(exec_client):
     body = exec_client.get(reverse("core:company_dashboard")).content.decode()
-    assert reverse("reports:exec_list") in body
-    assert "Reporte de resultados" in body
+    header = body[body.index("<header") : body.index("</header>")]
+    assert reverse("reports:exec_list") in header

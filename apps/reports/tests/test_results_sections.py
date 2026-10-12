@@ -71,3 +71,36 @@ def test_empty_assignment_shows_empty_states(company, nom035_survey):
     html = _html(Report(assignment=make_assignment(company, nom035_survey)))
     assert "Aún no hay cuestionarios valorados" in html
     assert "<svg" not in html
+
+
+def _blocks(section, css_class):
+    return section.split(f'class="{css_class}')[1:]
+
+
+def test_a_categoria_block_names_its_categoria_once(scored_assignment):
+    html = _html(Report(assignment=scored_assignment))
+    section = _slice(html, "resultadoscategoria")
+    blocks = _blocks(section, "report-group report-page-group")
+    assert blocks
+    for block in blocks:
+        label = block.split('<h4 class="report-h4">')[1].split("</h4>")[0]
+        assert block.count(label) == 1, label
+        assert "Distribución por nivel" in block
+        assert '<p class="report-caption">Calificación</p>' in block
+
+
+def test_a_dominio_block_names_its_dominio_once(scored_assignment):
+    html = _html(Report(assignment=scored_assignment))
+    section = _slice(html, "resultadosdominio")
+    blocks = _blocks(section, "report-group report-group--nested")
+    assert blocks
+    for block in blocks:
+        label = block.split('<p class="report-group-label">')[1].split("</p>")[0]
+        assert block.count(label) == 1, label
+
+
+def test_the_final_score_is_named_once(scored_assignment):
+    html = _html(Report(assignment=scored_assignment))
+    section = _slice(html, "resultadosfinal")
+    assert section.count("Calificación final") == 1
+    assert "report-stats-label" not in section

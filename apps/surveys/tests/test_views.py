@@ -724,3 +724,33 @@ class TestSurveyDialogs:
     def test_the_confirm_dialog_stays_shut_otherwise(self, client, active_assignment):
         html = client.get(_survey_url(active_assignment.pk)).content.decode()
         assert "data-open-on-load" not in self._tag(html, "submit-confirm-modal")
+
+
+class TestSurveyPageShape:
+    """The survey page follows the design system's page shape.
+
+    See docs/platform/design-system.md (Components).
+    """
+
+    def test_an_invalid_answer_raises_the_danger_alert(
+        self, client, active_assignment, survey_with_questions
+    ):
+        int_q = next(
+            q
+            for q in survey_with_questions["questions"]
+            if q.question_type == "integer"
+        )
+        html = client.post(
+            _survey_url(active_assignment.pk), {f"question_{int_q.id}": "x"}
+        ).content.decode()
+        main = html[html.index("<main") :]
+        assert 'role="alert"' in main
+        assert "Favor de corregir las preguntas resaltadas" in main
+
+    def test_headings_run_in_order(
+        self, client, active_assignment, survey_with_questions
+    ):
+        html = client.get(_survey_url(active_assignment.pk)).content.decode()
+        form = html[html.index('id="survey-form"') :]
+        first_h2 = form.find("<h2")
+        assert first_h2 == -1 or "<h3" not in form[:first_h2]

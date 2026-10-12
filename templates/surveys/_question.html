@@ -1,6 +1,6 @@
 {% load icons survey_extras %}
 {% with ans=existing_answers|dict_get:question.id %}
-<div class="question-card mb-6 rounded-lg bg-white p-5 shadow-sm border {% if question.id in errors %}border-danger-200{% else %}border-neutral-200{% endif %}"
+<div class="question-card card mb-6 p-5{% if question.id in errors %} border-danger-300{% endif %}"
      data-question-code="{{ question.code }}"
      data-question-name="question_{{ question.id }}"
      data-visible-when="{{ question.visible_when|as_json }}">
@@ -16,18 +16,18 @@
       {{ question.text }}
     </legend>
 
+    {% comment %}
+    Every option is an `answer` row: the whole row is the tap target and the
+    chosen row is marked (main.css). The input takes its look from the row.
+    {% endcomment %}
     {% if question.question_type == "boolean" %}
-      <div class="flex flex-col gap-2 lg:flex-row lg:gap-6">
-        <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md border border-neutral-200 px-3 py-2.5 transition-colors hover:bg-neutral-50 lg:min-h-0 lg:border-0 lg:px-0 lg:py-0 lg:hover:bg-transparent">
-          <input type="radio" name="question_{{ question.id }}" value="true"
-            {% if ans == True %}checked{% endif %}
-            class="h-4 w-4 text-primary-600 border-neutral-300 focus:ring-primary-500">
+      <div class="grid gap-2 lg:grid-cols-2">
+        <label class="answer">
+          <input type="radio" name="question_{{ question.id }}" value="true"{% if ans == True %} checked{% endif %}>
           <span class="text-base text-neutral-800">Sí</span>
         </label>
-        <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md border border-neutral-200 px-3 py-2.5 transition-colors hover:bg-neutral-50 lg:min-h-0 lg:border-0 lg:px-0 lg:py-0 lg:hover:bg-transparent">
-          <input type="radio" name="question_{{ question.id }}" value="false"
-            {% if ans == False and ans is not None %}checked{% endif %}
-            class="h-4 w-4 text-primary-600 border-neutral-300 focus:ring-primary-500">
+        <label class="answer">
+          <input type="radio" name="question_{{ question.id }}" value="false"{% if ans == False and ans is not None %} checked{% endif %}>
           <span class="text-base text-neutral-800">No</span>
         </label>
       </div>
@@ -35,10 +35,8 @@
     {% elif question.question_type == "single_choice" %}
       <div class="space-y-2">
         {% for choice in question.choices.all %}
-          <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md px-3 py-2.5 hover:bg-neutral-50 transition-colors">
-            <input type="radio" name="question_{{ question.id }}" value="{{ choice.value }}"
-              {% if ans == choice.value %}checked{% endif %}
-              class="h-4 w-4 text-primary-600 border-neutral-300 focus:ring-primary-500">
+          <label class="answer">
+            <input type="radio" name="question_{{ question.id }}" value="{{ choice.value }}"{% if ans == choice.value %} checked{% endif %}>
             <span class="text-base text-neutral-800">{{ choice.label }}</span>
           </label>
         {% endfor %}
@@ -47,10 +45,8 @@
     {% elif question.question_type == "multiple_choice" %}
       <div class="space-y-2">
         {% for choice in question.choices.all %}
-          <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md px-3 py-2.5 hover:bg-neutral-50 transition-colors">
-            <input type="checkbox" name="question_{{ question.id }}" value="{{ choice.value }}"
-              {% if ans and choice.value in ans %}checked{% endif %}
-              class="h-4 w-4 rounded text-primary-600 border-neutral-300 focus:ring-primary-500">
+          <label class="answer">
+            <input type="checkbox" name="question_{{ question.id }}" value="{{ choice.value }}"{% if ans and choice.value in ans %} checked{% endif %}>
             <span class="text-base text-neutral-800">{{ choice.label }}</span>
           </label>
         {% endfor %}
@@ -86,12 +82,10 @@
         class="control w-48">
 
     {% elif question.question_type == "rating" %}
-      <div class="flex flex-col gap-2 lg:flex-row lg:gap-4">
+      <div class="flex flex-col gap-2 lg:grid lg:grid-cols-5">
         {% for i in "12345" %}
-          <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md border border-neutral-200 px-3 py-2.5 transition-colors hover:bg-neutral-50 lg:min-h-0 lg:flex-col lg:items-center lg:gap-1 lg:border-0 lg:px-0 lg:py-0 lg:hover:bg-transparent">
-            <input type="radio" name="question_{{ question.id }}" value="{{ i }}"
-              {% if ans == i %}checked{% endif %}
-              class="h-4 w-4 text-primary-600 border-neutral-300 focus:ring-primary-500">
+          <label class="answer lg:min-h-20 lg:flex-col lg:justify-center lg:gap-2 lg:text-center">
+            <input type="radio" name="question_{{ question.id }}" value="{{ i }}"{% if ans == i %} checked{% endif %}>
             <span class="text-base text-neutral-800">{{ i }}</span>
           </label>
         {% endfor %}
@@ -100,17 +94,15 @@
     {% elif question.question_type == "likert" %}
       {% with pairs=question|likert_pairs %}
       {% comment %}
-      One row per option on a phone: five 72px columns need 392px and overflow,
-      and wrapping them onto two lines stops the scale reading as a scale. The
-      horizontal form survives behind `lg:`, where there is room for it.
+      One row per option on a phone: five columns don't fit 360px, and
+      wrapping them onto two lines stops the scale reading as a scale. From
+      `lg:` the options are five equal tiles in one row.
       {% endcomment %}
-      <div class="flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:gap-2">
+      <div class="flex flex-col gap-2 lg:grid lg:grid-cols-5">
         {% for value, label in pairs %}
-          <label class="flex min-h-11 items-center gap-3 cursor-pointer rounded-md border border-neutral-200 px-3 py-2.5 transition-colors hover:bg-neutral-50 lg:min-h-0 lg:min-w-[72px] lg:flex-col lg:items-center lg:gap-1 lg:border-0 lg:px-0 lg:py-0 lg:text-center lg:hover:bg-transparent">
-            <input type="radio" name="question_{{ question.id }}" value="{{ value }}"
-              {% if ans == value %}checked{% endif %}
-              class="h-4 w-4 text-primary-600 border-neutral-300 focus:ring-primary-500">
-            <span class="text-base text-neutral-800 lg:text-sm lg:text-neutral-600">{{ label }}</span>
+          <label class="answer lg:min-h-20 lg:flex-col lg:justify-center lg:gap-2 lg:px-2 lg:text-center">
+            <input type="radio" name="question_{{ question.id }}" value="{{ value }}"{% if ans == value %} checked{% endif %}>
+            <span class="text-base text-neutral-800 lg:text-sm lg:text-neutral-700">{{ label }}</span>
           </label>
         {% endfor %}
       </div>

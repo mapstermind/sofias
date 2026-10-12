@@ -1,8 +1,9 @@
+{% load icons %}
 <div class="flex flex-wrap items-center gap-2">
   {% for pill in pills %}
     <a href="{{ pill.remove_url }}" data-results-link
-       class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700 ring-1 ring-inset ring-primary-600/20 hover:bg-primary-100">
-      {{ pill.label }} <span aria-hidden="true">&times;</span><span class="sr-only">Quitar filtro</span>
+       class="chip border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100">
+      {{ pill.label }} {% icon "x-mark" "size-4" %}<span class="sr-only">Quitar filtro</span>
     </a>
   {% endfor %}
 </div>

@@ -58,8 +58,9 @@ sent the operator back for a second look at the other half.
 - A search box, three sorts (nombre, progreso, activación) and four filter
   dimensions (sexo, rol, área, localidad), all as optional GET parameters on
   that page; rol, área and localidad repeatable.
-- The filter modal: a native `<dialog>` of toggleable pills, and
-  `static/ts/roster_filters.ts`, the small script that opens and closes it.
+- The filter modal: the shared filter dialog of chips
+  (`components/_filter_dialog.html`, `static/ts/filter_dialog.ts`, see
+  `design-system.md`).
 - `apps/accounts/roles.py` — the canonical four group names, their Spanish
   labels, their URL slugs and their display order, imported by everything that
   needs any of the four.
@@ -136,7 +137,9 @@ shadow a good one that follows it. A filtered roster never raises.
 
 Above the list, on an opaque strip the width of the page shell: the search box,
 the *Filtros* button, a *Limpiar filtros* link when anything is being hidden,
-and the *Ordenar por* control on a second row, followed by
+and the *Ordenar por* control on a second row. On a phone *Filtros* stays beside
+the search box and *Limpiar filtros* wraps beneath, and *Ordenar por* sits above
+its three buttons, which split the width. Below the bar is
 `Mostrando X de Y colaboradores`. The bar starts below the page header and
 sticks to the top of the viewport once that header has scrolled past, so the
 roster scrolls beneath it and the controls stay reachable.
@@ -158,7 +161,8 @@ colaboradores vinculados a* the company and offers nothing to clear.
 
 ### The filter modal
 
-*Filtros* opens a native `<dialog>`, which brings its own backdrop, focus
+*Filtros* opens the shared filter dialog (`components/_filter_dialog.html`, the
+same one the results page uses), a native `<dialog>`, which brings its own backdrop, focus
 trapping and Esc-to-close. It holds one row of pills per dimension — Sexo, Rol,
 Área and, when the company has more than one, Localidad — over *Limpiar filtros*
 and *Aplicar filtros*.
@@ -190,10 +194,11 @@ button — points at the roster with nothing narrowing it, and keeps the sort.
 
 ### Without JavaScript
 
-`static/ts/roster_filters.ts` does four things and holds no filter state: it
-shows the dialog, closes it from the ✕ or the backdrop, lets a chosen sexo be
-un-chosen, and puts the pills back as they were when the dialog is dismissed
-without applying, so an abandoned edit does not ride along on the next search.
+`static/ts/dialog.ts` opens the dialog and closes it from the ✕, Esc or the
+backdrop. `static/ts/filter_dialog.ts` holds no filter state: it lets a chosen
+sexo be un-chosen and puts the pills back as they were when the dialog is
+dismissed without applying, so an abandoned edit does not ride along on the next
+search.
 
 Everything else is server-rendered. Without the script the search box, the sort
 buttons and every filter already in the URL go on working; only the modal is out

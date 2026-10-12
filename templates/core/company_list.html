@@ -1,37 +1,36 @@
 {% extends "base_app.html" %}
+{% load icons %}
 
 {% block title %}Empresas | {{ brand.name }}{% endblock %}
 
 {% block content %}
-  <div class="mb-8">
-    <h1 class="text-xl font-bold text-neutral-900">Empresas</h1>
-    <p class="mt-1 text-sm text-neutral-500">Selecciona una empresa para ver su tablero con análisis.</p>
-  </div>
+  {% include "components/_page_header.html" with title="Empresas" subtitle="Selecciona una empresa para ver su tablero con análisis." %}
 
   {% if companies %}
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {% for company in companies %}
         <a href="{% url 'core:company_dashboard_for' company.reference_code %}"
-           class="card block px-6 py-5 hover:border-primary-300 hover:shadow-md transition-all">
+           class="card card-link group items-start px-5 py-4">
+          <div class="min-w-0 flex-1">
+            <h2 class="truncate text-base font-semibold text-neutral-900">{{ company.name }}</h2>
+            <p class="mt-0.5 truncate text-sm text-neutral-600">{{ company.legal_name }}</p>
 
-          <h2 class="font-semibold text-neutral-900 truncate">{{ company.name }}</h2>
-          <p class="mt-0.5 text-sm text-neutral-500 truncate">{{ company.legal_name }}</p>
-
-          <dl class="mt-4 grid grid-cols-3 gap-2 text-center">
-            <div>
-              <dt class="text-xs text-neutral-500">Colaboradores</dt>
-              <dd class="mt-0.5 text-lg font-semibold text-neutral-800">{{ company.member_count }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs text-neutral-500">Encuestas activas</dt>
-              <dd class="mt-0.5 text-lg font-semibold text-neutral-800">{{ company.active_assignment_count }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs text-neutral-500">Respuestas</dt>
-              <dd class="mt-0.5 text-lg font-semibold text-neutral-800">{{ company.completed_submission_count }}</dd>
-            </div>
-          </dl>
-
+            <dl class="mt-4 grid grid-cols-3 gap-3">
+              <div>
+                <dt class="text-sm text-neutral-600">Colaboradores</dt>
+                <dd class="mt-0.5 text-lg font-semibold text-neutral-900 tabular-nums">{{ company.member_count }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm text-neutral-600">Encuestas activas</dt>
+                <dd class="mt-0.5 text-lg font-semibold text-neutral-900 tabular-nums">{{ company.active_assignment_count }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm text-neutral-600">Respuestas</dt>
+                <dd class="mt-0.5 text-lg font-semibold text-neutral-900 tabular-nums">{{ company.completed_submission_count }}</dd>
+              </div>
+            </dl>
+          </div>
+          {% icon "chevron-right" "mt-0.5 size-5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600" %}
         </a>
       {% endfor %}
     </div>

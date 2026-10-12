@@ -12,10 +12,10 @@
 {% with emp=employee_profile.user %}
 
 {# ── Header band: identity + survey progress ───────────────────────────────── #}
-<div class="flex flex-col lg:flex-row gap-4 mb-8">
+<div class="grid gap-4 lg:grid-cols-2">
 
   {# Identity #}
-  <div class="card px-6 py-5" style="flex: 2">
+  <div class="card px-6 py-5">
     <div class="flex items-center gap-4">
       {% include "_avatar.html" with person=emp only %}
       <div class="min-w-0">
@@ -23,7 +23,7 @@
           {% if emp.get_full_name %}
             {{ emp.get_full_name }}
           {% else %}
-            <span class="text-neutral-500 font-normal italic">Sin nombre</span>
+            <span class="text-neutral-600 font-normal">Sin nombre</span>
           {% endif %}
         </h1>
         <p class="mt-0.5 text-sm text-neutral-500 truncate">{{ emp.email }}</p>
@@ -32,37 +32,37 @@
 
     <dl class="mt-6 space-y-4">
       <div class="min-w-0">
-        <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Cargo</dt>
+        <dt class="text-sm font-medium text-neutral-600">Cargo</dt>
         <dd class="mt-1 text-sm font-medium text-neutral-900">
           {% if employee_profile.position %}
             {{ employee_profile.position }}
           {% else %}
-            <span class="text-neutral-500 font-normal italic">Sin asignar</span>
+            <span class="text-neutral-600 font-normal">Sin asignar</span>
           {% endif %}
         </dd>
       </div>
       <div class="min-w-0">
-        <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Área</dt>
+        <dt class="text-sm font-medium text-neutral-600">Área</dt>
         <dd class="mt-1 text-sm font-medium text-neutral-900">
           {% if employee_profile.area %}
             {{ employee_profile.area.name }}
           {% else %}
-            <span class="text-neutral-500 font-normal italic">Sin asignar</span>
+            <span class="text-neutral-600 font-normal">Sin asignar</span>
           {% endif %}
         </dd>
       </div>
       <div class="min-w-0">
-        <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Localidad</dt>
+        <dt class="text-sm font-medium text-neutral-600">Localidad</dt>
         <dd class="mt-1 text-sm font-medium text-neutral-900">
           {% if employee_profile.location %}
             {{ employee_profile.location.name }}
           {% else %}
-            <span class="text-neutral-500 font-normal italic">Sin asignar</span>
+            <span class="text-neutral-600 font-normal">Sin asignar</span>
           {% endif %}
         </dd>
       </div>
       <div class="min-w-0">
-        <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Estado de cuenta</dt>
+        <dt class="text-sm font-medium text-neutral-600">Estado de cuenta</dt>
         <dd class="mt-1">
           {% if employee_profile.is_activated %}
             <span class="pill pill-marker bg-success-50 text-success-800 ring-1 ring-inset ring-success-600/20">Activado</span>
@@ -75,7 +75,7 @@
   </div>
 
   {# Survey progress #}
-  <div class="flex flex-col gap-4" style="flex: 2">
+  <div class="flex flex-col gap-4">
     {% if survey_progress %}
       {% for prog in survey_progress %}
         <div class="card flex h-full items-center gap-5 px-6 py-5">
@@ -122,15 +122,15 @@
 
 {# ── Valoración de resultados (can_view_insights only) ────────────────────── #}
 {% if perms.accounts.can_view_insights %}
-<section class="mb-8">
-  <h2 class="text-base font-semibold text-neutral-900 mb-4">Valoración de resultados</h2>
+<section>
+  <h2 class="mt-10 mb-4 text-lg font-semibold text-neutral-900">Valoración de resultados</h2>
 
   {% if valuation %}
     {# Final risk #}
     <div class="card px-6 py-5">
       <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
         <div class="min-w-0">
-          <p class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Nivel de riesgo final</p>
+          <p class="text-sm font-medium text-neutral-600">Nivel de riesgo final</p>
           <p class="mt-1 flex items-baseline gap-2">
             <span class="text-xl font-bold text-neutral-900">{{ valuation.final_ndr_label }}</span>
             <span class="text-sm tabular-nums text-neutral-500">{{ valuation.final_score }} puntos</span>
@@ -143,10 +143,7 @@
     </div>
 
     {% if valuation.guia1_positive %}
-      <div class="mt-4 flex items-start gap-3 rounded-2xl border border-danger-200 bg-danger-50 px-6 py-4">
-        {% icon "exclamation-triangle" "size-5 shrink-0 text-danger-600" %}
-        <p class="text-sm font-medium text-danger-800">Usuario positivo a un acontecimiento traumático severo.</p>
-      </div>
+      <div class="mt-4">{% include "components/_alert.html" with tone="danger" body="Usuario positivo a un acontecimiento traumático severo." %}</div>
     {% endif %}
 
     {# One card per categoría #}
@@ -170,10 +167,10 @@
             {% for dom in cat.domains %}
               {% if dom.dimensions %}
                 <details class="group/dim">
-                  <summary class="group flex cursor-pointer list-none items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md transition-colors hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 [&::-webkit-details-marker]:hidden">
+                  <summary class="group flex min-h-11 cursor-pointer list-none items-center gap-2 -mx-2 px-2 rounded-md transition-colors hover:bg-neutral-50 lg:min-h-0 lg:items-baseline lg:py-0.5 [&::-webkit-details-marker]:hidden">
                     {% icon "chevron-right" "size-3 shrink-0 self-center text-neutral-500 transition-transform group-open/dim:rotate-90" %}
-                    <span class="shrink-0 text-sm text-neutral-700 transition-colors group-hover:text-neutral-900">{{ dom.label }}</span>
-                    <span class="flex-1 border-b border-dotted border-neutral-300 transition-colors group-hover:border-neutral-400"></span>
+                    <span class="min-w-0 text-sm text-neutral-700 transition-colors group-hover:text-neutral-900">{{ dom.label }}</span>
+                    <span class="min-w-3 flex-1 border-b border-dotted border-neutral-300 transition-colors group-hover:border-neutral-400"></span>
                     <span class="shrink-0 flex items-center gap-2">
                       <span class="text-sm tabular-nums text-neutral-500 transition-colors group-hover:text-neutral-900">{{ dom.score }}</span>
                       <span class="pill ring-1 ring-inset {{ dom.ndr|ndr_badge:"dominio" }}">{{ dom.ndr_label }}</span>
@@ -182,19 +179,19 @@
                   <ul class="mt-1 mb-2 ml-4 space-y-0.5 border-l border-neutral-100 pl-3">
                     {% for dim in dom.dimensions %}
                       <li class="flex items-baseline gap-2 text-sm text-neutral-500">
-                        <span class="shrink-0">{{ dim.label }}</span>
-                        <span class="flex-1 border-b border-dotted border-neutral-200"></span>
+                        <span class="min-w-0">{{ dim.label }}</span>
+                        <span class="min-w-3 flex-1 border-b border-dotted border-neutral-200"></span>
                         <span class="shrink-0 tabular-nums">{{ dim.score }}</span>
                       </li>
                     {% endfor %}
                   </ul>
                 </details>
               {% else %}
-                <div class="group flex items-baseline gap-2 -mx-2 px-2 py-0.5 rounded-md transition-colors hover:bg-neutral-50">
+                <div class="group flex min-h-11 items-center gap-2 -mx-2 px-2 rounded-md transition-colors hover:bg-neutral-50 lg:min-h-0 lg:items-baseline lg:py-0.5">
                   {# Aligns with the disclosure rows above, which lead with a chevron. #}
                   <span class="size-3 shrink-0 self-center" aria-hidden="true"></span>
-                  <span class="shrink-0 text-sm text-neutral-700 transition-colors group-hover:text-neutral-900">{{ dom.label }}</span>
-                  <span class="flex-1 border-b border-dotted border-neutral-300 transition-colors group-hover:border-neutral-400"></span>
+                  <span class="min-w-0 text-sm text-neutral-700 transition-colors group-hover:text-neutral-900">{{ dom.label }}</span>
+                  <span class="min-w-3 flex-1 border-b border-dotted border-neutral-300 transition-colors group-hover:border-neutral-400"></span>
                   <span class="shrink-0 flex items-center gap-2">
                     <span class="text-sm tabular-nums text-neutral-500 transition-colors group-hover:text-neutral-900">{{ dom.score }}</span>
                     <span class="pill ring-1 ring-inset {{ dom.ndr|ndr_badge:"dominio" }}">{{ dom.ndr_label }}</span>
@@ -214,8 +211,8 @@
 
 {# ── Submissions / answers (can_view_submissions only) ───────────────────── #}
 {% if submissions_data is not None %}
-<section class="mb-8">
-  <h2 class="text-base font-semibold text-neutral-900 mb-4">Respuestas</h2>
+<section>
+  <h2 class="mt-10 mb-4 text-lg font-semibold text-neutral-900">Respuestas</h2>
 
   {% if submissions_data %}
     <div class="space-y-4">
@@ -239,7 +236,7 @@
 
           {% if not item.submission %}
             <div class="px-6 py-8 text-center">
-              <p class="text-sm text-neutral-500 italic">Este colaborador aún no ha iniciado esta encuesta.</p>
+              <p class="text-sm text-neutral-600">Este colaborador aún no ha iniciado esta encuesta.</p>
             </div>
           {% else %}
             <div class="px-6 py-5 space-y-6">
@@ -248,7 +245,7 @@
               {% for mod in item.modules %}
                 <div>
                   <div class="mb-3 flex items-end justify-between gap-3 border-b border-neutral-100 pb-2">
-                    <h3 class="text-sm font-semibold text-neutral-500 uppercase tracking-wide">
+                    <h3 class="text-base font-semibold text-neutral-900">
                       {{ mod.module.title }}
                     </h3>
                     {% with likert_qa=mod.items|first_of_type:"likert" %}
