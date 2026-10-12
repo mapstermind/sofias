@@ -18,9 +18,8 @@
 @source "../../apps/**/templatetags/*.py";
 @source "../ts";
 
-/* Widths a view can pass as `container_width` (see templates/base_app.html and
-   templates/base_centered.html). They are chosen in Python by name, so no scan
-   can see them. */
+/* Widths a view can pass as `container_width` (see templates/base_app.html).
+   They are chosen in Python by name, so no scan can see them. */
 @source inline("max-w-5xl max-w-6xl");
 
 /* ── Figtree ────────────────────────────────────────────────────────────────
@@ -320,8 +319,16 @@
       radial-gradient(50% 45% at 100% 100%, var(--brand-accent-100) 0%, transparent 70%),
       var(--brand-neutral-100);
   }
-  /* The brand panel: a band above the form on a phone, the card's left column
-     from `lg`. White text sits over the primary-900 pool at the bottom left. */
+  /* The white split card of the account screens and the about page: one
+     column on a phone, two from `lg` (the page sets the column split). */
+  .auth-card {
+    @apply grid w-full grid-cols-1 rounded-[20px] bg-white p-2 lg:rounded-3xl lg:p-3;
+    box-shadow:
+      0 0 0 1px var(--brand-neutral-200),
+      0 30px 60px -24px color-mix(in srgb, var(--brand-primary-900) 35%, transparent);
+  }
+  /* The brand panel: a band at the top of the card on a phone, one of its
+     columns from `lg`. White text sits over the primary-900 pool at the bottom left. */
   .auth-panel {
     @apply relative isolate flex flex-col justify-between gap-4 overflow-hidden rounded-[14px] p-5 text-white lg:rounded-2xl lg:p-8 xl:p-10;
     background:

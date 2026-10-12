@@ -1,29 +1,48 @@
-{% extends "base_centered.html" %}
+{% extends "base.html" %}
+
+{% comment %}
+The about page: the account screens' split card with its columns swapped. The
+text is on the left, and the brand panel holding the page's title is on the
+right. The panel comes first in the markup, so the title is read before the
+text; on a phone it is the band at the top of the card.
+{% endcomment %}
 
 {% block title %}¿Qué es {{ brand.short_name }}? | {{ brand.name }}{% endblock %}
 
-{% block container_width %}max-w-xl{% endblock %}
+{% block body_class %}min-h-screen auth-backdrop{% endblock %}
 
-{% block card_header %}
-  <h1 class="text-xl font-bold text-neutral-900">¿Qué es {{ brand.short_name }}?</h1>
-{% endblock %}
+{% block body %}
+<main id="main" tabindex="-1" class="flex flex-1 items-center justify-center px-4 py-6 focus:outline-none lg:px-8 lg:py-12">
+  <div class="auth-card max-w-5xl lg:min-h-[620px] lg:grid-cols-2">
 
-{% block card_body %}
-  <div class="space-y-4 text-base text-neutral-700">
-    <p>
-      <strong class="font-semibold text-neutral-900">{{ brand.name }}</strong> ({{ brand.meaning }}) es una plataforma diseñada para que las organizaciones recopilen, procesen y analicen la retroalimentación de sus colaboradores de forma estructurada.
-    </p>
-    <p>
-      A través de cuestionarios como los de la NOM-035, {{ brand.name }} permite capturar opiniones, percepciones y datos cuantitativos de los colaboradores.
-    </p>
-    <p>
-      Los resultados se procesan automáticamente y se presentan en tableros y reportes que ayudan a decidir con datos sobre los riesgos psicosociales y el entorno de trabajo.
-    </p>
+    <section class="auth-panel lg:order-last" aria-labelledby="about-title">
+      {% include "_logo.html" with css_class="h-9 w-auto self-start text-white lg:h-10" %}
+      <div class="space-y-2 lg:space-y-3">
+        <h1 id="about-title" class="text-xl font-bold text-balance lg:text-2xl xl:text-3xl">¿Qué es {{ brand.short_name }}?</h1>
+        <p class="max-w-[40ch] text-sm text-white/90 lg:max-w-[30ch] lg:text-base">{{ brand.meaning }}</p>
+      </div>
+    </section>
+
+    <div class="min-w-0 px-4 pt-7 pb-6 lg:flex lg:items-center lg:px-10 lg:py-12">
+      <div class="mx-auto w-full max-w-[34rem]">
+        {% include "_logo.html" with css_class="mx-auto mb-8 hidden h-10 w-auto text-primary-600 lg:block" %}
+        {% include "_messages.html" %}
+        <div class="space-y-4 text-base text-neutral-700">
+          <p>
+            <strong class="font-semibold text-neutral-900">{{ brand.name }}</strong> es una plataforma diseñada para que las organizaciones recopilen, procesen y analicen la retroalimentación de sus colaboradores de forma estructurada.
+          </p>
+          <p>
+            A través de cuestionarios como los de la NOM-035, {{ brand.name }} permite capturar opiniones, percepciones y datos cuantitativos de los colaboradores.
+          </p>
+          <p>
+            Los resultados se procesan automáticamente y se presentan en tableros y reportes que ayudan a decidir con datos sobre los riesgos psicosociales y el entorno de trabajo.
+          </p>
+        </div>
+        <a href="{% url 'core:home' %}" class="btn btn-primary btn-glow mt-8 w-full lg:w-auto">Ir al inicio</a>
+      </div>
+    </div>
+
   </div>
-{% endblock %}
-
-{% block card_footer %}
-  <p class="mt-6 text-center text-sm">
-    <a href="{% url 'core:home' %}" class="link">Ir al inicio</a>
-  </p>
+</main>
+{% include "_footer.html" %}
 {% endblock %}

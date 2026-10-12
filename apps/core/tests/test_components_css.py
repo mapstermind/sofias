@@ -28,6 +28,7 @@ COMPONENTS = (
     "chip",
     "answer",
     "auth-backdrop",
+    "auth-card",
     "auth-panel",
     "btn-glow",
 )

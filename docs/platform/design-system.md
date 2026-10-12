@@ -236,8 +236,9 @@ be compared live on the real screens rather than in a mock-up.
     it, and the survey draws the same shape with its description at body size. The dashboard sets
     the company name beside a `primary-50` panel holding the *Código de empresa*: large
     monospace, so 0/O and 1/I stay apart, with a *Copiar* button (`static/ts/copy.ts`, shown only
-    where the Clipboard API exists) and one line saying colaboradores type it to activate. Employee detail, the confirmation page and the about page draw their
-    title inside a card, and the account screens in their form column. The report sheet keeps its
+    where the Clipboard API exists) and one line saying colaboradores type it to activate. Employee detail and the confirmation page draw their
+    title inside a card, the account screens in their form column, and the about page in its
+    brand panel. The report sheet keeps its
     cover's own title.
   - **Keyboard focus.** A base rule draws a 2px `primary-500` outline with a 2px offset on
     `:focus-visible` for every link, button, summary, checkbox and radio, so no template draws its
@@ -277,7 +278,7 @@ be compared live on the real screens rather than in a mock-up.
     the alert take keyboard focus on load (`static/ts/focus_on_load.ts`), for an error a form
     reloaded to report: a role read out on load is not announced reliably, focus is.
   - **Messages.** `templates/_messages.html` draws Django's messages as dismissible alerts at the
-    top of every page; `base_app.html`, `base_auth.html` and `base_centered.html` include it. `error` maps to
+    top of every page; `base_app.html`, `base_auth.html` and `core/about.html` include it. `error` maps to
     `danger` and `debug` to `info`. The close button (*Cerrar aviso*) is wired by
     `static/ts/dismiss.ts`, loaded on every page, which moves focus to the next message or to
     `#main`, which every layout has. Without
@@ -352,10 +353,11 @@ be compared live on the real screens rather than in a mock-up.
     The empty roster offers *Limpiar filtros* when it is filtered.
   - **Account screens.** The ways to sign in (*Código por correo*, *Revisa tu correo*,
     *Contraseña*, *Primer ingreso*), *Cambia tu contraseña* and *Activa tu cuenta* extend
-    `templates/base_auth.html`: a white card on `auth-backdrop`, the page's `neutral-100` tinted by
-    a `primary-100` glow at the top left and an `accent-100` glow at the bottom right. The card has
-    a 24px radius, a `neutral-200` ring and one large shadow tinted `primary-900`, and splits into
-    two columns from `lg`.
+    `templates/base_auth.html`. The page is `auth-backdrop`: `neutral-100` tinted by a
+    `primary-100` glow at the top left and an `accent-100` glow at the bottom right. On it sits an
+    `auth-card`: white, with a 20px radius and 8px padding on a phone and 24px and 12px from
+    `lg`, a `neutral-200` ring and one large shadow tinted `primary-900`. It is one column on a
+    phone, and the page sets its two columns from `lg`.
     - **The panel:** `auth-panel` is the left column, inset 12px with a 16px radius. Its gradient
       is layered from the palette's variables, with a `primary-900` pool at the bottom left under
       the white text, `accent-300` and `accent-500` glows, a blurred `primary-700` shape and a
@@ -376,6 +378,16 @@ be compared live on the real screens rather than in a mock-up.
       cuenta*). The card widens to `max-w-6xl` with a 2:3 split, the form column to `max-w-lg`
       starting at the top, and the panel becomes one screen tall and sticky, so the logo and the
       name stay in view while the form scrolls.
+  - **The about page.** `core/about.html` extends `base.html` and uses the same `auth-backdrop`
+    and `auth-card` with the columns swapped.
+    - **The left column:** the logo, centered in `primary-600` from `lg`, then the messages, the
+      three paragraphs at `text-base` in `neutral-700` on a 34rem measure, and *Ir al inicio* as
+      `btn btn-primary btn-glow`.
+    - **The right column:** an `auth-panel` with the logo at the top and, at the bottom, the
+      page's `h1` *¿Qué es {{ brand.short_name }}?* with `brand.meaning` under it. The title is
+      the panel's display text: `text-xl` on a phone, `text-2xl` from `lg` and `text-3xl` from
+      `xl`. The panel comes first in the markup, so the title is read before the text, and
+      `lg:order-last` moves it to the right.
   - **Error pages.** `templates/404.html`, `403.html` and `500.html` extend `base_error.html`,
     a centered card. Each holds:
     - the logo
@@ -448,7 +460,9 @@ centered card.
 The account screens are one card on a phone: the panel is a short band at the top holding the
 logo and `brand.meaning` as one `text-sm` paragraph, and the form follows below it. The form
 column's own logo shows only from `lg`, where the panel becomes the left column. The *Otras
-formas de ingresar* rows are full width and at least 44px tall.
+formas de ingresar* rows are full width and at least 44px tall. The about page has the same
+shape: the panel's band, now holding its title, and then the text with *Ir al inicio* at full
+width.
 
 The dashboard's stat cards sit two to a row on a phone and four from `lg`. Each survey on it is
 one card: its progress on top and, for a viewer who answers it, a *Tus respuestas* strip under a
@@ -586,7 +600,9 @@ spreads them across one row from `sm`.
 - Tests cover the component classes in the built CSS, the field template (order, every error,
   *(opcional)*, the ARIA wiring, the fieldset, the admin left alone), the icon tag, each alert
   tone and messages on the layouts, and the styleguide's access and contents. Tests check that
-  each account screen renders in `base_auth.html` with its panel, that the long variant is
+  the about page renders as a split card with its title in the panel and its messages shown,
+  and that each account screen renders in
+  `base_auth.html` with its panel, that the long variant is
   activation's (its blocked states included), which other ways in each sign-in form offers, and
   that a password field, and only a password field, renders its show/hide button `hidden`, after
   the control and before the errors. The busy, dismiss, focus-on-load and password-toggle scripts
