@@ -61,7 +61,7 @@ def _with_message(client, text, level=constants.SUCCESS):
 
 
 @pytest.mark.django_db
-def test_a_message_shows_on_a_centered_page(client):
+def test_a_message_shows_on_a_sign_in_page(client):
     _with_message(client, "Revisa tu correo", constants.INFO)
     html = client.get("/cuentas/ingresar/").content.decode()
     assert "Revisa tu correo" in html

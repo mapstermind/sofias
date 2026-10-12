@@ -152,3 +152,39 @@ def test_each_date_part_is_named():
     for name, label in (("day", "Día"), ("month", "Mes"), ("year", "Año")):
         select = re.search(rf'<select[^>]*name="born_{name}"[^>]*>', html).group(0)
         assert f'aria-label="{label}"' in select
+
+
+class PasswordForm(forms.Form):
+    password = forms.CharField(label="Contraseña", widget=forms.PasswordInput)
+
+    def clean_password(self):
+        raise forms.ValidationError("Revisa tu contraseña.")
+
+
+def test_a_password_field_gets_a_hidden_show_button():
+    html = group(PasswordForm(), "password")
+    assert "data-password-toggle" in html
+    button = re.search(r"<button[^>]*data-password-toggle-button[^>]*>", html).group(0)
+    assert 'type="button"' in button
+    assert 'aria-label="Mostrar contraseña"' in button
+    assert 'aria-pressed="false"' in button
+    # Shown only once static/ts/password_toggle.ts runs.
+    assert re.search(r"\shidden[\s>]", button)
+
+
+def test_the_show_button_sits_after_the_control_and_before_the_errors():
+    html = group(PasswordForm(data={"password": "x"}), "password")
+    assert html.index("<input") < html.index("data-password-toggle-button")
+    assert html.index("data-password-toggle-button") < html.index(
+        "Revisa tu contraseña."
+    )
+    assert 'aria-describedby="id_password_error"' in html
+
+
+def test_other_fields_get_no_show_button():
+    assert "data-password-toggle" not in group(DemoForm(), "name")
+
+
+def test_every_page_loads_the_password_toggle(client):
+    html = client.get("/cuentas/ingresar/").content.decode()
+    assert "js/password_toggle.js" in html

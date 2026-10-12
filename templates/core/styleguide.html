@@ -66,6 +66,10 @@ static page, so they are tried live. See docs/platform/design-system.md.
           <button type="button" class="btn btn-primary" disabled>Publicar</button>
           <button type="button" class="btn btn-secondary" disabled>Descargar PDF</button>
         </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" class="btn btn-primary btn-glow">Enviarme un código</button>
+          <p class="text-sm text-neutral-600">Con brillo: la acción principal de las pantallas de cuenta.</p>
+        </div>
       </div>
     </section>
 
@@ -123,6 +127,13 @@ static page, so they are tried live. See docs/platform/design-system.md.
           <p class="mt-1 text-2xl font-bold text-neutral-900">128</p>
         </div>
         {% include "components/_empty.html" with body="Aún no hay reportes publicados." icon="document-text" compact=True %}
+      </div>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <div class="auth-panel min-h-56">
+          {% include "_logo.html" with css_class="h-9 w-auto self-start text-white" %}
+          <p class="max-w-[40ch] text-sm font-medium text-white/90">{{ brand.meaning }}</p>
+        </div>
+        <p class="self-center text-sm text-neutral-600">El panel de las pantallas de cuenta, en la paleta activa.</p>
       </div>
       <div class="mt-4">
         {% include "components/_empty.html" with title="Ningún colaborador coincide" body="Ningún colaborador coincide con la búsqueda." icon="users" action_url="#sg-cards" action_label="Limpiar filtros" %}

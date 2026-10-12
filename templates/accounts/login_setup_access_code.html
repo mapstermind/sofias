@@ -1,27 +1,22 @@
-{% extends "base_centered.html" %}
+{% extends "base_auth.html" %}
 
 {% block title %}Primer ingreso | {{ brand.name }}{% endblock %}
 
-{% block card_header %}
+{% block form_header %}
   <h1 class="text-xl font-bold text-neutral-900">Primer ingreso</h1>
   <p class="mt-2 text-sm text-neutral-600">
     Escribe tu correo de trabajo y el código de acceso de 9 dígitos que te entregó quien te invitó.
   </p>
 {% endblock %}
 
-{% block card_body %}
+{% block form_body %}
   <form method="post" novalidate>
     {% csrf_token %}
     {{ form }}
-    <button type="submit" class="btn btn-primary mt-8 w-full">Continuar</button>
+    <button type="submit" class="btn btn-primary btn-glow mt-8 w-full">Continuar</button>
   </form>
 {% endblock %}
 
-{% block card_footer %}
-  <p class="mt-6 text-center text-sm text-neutral-600">
-    ¿Ya creaste tu contraseña?
-    <a href="{% url 'accounts:password_login' %}" class="link">
-      Inicia sesión con contraseña
-    </a>
-  </p>
+{% block form_footer %}
+  {% include "accounts/_signin_alternatives.html" with current="setup" %}
 {% endblock %}
