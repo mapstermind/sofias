@@ -1,0 +1,82 @@
+{% load charts icons l10n valuation_extras %}
+{% comment %}
+The main box. Takes `h` (results_proposal.hero), `title`, `subtitle`, `view`
+("dist" or "stats") and `tier`. The real page switches the view and the
+selected level in place; here each state is drawn on its own.
+{% endcomment %}
+{% with g=h.group %}
+<section class="min-w-0 rounded-3xl bg-white p-5 shadow-xl shadow-primary-900/10 sm:p-7">
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div class="flex min-w-0 items-start gap-3">
+      <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-700">{% icon "chart-bar" "size-6" %}</span>
+      <div class="min-w-0">
+        <h3 class="text-2xl font-medium text-neutral-900">{{ title }}</h3>
+        <p class="mt-1 max-w-prose text-sm text-neutral-600">{{ subtitle }}</p>
+      </div>
+    </div>
+    <div class="inline-flex shrink-0 self-start rounded-full bg-neutral-100 p-1 text-sm font-medium">
+      <span class="rounded-full px-4 py-1.5 {% if view == 'dist' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-600{% endif %}">Distribución</span>
+      <span class="rounded-full px-4 py-1.5 {% if view == 'stats' %}bg-white text-neutral-900 shadow-sm{% else %}text-neutral-600{% endif %}">Estadísticas</span>
+    </div>
+  </div>
+
+  {% if view == "dist" %}
+    <div class="mt-6 flex flex-col-reverse gap-6 md:flex-row md:items-end md:gap-8">
+      <div class="md:w-44 md:shrink-0 md:pb-14">
+        <p class="text-3xl font-medium text-neutral-900 tabular-nums">{{ h.selected.percent }} %</p>
+        <p class="mt-2 text-sm text-neutral-600">de los cuestionarios quedaron en nivel {{ h.selected.label|lower }}.</p>
+        <p class="mt-1 text-sm text-neutral-500 tabular-nums">{{ h.selected.count }} de {{ g.n }}</p>
+      </div>
+      <figure class="m-0 min-w-0 flex-1">
+        {% localize off %}
+        <div class="relative pl-10">
+          <div class="absolute inset-x-0 top-0 h-56 sm:h-64" aria-hidden="true">
+            {% for line in h.gridlines %}
+              <div class="absolute inset-x-0" style="bottom: {{ line.bottom }}%">
+                <span class="absolute left-0 -translate-y-1/2 text-xs text-neutral-500 tabular-nums">{{ line.label }}</span>
+                <span class="absolute right-0 left-10 border-t border-dotted border-neutral-300"></span>
+              </div>
+            {% endfor %}
+          </div>
+          <ul class="relative grid grid-cols-5 gap-1 sm:gap-2">
+            {% for col in h.columns %}
+              <li class="flex min-w-0 flex-col items-center gap-3">
+                <div class="flex h-56 w-full max-w-16 flex-col items-center justify-end rounded-full sm:h-64{% if col.selected %} bg-neutral-100{% endif %}" aria-hidden="true">
+                  <div class="relative flex flex-col items-center" style="height: {{ col.height }}%">
+                    {% if col.selected %}<span class="pill absolute bottom-full mb-2 bg-neutral-900 text-white tabular-nums">{{ col.count }}</span>{% endif %}
+                    <span class="size-4 shrink-0 rounded-full ring-4 ring-white {{ col.level|ndr_bar:tier }}"></span>
+                    <span class="w-0.5 flex-1 bg-neutral-300"></span>
+                  </div>
+                </div>
+                <span class="flex w-full max-w-24 flex-wrap items-center justify-center gap-1.5 rounded-2xl px-1.5 py-1.5 text-center text-xs leading-tight font-medium {% if col.selected %}bg-neutral-900 text-white{% else %}bg-neutral-100 text-neutral-700{% endif %}">
+                  <span class="size-2.5 shrink-0 rounded-xs {{ col.level|ndr_bar:tier }}" aria-hidden="true"></span>{{ col.label }}
+                  <span class="sr-only">: {{ col.count }} cuestionarios, {{ col.percent }} %</span>
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endlocalize %}
+        <figcaption class="mt-3 text-sm text-neutral-500 md:pl-10">Porcentaje de cuestionarios en cada nivel, en una escala de 0 a {{ h.ceiling }} %.</figcaption>
+      </figure>
+    </div>
+  {% else %}
+    <div class="mt-6">
+      <dl class="grid grid-cols-2 gap-4 sm:grid-cols-5">
+        <div class="border-l border-neutral-200 pl-3"><dt class="text-sm text-neutral-500">Cuestionarios</dt><dd class="mt-1 text-2xl font-medium text-neutral-900 tabular-nums">{{ g.n }}</dd></div>
+        <div class="border-l-2 border-primary-600 pl-3"><dt class="text-sm text-neutral-500">Promedio</dt><dd class="mt-1 text-2xl font-medium text-neutral-900 tabular-nums">{{ g.mean }}</dd></div>
+        <div class="border-l border-neutral-200 pl-3"><dt class="text-sm text-neutral-500">Mediana</dt><dd class="mt-1 text-2xl font-medium text-neutral-900 tabular-nums">{{ g.median }}</dd></div>
+        <div class="border-l border-neutral-200 pl-3"><dt class="text-sm text-neutral-500">Mínimo</dt><dd class="mt-1 text-2xl font-medium text-neutral-900 tabular-nums">{{ g.minimum }}</dd></div>
+        <div class="border-l border-neutral-200 pl-3"><dt class="text-sm text-neutral-500">Máximo</dt><dd class="mt-1 text-2xl font-medium text-neutral-900 tabular-nums">{{ g.maximum }}</dd></div>
+      </dl>
+      <div class="mt-8">{% range_strip g.strip_bands g.scale_max g.strip_points %}</div>
+      <p class="mt-3 text-sm text-neutral-500">Puntos, de 0 a {{ g.scale_max }}. Las bandas son los rangos de cada nivel en la guía:</p>
+      <ul class="mt-2 grid gap-x-6 gap-y-1 text-sm text-neutral-600 sm:grid-cols-2">
+        {% for r in g.ranges %}
+          <li class="flex items-center gap-2"><span class="size-2.5 shrink-0 rounded-xs {{ r.level|ndr_bar:tier }}" aria-hidden="true"></span><span class="font-medium text-neutral-800">{{ r.label }}</span> {{ r.range }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+</section>
+{% endwith %}

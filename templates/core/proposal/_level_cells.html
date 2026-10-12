@@ -1,0 +1,10 @@
+{% load valuation_extras %}
+{% comment %}The five levels of a group as small cells. Takes `group` and `tier`.{% endcomment %}
+<dl class="grid grid-cols-5 gap-1 text-center">
+  {% for lv in group.levels %}
+    <div class="min-w-0 rounded-xl bg-white px-1 py-2">
+      <dt class="flex flex-wrap items-center justify-center gap-1 text-xs leading-tight text-neutral-600"><span class="size-2.5 shrink-0 rounded-xs {{ lv.level|ndr_bar:tier }}" aria-hidden="true"></span>{{ lv.label }}</dt>
+      <dd class="mt-1 text-base font-semibold text-neutral-900 tabular-nums">{{ lv.percent }} %</dd>
+    </div>
+  {% endfor %}
+</dl>
