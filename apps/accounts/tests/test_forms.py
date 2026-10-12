@@ -89,7 +89,7 @@ class TestProfileActivationFormCleanReferenceCode:
 
 @pytest.mark.django_db
 class TestProfileActivationFormIdentityFields:
-    """Name and cargo are collected here, so the CSV import doesn't carry them."""
+    """Name and puesto are collected here, so the CSV import doesn't carry them."""
 
     @pytest.fixture
     def company_with_area(self, make_company, make_area):

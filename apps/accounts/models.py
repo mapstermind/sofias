@@ -115,7 +115,7 @@ class Company(models.Model):
     industry = models.CharField("actividad principal", max_length=255, blank=True)
     work_center = models.CharField("centro de trabajo", max_length=255, blank=True)
     reference_code = models.CharField(
-        "código de referencia",
+        "código de empresa",
         max_length=5,
         unique=True,
         blank=True,
@@ -215,7 +215,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="profile", verbose_name="usuario"
     )
-    position = models.CharField("cargo", max_length=255, blank=True)
+    position = models.CharField("puesto", max_length=255, blank=True)
     # Blank/null here and required in `ProfileActivationForm`: the CSV importer
     # creates this row before the employee has answered anything. This is the
     # same split `area` uses.
@@ -313,8 +313,8 @@ class SetupAccessCode(models.Model):
     used_at = models.DateTimeField("fecha de uso", null=True, blank=True)
 
     class Meta:
-        verbose_name = "código temporal de acceso"
-        verbose_name_plural = "códigos temporales de acceso"
+        verbose_name = "código de acceso"
+        verbose_name_plural = "códigos de acceso"
         constraints = [
             models.UniqueConstraint(
                 fields=["code"],
@@ -338,7 +338,7 @@ class SetupAccessCode(models.Model):
         self.save(update_fields=["used_at", "code"])
 
     def __str__(self):
-        return f"Código temporal de acceso para {self.user.email}"
+        return f"Código de acceso para {self.user.email}"
 
 
 def normalize_setup_access_code(code: str) -> str:

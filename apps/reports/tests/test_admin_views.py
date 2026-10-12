@@ -52,7 +52,7 @@ def _form_data(**overrides):
 
 def test_list_shows_states(admin_client, urls):
     body = admin_client.get(urls["list"]).content.decode()
-    assert "Sin iniciar" in body
+    assert "Sin borrador" in body
 
 
 def test_detail_previews_without_creating(admin_client, urls):
@@ -88,9 +88,9 @@ def test_publish_flow_and_edit_lock(admin_client, urls):
     resp = admin_client.post(urls["publish"], follow=True)
     assert "Reporte publicado." in resp.content.decode()
     resp = admin_client.get(urls["edit"], follow=True)
-    assert "Despublica el reporte para editarlo." in resp.content.decode()
+    assert "Retira la publicación del reporte para editarlo." in resp.content.decode()
     resp = admin_client.post(urls["unpublish"], follow=True)
-    assert "Reporte despublicado." in resp.content.decode()
+    assert "Publicación retirada." in resp.content.decode()
 
 
 def test_publish_refusal_names_the_reasons(admin_client, urls, scored_assignment):
@@ -219,7 +219,9 @@ def test_unpublish_asks_for_confirmation_in_a_dialog(
     assert 'data-dialog-open="unpublish-dialog"' in body
     dialog = body[body.index('<dialog id="unpublish-dialog"') : body.index("</dialog>")]
     assert f'action="{urls["unpublish"]}"' in dialog
-    assert "la empresa dejará de verlo hasta que se publique de nuevo." in dialog
+    assert (
+        "la empresa dejará de ver el reporte hasta que lo publiques de nuevo." in dialog
+    )
     assert "onsubmit" not in body
     # The sheet is a document with its own cover title (the PDF's too); the
     # page around it has one.
@@ -229,6 +231,14 @@ def test_unpublish_asks_for_confirmation_in_a_dialog(
 
 def test_the_report_form_has_one_title(admin_client, urls):
     assert admin_client.get(urls["edit"]).content.decode().count("<h1") == 1
+
+
+def test_fields_needed_to_publish_say_so(admin_client, urls):
+    """Optional on save, required to publish: the form says the second."""
+    html = admin_client.get(urls["edit"]).content.decode()
+    label = html[html.index('for="id_issued_in"') :]
+    assert "(opcional)" not in label[: label.index("</label>")]
+    assert html.count("Necesario para publicar.") == 5
 
 
 def test_double_publish_is_a_silent_success(admin_client, urls):

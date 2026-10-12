@@ -56,7 +56,7 @@ the results partials and the shared statistics row, `_stats.html`). A report
 names each subject once: where a heading already names the row, the caller
 captions the charts (`report-caption`: *Distribución por nivel*,
 *Calificación*) and includes `_stats.html` with `hide_label=True`. On the detail
-page *Despublicar* opens `<dialog id="unpublish-dialog">`, which holds the
+page *Retirar publicación* opens `<dialog id="unpublish-dialog">`, which holds the
 unpublish form.
 
 ## Conventions & gotchas

@@ -60,7 +60,7 @@ def period_span(first, last) -> str:
 
 def assignment_label(variant_label, first, last, created) -> str:
     if first is None:
-        return f"{variant_label} · creada {_short(created)} · sin respuestas"
+        return f"{variant_label} · creada {_short(created)} · sin cuestionarios contestados"
     return f"{variant_label} · aplicada {period_span(first, last)}"
 
 
@@ -178,10 +178,10 @@ class StatsRow:
         if not self.n:
             return []
         return [
-            ("min", "Mín", self.minimum),
+            ("min", "Mín.", self.minimum),
             ("median", "Mediana", self.median),
             ("mean", "Prom.", self.mean),
-            ("max", "Máx", self.maximum),
+            ("max", "Máx.", self.maximum),
         ]
 
 

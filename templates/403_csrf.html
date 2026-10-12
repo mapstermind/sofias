@@ -1,0 +1,6 @@
+{% extends "base_error.html" %}
+{% block error_title %}Página vencida{% endblock %}
+{% block error_heading %}Esta página ya venció{% endblock %}
+{% block error_body %}La página estuvo abierta mucho tiempo o se usó en otra pestaña. Recárgala e intenta de nuevo.{% endblock %}
+{% block error_actions %}<a href="/" class="btn btn-secondary">Ir al inicio</a><a href="{{ request.get_full_path }}" class="btn btn-primary">Recargar</a>{% endblock %}
+{% block error_code %}Error 403{% endblock %}

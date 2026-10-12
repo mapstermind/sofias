@@ -9,14 +9,16 @@ def send_otp_email(email: str, code: str) -> None:
     Raises smtplib.SMTPException (or subclasses) on delivery failure —
     callers are responsible for catching and handling the error.
     """
+    brand = settings.BRAND["name"]
     expiry = getattr(settings, "OTP_EXPIRY_MINUTES", 10)
     body = (
-        f"Your one-time login code is: {code}\n\n"
-        f"This code expires in {expiry} minute{'s' if expiry != 1 else ''}.\n\n"
-        "If you didn't request this code, you can safely ignore this email."
+        f"Tu código de inicio de sesión en {brand} es: {code}\n\n"
+        f"Vence en {expiry} minuto{'s' if expiry != 1 else ''}.\n\n"
+        "Si no lo pediste, ignora este correo: nadie puede entrar a tu cuenta "
+        "sin el código."
     )
     send_mail(
-        subject="Your login code",
+        subject=f"Tu código para iniciar sesión en {brand}",
         message=body,
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[email],

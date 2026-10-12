@@ -114,8 +114,8 @@ Referencia, "Interpretación … Guía de Referencia I"):
 
 The two flags give three outcomes — no event, an event not requiring valuation,
 and a positive referral — which the results page counts. A positive result
-surfaces on the employee-detail card as **"Usuario positivo a un acontecimiento
-traumático severo."** and indicates the worker requires clinical valuation. There
+surfaces on the employee-detail card as **"Requiere valoración clínica: reportó un
+acontecimiento traumático severo (Guía I)."** and indicates the worker requires clinical valuation. There
 is **no severity gradient** — the standard defines a binary referral outcome.
 
 ### When scoring runs (materialized)

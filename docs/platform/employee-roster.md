@@ -26,7 +26,7 @@ the chosen values are OR-ed and across dimensions they are AND-ed, so *Producci�
 o Logística, and only empleados* is one reading of the roster rather than three.
 
 Each card carries a circular avatar of the person's initials, their name and
-correo, a single metadata line reading *Rol · Cargo · Área · Localidad*, and a
+correo, a single metadata line reading *Rol · Puesto · Área · Localidad*, and a
 progress bar per assigned survey.
 
 The same Rol appears in the Django admin, as a column and a filter on the
@@ -78,7 +78,7 @@ sent the operator back for a second look at the other half.
 - Renaming `auth.Group.name`. The four English names stay the lookup keys and
   the CSV importer's accepted values — only their presentation is Spanish.
   The rename remains open finding #1.
-- Filtering by cargo. It is free text typed per person, not a catalog, so it
+- Filtering by puesto. It is free text typed per person, not a catalog, so it
   offers no stable set of options; the search box reaches it instead.
 - Filtering by edad or by date ranges, and any segmented *aggregate* of the
   demographics. NOM-035 results by age band and sex are read on the results
@@ -155,9 +155,9 @@ reading by progreso does not quietly reorder the list back to nombre.
 
 An empty list is replaced by one of two empty states, because *nobody matches
 this search* and *this company has nobody* are different answers: a narrowed
-roster with no match reads *Ningún colaborador coincide con la búsqueda* and
-offers *Limpiar filtros*, while an unnarrowed one reads *Aún no hay
-colaboradores vinculados a* the company and offers nothing to clear.
+roster with no match reads *Ningún colaborador coincide con la búsqueda o los
+filtros* and offers *Limpiar filtros*, while an unnarrowed one reads *Aún no hay
+colaboradores en* the company and offers nothing to clear.
 
 ### The filter modal
 
@@ -233,9 +233,9 @@ One card per person:
 - Name, with a *Tú* badge on the viewer's own card, and the correo below it.
   Someone with no name recorded is listed by correo alone, which is then not
   repeated underneath.
-- One metadata line: *Rol · Cargo · Área · Localidad*, with separators between
+- One metadata line: *Rol · Puesto · Área · Localidad*, with separators between
   whichever of the four are recorded. A value that is absent is omitted rather
-  than printed as *Sin cargo*.
+  than printed as *Sin puesto*.
 - A progress bar per assignment, labelled with the survey title, its variante,
   the percent, and the answered-over-total count.
 

@@ -11,12 +11,13 @@ from apps.accounts.models import (
     UserProfile,
     normalize_setup_access_code,
 )
+from apps.core.forms import ErrorFocusMixin, LabelledSelectDateWidget
 
 
 class UserCSVImportForm(forms.Form):
     csv_file = forms.FileField(
         label="Archivo CSV",
-        help_text="Sube un archivo .csv con usuarios para crear.",
+        help_text="Un archivo .csv con las cuentas que quieres crear.",
         widget=forms.ClearableFileInput(attrs={"accept": ".csv,text/csv"}),
     )
 
@@ -27,7 +28,7 @@ class UserCSVImportForm(forms.Form):
         return csv_file
 
 
-class EmailRequestForm(forms.Form):
+class EmailRequestForm(ErrorFocusMixin, forms.Form):
     email = forms.EmailField(
         label="Correo electrónico",
         widget=forms.EmailInput(
@@ -40,7 +41,7 @@ class EmailRequestForm(forms.Form):
     )
 
 
-class EmailPasswordLoginForm(forms.Form):
+class EmailPasswordLoginForm(ErrorFocusMixin, forms.Form):
     email = forms.EmailField(
         label="Correo electrónico",
         widget=forms.EmailInput(
@@ -62,7 +63,7 @@ class EmailPasswordLoginForm(forms.Form):
     )
 
     error_messages = {
-        "invalid_login": "Correo o contraseña inválidos.",
+        "invalid_login": "El correo o la contraseña no son correctos. Revísalos e intenta de nuevo.",
     }
 
     def clean_email(self):
@@ -97,7 +98,7 @@ class EmailPasswordLoginForm(forms.Form):
         return cleaned_data
 
 
-class SetupAccessCodeLoginForm(forms.Form):
+class SetupAccessCodeLoginForm(ErrorFocusMixin, forms.Form):
     email = forms.EmailField(
         label="Correo electrónico",
         widget=forms.EmailInput(
@@ -109,7 +110,7 @@ class SetupAccessCodeLoginForm(forms.Form):
         ),
     )
     setup_access_code = forms.CharField(
-        label="Código temporal de acceso",
+        label="Código de acceso",
         widget=forms.TextInput(
             attrs={
                 "inputmode": "numeric",
@@ -127,12 +128,12 @@ class SetupAccessCodeLoginForm(forms.Form):
         code = normalize_setup_access_code(self.cleaned_data["setup_access_code"])
         if len(code) != 9 or not code.isdigit():
             raise forms.ValidationError(
-                "El código temporal de acceso debe tener 9 dígitos."
+                "El código de acceso tiene 9 dígitos. Revisa que no falte ninguno."
             )
         return code
 
 
-class RequiredPasswordChangeForm(forms.Form):
+class RequiredPasswordChangeForm(ErrorFocusMixin, forms.Form):
     new_password1 = forms.CharField(
         label="Nueva contraseña",
         strip=False,
@@ -143,7 +144,7 @@ class RequiredPasswordChangeForm(forms.Form):
         ),
     )
     new_password2 = forms.CharField(
-        label="Confirma la nueva contraseña",
+        label="Repite la nueva contraseña",
         strip=False,
         widget=forms.PasswordInput(
             attrs={
@@ -161,7 +162,9 @@ class RequiredPasswordChangeForm(forms.Form):
         password2 = self.cleaned_data["new_password2"]
 
         if password1 and password1 != password2:
-            raise forms.ValidationError("Las contraseñas no coinciden.")
+            raise forms.ValidationError(
+                "Las dos contraseñas no coinciden. Escríbelas otra vez."
+            )
 
         validate_password(password2, self.user)
         return password2
@@ -173,7 +176,7 @@ class RequiredPasswordChangeForm(forms.Form):
         return self.user
 
 
-class OTPVerifyForm(forms.Form):
+class OTPVerifyForm(ErrorFocusMixin, forms.Form):
     email = forms.EmailField(widget=forms.HiddenInput())
     code = forms.CharField(
         label="Código de inicio de sesión",
@@ -193,14 +196,16 @@ class OTPVerifyForm(forms.Form):
     def clean_code(self):
         code = self.cleaned_data["code"].strip()
         if not code.isdigit():
-            raise forms.ValidationError("El código debe contener solo dígitos.")
+            raise forms.ValidationError(
+                "El código lleva solo números, sin letras ni espacios."
+            )
         return code
 
 
-class ProfileActivationForm(forms.Form):
+class ProfileActivationForm(ErrorFocusMixin, forms.Form):
     reference_code = forms.CharField(
-        label="Código de referencia de la empresa",
-        help_text="El código de 5 caracteres proporcionado por tu administrador.",
+        label="Código de empresa",
+        help_text="Son 5 letras y números. Te lo da quien te invitó.",
         min_length=5,
         max_length=5,
         widget=forms.TextInput(
@@ -211,7 +216,7 @@ class ProfileActivationForm(forms.Form):
             }
         ),
     )
-    # Name and cargo are collected here rather than at import: the admin's roster
+    # Name and puesto are collected here rather than at import: the admin's roster
     # only has to carry what identifies the account, and the employee is the
     # authority on their own name anyway.
     first_name = forms.CharField(
@@ -239,7 +244,7 @@ class ProfileActivationForm(forms.Form):
         ),
     )
     position = forms.CharField(
-        label="Cargo",
+        label="Puesto",
         help_text="El puesto que ocupas en tu empresa.",
         max_length=255,
         required=False,
@@ -254,7 +259,7 @@ class ProfileActivationForm(forms.Form):
         choices=[("", "Selecciona tu sexo"), *UserProfile.Sex.choices],
         error_messages={
             "required": "Selecciona tu sexo.",
-            "invalid_choice": "Selecciona una opción válida.",
+            "invalid_choice": "Selecciona Masculino o Femenino.",
         },
         widget=forms.Select(),
     )
@@ -266,7 +271,7 @@ class ProfileActivationForm(forms.Form):
     date_of_birth = forms.DateField(
         label="Fecha de nacimiento",
         required=False,
-        error_messages={"invalid": "Escribe una fecha de nacimiento válida."},
+        error_messages={"invalid": "Esa fecha no existe. Revisa el día y el mes."},
     )
     area = forms.ModelChoiceField(
         queryset=CompanyArea.objects.none(),
@@ -307,7 +312,7 @@ class ProfileActivationForm(forms.Form):
         # already passed, so `clean_date_of_birth` still decides the exact
         # boundary.
         today = timezone.localdate()
-        self.fields["date_of_birth"].widget = forms.SelectDateWidget(
+        self.fields["date_of_birth"].widget = LabelledSelectDateWidget(
             years=range(
                 today.year - MIN_ACTIVATION_AGE, today.year - MAX_ACTIVATION_AGE - 1, -1
             ),
@@ -348,8 +353,8 @@ class ProfileActivationForm(forms.Form):
         cleaned_data = super().clean()
         if self.location_options_changed:
             raise forms.ValidationError(
-                "Las opciones de localidad cambiaron mientras llenabas el "
-                "formulario. Revisa tus datos y confirma tu selección.",
+                "La lista de localidades cambió mientras llenabas el "
+                "formulario. Revisa tus datos y vuelve a enviarlo.",
                 code="location_options_changed",
             )
         return cleaned_data
@@ -358,7 +363,7 @@ class ProfileActivationForm(forms.Form):
         code = self.cleaned_data["reference_code"].strip().upper()
         if not code.isalnum():
             raise forms.ValidationError(
-                "El código de referencia debe ser alfanumérico."
+                "El código de empresa lleva solo letras y números."
             )
         return code
 
@@ -368,13 +373,13 @@ class ProfileActivationForm(forms.Form):
         form is a plain `Form`, so the model's `clean()` never runs on POST."""
         date_of_birth = self.cleaned_data.get("date_of_birth")
         if date_of_birth is None:
-            raise forms.ValidationError("Escribe tu fecha de nacimiento.")
+            raise forms.ValidationError("Selecciona tu fecha de nacimiento.")
 
         # An unsaved instance is fine here: `age` only reads `date_of_birth`.
         age = UserProfile(date_of_birth=date_of_birth).age
         if not MIN_ACTIVATION_AGE <= age <= MAX_ACTIVATION_AGE:
             raise forms.ValidationError(
-                f"La fecha de nacimiento debe corresponder a una edad entre "
+                f"Revisa el año: la edad debe estar entre "
                 f"{MIN_ACTIVATION_AGE} y {MAX_ACTIVATION_AGE} años."
             )
         return date_of_birth

@@ -99,7 +99,7 @@ def test_poblacion_prints_the_bare_application_span(report):
     assert "en el periodo 3 feb – 10 mar 2026." in poblacion
     assert "Guía I y la Guía III" in poblacion
     assert "Guía III ·" not in poblacion
-    assert "sin respuestas" not in poblacion
+    assert "sin cuestionarios contestados" not in poblacion
 
 
 def test_poblacion_omits_the_period_without_answer_dates(company, nom035_survey):

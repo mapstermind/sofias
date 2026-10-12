@@ -87,10 +87,15 @@ def test_every_page_loads_the_busy_submit_script(client):
     assert "js/busy_submit.js" in client.get("/cuentas/ingresar/").content.decode()
 
 
-@pytest.mark.django_db
-def test_the_code_request_marks_its_button_busy(client):
-    """It sends an email, so a double tap would send two codes."""
-    assert "data-loading" in client.get("/cuentas/ingresar/").content.decode()
+def test_busy_is_the_default_for_post_forms():
+    """Every POST form shows the spinner unless it opts out with data-no-busy;
+    no template opts in any more."""
+    from pathlib import Path
+
+    source = Path("static/ts/busy_submit.ts").read_text()
+    assert 'form.method !== "post"' in source and "data-no-busy" in source
+    templates = Path("templates")
+    assert not [p for p in templates.rglob("*.html") if "data-loading" in p.read_text()]
 
 
 @pytest.mark.django_db

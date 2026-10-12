@@ -19,7 +19,7 @@ need one: no messages, no palette switch, no user.
       <h1 class="text-xl font-bold text-neutral-900">{% block error_heading %}{% endblock %}</h1>
       <p class="mx-auto mt-3 max-w-prose text-base text-neutral-600">{% block error_body %}{% endblock %}</p>
       <div class="mt-8 flex flex-col-reverse justify-center gap-3 sm:flex-row">
-        <a href="/" class="btn btn-primary">Ir al inicio</a>
+        {% block error_actions %}<a href="/" class="btn btn-primary">Ir al inicio</a>{% endblock %}
       </div>
       <p class="mt-8 text-sm text-neutral-500">{% block error_code %}{% endblock %}</p>
     </div>

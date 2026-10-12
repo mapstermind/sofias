@@ -1,6 +1,6 @@
 {% extends "base_centered.html" %}
 
-{% block title %}Ingresa tu código | {{ brand.name }}{% endblock %}
+{% block title %}Revisa tu correo | {{ brand.name }}{% endblock %}
 
 {% block card_header %}
   <h1 class="text-xl font-bold text-neutral-900">Revisa tu correo electrónico</h1>
@@ -14,15 +14,17 @@
   <form method="post" novalidate>
     {% csrf_token %}
     {{ form }}
-    <button type="submit" class="btn btn-primary mt-8 w-full">Verificar código</button>
+    <button type="submit" class="btn btn-primary mt-8 w-full">Iniciar sesión</button>
   </form>
 {% endblock %}
 
 {% block card_footer %}
   <p class="mt-6 text-center text-sm text-neutral-600">
-    ¿Correo electrónico incorrecto?
-    <a href="{% url 'accounts:request_otp' %}" class="link">
-      Usa una dirección diferente
-    </a>
+    ¿No te llegó? Revisa tu correo no deseado o
+    <a href="{% url 'accounts:request_otp' %}" class="link">pide otro código</a>.
+  </p>
+  <p class="mt-3 text-center text-sm text-neutral-600">
+    ¿No es tu correo?
+    <a href="{% url 'accounts:request_otp' %}" class="link">Usa otro correo</a>
   </p>
 {% endblock %}

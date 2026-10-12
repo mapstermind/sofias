@@ -121,7 +121,7 @@ labelled from its data by `assignment_label`, with dates in
 - with answers: *"Guía III · aplicada 12 ene – 28 feb 2026"* — the variant label
   and the earliest and latest `completed_at` among its scored submissions (both
   years shown when they differ, a single date when they coincide);
-- without answers: *"Guía III · creada 12 ene 2026 · sin respuestas"*.
+- without answers: *"Guía III · creada 12 ene 2026 · sin cuestionarios contestados"*.
 
 A company with no NOM-035 assignment shows *"Esta empresa aún no tiene encuestas
 NOM-035 asignadas."* and no filter bar.
@@ -155,15 +155,15 @@ come first under an *Empresa* heading, categoría-level sections second under
 |---|---|---|---|
 | 0 | Active-filter pills and group line: *"Femenino · 25–29 · Operaciones — 18 cuestionarios"*, or *"Toda la empresa — 60 cuestionarios"* | `_group_line.html` | text |
 | **Empresa** | | | |
-| 1 | **Participación por área** — Registrados, Respondieron, Participación, final-NDR distribution | `_participation.html` | `level_columns` per row |
-| 2 | **Perfil de quienes respondieron — sexo** | `_sex_profile.html` | `stacked_bar` with legend |
-| 3 | **Perfil de quienes respondieron — edad** | `_age_profile.html` | `column_chart` |
-| 4 | **Calificación final — distribución** | `_final_distribution.html` | `level_columns` |
-| 5 | **Calificación final — estadística** | `_final_stats.html` | stats row + `range_strip` |
-| 6 | **Guía I — acontecimientos traumáticos severos** | `_guia1.html` | headline count + `stacked_bar` with legend |
+| 1 | **Participación por área** — Cuentas activadas, Respondieron, Participación, *Nivel de riesgo final* distribution | `_participation.html` | `level_columns` per row |
+| 2 | **Quienes respondieron, por sexo** | `_sex_profile.html` | `stacked_bar` with legend |
+| 3 | **Quienes respondieron, por edad** | `_age_profile.html` | `column_chart` |
+| 4 | **Distribución de la calificación final** | `_final_distribution.html` | `level_columns` |
+| 5 | **Estadísticas de la calificación final** | `_final_stats.html` | stats row + `range_strip` |
+| 6 | **Guía I: acontecimientos traumáticos severos** | `_guia1.html` | headline count + `stacked_bar` with legend |
 | **Por categoría** | | | |
 | 7 | **Distribución por categoría** | `_categoria_distribution.html` | `level_columns` per categoría, each followed by a `<details>` holding its dominios |
-| 8 | **Estadística por categoría** | `_categoria_stats.html` | stats row + `range_strip` per categoría, each followed by a `<details>` holding its dominios |
+| 8 | **Estadísticas por categoría** | `_categoria_stats.html` | stats row + `range_strip` per categoría, each followed by a `<details>` holding its dominios |
 
 `_body.html` assembles them; `_stats_row.html` is the one statistics row sections
 5 and 8 share; `_ndr_columns.html` the five level names, with swatches, that head
@@ -181,25 +181,25 @@ the same page.
 **1 — Participación por área.** One row per área of the company, sorted by name;
 a retired área (`is_active=False`) appears only while it still has registered
 members or respondents. A "Sin área" row follows, last, when some respondent has
-no área of this company. *Registrados* counts **activated** members of the
+no área of this company. *Cuentas activadas* counts **activated** members of the
 company in that área (only activated members carry área, sexo and date of
 birth); *Respondieron* counts the group's scored questionnaires in that área;
-*Participación* is Respondieron ÷ Registrados as a whole percent. The sexo, edad
+*Participación* is Respondieron ÷ Cuentas activadas as a whole percent. The sexo, edad
 and localidad filters apply to both counts; the área filter limits which rows
-appear. "Sin área" shows "—" for Registrados and Participación, since activation
+appear. "Sin área" shows "—" for Cuentas activadas and Participación, since activation
 always assigns an área. Each row with respondents shows its final-score
 distribution as level columns, as in sections 4 and 7; a row with no respondents
 shows "—" in their place. The área name links to the same page with that área added to
-the filter, unless it is already selected. A company with no áreas shows *"Esta empresa no tiene
-áreas registradas."*
+the filter, unless it is already selected. A company with no áreas shows *"Esta empresa aún no tiene
+áreas."*
 
 **2 — Sexo.** One 100 % bar: Femenino, Masculino, Sin dato, with a legend giving
 each segment's percent and count of *personas*. Ignores the `sexo` filter, noting
-*"Sin filtro de sexo"* when one is set.
+*"Esta gráfica no aplica el filtro de sexo."* when one is set.
 
 **3 — Edad.** One column per band from 15–19 to 60 o más, youngest left, count
 labelled above each non-empty column, then a "Sin dato" column. Ignores the
-`edad` filter, noting *"Sin filtro de edad"* when one is set.
+`edad` filter, noting *"Esta gráfica no aplica el filtro de edad."* when one is set.
 
 **4 and 7 — NDR distribution.** Five columns, one per level — Nulo, Bajo, Medio,
 Alto, Muy alto, always in that order and always in the same slot — with the
@@ -229,7 +229,7 @@ The categoría's row is always in view. Below it, a `<details>` whose summary re
 opens that categoría's dominio rows, indented beneath it.
 
 **5 and 8 — Statistics.** Each row shows *n*, *Prom.* (mean, one decimal),
-*Mediana* (may end in .5), *Mín* and *Máx* of the raw integer scores, with "—"
+*Mediana* (may end in .5), *Mín.* and *Máx.* of the raw integer scores, with "—"
 when the row has no scores. Each row carries its own *n*: a dominio whose whole
 conditional block was skipped has no `GroupScore` row, so a dominio's *n* can be
 lower than the final score's. Beside the numbers a range strip draws that row's
@@ -240,7 +240,7 @@ boundary that falls inside the scale, and the maximum, so each band's span reads
 as numbers; the band colors follow the five-level legend under the section, and
 a dominio row's bands the dominio legend inside its disclosure. The
 strip plots four labelled
-points — *Mín*, *Mediana*, *Prom.*, *Máx*. A label near either end anchors to
+points — *Mín.*, *Mediana*, *Prom.*, *Máx.* A label near either end anchors to
 that end. Points whose labels would collide alternate above and below the strip.
 A row with no scores draws no strip. In section 8 each categoría's row is
 always in view, followed by the same *"Dominios (n)"* disclosure as section 7,
@@ -259,7 +259,7 @@ this page.
 At 360px the page reads as one column with no horizontal scroll. The filter bar
 stacks: the survey selector runs full width, with *Filtros* and, while filtering,
 *Limpiar filtros* on the row beneath; the filter dialog fits the screen. Participation rows become stacked cards — the área name on its own line,
-then Registrados, Respondieron and Participación side by side, each with its
+then Cuentas activadas, Respondieron and Participación side by side, each with its
 label stacked above the value, then the level columns full width; the table's
 column header is hidden. The sex and age sections stack in one column (they sit side by side only
 from the `lg` breakpoint). Each statistics row puts its label, then its five
@@ -282,8 +282,8 @@ applies at two levels, and área rows carry one more rule on top:
 
 - **The group.** When a filter is active, *S* is the group and *B* is every
   scored questionnaire of the assignment. If the rule fails, sections 4–8 are
-  replaced by *"Grupo demasiado pequeño para mostrar resultados sin identificar a
-  las personas (mínimo 5)"*. Sections 0–3 still render: they count people and
+  replaced by *"Grupo muy pequeño: ocultamos sus resultados para no identificar a
+  nadie (mínimo 5 personas)."* Sections 0–3 still render: they count people and
   reveal no scores, and every row with respondents in section 1 shows the same
   message in place of its level columns. With no filter active, the whole
   assignment is always shown, whatever its size.
@@ -299,13 +299,13 @@ applies at two levels, and área rows carry one more rule on top:
   `MIN_GROUP_SIZE` respondents or no visible row with respondents remains. A row
   with no respondents is never hidden and never counts toward that total.
 
-A suppressed participation row keeps its headcounts (Registrados, Respondieron)
+A suppressed participation row keeps its headcounts (Cuentas activadas, Respondieron)
 and shows no NDR distribution.
 
 A group of zero questionnaires shows, for every viewer and in place of every
 section after the group line, *"Ningún cuestionario coincide con los
-filtros."* when a filter is active and *"Esta encuesta aún no tiene
-cuestionarios contestados."* when none is.
+filtros."*, with a *Limpiar filtros* action, when a filter is active and *"Esta
+encuesta aún no tiene cuestionarios contestados."* when none is.
 
 The rule is enforced in the data layer: a suppressed group carries
 `suppressed=True` and no distribution, statistics or Guía I data, and a
@@ -334,7 +334,7 @@ dialog, refreshes the count on *Filtros*, shows or hides the bar's *Limpiar
 filtros*, and updates the address bar
 with `history.replaceState` — a filtered view is a shareable link and survives a
 reload. A newer request aborts one still in flight; `#results-body` carries
-`aria-busy` while it loads; a failed request falls back to navigating to the
+`aria-busy` while it loads, which dims it; a failed request falls back to navigating to the
 page URL. After each swap the script copies the new group line
 (`[data-group-line]`) into a persistent, visually hidden
 `<p id="results-status" aria-live="polite">` outside `#results-body`, so a screen
@@ -343,8 +343,11 @@ reader announces the new group once; `#results-body` itself is not a live region
 The active-filter pills (each with a × that removes that value) and the group
 line render inside `#results-body`, so the swap refreshes them. Pills and área
 links carry `data-results-link`: clicking one sets the form's controls from the
-link's query string and runs the same swap. *Limpiar filtros* clears the chips
-and applies, keeping whichever survey is selected. The company's áreas and localidades
+link's query string and runs the same swap, as does any other link inside the
+body back to this page (the empty state's *Limpiar filtros*). The link is gone
+after the swap, so focus moves to the group line (`tabindex="-1"`) instead of
+falling back to the page. The bar's *Limpiar filtros* clears the chips and
+applies, keeping whichever survey is selected. The company's áreas and localidades
 do not depend on the assignment, so the filter bar itself is never re-rendered.
 
 ### Chart components

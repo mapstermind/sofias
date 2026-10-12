@@ -9,7 +9,7 @@
 
 
   {% if not rows %}
-    {% if is_admin_view %}{% include "components/_empty.html" with body="Esta empresa aún no tiene encuestas NOM-035 asignadas." icon="document-text" %}{% else %}{% include "components/_empty.html" with body="Aún no hay reportes publicados." icon="document-text" %}{% endif %}
+    {% if is_admin_view %}{% include "components/_empty.html" with body="Esta empresa aún no tiene encuestas NOM-035 asignadas." icon="document-text" %}{% else %}{% include "components/_empty.html" with body="Aún no hay reportes publicados. Aquí aparecerán cuando estén listos." icon="document-text" %}{% endif %}
   {% else %}
     <ul class="card divide-y divide-neutral-100 overflow-hidden">
       {% for row in rows %}
@@ -30,7 +30,7 @@
             {% if not is_admin_view %}
               <span class="pill pill-marker bg-success-100 text-success-800">Publicado</span>
             {% elif not row.report %}
-              <span class="pill pill-marker bg-neutral-100 text-neutral-600">Sin iniciar</span>
+              <span class="pill pill-marker bg-neutral-100 text-neutral-600">Sin borrador</span>
             {% elif row.report.status == "published" %}
               <span class="pill pill-marker bg-success-100 text-success-800">Publicado</span>
             {% else %}

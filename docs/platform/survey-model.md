@@ -81,6 +81,38 @@ per-type parser used by both POST paths. Answers persist in `apps/responses`
 JSON value typed by `question_type`). `apps/core` reads these for dashboards and
 per-employee progress.
 
+### The page, saving and errors
+
+The form comes before the sidebar in the source, as it does on screen, so a
+keyboard or a screen reader meets the title, then the questions, then progress
+and **Pendientes**. Below `lg:` the action bar is fixed to the bottom of the
+screen, and the page's scroll padding keeps a question reached by Tab or a link
+above it.
+
+The first visit opens the instructions: the norm's own points from Guía II/III
+(*cómo aplicarse*) — the two last months, no right or wrong answers, answer
+honestly, every question, confidentiality — and how saving works. They say the
+questions are the norm's official ones, which is why the questions speak
+*usted* around a *tú* page.
+
+Each answer autosaves as it is chosen. A line under the progress bar
+(`#save-status`, `aria-live="polite"`) says *Guardando…*, then *Cambios
+guardados*; when a save fails — no network, a server error, an expired security
+token — it says *No se pudo guardar. Revisa tu conexión y presiona Guardar
+progreso.*, and for a survey that has closed, *La encuesta cerró; ya no se
+guardan cambios.* A 401 opens the *Tu sesión se cerró* dialog, whose sign-in
+link carries `next` back to the survey.
+
+A POST with an answer `_parse_value` refuses saves nothing. The page comes back
+with what was posted, the good answers and the refused text alike, rather than
+the stored ones, so a typo costs one correction. Each refused question's
+`fieldset` carries `aria-invalid` and `aria-describedby` to its message, and the
+danger alert at the top (*Corrige N respuestas para poder guardar.*) links to the
+first one and takes focus on load.
+
+A link to a closed survey, or to one the respondent already sent, lands on
+`core:home` with a message saying which.
+
 ### Finding what is left to answer
 
 A respondent who skips a question and comes back to a 72-item form should not have
@@ -109,7 +141,8 @@ The column's `overflow-y` clips the x-axis too, which is why it carries a
 sliver of horizontal padding: without it the save button's focus ring is shaved
 off at the sides.
 
-Clicking an entry scrolls its card to the centre of the viewport, flashes a ring
+Clicking an entry scrolls its card to the centre of the viewport (without the
+smooth scroll under `prefers-reduced-motion`), flashes a ring
 for 1.5 s, and moves keyboard focus to the card's first control. Focus moves
 because scrolling alone leaves the tab order untouched — a keyboard or
 screen-reader user would end up looking at the question without being in it. What
@@ -125,7 +158,7 @@ into a text answer does not throw away its scroll position on every keystroke.
 The panel carries no `aria-live`: its count moves with every answer, and
 announcing each move would make it chatter continuously.
 
-**Ir a la siguiente ↓** walks the pending set: it jumps to the first pending
+**Ir a la siguiente pendiente ↓** walks the pending set: it jumps to the first pending
 question that *follows the last one jumped to* in document order, wrapping to the
 top when there is none. The cursor is a document position and never a viewport
 position — once the page is scrolled to its limit `scrollIntoView` cannot move it
@@ -141,8 +174,8 @@ button covers the tail below the reader. A one-line hint under the heading says
 the entries are selectable, since a hover state alone does not advertise it.
 
 The panel is the sidebar's last card on a wide screen. Below `lg:` the sidebar
-stacks after the form, so the panel is what a respondent meets on reaching the
-end of the questions — where **Ir a la siguiente** walks them back through
+stacks after the form, as it sits in the source, so the panel is what a respondent meets on reaching the
+end of the questions — where **Ir a la siguiente pendiente** walks them back through
 whatever is still blank. Progress and **Guardar progreso** stay reachable
 throughout in an action bar pinned to the bottom of the screen; it is the same
 element as the sidebar block, repositioned, so the panel and the bar can never
@@ -152,7 +185,8 @@ disagree about what is left. See
 ### Confirming a submission
 
 A `COMPLETED` submission is final — `survey_detail` redirects a respondent who
-already has one to `core:home`, so there is no way back into the form. Locking it
+already has one to `core:home` with *Ya enviaste tus respuestas a esta encuesta.*, so there is
+no way back into the form. Locking it
 therefore takes **two independent keys**: the server finding every visible
 question answered, *and* an explicit `confirm` in the POST. Answering the last
 question does not lock anything by itself, and a `confirm` posted against a
@@ -169,7 +203,7 @@ Every POST saves the answers first, then routes on those two keys:
 `?confirm=1` re-renders the form with the confirmation modal
 (`_submit_confirm_modal.html`) open, warning that submitting is irreversible. Its
 "Enviar respuestas" button is a `form="survey-form"` submit carrying
-`name="confirm"`, so accepting reposts the whole form; "Seguir editando" just
+`name="confirm"`, so accepting reposts the whole form; "Seguir respondiendo" just
 closes the modal, since the answers are already saved. Abandoning the page at
 this point leaves the submission `IN_PROGRESS` with everything stored, and the
 next save offers the same confirmation.

@@ -46,7 +46,7 @@ def test_published_is_readable_and_listed(exec_client, scored_assignment, make_u
     resp = exec_client.get(_detail(scored_assignment))
     assert resp.status_code == 200
     html = resp.content.decode()
-    assert "Despublicar" not in html and "Editar" not in html
+    assert "Retirar publicación" not in html and "Editar" not in html
 
 
 def test_empty_list_message(exec_client):

@@ -1,6 +1,6 @@
 {% load icons survey_extras %}
 {% with ans=existing_answers|dict_get:question.id %}
-<div class="question-card card mb-6 p-5{% if question.id in errors %} border-danger-300{% endif %}"
+<div id="q-{{ question.id }}" class="question-card card mb-6 p-5{% if question.id in errors %} border-danger-300{% endif %}"
      data-question-code="{{ question.code }}"
      data-question-name="question_{{ question.id }}"
      data-visible-when="{{ question.visible_when|as_json }}">
@@ -11,7 +11,7 @@
        reset classes are load-bearing — Tailwind's preflight leaves fieldset
        and legend alone, so their UA defaults (a groove border, indents, and a
        min-content minimum that stops the likert row shrinking) would show. -->
-  <fieldset class="m-0 p-0 border-0 min-w-0">
+  <fieldset class="m-0 p-0 border-0 min-w-0"{% if question.id in errors %} aria-invalid="true" aria-describedby="question_{{ question.id }}_error"{% endif %}>
     <legend class="question-label block p-0 text-base font-semibold text-neutral-900 mb-3">
       {{ question.text }}
     </legend>
@@ -117,7 +117,7 @@
   </fieldset>
 
   {% for err_id, err_msg in errors.items %}
-    {% if err_id == question.id %}<p class="mt-2 flex items-start gap-1.5 text-sm text-danger-600">{% icon "exclamation-circle" "mt-0.5 size-4 shrink-0" %}<span>{{ err_msg }}</span></p>{% endif %}
+    {% if err_id == question.id %}<p id="question_{{ question.id }}_error" class="mt-2 flex items-start gap-1.5 text-sm text-danger-600">{% icon "exclamation-circle" "mt-0.5 size-4 shrink-0" %}<span>{{ err_msg }}</span></p>{% endif %}
   {% endfor %}
 
 </div>

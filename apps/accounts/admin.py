@@ -136,7 +136,7 @@ class CustomUserAdmin(UserAdmin):
 
         context = {
             **self.admin_site.each_context(request),
-            "title": "Importar usuarios desde CSV",
+            "title": "Importar colaboradores",
             "form": form,
             "opts": self.model._meta,
             "required_columns": REQUIRED_HEADERS,

@@ -1,6 +1,6 @@
 {% extends "base_centered.html" %}
 
-{% block title %}Activar cuenta — {{ brand.name }}{% endblock %}
+{% block title %}Activar cuenta | {{ brand.name }}{% endblock %}
 
 {# Wider than the other auth cards: this form asks for eight things, not a code. #}
 {% block container_width %}max-w-xl{% endblock %}
@@ -8,15 +8,15 @@
 {% block card_header %}
   <h1 class="text-xl font-bold text-neutral-900">Activa tu cuenta</h1>
   <p class="mt-2 text-sm text-neutral-600">
-    Confirma el código de referencia de tu empresa y completa tus datos.
+    Escribe el código de tu empresa y completa tus datos.
   </p>
 {% endblock %}
 
 {% block card_body %}
   {% if no_company or no_profile %}
-    {% include "components/_alert.html" with tone="danger" body="Tu cuenta no está vinculada a ninguna empresa. Contacta a tu administrador." %}
+    {% include "components/_alert.html" with tone="danger" body="Tu cuenta aún no tiene una empresa asignada. Avisa a quien te invitó." %}
   {% elif no_areas %}
-    {% include "components/_alert.html" with tone="warning" body="Tu empresa aún no tiene áreas configuradas. Contacta a tu administrador para continuar." %}
+    {% include "components/_alert.html" with tone="warning" body="Tu empresa aún no da de alta sus áreas, así que todavía no puedes activar tu cuenta. Avisa a quien te invitó." %}
   {% else %}
     <form method="post" novalidate>
       {% csrf_token %}

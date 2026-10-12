@@ -839,6 +839,15 @@ class StyleguideView(TemplateView):
         )
 
 
+def csrf_failure(request, reason=""):
+    """The page for a form whose security token expired (`CSRF_FAILURE_VIEW`).
+
+    It was open too long, or the person signed in again in another tab. Django's
+    own page is English and names the mechanism; this one says what to do.
+    """
+    return render(request, "403_csrf.html", status=403)
+
+
 def server_error(request):
     """The 500 page (`handler500`), rendered without the request context.
 

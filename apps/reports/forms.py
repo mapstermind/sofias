@@ -5,6 +5,7 @@ from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.forms.formsets import ORDERING_FIELD_NAME
 
 from apps.reports.models import Report, ReportSignatory
+from apps.reports.publishing import REQUIRED
 
 
 def _text(**attrs):
@@ -44,6 +45,15 @@ class ReportForm(forms.ModelForm):
             "additional_recommendations": _textarea(),
             "conclusions": _textarea(),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Optional on save, so a draft can be half-written; publishing refuses
+        # without them, so the form says so instead of "(opcional)".
+        for name, _label in REQUIRED:
+            field = self.fields[name]
+            field.shown_as_required = True
+            field.help_text = "Necesario para publicar."
 
 
 class BaseSignatoryFormSet(BaseInlineFormSet):

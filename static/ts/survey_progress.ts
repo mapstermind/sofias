@@ -241,7 +241,8 @@ function ring(card: HTMLElement): void {
 
 function revealCard(card: HTMLElement): void {
   lastRevealed = card;
-  card.scrollIntoView({ behavior: "smooth", block: "center" });
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  card.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "center" });
   ring(card);
 
   // Scrolling alone leaves the tab order untouched, so a keyboard or
@@ -383,18 +384,51 @@ function showSessionExpired(): void {
     });
 }
 
+const SAVE_FAILED =
+  "No se pudo guardar. Revisa tu conexión y presiona Guardar progreso.";
+
+/** The line under the progress bar (#save-status), read out politely. */
+function setSaveStatus(text: string, failed = false): void {
+  const status = document.getElementById("save-status");
+  if (!status) return;
+  status.textContent = text;
+  status.classList.toggle("text-danger-700", failed);
+  status.classList.toggle("text-neutral-600", !failed);
+}
+
+/** Why the server refused a save, from the JSON body autosave_survey sends. */
+async function refusal(resp: Response): Promise<string> {
+  try {
+    const body: unknown = await resp.json();
+    if (body && typeof body === "object" && "error" in body) return String(body.error);
+  } catch {
+    // Not JSON: Django's CSRF page, a proxy's error page.
+  }
+  return "";
+}
+
 async function autoSave(
   name: string,
   form: HTMLFormElement,
   url: string
 ): Promise<void> {
+  setSaveStatus("Guardando…");
   try {
     const resp = await fetch(url, { method: "POST", body: buildFieldData(name, form) });
-    if (resp.status === 401) {
+    if (resp.ok) {
+      setSaveStatus("Cambios guardados");
+    } else if (resp.status === 401) {
+      setSaveStatus("");
       showSessionExpired();
+    } else if ((await refusal(resp)) === "closed") {
+      setSaveStatus("La encuesta cerró; ya no se guardan cambios.", true);
+    } else {
+      // A stale security token, a server error: the manual save still works,
+      // or at least says why it does not.
+      setSaveStatus(SAVE_FAILED, true);
     }
   } catch {
-    // Silent — the manual save button is always available as a fallback.
+    setSaveStatus(SAVE_FAILED, true);
   }
 }
 

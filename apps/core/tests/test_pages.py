@@ -78,3 +78,25 @@ def test_a_respondents_pages_have_one_title(client, as_group, active_assignment)
 )
 def test_a_signed_out_page_has_one_title(client, name):
     assert _h1_count(client, reverse(name)) == 1
+
+
+def test_every_layout_opens_with_a_skip_link(client):
+    import re
+
+    html = client.get(reverse("accounts:request_otp")).content.decode()
+    body = html[html.index("<body") :]
+    first_link = re.search(r"<a [^>]*>", body).group(0)
+    assert 'href="#main"' in first_link
+    assert "Saltar al contenido" in body[: body.index("</a>")]
+    assert 'id="main"' in body
+
+
+def test_a_csrf_failure_is_a_spanish_page():
+    from django.test import Client
+
+    strict = Client(enforce_csrf_checks=True)
+    response = strict.post(reverse("accounts:request_otp"), {"email": "a@x.mx"})
+    assert response.status_code == 403
+    html = response.content.decode()
+    assert "Recárgala e intenta de nuevo." in html
+    assert "Recargar" in html

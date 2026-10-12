@@ -5,7 +5,7 @@
   "license": "ISC",
   "type": "commonjs",
   "scripts": {
-    "build:css": "npx @tailwindcss/cli -i ./static/css/main.css -o ./static/css/output.css",
+    "build:css": "npx @tailwindcss/cli -i ./static/css/main.css -o ./static/css/output.css --minify",
     "watch:css": "npx @tailwindcss/cli -i ./static/css/main.css -o ./static/css/output.css --watch",
     "build:js": "npx tsc --project tsconfig.browser.json",
     "watch:js": "npx tsc --project tsconfig.browser.json --watch"

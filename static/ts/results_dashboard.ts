@@ -53,7 +53,9 @@ function initFilters(): void {
   const pageUrl = new URL(form.action).pathname;
   let inflight: AbortController | null = null;
 
-  async function update(): Promise<void> {
+  /** `fromLink`: the link that was clicked is gone after the swap, so focus
+   *  moves to the group line rather than falling back to the page. */
+  async function update(fromLink = false): Promise<void> {
     const params = queryFromForm(form);
     inflight?.abort();
     const controller = new AbortController();
@@ -89,6 +91,7 @@ function initFilters(): void {
       if (status && groupLine) {
         status.textContent = (groupLine.textContent ?? "").replace(/\s+/g, " ").trim();
       }
+      if (fromLink && groupLine instanceof HTMLElement) groupLine.focus();
     } catch (error) {
       if (!(error instanceof DOMException && error.name === "AbortError")) {
         window.location.assign(withQuery(pageUrl, params));
@@ -119,11 +122,14 @@ function initFilters(): void {
   });
   form.querySelector("select[name=encuesta]")?.addEventListener("change", () => void update());
   body.addEventListener("click", (event) => {
-    const link = event.target instanceof Element ? event.target.closest("a[data-results-link]") : null;
+    // Pills and área links say so; any other link back to this page (the empty
+    // state's *Limpiar filtros*) is one too.
+    const link = event.target instanceof Element ? event.target.closest("a") : null;
     if (!(link instanceof HTMLAnchorElement)) return;
+    if (!link.hasAttribute("data-results-link") && link.pathname !== pageUrl) return;
     event.preventDefault();
     applyParamsToForm(form, new URL(link.href).searchParams);
-    void update();
+    void update(true);
   });
 }
 

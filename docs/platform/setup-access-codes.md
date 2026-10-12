@@ -96,7 +96,7 @@ manual administrative removal.
 
 Spanish user-facing copy must distinguish setup access codes from passwords:
 
-- Use `código temporal de acceso` for setup access codes.
+- Use *código de acceso* for setup access codes (the screens add "de 9 dígitos" where a user must tell it apart from the 6-digit emailed code).
 - Use `contraseña` for passwords.
 
 ## Actors

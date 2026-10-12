@@ -147,8 +147,16 @@ population.
 | One respondent's attempt at an assignment | **envío de encuesta** | respuesta, participación |
 | One answer within an attempt | **respuesta** | contestación |
 | The NOM-035 result for a submission | **valoración** | puntuación, evaluación |
-| A person's job title | **cargo** | puesto, posición |
+| A person's job title, a colaborador's or a report signatory's | **puesto** | cargo, posición |
 | The `Employees` role specifically | **empleado** | colaborador, operativo |
+| One person's completed survey, counted for an executive | **cuestionario contestado** | respuesta |
+| The 5-character code typed at activation | **código de empresa** | código de referencia |
+| The 9-digit code for the first sign-in | **código de acceso** | código temporal de acceso |
+| The 6-digit code sent by email | **código de inicio de sesión** | login code |
+| Signing in | **iniciar sesión** (the first-sign-in path: *Primer ingreso*) | ingresar, entrar |
+| Who a colaborador asks for a code or access | **quien te invitó** | tu administrador, RH |
+| Taking a report off the company's view | **retirar la publicación** | despublicar |
+| Staff working remotely | **teletrabajo** | home office |
 
 *Colaborador* and *empleado* are not interchangeable. Every person on a company
 roster is a *colaborador* — the list holds administradores and ejecutivos

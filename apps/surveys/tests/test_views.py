@@ -671,7 +671,9 @@ class TestSurveyTypography:
     @pytest.fixture
     def cards(self, client, active_assignment, survey_with_questions):
         html = client.get(_survey_url(active_assignment.pk)).content.decode()
-        found = re.findall(r'<div class="question-card.*?</fieldset>', html, re.DOTALL)
+        found = re.findall(
+            r'<div id="q-\d+" class="question-card.*?</fieldset>', html, re.DOTALL
+        )
         assert len(found) == len(survey_with_questions["questions"])
         return found
 
@@ -745,7 +747,7 @@ class TestSurveyPageShape:
         ).content.decode()
         main = html[html.index("<main") :]
         assert 'role="alert"' in main
-        assert "Favor de corregir las preguntas resaltadas" in main
+        assert "Corrige 1 respuesta para poder guardar." in main
 
     def test_headings_run_in_order(
         self, client, active_assignment, survey_with_questions
@@ -754,3 +756,75 @@ class TestSurveyPageShape:
         form = html[html.index('id="survey-form"') :]
         first_h2 = form.find("<h2")
         assert first_h2 == -1 or "<h3" not in form[:first_h2]
+
+
+class TestSurveyErrorsAndOrder:
+    """What a respondent meets when an answer is refused, and the reading order.
+
+    See docs/platform/survey-model.md.
+    """
+
+    def _q(self, survey_with_questions, qtype):
+        return next(
+            q for q in survey_with_questions["questions"] if q.question_type == qtype
+        )
+
+    def test_a_bad_number_keeps_what_was_posted(
+        self, client, active_assignment, survey_with_questions
+    ):
+        int_q = self._q(survey_with_questions, "integer")
+        likert_q = self._q(survey_with_questions, "likert")
+        html = client.post(
+            _survey_url(active_assignment.pk),
+            {f"question_{int_q.id}": "doce", f"question_{likert_q.id}": "2"},
+        ).content.decode()
+        assert 'value="doce"' in html
+        assert re.search(rf'name="question_{likert_q.id}" value="2"[^>]*checked', html)
+        assert "Escribe un número entero, sin decimales." in html
+        assert 'aria-invalid="true"' in html
+        assert f'aria-describedby="question_{int_q.id}_error"' in html
+        assert f'id="question_{int_q.id}_error"' in html
+        assert "Corrige 1 respuesta para poder guardar." in html
+        assert f'href="#q-{int_q.id}"' in html
+        assert "data-focus-on-load" in html
+        assert not Answer.objects.exists()
+
+    def test_the_form_comes_before_the_sidebar(self, client, active_assignment):
+        html = client.get(_survey_url(active_assignment.pk)).content.decode()
+        main = html[html.index("<main") :]
+        assert main.index('id="survey-form"') < main.index('id="survey-actions"')
+        assert main.index("<h1") < main.index("<h2")
+
+    def test_a_closed_survey_link_says_so(self, client, active_assignment):
+        active_assignment.status = SurveyAssignment.Status.CLOSED
+        active_assignment.save()
+        resp = client.get(_survey_url(active_assignment.pk), follow=True)
+        assert "Esta encuesta ya cerró." in resp.content.decode()
+
+    def test_a_completed_survey_link_says_so(
+        self, client, active_assignment, respondent
+    ):
+        SurveySubmission.objects.create(
+            assignment=active_assignment,
+            user=respondent,
+            status=SurveySubmission.Status.COMPLETED,
+        )
+        resp = client.get(_survey_url(active_assignment.pk), follow=True)
+        assert "Ya enviaste tus respuestas a esta encuesta." in resp.content.decode()
+
+    def test_the_instructions_are_the_norms(self, client, active_assignment):
+        html = client.get(_survey_url(active_assignment.pk)).content.decode()
+        assert "Lorem" not in html
+        assert "dos últimos meses" in html
+
+    def test_the_session_expired_link_returns_to_the_survey(
+        self, client, active_assignment
+    ):
+        html = client.get(_survey_url(active_assignment.pk)).content.decode()
+        dialog = html[html.index('id="session-expired-modal"') :]
+        assert "?next=/encuestas/asignados/" in dialog[: dialog.index("</dialog>")]
+
+    def test_the_save_line_is_a_live_region(self, client, active_assignment):
+        html = client.get(_survey_url(active_assignment.pk)).content.decode()
+        actions = html[html.index('id="survey-actions"') :]
+        assert re.search(r'id="save-status" aria-live="polite"', actions[:3000])

@@ -10,7 +10,7 @@
   {% include "components/_page_header.html" with title="Editar reporte" subtitle=company.name %}
 
 
-  <form method="post" class="space-y-6" data-loading>
+  <form method="post" class="space-y-6">
     {% csrf_token %}
     {% if form.non_field_errors %}
       {% include "components/_alert.html" with tone="danger" items=form.non_field_errors only %}
@@ -50,7 +50,7 @@
             {% for hidden in sub.hidden_fields %}{{ hidden }}{% endfor %}
             <div class="min-w-0 flex-1">{{ sub.title.as_field_group }}</div>
             <div class="min-w-0 flex-1">{{ sub.name.as_field_group }}</div>
-            <label class="flex min-h-11 items-center gap-2 text-sm text-neutral-700 [&>input]:size-5 [&>input]:accent-danger-600">{{ sub.DELETE }} Eliminar</label>
+            <label class="flex min-h-11 items-center gap-2 text-sm text-neutral-700 [&>input]:size-5 [&>input]:accent-danger-600">{{ sub.DELETE }} Quitar</label>
           </li>
         {% endfor %}
       </ol>
@@ -59,7 +59,7 @@
     <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
       <a href="{% url 'reports:admin_detail' company.reference_code report.assignment.pk %}"
          class="btn btn-secondary">Cancelar</a>
-      <button type="submit" class="btn btn-primary">Guardar</button>
+      <button type="submit" class="btn btn-primary">Guardar reporte</button>
     </div>
   </form>
 {% endblock %}

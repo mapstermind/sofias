@@ -409,7 +409,7 @@ class TestEmployeeSurveyListView:
         )
         client.force_login(self._make_employee(make_user, bootstrap_groups, company))
         html = client.get(self.URL).content.decode()
-        assert "La encuesta cerró; ya no puedes ver tus respuestas." in html
+        assert "La encuesta cerró antes de que enviaras tus respuestas." in html
         assert "bg-black" not in html
 
     def test_unauthenticated_redirects_to_login(self, client):
@@ -1396,9 +1396,7 @@ class TestCompanyEmployeeListView:
 
         assert response.context["total_count"] == 0
         assert response.context["roster_query"].is_narrowed is False
-        assert "Aún no hay colaboradores vinculados a Vacía.".encode() in (
-            response.content
-        )
+        assert "Aún no hay colaboradores en Vacía.".encode() in (response.content)
         assert "Ningún colaborador coincide".encode() not in response.content
 
 
@@ -1728,7 +1726,7 @@ class TestEmployeeDetailView:
         client.force_login(viewer)
         response = client.get(self._url(emp.id))
         assert (
-            "La valoración se genera al completar la encuesta."
+            "La valoración aparece cuando el colaborador envía la encuesta."
             in response.content.decode()
         )
 
@@ -1775,7 +1773,10 @@ class TestEmployeeDetailView:
         assert "160 puntos" in body
         assert "Nivel de riesgo Muy alto" in body  # the 5-step scale's aria-label
         assert "Ambiente de trabajo" in body
-        assert "Usuario positivo a un acontecimiento traumático severo." in body
+        assert (
+            "Requiere valoración clínica: reportó un acontecimiento traumático severo (Guía I)."
+            in body
+        )
         # The dominio row is itself the disclosure that reveals its dimensiones.
         assert "<details" in body
         assert "Trabajos peligrosos" in body

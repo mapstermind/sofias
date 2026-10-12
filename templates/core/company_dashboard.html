@@ -22,7 +22,7 @@
     <div class="rounded-lg border border-primary-200 bg-primary-50 px-4 py-3 sm:w-80 sm:shrink-0">
       <div class="flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <p class="text-sm font-medium text-primary-700">Código de referencia</p>
+          <p class="text-sm font-medium text-primary-700">Código de empresa</p>
           <p data-copy-source class="mt-0.5 font-mono text-2xl font-semibold tracking-[0.2em] text-neutral-900">{{ company.reference_code }}</p>
         </div>
         <button type="button" data-copy="{{ company.reference_code }}" hidden class="btn btn-secondary btn-sm shrink-0">
@@ -42,7 +42,7 @@
       <div class="card flex items-start gap-4 px-5 py-4">
     {% endif %}
         <div class="min-w-0 flex-1">
-          <p class="text-sm font-medium text-neutral-600">Colaboradores registrados</p>
+          <p class="text-sm font-medium text-neutral-600">Cuentas activadas</p>
           <p class="mt-1 text-2xl font-bold text-neutral-900 tabular-nums">
             {{ activated_count }}<span class="text-base font-normal text-neutral-600">&thinsp;/&thinsp;{{ member_count }}</span>
           </p>
@@ -73,7 +73,7 @@
         {% if representative_minimum is not None %}
           <span class="mt-1 block text-2xl font-bold text-neutral-900 tabular-nums">{{ representative_minimum }}</span>
         {% else %}
-          <span class="mt-1 block text-sm text-neutral-600">Sin datos</span>
+          <span class="mt-1 block text-sm text-neutral-600">Sin colaboradores</span>
         {% endif %}
       </span>
       <span class="mt-0.5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600">
@@ -86,7 +86,7 @@
         <div class="min-w-0 flex-1">
           <p class="text-sm font-medium text-neutral-600">Cuestionarios valorados</p>
           {% if latest_scored_count is None %}
-            <p class="mt-1 text-sm text-neutral-600">Sin encuestas NOM-035</p>
+            <p class="mt-1 text-sm text-neutral-600">Sin encuestas NOM-035 asignadas</p>
           {% else %}
             <p class="mt-1 text-2xl font-bold text-neutral-900 tabular-nums">{{ latest_scored_count }}</p>
           {% endif %}
@@ -105,13 +105,13 @@
       </button>
     </div>
       <p class="mt-3 text-sm text-neutral-600 leading-relaxed">
-        La <span class="font-medium text-neutral-800">fórmula de Cochran</span> estima el tamaño mínimo de muestra necesario para que los resultados de una encuesta sean estadísticamente representativos, con un <span class="font-medium text-neutral-800">95% de confianza</span> y un <span class="font-medium text-neutral-800">5% de margen de error</span>.
+        La <span class="font-medium text-neutral-800">fórmula de Cochran</span> estima el tamaño mínimo de muestra necesario para que los resultados de una encuesta sean estadísticamente representativos, con un <span class="font-medium text-neutral-800">95 % de confianza</span> y un <span class="font-medium text-neutral-800">5 % de margen de error</span>.
       </p>
       <div class="mt-4 rounded-xl bg-neutral-50 border border-neutral-200 px-5 py-4 font-mono text-sm text-neutral-700 text-center tracking-wide">
         n = 0.9604 &middot; N &thinsp;/&thinsp; (0.0025(N &minus; 1) + 0.9604)
       </div>
       <p class="mt-4 text-sm text-neutral-500 leading-relaxed">
-        Donde <span class="font-medium">N</span> es el total de colaboradores registrados y <span class="font-medium">n</span> es el número mínimo de respuestas requeridas. Las constantes corresponden a z&sup2;&middot;p(1&minus;p) con z&nbsp;=&nbsp;1.96 y p&nbsp;=&nbsp;0.5, y e&sup2; con e&nbsp;=&nbsp;0.05.
+        Donde <span class="font-medium">N</span> es el total de colaboradores de la empresa y <span class="font-medium">n</span> es el número mínimo de cuestionarios contestados. Las constantes corresponden a z&sup2;&middot;p(1&minus;p) con z&nbsp;=&nbsp;1.96 y p&nbsp;=&nbsp;0.5, y e&sup2; con e&nbsp;=&nbsp;0.05.
       </p>
   </dialog>
 
@@ -130,7 +130,7 @@
                     <span class="font-normal text-neutral-600">({{ item.assignment.get_variant_display }})</span>
                   </h3>
                   <p class="mt-1 text-sm text-neutral-600">
-                    {% if item.assignment.status == "active" %}<span class="font-medium text-primary-700">Activa</span>{% else %}Cerrada{% endif %}{% if item.assignment.due_date %}, fecha límite {{ item.assignment.due_date|date:"d/m/Y" }}{% endif %}
+                    {% if item.assignment.status == "active" %}<span class="font-medium text-primary-700">Activa</span>{% else %}Cerrada{% endif %}{% if item.assignment.due_date %} <span aria-hidden="true">·</span> Fecha límite: {{ item.assignment.due_date|date:"d/m/Y" }}{% endif %}
                   </p>
                 </div>
                 <div class="shrink-0 text-right">
@@ -148,14 +148,14 @@
               {% if representative_threshold_pct is not None %}
                 <p class="mt-2 flex items-center gap-2 text-xs text-neutral-600">
                   <span class="h-3 w-0.5 rounded-full bg-neutral-500" aria-hidden="true"></span>
-                  Mínimo representativo: {{ representative_minimum }} respuestas
+                  Mínimo representativo: {{ representative_minimum }} cuestionarios
                 </p>
               {% endif %}
             </div>
 
             {% if can_take_surveys %}
               <div class="flex flex-col gap-3 border-t border-neutral-100 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <p class="text-sm font-medium text-neutral-800">Tu respuesta</p>
+                <p class="text-sm font-medium text-neutral-800">Tus respuestas</p>
                 {% if item.assignment.status == "active" and not item.user_completed %}
                   <a href="{% url 'surveys:survey_detail' item.assignment.id %}" class="btn btn-primary btn-sm w-full sm:w-auto">Responder</a>
                 {% elif item.user_completed %}
@@ -166,7 +166,7 @@
                 {% else %}
                   <p class="flex flex-wrap items-center gap-2 text-sm text-neutral-600">
                     <span class="pill pill-marker bg-neutral-100 text-neutral-600 ring-1 ring-inset ring-neutral-500/20">Cerrada</span>
-                    La encuesta cerró; ya no puedes ver tus respuestas.
+                    La encuesta cerró antes de que enviaras tus respuestas.
                   </p>
                 {% endif %}
               </div>
@@ -175,7 +175,7 @@
         {% endfor %}
       </div>
     {% else %}
-      {% include "components/_empty.html" with body="No hay encuestas asignadas a esta empresa." icon="clipboard-document-list" %}
+      {% include "components/_empty.html" with body="Aún no hay encuestas asignadas a esta empresa." icon="clipboard-document-list" %}
     {% endif %}
   </section>
   <script src="{% static 'js/copy.js' %}"></script>

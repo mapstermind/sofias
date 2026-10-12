@@ -33,9 +33,9 @@ class TestRequestOTPView:
     def test_get_renders_form(self, client):
         response = client.get(REQUEST_OTP_URL)
         assert response.status_code == 200
-        assert "Inicio de sesión por correo".encode() in response.content
+        assert "Iniciar sesión con un código por correo".encode() in response.content
         assert "Otras formas de ingresar".encode() in response.content
-        assert "Tengo un código temporal de acceso".encode() in response.content
+        assert "Tengo un código de acceso".encode() in response.content
         assert "Ya creé mi contraseña".encode() in response.content
         assert reverse("accounts:setup_access_code_login").encode() in response.content
         assert reverse("accounts:password_login").encode() in response.content
@@ -333,7 +333,7 @@ class TestSetupAccessCodeLoginView:
         response = client.get(SETUP_ACCESS_CODE_URL)
 
         assert response.status_code == 200
-        assert "código temporal de acceso".encode() in response.content
+        assert "código de acceso de 9 dígitos".encode() in response.content
 
     def test_authenticated_user_is_redirected(self, client, make_user):
         client.force_login(make_user())
@@ -1211,3 +1211,51 @@ class TestLogoutView:
         response = client.post(LOGOUT_URL)
         assert response.status_code == 302
         assert "_auth_user_id" not in client.session
+
+
+class TestNext:
+    """Signing in returns a visitor to where they were headed, on this site only.
+
+    See docs/platform/auth-and-onboarding.md.
+    """
+
+    def test_next_survives_the_emailed_code_round_trip(
+        self, client, make_user_with_profile, make_company
+    ):
+        make_user_with_profile(email="a@example.com", company=make_company())
+        client.get(REQUEST_OTP_URL + "?next=/encuestas/asignados/5/")
+        client.post(REQUEST_OTP_URL, {"email": "a@example.com"})
+        code = EmailOTP.objects.get(email="a@example.com").code
+        response = client.post(VERIFY_OTP_URL, {"email": "a@example.com", "code": code})
+        assert response["Location"] == "/encuestas/asignados/5/"
+
+    def test_an_offsite_next_is_ignored(
+        self, client, make_user_with_profile, make_company
+    ):
+        make_user_with_profile(
+            email="b@example.com", password="TempPass123!", company=make_company()
+        )
+        client.get(PASSWORD_LOGIN_URL + "?next=https://evil.example/")
+        response = client.post(
+            PASSWORD_LOGIN_URL, {"email": "b@example.com", "password": "TempPass123!"}
+        )
+        assert response["Location"] == "/"
+
+    def test_next_waits_for_a_new_password(
+        self, client, make_user_with_profile, make_company
+    ):
+        user = make_user_with_profile(
+            email="c@example.com", password="TempPass123!", company=make_company()
+        )
+        user.must_change_password = True
+        user.save()
+        client.get(PASSWORD_LOGIN_URL + "?next=/encuestas/asignados/5/")
+        response = client.post(
+            PASSWORD_LOGIN_URL, {"email": "c@example.com", "password": "TempPass123!"}
+        )
+        assert response["Location"] == CHANGE_PASSWORD_URL
+        response = client.post(
+            CHANGE_PASSWORD_URL,
+            {"new_password1": "Otra-Clave-2026", "new_password2": "Otra-Clave-2026"},
+        )
+        assert response["Location"] == "/encuestas/asignados/5/"
