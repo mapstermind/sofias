@@ -1,21 +1,5 @@
 # Valoración NOM-035 — Supuestos y puntos por validar
 
-## Propósito
-
-Este documento reúne, **en lenguaje no técnico**, los supuestos que aún debemos
-**confirmar con la persona experta** en la norma y con el cliente, sobre la
-valoración y sobre cómo se aplica la encuesta.
-
-Los datos de calificación ya confirmados —ítems invertidos, agrupación
-Categoría/Dominio, tablas de umbrales por dominio/categoría/final y la regla de
-canalización de la Guía I— se transcribieron de la fuente única de verdad
-(`docs/internal/Guias de Referencia.md`) y se consideran resueltos;
-su detalle vive en `docs/platform/nom-035-analytics.md`. La página de
-**Resultados** de cada empresa se describe en
-`docs/platform/nom-035-results-dashboard.md`, y el **Reporte de resultados**
-descargable, en `docs/platform/nom-035-report.md`. Aquí quedan únicamente los
-**puntos abiertos**.
-
 > 🟡 = por validar. Última actualización: 2026-10-12.
 
 ---
@@ -82,20 +66,7 @@ vista completa revelaría a quienes quedaron fuera.
 - **Lo que necesitamos:** confirmar que así debe leerse el perfil de quienes
   respondieron, y si la edad debería fijarse a la fecha de respuesta.
 
-## 4. Guía I: tres resultados 🟡
-
-- **Supuesto actual:** cada cuestionario queda en uno de tres resultados: **sin
-  acontecimiento** (la Sección I no se respondió "Sí"), **acontecimiento sin requerir
-  valoración** (la Sección I se respondió "Sí", pero no se alcanzó ningún umbral
-  de las Secciones II a IV) y **requiere valoración clínica**. La página muestra
-  cuántas personas hay en cada uno, sin nombres. Guardamos si ocurrió el
-  acontecimiento, además del resultado de canalización, porque sin ese dato no
-  se distingue a quien no vivió un acontecimiento de quien lo vivió sin requerir
-  valoración.
-- **Lo que necesitamos:** confirmar que estos tres resultados son la lectura
-  correcta de la Guía I para la empresa.
-
-## 5. Reporte: grupos pequeños también para Administración 🟡
+## 4. Reporte: grupos pequeños también para Administración 🟡
 
 - **Supuesto actual:** el Reporte de resultados se calcula **siempre** con la
   regla de grupos pequeños del punto 2, también en la vista previa de
@@ -107,7 +78,7 @@ vista completa revelaría a quienes quedaron fuera.
   falta decidir quién lo recibe y si el Ejecutivo principal seguiría viendo la
   versión con grupos ocultos.
 
-## 6. Reporte: texto del Objetivo 🟡
+## 5. Reporte: texto del Objetivo 🟡
 
 - **Supuesto actual:** la sección **Objetivo** es un texto fijo, igual para todos
   los reportes, y por ahora es un texto provisional.
@@ -115,7 +86,7 @@ vista completa revelaría a quienes quedaron fuera.
   fijo o si debe cambiar según el tamaño de la empresa y las guías aplicadas
   (Guía I con Guía II o con Guía III).
 
-## 7. Reporte: cómo describir la calificación final 🟡
+## 6. Reporte: cómo describir la calificación final 🟡
 
 - **Supuesto actual:** el reporte resume la calificación final agrupando niveles:
   *"De los N colaboradores evaluados, el X % presentó niveles de riesgo Nulo o
@@ -124,7 +95,7 @@ vista completa revelaría a quienes quedaron fuera.
   **cada nivel por separado**, sin agruparlos (por ejemplo, *"48 % Nulo, 28 %
   Bajo, 14 % Medio, 8 % Alto y 2 % Muy alto"*).
 
-## 8. Encuesta: instrucciones para quien responde 🟡
+## 7. Encuesta: instrucciones para quien responde 🟡
 
 - **Supuesto actual:** la primera vez que alguien abre la encuesta ve unas
   instrucciones redactadas a partir de los puntos que la propia norma pide
@@ -139,26 +110,36 @@ vista completa revelaría a quienes quedaron fuera.
   en su página de detalle, y **Administración** ve además sus respuestas.
 - **A quién acudir:** cuando a alguien le falta un código o no tiene acceso, la
   aplicación le dice que lo pida a **"quien te invitó"**.
-- **Lo que necesitamos:** el texto definitivo de las instrucciones y el video
-  (tarea SOF de la reunión del 3 de agosto); confirmar que la redacción sobre
+- **Lo que necesitamos:** el texto definitivo de las instrucciones y el video;
+  confirmar que la redacción sobre
   confidencialidad es aceptable, o si el Ejecutivo principal debería dejar de ver
   el nivel de riesgo individual; y si "quien te invitó" basta o
   conviene nombrar un área (por ejemplo, Recursos Humanos).
 
-## 9. Empresas con varias razones sociales 🟡
+## 8. Qué abarca una empresa y su reporte 🟡
 
-- **Supuesto actual:** cada **razón social** se registra como una **empresa
-  distinta** en la plataforma, con su propio código de empresa, sus colaboradores
-  y sus resultados. Dos razones sociales de un mismo grupo no comparten tablero
-  ni reporte.
-- **Lo que necesitamos:** confirmar que así debe ser, o si un grupo con varias
-  razones sociales necesita verse también en conjunto (reunión del 3 de agosto).
+- **Supuesto actual:** cada empresa registrada en la plataforma tiene su propio
+  código de empresa, sus colaboradores, su página de Resultados y **un solo
+  Reporte de resultados**, que la cubre completa.
+  - **Varias razones sociales:** cada razón social se registra como una
+    **empresa distinta**. Dos razones sociales de un mismo grupo no comparten
+    tablero ni reporte.
+  - **Varias localidades:** una empresa puede registrar varias localidades y
+    filtrar por localidad en la página de Resultados, pero el reporte es uno
+    solo para toda la empresa. Si se necesita un reporte separado por localidad
+    (por ejemplo, un centro de trabajo por planta), cada localidad se registra
+    como una **empresa distinta**.
+- **Lo que necesitamos:** confirmar que así debe ser en los dos sentidos:
+  - si un grupo con varias razones sociales necesita verse también en conjunto;
+  - si un solo reporte por empresa es aceptable para la norma cuando hay varias
+    localidades, o si cada centro de trabajo debe tener su propio reporte.
 
-## 10. Edad mínima para activar una cuenta 🟡
+## 9. Puesto al activar la cuenta 🟡
 
-- **Supuesto actual:** la fecha de nacimiento debe corresponder a una edad
-  **entre 15 y 99 años**. Usamos 15 porque es la edad mínima legal para trabajar
-  en México; es el único límite que podíamos fijar sin preguntar.
-- **Lo que necesitamos:** confirmar si la plantilla de los clientes es de
-  **18 años o más** por política. Si es así, subimos el mínimo a 18; hoy una
-  persona de 16 años pasaría la validación.
+- **Supuesto actual:** al activar su cuenta, la persona puede escribir su
+  **puesto**, pero el campo es **opcional**. El puesto solo aparece en la lista
+  de colaboradores y en su página de detalle; no se usa en la valoración, en los
+  filtros de Resultados ni en el Reporte.
+- **Lo que necesitamos:** confirmar si el puesto sirve para algo. Si sirve, lo
+  hacemos **obligatorio** al activar la cuenta. Si no sirve, **lo quitamos** del
+  formulario para pedir un dato menos.
