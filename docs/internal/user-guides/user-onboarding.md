@@ -174,6 +174,7 @@ When the response window ends, go to **Encuestas → Asignaciones de encuesta**,
 
 | What happens | Why, and what to do |
 |---|---|
+| An operator signs in and sees *Tu cuenta aún no tiene una empresa asignada* | Their account is not in the `Admins` group, so the platform treats it as a collaborator without a company. In `/admin/`, go to **Cuentas → Usuarios**, open the account, add **Admins** under **Grupos**, and save. Operators never need a company. |
 | A collaborator is told the company has no áreas | The company has no active área. Add one (step 1); they can then finish activating. |
 | "No hay ninguna cuenta con este correo" at login | The email isn't imported, or is typed differently. Check the import report; add them with a new CSV containing only that row. |
 | A login code never arrives | Check the platform's email settings ([`platform-setup.md`](platform-setup.md#4-configure-env)). If the company blocks external mail, that person needs the `password` path: delete their user and re-import them with `auth_method` = `password`. |
