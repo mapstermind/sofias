@@ -1,4 +1,4 @@
-.PHONY: install lock serve makemigrations migrate bootstrap-groups clean-pycache test test-fast test-accounts test-core test-surveys test-responses \
+.PHONY: install lock serve serve-lan makemigrations migrate bootstrap-groups clean-pycache test test-fast test-accounts test-core test-surveys test-responses \
         lint fmt
 
 lint:
@@ -15,6 +15,9 @@ lock:
 
 serve:
 	poetry run python manage.py runserver
+
+serve-lan:
+	poetry run python manage.py runserver 0.0.0.0:8000
 
 makemigrations:
 	poetry run python manage.py makemigrations

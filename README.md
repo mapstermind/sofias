@@ -76,6 +76,7 @@ Most tasks have a `make` target (see the `Makefile`):
 
 ```bash
 make serve              # run the dev server
+make serve-lan          # run it on 0.0.0.0:8000 so another computer can reach it
 make test               # run all tests
 make lint               # ruff check --fix
 make fmt                # ruff format
