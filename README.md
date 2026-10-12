@@ -41,34 +41,27 @@ Each app has its own `CLAUDE.md` with model and flow details.
 
 ## Setup
 
-1. **PostgreSQL** — create the database and user:
+Needs Python 3.13, Poetry 2.x, PostgreSQL 17 built with ICU, and Pango (for the report PDF).
+The full walkthrough — packages, `.env` variables, email, checks — is
+[`docs/internal/user-guides/platform-setup.md`](docs/internal/user-guides/platform-setup.md).
 
-   ```bash
-   sudo -u postgres psql -c "CREATE USER sofias WITH PASSWORD 'sofias';"
-   sudo -u postgres psql -c "CREATE DATABASE sofias OWNER sofias;"
-   ```
+```bash
+sudo -u postgres psql -c "CREATE USER sofias WITH PASSWORD 'sofias';"
+sudo -u postgres psql -c "CREATE DATABASE sofias OWNER sofias;"
 
-2. **Environment** — configuration is read from `.env` at the project root. All variables have development defaults; the main ones are `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, and the email settings (`EMAIL_*`). With no `.env`, OTP emails print to the console.
+cp .env.example .env              # then set DB_PASSWORD to the password above
+poetry install && source .venv/bin/activate
 
-3. **Install and migrate:**
+python manage.py migrate
+python manage.py bootstrap_groups     # the four role groups
+python manage.py seed_nom035_survey   # the NOM-035 questionnaire
+python manage.py createsuperuser      # use a lowercase email
+python manage.py runserver
+```
 
-   ```bash
-   poetry install
-   python manage.py migrate
-   python manage.py bootstrap_groups   # creates the four permission groups
-   ```
-
-4. **Seed survey content (optional):**
-
-   ```bash
-   python manage.py seed_nom035_survey          # NOM-035 survey (Survey → Module → Question)
-   ```
-
-5. **Run:**
-
-   ```bash
-   python manage.py runserver
-   ```
+Then sign in at `/admin/` and add your superuser to the **Admins** group
+(Cuentas → Usuarios → Grupos). To onboard a client company, follow
+[`docs/internal/user-guides/user-onboarding.md`](docs/internal/user-guides/user-onboarding.md).
 
 ## Common commands
 
