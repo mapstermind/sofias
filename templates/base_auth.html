@@ -13,7 +13,7 @@ narrower panel that stays in view while the form scrolls.
 {% block body %}
 <main id="main" tabindex="-1" class="flex flex-1 items-center justify-center px-4 py-6 focus:outline-none lg:px-8 lg:py-12">
   <div data-auth-variant="{{ auth_variant|default:"" }}"
-       class="grid w-full grid-cols-1 rounded-[20px] bg-white p-2 shadow-[0_0_0_1px_var(--color-neutral-200),0_30px_60px_-24px_color-mix(in_srgb,var(--color-primary-900)_35%,transparent)] lg:rounded-3xl lg:p-3 {% if auth_variant == "long" %}max-w-6xl lg:grid-cols-[2fr_3fr]{% else %}max-w-5xl lg:min-h-[620px] lg:grid-cols-2{% endif %}">
+       class="auth-card {% if auth_variant == "long" %}max-w-6xl lg:grid-cols-[2fr_3fr]{% else %}max-w-5xl lg:min-h-[620px] lg:grid-cols-2{% endif %}">
 
     <aside data-auth-panel aria-label="{{ brand.name }}"
            class="auth-panel{% if auth_variant == "long" %} lg:sticky lg:top-6 lg:h-[calc(100dvh-3rem)] lg:max-h-[760px] lg:self-start{% endif %}">
