@@ -79,7 +79,7 @@ Guides, meeting notes, roadmap context, and workflows for the team. The agent do
 
 - `prompting-workflow.md` is the master guide: how a request is routed, and the eight steps from there to merged.
 - `open-findings.md` tracks issues found during development that were out of scope for the change that found them.
-- `user-guides/` contains operator procedures (CSV import, user onboarding, rebranding).
+- `user-guides/` contains operator procedures: platform setup, onboarding a client company, the CSV import reference, rebranding.
 - `meetings/` contains background context. `Guias de Referencia.md` is the single
   source of truth for NOM-035 scoring data (see `.claude/CLAUDE.md`).
 
@@ -114,5 +114,8 @@ Docs moved here when the feature they describe is retired or superseded. Include
 | `adr/adr-0004-per-company-area-and-locality-catalogs.md` | Why área and localidad are per-company catalogs |
 | `adr/adr-0005-two-surname-names-and-profile-demographics.md` | Why a name is three fields and demographics live on the profile |
 | `adr/adr-0006-brand-palette.md` | (Proposed) The brand palette: why blue/slate, the alternatives weighed |
+| `internal/user-guides/platform-setup.md` | Fresh machine → running platform with an operator account |
+| `internal/user-guides/user-onboarding.md` | Onboarding a client: company, users, survey assignment, hand-off |
+| `internal/user-guides/csv-user-import.md` | The CSV user import: columns, report, skipped rows |
 | `internal/user-guides/rebranding.md` | (Draft) Replacing the product's name, logo and palette |
 | `internal/Guias de Referencia.md` | Single source of truth for NOM-035 scoring data |
