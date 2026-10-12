@@ -3,7 +3,8 @@
 ## Propósito
 
 Este documento reúne, **en lenguaje no técnico**, los supuestos que aún debemos
-**confirmar con la persona experta** en la norma.
+**confirmar con la persona experta** en la norma y con el cliente, sobre la
+valoración y sobre cómo se aplica la encuesta.
 
 Los datos de calificación ya confirmados —ítems invertidos, agrupación
 Categoría/Dominio, tablas de umbrales por dominio/categoría/final y la regla de
@@ -15,7 +16,7 @@ su detalle vive en `docs/platform/nom-035-analytics.md`. La página de
 descargable, en `docs/platform/nom-035-report.md`. Aquí quedan únicamente los
 **puntos abiertos**.
 
-> 🟡 = por validar. Última actualización: 2026-10-04.
+> 🟡 = por validar. Última actualización: 2026-10-12.
 
 ---
 
@@ -41,8 +42,8 @@ vista completa revelaría a quienes quedaron fuera.
 - **Supuesto actual:** el **Ejecutivo principal** ve los resultados de un grupo
   filtrado solo si reúne **al menos 5 cuestionarios** y no deja fuera **de 1 a 4
   personas** (por ejemplo, "todos menos Dirección" cuando Dirección tiene dos
-  personas). Si no se cumple, la página muestra *"Grupo demasiado pequeño para
-  mostrar resultados sin identificar a las personas (mínimo 5)"*. La misma regla
+  personas). Si no se cumple, la página muestra *"Grupo muy pequeño: ocultamos
+  sus resultados para no identificar a nadie (mínimo 5 personas)."* La misma regla
   se aplica a cada renglón de la tabla por área. **Administración** (el equipo
   que opera la plataforma) puede verlos sin límite. La **vista completa de la
   encuesta**, sin filtros, siempre se muestra, aunque tenga menos de 5
@@ -122,3 +123,33 @@ vista completa revelaría a quienes quedaron fuera.
 - **Lo que necesitamos:** confirmar si es preferible describir el porcentaje de
   **cada nivel por separado**, sin agruparlos (por ejemplo, *"48 % Nulo, 28 %
   Bajo, 14 % Medio, 8 % Alto y 2 % Muy alto"*).
+
+## 8. Encuesta: instrucciones para quien responde 🟡
+
+- **Supuesto actual:** la primera vez que alguien abre la encuesta ve unas
+  instrucciones redactadas a partir de los puntos que la propia norma pide
+  explicar (Guía II/III, *cómo aplicarse*): pensar en los **dos últimos meses**,
+  que **no hay respuestas correctas ni incorrectas**, contestar con sinceridad y
+  todas las preguntas, y que los datos se manejan con **privacidad y
+  confidencialidad** y solo para mejorar el ambiente de trabajo. El enlace al
+  video apunta, por ahora, a la página principal de YouTube.
+- **Confidencialidad:** el texto **no promete** que la empresa vea solo
+  resultados de grupo, porque no es así: el **Ejecutivo principal** ve el nivel
+  de riesgo de cada colaborador (y si requiere valoración clínica por la Guía I)
+  en su página de detalle, y **Administración** ve además sus respuestas.
+- **A quién acudir:** cuando a alguien le falta un código o no tiene acceso, la
+  aplicación le dice que lo pida a **"quien te invitó"**.
+- **Lo que necesitamos:** el texto definitivo de las instrucciones y el video
+  (tarea SOF de la reunión del 3 de agosto); confirmar que la redacción sobre
+  confidencialidad es aceptable, o si el Ejecutivo principal debería dejar de ver
+  el nivel de riesgo individual; y si "quien te invitó" basta o
+  conviene nombrar un área (por ejemplo, Recursos Humanos).
+
+## 9. Empresas con varias razones sociales 🟡
+
+- **Supuesto actual:** cada **razón social** se registra como una **empresa
+  distinta** en la plataforma, con su propio código de empresa, sus colaboradores
+  y sus resultados. Dos razones sociales de un mismo grupo no comparten tablero
+  ni reporte.
+- **Lo que necesitamos:** confirmar que así debe ser, o si un grupo con varias
+  razones sociales necesita verse también en conjunto (reunión del 3 de agosto).

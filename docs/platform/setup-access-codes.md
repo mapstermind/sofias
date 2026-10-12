@@ -26,8 +26,8 @@ Current behavior:
 SOFIA-S supports first login for users whose client blocks external email
 without treating the distributed first-login secret as a normal password.
 
-The CSV import contract for admins is unchanged; the fallback credential is a
-"setup access code" rather than a "temporary password."
+The CSV import contract stays the same for both login methods; the fallback
+credential is a *código de acceso*, not a password.
 
 Related ADR:
 
@@ -115,7 +115,6 @@ Spanish user-facing copy must distinguish setup access codes from passwords:
   - `company_reference_code`
   - `group`
   - `auth_method=password`
-  - optional profile/name fields already supported by CSV import
 - Setup-code first-login form:
   - `email`
   - `setup_access_code`
@@ -136,25 +135,25 @@ row_number,email,status,message,username,setup_access_code
   verification.
 - Redirects from required-password middleware until the user creates a permanent
   password.
-- Existing password-change success redirect behavior after
+- Post-login routing (and any `next`) once
   `User.must_change_password` is cleared.
 
 ## API / routes / commands
 
 | Interface | Method | Input | Output | Notes |
 |---|---|---|---|---|
-| `/admin/accounts/user/import-csv/` | POST | CSV file | CSV import report download | Existing admin import route. `auth_method=password` now creates setup access codes. |
+| `/admin/accounts/user/import-csv/` | POST | CSV file | CSV import report download | The admin import route; `auth_method=password` rows get a setup access code in the report. |
 | `/cuentas/primer-ingreso/` | GET | none | Setup-code first-login form | Public route for users with internally distributed setup access codes. |
 | `/cuentas/primer-ingreso/` | POST | `email`, `setup_access_code` | Redirect to password change or form errors | Must not reveal whether the email, code, or account state caused failure. |
-| `/cuentas/cambiar-contrasena/` | GET/POST | existing password-change fields | Existing password creation/change behavior | Used immediately after setup-code verification. |
-| `/cuentas/ingresar-con-contrasena/` | GET/POST | email and password | Existing password login behavior | Used only after the user creates a permanent password. |
+| `/cuentas/cambiar-contrasena/` | GET/POST | the password-change fields | The password-change form | Used immediately after setup-code verification. |
+| `/cuentas/ingresar-con-contrasena/` | GET/POST | email and password | The password login | Used only after the user creates a permanent password. |
 
 ## Data model impact
 
 - Models:
   - `accounts.SetupAccessCode`.
   - `accounts.User.must_change_password`.
-  - `accounts.EmailOTP` (unchanged by this feature).
+  - `accounts.EmailOTP` (the emailed-code login, separate from setup codes).
 - Fields:
   - `SetupAccessCode.user`: foreign key to `accounts.User`.
   - `SetupAccessCode.code`: nullable normalized 9-digit setup access code,
@@ -171,7 +170,7 @@ row_number,email,status,message,username,setup_access_code
   - Historical used setup access code rows may remain for audit/debug context,
     but they must not retain the consumed plaintext code.
 - Migrations:
-  - `SetupAccessCode` was added in `apps/accounts/migrations/0007_setupaccesscode.py`.
+  - `SetupAccessCode` is created in `apps/accounts/migrations/0001_initial.py`.
   - No migration should rename or remove `User.must_change_password`.
 
 ## Side effects
@@ -187,7 +186,7 @@ row_number,email,status,message,username,setup_access_code
   - No application event bus behavior is required.
 - Emails/notifications:
   - Setup access code creation sends no email.
-  - Email OTP behavior is unchanged.
+  - The emailed-code (OTP) login sends its own email; setup codes send none.
 - External API calls:
   - No new external API calls.
 - Files/storage:

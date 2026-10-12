@@ -299,7 +299,7 @@ for _dim_map in (_LARGE_DIMENSION_ITEMS, _SMALL_DIMENSION_ITEMS):
 CATEGORIA_ORDER = [CAT_AMBIENTE, CAT_FACTORES, CAT_TIEMPO, CAT_LIDERAZGO, CAT_ENTORNO]
 
 # ── Inverted items (scored 5 - value: Siempre→4 … Nunca→0) ──────────────────
-# Guía III: the "4,3,2,1,0" group from the Ejemplo Reporte value table.
+# Guía III: the "4,3,2,1,0" group from the client's report template's value table.
 _INVERTED_LARGE = {
     f"g3-{n}"
     for n in [

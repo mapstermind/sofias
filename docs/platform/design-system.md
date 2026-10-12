@@ -139,7 +139,7 @@ be compared live on the real screens rather than in a mock-up.
     activar*…), takes the pill's ink. Pills that hold a value rather than a state (answers,
     filters, the *Tú* tag) carry no marker.
   - Status takes the `success`, `warning` and `danger` scales: confirmations and finished
-    states (*Completada*, *Publicado*, *Activado*) `success`; notices and states that need an
+    states (*Completada*, *Publicado*, *Activada*) `success`; notices and states that need an
     action (*Borrador*, *Sin activar*, the pending-questions panel) `warning`; errors and field
     validation `danger`. Pills use the 50 or 100 fill with 800 ink, messages a 50 fill, 200
     border and 800 ink, field errors 600 text, icons 500. Status colors are always paired with an

@@ -36,7 +36,7 @@ The file needs exactly four columns, and every one of them is required:
 - `group`: one Django group name to assign to the user.
 - `auth_method`: either `otp` or `password`.
 
-There are no optional columns. **You do not upload names, cargos, áreas or localidades** — each employee supplies those themselves when they activate their account, so you only need the list of who gets access and what kind.
+There are no optional columns. **You do not upload names, puestos, áreas or localidades** — each employee supplies those themselves when they activate their account, so you only need the list of who gets access and what kind.
 
 Existing users are never updated; duplicate emails are skipped.
 
@@ -57,10 +57,10 @@ Use `otp` when the user can receive the login code by email. Use `password` only
 
 1. Open Django Admin.
 2. Go to **Usuarios**.
-3. Click **Importar usuarios desde CSV**.
+3. Click **Importar colaboradores**.
 4. Review the required columns shown on the page.
 5. Select the `.csv` file.
-6. Click **Importar usuarios**.
+6. Click **Importar colaboradores**.
 7. Download and review the generated import report.
 
 ## Import Results
@@ -82,9 +82,9 @@ For OTP users:
 
 1. Tell the company contact that users can log in at `/cuentas/ingresar/`.
 2. Share the company `reference_code` through the correct company contact.
-3. Users enter their email, receive an OTP, and then complete activation: the company reference code, their nombre(s) and apellido paterno, an optional apellido materno, an optional cargo, their sexo, their fecha de nacimiento, their área, and their localidad when the company has more than one.
+3. Users enter their email, receive an OTP, and then complete activation: the *código de empresa*, their nombre(s) and apellido paterno, an optional apellido materno, an optional puesto, their sexo, their fecha de nacimiento, their área, and their localidad when the company has more than one.
 
-Until a user activates, the roster shows them as *Sin nombre* — that is expected, not a failed import.
+Until a user activates, the roster lists them by correo alone — that is expected, not a failed import.
 
 For setup-code fallback users:
 

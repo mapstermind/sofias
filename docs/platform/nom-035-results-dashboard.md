@@ -15,8 +15,8 @@ the raw scores against the official threshold bands, and how many respondents
 screened positive on Guía I. One filter bar — sexo, edad, área, localidad —
 narrows every chart at once without reloading the page. Groups small enough to
 identify a person are hidden from company executives. Each chart is a reusable,
-server-rendered SVG component that knows nothing about NOM-035, so the future
-downloadable report draws the same charts from the same data.
+server-rendered SVG component that knows nothing about NOM-035, so the results
+report (`nom-035-report.md`) draws the same charts from the same data.
 
 ## Why it exists
 
@@ -398,13 +398,14 @@ Colors:
   legend swatches, each taking `"dominio"` for the deeper tier. The dominio tier
   is validated: adjacent levels at least ΔE 16.5 apart in normal vision and
   11.4 under protan/deutan simulation.
-- **Sex** — Femenino violet-600 (`#7c3aed`), Masculino sky-600 (`#0284c7`), Sin
-  dato gray-300. The pair passes the dataviz palette validator on a light
-  surface (deutan ΔE 9.2, normal-vision ΔE 19.8). Neither reuses a risk color.
-- **Age** — every band indigo-500; "Sin dato" gray-300. Position encodes the
+- **Sex** — Femenino `series-1`, Masculino `series-2`, Sin dato `neutral-300`.
+  The two series tokens follow the active palette (`design-system.md`), and
+  neither reuses a risk color.
+- **Age** — every band `series-1`; "Sin dato" `neutral-300`. Position encodes the
   band and height the count, so one hue suffices.
-- **Guía I** — Sin acontecimiento gray-300, Acontecimiento sin requerir
-  valoración amber-500, Requiere valoración clínica red-500.
+- **Guía I** — Sin acontecimiento `neutral-300`, Acontecimiento sin requerir
+  valoración `#CA9429`, Requiere valoración clínica `#7A1010`: fixed colors taken
+  from the risk ramp, outside every palette.
 
 ### Results data
 
@@ -447,7 +448,7 @@ card, gated on `can_view_insights`: the scored-questionnaire count of the
 assignment the results page opens on
 (`select_assignment(assignment_options(company), None)` in
 `CompanyDashboardView`). The whole card links to the results page. A company
-with no NOM-035 assignment reads *Sin encuestas NOM-035* instead of a count. The
+with no NOM-035 assignment reads *Sin encuestas NOM-035 asignadas* instead of a count. The
 page itself is also the *Resultados* section of the company navigation.
 
 ## Schema

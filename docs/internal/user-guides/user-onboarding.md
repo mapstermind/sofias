@@ -17,11 +17,11 @@ Before creating users, confirm the company already exists in Django Admin and ha
 - **Áreas** — at least one
 - **Localidades** — optional
 
-The **Código de empresa** is generated automatically and is required during first-time profile activation. Share this company reference code only with the correct company contact.
+The **Código de empresa** is generated automatically and is required during first-time profile activation. Share this code only with the correct company contact.
 
 **Áreas and localidades are loaded on the company itself**, in the *Áreas* and *Localidades* sections at the bottom of the company page in Django Admin. Each company has its own lists. They must be loaded **before** employees try to activate their accounts, because the employee picks their área from this list.
 
-> **At least one área is required.** An employee whose company has no áreas cannot finish activation — they will see a message asking them to contact their administrator. The company list in Django Admin shows an *Áreas* count column so you can spot companies that still need one.
+> **At least one área is required.** An employee whose company has no áreas cannot finish activation — they will see a message asking them to tell whoever invited them. The company list in Django Admin shows an *Áreas* count column so you can spot companies that still need one.
 
 Names are unique per company, ignoring capitalization, accents and extra spaces: adding `Ventas` and `ventas`, or `Dirección` and `Direccion`, to the same company is rejected — they are one entry typed two ways, and letting both through would split the área into two dashboard rows that nobody can merge later. The `ñ` is treated as the letter it is, so `Cañada` and `Canada` can both exist. To retire an área or localidad that is no longer used, **uncheck *activa*** instead of deleting it — that removes it from the picker while the employees already assigned to it keep their history. Deleting one that still has employees assigned is blocked.
 
@@ -80,7 +80,7 @@ Use this path when the user can receive emails from SOFIA-S.
 8. If this is the user’s first login, they are redirected to `/cuentas/completar-perfil/`.
 9. The user enters the company `reference_code`, their **nombre(s)** and **apellido paterno**, their **sexo** and their **fecha de nacimiento** (all required), plus an optional **apellido materno** and an optional **puesto**, then selects their **área** from the company’s list. If the company has more than one localidad, they also select their **localidad**; with exactly one localidad it is assigned automatically and not shown.
 10. **Fecha de nacimiento** is three dropdowns — Día, Mes, Año. The Año list is bounded to the years that put the user's age in the 15-to-99 working-age range; a year alone can't settle whether the birthday has passed, so the exact boundary is still enforced when the form is submitted.
-11. If the code matches the company linked to their profile, **Cuenta activada** becomes enabled, the name, puesto, sexo, fecha de nacimiento, área and localidad are saved, and the user proceeds into the app. Until this happens the employee roster shows them as *Sin nombre*.
+11. If the code matches the company linked to their profile, **Cuenta activada** becomes enabled, the name, puesto, sexo, fecha de nacimiento, área and localidad are saved, and the user proceeds into the app. Until this happens the roster lists them by correo and their detail page reads *Sin nombre*.
 
 ## Path B: Setup Access Code Fallback
 

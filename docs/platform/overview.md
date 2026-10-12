@@ -66,8 +66,8 @@ Three things do not live where the clean pattern would eventually put them:
   components (see [`nom-035-report.md`](./nom-035-report.md)).
 - **`SurveyAssignment.Variant`'s display labels are NOM-035-specific**
   (`"Guía II"`/`"Guía III"`) despite `SurveyAssignment` living in the
-  instrument-agnostic `apps/surveys` app. This was accepted as-is when the
-  labels were introduced; **revisit it when a second instrument is added** —
+  instrument-agnostic `apps/surveys` app. That is acceptable with one
+  instrument; **revisit it when a second instrument is added** —
   those labels would otherwise leak NOM-035 vocabulary onto an unrelated
   instrument's assignments.
 

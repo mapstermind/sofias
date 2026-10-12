@@ -25,7 +25,7 @@ Company employees and normal company managers are out of scope for this version.
 
 The feature lives in Django Admin on the `User` changelist.
 
-- Admin link label: `Importar usuarios desde CSV`
+- Admin link label: `Importar colaboradores`
 - Upload URL: `admin:accounts_user_import_csv`
 - Upload template: `templates/admin/accounts/user/import_csv.html`
 - Changelist override: `templates/admin/accounts/user/change_list.html`
@@ -105,7 +105,7 @@ For every created row:
   - `company`: company matched by `company_reference_code`
   - `is_activated=False`
 
-`User.first_name`, `User.paternal_last_name`, `User.maternal_last_name`, `UserProfile.position`, `UserProfile.sex`, `UserProfile.date_of_birth`, `UserProfile.area`, and `UserProfile.location` are left at their blank/null defaults. The employee fills them in at activation, and until they do the roster renders them as *Sin nombre* / *Sin puesto*.
+`User.first_name`, `User.paternal_last_name`, `User.maternal_last_name`, `UserProfile.position`, `UserProfile.sex`, `UserProfile.date_of_birth`, `UserProfile.area`, and `UserProfile.location` are left at their blank/null defaults. The employee fills them in at activation; until they do, the roster lists them by correo and the detail page reads *Sin nombre*.
 
 For `auth_method=otp`:
 

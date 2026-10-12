@@ -385,7 +385,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | Inactive área not selectable | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_inactive_area_is_not_selectable` |
 | Conditional localidad picker | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_single_location_is_auto_assigned_and_not_rendered`, `test_posted_location_never_assigned_when_field_hidden`, `test_several_locations_require_a_choice`, `test_zero_locations_activates_with_null_location` |
 | Localidad retired while the form is open | `apps/accounts/tests/test_views.py`, `apps/accounts/tests/test_forms.py` | `TestSetupProfileView::test_location_retired_mid_session_is_not_substituted`, `TestProfileActivationFormScoping::test_location_posted_while_picker_is_gone_is_rejected` |
-| Name and puesto saved at activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_activation_saves_name_and_cargo`, `test_activation_without_cargo_leaves_it_blank` |
+| Name and puesto saved at activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_activation_saves_name_and_puesto`, `test_activation_without_puesto_leaves_it_blank` |
 | Name is required to activate | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_missing_name_blocks_activation` |
 | Sexo and fecha de nacimiento saved at activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_activation_saves_demographics` |
 | Sexo is required to activate | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_missing_sex_blocks_activation` |

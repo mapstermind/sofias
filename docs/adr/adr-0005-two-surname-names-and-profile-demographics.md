@@ -94,9 +94,10 @@ everywhere.
   traps them on the activation page, which prefills what is on record. This is a
   deliberate re-collection rather than a backfill: nobody but the employee knows
   their own date of birth.
-- Reports are not reproducible across time. An age band computed today differs
-  from the same query run next year, because the underlying date of birth is
-  fixed but the age is not.
+- The results page is not reproducible across time. An age band computed today
+  differs from the same query run next year, because the underlying date of
+  birth is fixed but the age is not. A published report does not move: it keeps
+  the age bands it was published with in its snapshot.
 
 ## Alternatives considered
 

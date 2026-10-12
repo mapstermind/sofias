@@ -52,13 +52,13 @@ static page, so they are tried live. See docs/platform/design-system.md.
           <button type="button" class="btn btn-primary">Publicar</button>
           <button type="button" class="btn btn-secondary">Descargar PDF</button>
           <button type="button" class="btn btn-text">Limpiar filtros</button>
-          <button type="button" class="btn btn-danger">Despublicar</button>
+          <button type="button" class="btn btn-danger">Retirar publicación</button>
         </div>
         <div class="flex flex-wrap items-center gap-3">
           <button type="button" class="btn btn-primary btn-sm">Publicar</button>
           <button type="button" class="btn btn-secondary btn-sm">Descargar PDF</button>
           <button type="button" class="btn btn-text btn-sm">Limpiar filtros</button>
-          <button type="button" class="btn btn-danger btn-sm">Despublicar</button>
+          <button type="button" class="btn btn-danger btn-sm">Retirar publicación</button>
         </div>
         <div class="flex flex-wrap items-center gap-3">
           <button type="button" class="btn btn-secondary">{% icon "funnel" %}Filtros</button>
@@ -87,7 +87,7 @@ static page, so they are tried live. See docs/platform/design-system.md.
       <div class="mt-4 space-y-3">
         {% include "components/_alert.html" with tone="success" body="Reporte publicado." dismissible=True %}
         {% include "components/_alert.html" with tone="info" body="Te enviamos un código a tu correo." dismissible=True %}
-        {% include "components/_alert.html" with tone="warning" title="Para publicar falta:" items=blocker_examples %}
+        {% include "components/_alert.html" with tone="warning" title="Antes de publicar, falta:" items=blocker_examples %}
         {% include "components/_alert.html" with tone="danger" body="Correo o contraseña inválidos." %}
       </div>
     </section>

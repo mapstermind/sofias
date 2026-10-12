@@ -20,18 +20,20 @@ docs/
 │   ├── auth-and-onboarding.md
 │   ├── csv-user-import.md
 │   ├── database.md
+│   ├── design-system.md
+│   ├── employee-roster.md
 │   ├── localization.md
 │   ├── nom-035-analytics.md
+│   ├── nom-035-report.md
 │   ├── nom-035-results-dashboard.md
 │   ├── nom-035-valoracion-supuestos.md
+│   ├── responsive-layout.md
 │   ├── setup-access-codes.md
 │   ├── survey-model.md
 │   └── wip/                         # Disposable scaffolding — emptied when a branch merges
 ├── internal/                        # The human side of the process
 │   ├── prompting-workflow.md        # End-to-end guide for developing a feature
-│   ├── keep-in-mind.md
-│   ├── HARNESS-ENGINEERING.md
-│   ├── characterization-testing.md
+│   ├── open-findings.md             # Issues found out of scope of the change that found them
 │   ├── Guias de Referencia.md       # NOM-035 scoring source of truth
 │   ├── meetings/
 │   └── user-guides/
@@ -77,7 +79,7 @@ Guides, meeting notes, roadmap context, and workflows for the team. The agent do
 
 - `prompting-workflow.md` is the master guide: how a request is routed, and the eight steps from there to merged.
 - `open-findings.md` tracks issues found during development that were out of scope for the change that found them.
-- `user-guides/` contains operator procedures (CSV import, user onboarding).
+- `user-guides/` contains operator procedures (CSV import, user onboarding, rebranding).
 - `meetings/` contains background context. `Guias de Referencia.md` is the single
   source of truth for NOM-035 scoring data (see `.claude/CLAUDE.md`).
 
@@ -100,10 +102,17 @@ Docs moved here when the feature they describe is retired or superseded. Include
 | `platform/nom-035-valoracion-supuestos.md` | (Spanish) NOM-035 scoring assumptions tracked for the domain expert |
 | `platform/auth-and-onboarding.md` | Login flows, OTP, setup codes, profile activation |
 | `platform/csv-user-import.md` | Bulk user creation via Django Admin |
-| `platform/localization.md` | Spanish-UI / English-code conventions and where each layer of copy comes from |
+| `platform/localization.md` | Spanish-UI / English-code conventions, where each layer of copy comes from, and the glossary |
+| `platform/design-system.md` | Brand config, palettes, type scale, components, page rules and the product's voice (*Voz*) |
+| `platform/responsive-layout.md` | The 360px phone contract and the survey's tappable answer rows |
+| `platform/employee-roster.md` | The colaborador roster: search, filters, sorting, the detail page |
+| `platform/nom-035-report.md` | The formal NOM-035 results report: draft/publish, snapshot, PDF |
 | `platform/setup-access-codes.md` | First-login fallback for blocked-email users |
 | `adr/adr-0001-setup-access-codes-for-blocked-email-login.md` | Why setup codes exist instead of temporary passwords |
 | `adr/adr-0002-flatten-survey-authoring-model.md` | Why the survey model is a flat Survey→Module→Question tree (no library/versions) |
 | `adr/adr-0003-per-instrument-survey-processing-apps.md` | Why each instrument gets its own engine app instead of a generic engine |
 | `adr/adr-0004-per-company-area-and-locality-catalogs.md` | Why área and localidad are per-company catalogs |
+| `adr/adr-0005-two-surname-names-and-profile-demographics.md` | Why a name is three fields and demographics live on the profile |
+| `adr/adr-0006-brand-palette.md` | (Proposed) The brand palette: why blue/slate, the alternatives weighed |
+| `internal/user-guides/rebranding.md` | (Draft) Replacing the product's name, logo and palette |
 | `internal/Guias de Referencia.md` | Single source of truth for NOM-035 scoring data |

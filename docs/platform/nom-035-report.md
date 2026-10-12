@@ -23,7 +23,8 @@ and draws the results with the same chart components as the results dashboard.
 
 The client keeps a formal results document as evidence of having applied the
 Guías de Referencia, and the domain expert named its structure the top priority
-(`docs/internal/meetings/20260609_00.md`). Hand-assembled reports carry
+(`docs/internal/meetings/20260609_00.md`); the report's sections follow the
+order of the client's own template. Hand-assembled reports carry
 copy-paste errors — figures in the narrative that disagree with the chart beside
 them — which generating every figure-bearing sentence from data removes.
 
@@ -42,8 +43,8 @@ them — which generating every figure-bearing sentence from data removes.
 - The report's sections, generated sentences, recommendations matrix and fixed
   text, declared as an ordered section registry.
 - Administrador pages to list, preview, edit, publish, unpublish and download a
-  report; Ejecutivo principal pages to list, read and download published reports;
-  entry points from the company dashboards and the admin results page.
+  report; Ejecutivo principal pages to list, read and download published reports,
+  reached from the header's *Reportes* section.
 - PDF rendering with WeasyPrint, from the same partials as the screen.
 
 **Out of scope:**
@@ -97,7 +98,7 @@ of these holds:
 - a required field is empty: lugar de emisión, principales actividades,
   evaluator name, evaluator cédula, conclusiones.
 
-A draft's page lists the same conditions under *Para publicar falta:* above the
+A draft's page lists the same conditions under *Antes de publicar, falta:* above the
 report (`publishing.blockers`).
 
 Headcounts, signatories and additional recommendations are optional; an empty
@@ -404,7 +405,8 @@ The confidentiality notice (with the company's `name` filled in at render),
 the recommendations matrix (keyed by the engine's dominio keys, covering both
 variants), the glossary, the Ley Federal del Trabajo articles and the Objetivo
 placeholder are constants in `apps/reports/content.py`, transcribed from the
-reference material in `docs/internal/report-references/`.
+client's report template (*Ejemplo Reporte Resultados*) and risk-interpretation
+note (*Interpretación de Riesgo*), both kept in the project's shared Drive.
 
 ## Where the code lives
 
@@ -423,7 +425,6 @@ reference material in `docs/internal/report-references/`.
 | `templates/reports/` | the list, detail and form pages, `_document.html`, `base_report.html`, `report_pdf.html`, `sections/` partials |
 | `static/css/report.css`, `report-wide.css`, `report-print.css` | the report's plain CSS |
 | `static/fonts/` | Source Serif 4 variable TTF and `OFL.txt`; `figtree/` holds Figtree |
-| `docs/internal/report-references/` | the report template and the risk-interpretation note the fixed text and sentences follow |
 
 `apps/reports` is registered as `apps.reports` (label `reports`, *Reportes* in
 the admin) with Spanish model metadata.
