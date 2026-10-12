@@ -45,8 +45,8 @@ person can do in SOFIA-S, and the roster is where an operator reads it without
 opening the Django admin.
 
 The questions an operator asks rarely land on exactly one área or exactly one
-role, so a dimension that accepted one value at a time answered half of them and
-sent the operator back for a second look at the other half.
+role, so every dimension but sexo takes several values at once: one value at a
+time would answer half the question and send the operator back for the rest.
 
 ## Scope
 
@@ -68,7 +68,7 @@ sent the operator back for a second look at the other half.
 - The roster card layout: an initials avatar, one metadata line, and progress.
 - The card's accessibility: a named link per person rather than a card-sized
   one, and progress bars that report their value.
-- The terminology sweep: *colaborador* for a person, *empleado* reserved for the
+- The terminology: *colaborador* for a person, *empleado* reserved for the
   `Employees` role, including the `/colaboradores/` URLs.
 
 **Out of scope:**
@@ -410,15 +410,15 @@ Search and filters narrow what is displayed and never widen who may display it.
   the sort control already does.
 
 - Decision: the viewer's own card keeps its place at the top under every sort.
-  Reason: it is existing behavior and an operator looking for themselves is the
-  one lookup that never needs a filter; a sort is for reading the other people.
+  Reason: an operator looking for themselves is the one lookup that never needs a
+  filter; a sort is for reading the other people.
 
 - Decision: the only badges on the page are *Tú* and *Sin activar*.
   Reason: a badge on every card for a state nearly every card shares carries no
-  information, and four of them per card left nothing for the exception to stand
-  out against.
+  information, and several per card would leave nothing for the exception to
+  stand out against.
 
-- Decision: the card stops being a single link and the name becomes the link.
+- Decision: the name is the card's link, not the whole card.
   Reason: a link wrapping the name, the correo and every progress figure
   announces all of it as one link name, which makes the list unusable by
   anything that reads links aloud or lists them.

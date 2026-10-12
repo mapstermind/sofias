@@ -831,7 +831,7 @@ class TestSetupProfileView:
         assert user.profile.is_activated is True
         assert user.profile.location is None
 
-    def test_activation_saves_name_and_cargo(
+    def test_activation_saves_name_and_puesto(
         self, client, make_user_with_profile, make_company, make_area
     ):
         company = make_company()
@@ -882,7 +882,7 @@ class TestSetupProfileView:
         assert user.profile.is_activated is False
         assert "first_name" in response.context["form"].errors
 
-    def test_activation_without_cargo_leaves_it_blank(
+    def test_activation_without_puesto_leaves_it_blank(
         self, client, make_user_with_profile, make_company, make_area
     ):
         company = make_company()

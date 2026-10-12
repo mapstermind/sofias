@@ -2,12 +2,13 @@
 
 ## Overview
 
-The schema is organized around three distinct concerns:
+The schema is organized around five concerns:
 
 1. **Who** — identity and company membership (`accounts` app)
 2. **What** — the fixed survey instrument: `surveys` app `Survey → Module → Question → Choice`. There is no reusable question library and no numbered versions; operators seed fixed instruments (NOM-035) and a material change means a new `Survey`. See `docs/adr/adr-0002-flatten-survey-authoring-model.md`.
 3. **Context & results** — who must answer, in which variant, and what they said (`surveys` app: `SurveyAssignment`; `responses` app: `SurveySubmission`, `Answer`)
 4. **Derived valuation** — NOM-035 scores/NDR computed from the answers (`nom035` app: `SubmissionScore`, `GroupScore`)
+5. **The results report** — one formal report per NOM-035 assignment, with its signatories (`reports` app: `Report`, `ReportSignatory`)
 
 A `Survey` is modular: each `Module` is tagged `applies_to` (`all`/`small`/`large`) and the company's headcount selects a variant (frozen on the assignment). Conditional branching is a data-driven `visible_when` rule.
 
@@ -26,8 +27,10 @@ Represents an organization that participates in surveys.
 | `name` | CharField(255) | Display name; Spanish collation |
 | `legal_name` | CharField(255) | Official registered name; Spanish collation |
 | `rfc` | CharField(13) | Optional RFC |
-| `address` | CharField(500) | Optional address |
-| `reference_code` | CharField(5) | Unique alphanumeric identifier; auto-generated on save if blank |
+| `address` | CharField(500) | Optional address (*domicilio*) |
+| `industry` | CharField(255) | Optional *actividad principal*; printed on the report |
+| `work_center` | CharField(255) | Optional *centro de trabajo*; printed on the report |
+| `reference_code` | CharField(5) | Unique alphanumeric identifier, shown as the *código de empresa* employees type at activation; auto-generated on save if blank |
 | `created_at` | DateTimeField | Auto-set on creation |
 | `updated_at` | DateTimeField | Auto-updated on save |
 
@@ -193,7 +196,7 @@ A single attempt by a user to answer a survey, scoped to a specific assignment (
 |---|---|---|
 | `id` | BigAutoField | PK |
 | `assignment` | ForeignKey → `SurveyAssignment` | Cascades |
-| `user` | ForeignKey → `User` | SET NULL; nullable (supports unauthenticated responses) |
+| `user` | ForeignKey → `User` | SET NULL; null only once the employee's account is deleted, so the submission still counts |
 | `status` | CharField | `in_progress` / `completed` |
 | `started_at` | DateTimeField | Auto-set on creation |
 | `completed_at` | DateTimeField | Nullable; set on completion |
@@ -245,6 +248,38 @@ Per-grouping breakdown for a submission — one row per categoría, per dominio 
 | `ndr` | CharField | Group NDR (same choices as `final_ndr`); blank on dimensión rows |
 
 Constraint: `UNIQUE (submission_score, level, key)`. Indexes on `(submission_score, level)` and `(level, ndr)`.
+
+### `reports`
+
+The NOM-035 results report (see `docs/platform/nom-035-report.md`).
+
+#### `Report`
+One per NOM-035 `SurveyAssignment`: a draft the Administrador edits, or a published report frozen in `snapshot`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | BigAutoField | PK |
+| `assignment` | OneToOneField → `SurveyAssignment` | Cascades |
+| `status` | CharField | `draft` / `published` |
+| `snapshot` | JSONField | The report's data, frozen at publishing; null while a draft |
+| `published_at`, `published_by` | DateTimeField, ForeignKey → `User` | Null while a draft |
+| `issued_in` | CharField | *Lugar de emisión* |
+| `activities_summary` | TextField | *Principales actividades* |
+| `headcount_in_person`, `headcount_home_office`, `headcount_hybrid` | PositiveIntegerField | Nullable; *presencial*, *teletrabajo*, *híbrido* |
+| `evaluator_name`, `evaluator_license` | CharField | Evaluator and *cédula profesional* |
+| `additional_recommendations`, `conclusions` | TextField | Written by the Administrador |
+| `created_at`, `updated_at` | DateTimeField | |
+
+#### `ReportSignatory`
+The client's signatories, printed in `order`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | BigAutoField | PK |
+| `report` | ForeignKey → `Report` | Cascades |
+| `title` | CharField(200) | *Puesto* |
+| `name` | CharField(200) | |
+| `order` | PositiveSmallIntegerField | Display order |
 
 ---
 
@@ -308,9 +343,9 @@ Company.create(name, legal_name)              ← reference_code auto-generated
        └─ UserProfile.create(user, position, company, is_activated=False)
 ```
 
-A `Company` is created first, **together with its áreas and localidades** — these are curated as inlines on the Company change page in the admin. Loading at least one área matters: an employee whose company has no active área cannot complete activation (the activation screen tells them to contact their administrator). The Company changelist shows área/localidad counts so the gap is visible before anyone hits it.
+A `Company` is created first, **together with its áreas and localidades** — these are curated as inlines on the Company change page in the admin. Loading at least one área matters: an employee whose company has no active área cannot complete activation (the activation screen tells them to tell whoever invited them). The Company changelist shows área/localidad counts so the gap is visible before anyone hits it.
 
-Users are then created via Django's auth system, manual admin entry, or CSV import. A `UserProfile` links non-admin users to their company; company headcount is `company.members.count()`. The employee's `area`/`location` are normally set by themselves at activation; the CSV importer can pre-set `area` by name (lookup-only — it never creates catalog entries).
+Users are then created via Django's auth system, manual admin entry, or CSV import. A `UserProfile` links non-admin users to their company; company headcount is `company.members.count()`. The employee's `area`/`location` are set by themselves at activation; the CSV importer sets neither (see `docs/adr/adr-0004-per-company-area-and-locality-catalogs.md`).
 
 ### 2. Seed the survey instrument
 
@@ -345,7 +380,7 @@ Completion counts only questions visible under the current answers (see `apps/su
 
 ## Key Design Decisions
 
-**Fixed instruments, no library or versions.** Operators seed a few fixed surveys; a material change is a new `Survey`, not a new version. This removed the `QuestionTemplate`/`ChoiceTemplate` library, `SurveyTemplate`/`SurveyVersion` split, copy-on-stamp, and numbered versioning. See `docs/adr/adr-0002-flatten-survey-authoring-model.md`.
+**Fixed instruments, no library or versions.** Operators seed a few fixed surveys; a material change is a new `Survey`, not a new version. See `docs/adr/adr-0002-flatten-survey-authoring-model.md`.
 
 **Modular by `applies_to`.** A single `Survey` expresses the NOM-035 modular structure; the company's headcount selects which `small`/`large` modules join the shared `all` modules. Each item is defined once.
 

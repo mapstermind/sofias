@@ -1,7 +1,7 @@
 """Fixed report content: consultancy text shared by every report.
 
-Transcribed from the report template in docs/internal/report-references/. The
-recommendations matrix is consultancy content, not part of the norm; the norm's
+Transcribed from the client's report template (*Ejemplo Reporte Resultados*, in
+the project's shared Drive). The recommendations matrix is consultancy content, not part of the norm; the norm's
 own action criteria live in apps/nom035 (`action_text`).
 """
 

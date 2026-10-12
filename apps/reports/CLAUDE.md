@@ -25,7 +25,7 @@ components. Registered as `apps.reports` (label `reports`, admin heading
 - `content.py` — fixed consultancy text as constants: `RECOMMENDATIONS` (dominio
   key → level → text), `CONFIDENTIALITY_NOTICE` (formatted with the company's
   `name`), `GLOSSARY`, `LFT_ARTICLES`, `OBJECTIVE_PLACEHOLDER`. Transcribed from
-  `docs/internal/report-references/`. The norm's own action criteria stay in
+  the client's report template (*Ejemplo Reporte Resultados*, in the shared Drive). The norm's own action criteria stay in
   `apps/nom035/_nom035_scoring.py`.
 - `sections.py` — **the report's structure.** `REGISTRY` is one ordered tuple of
   `Section(key, title, template, build, children)`; `context_for(report)` makes
@@ -118,7 +118,8 @@ two áreas and one respondent without área), `test_models.py`,
 `test_snapshot.py` (build and JSON round trip), `test_text.py` (sentences),
 `test_content.py` (matrix covers every dominio, fixed text present), `test_sections.py` (registry, numbering,
 section contexts), `test_results_sections.py` (results partials),
-`test_publishing.py`, `test_admin_views.py`, `test_executive_views.py` and
+`test_publishing.py`, `test_admin_views.py`, `test_executive_views.py`,
+`test_dominio_palette.py` (the dominio tier's colors), `test_page_breaks.py` and
 `test_pdf.py` (a real WeasyPrint render, the fetcher, the filename, the
 watermark). The suite asserts the rendered HTML and that a PDF is produced; the
 PDF's layout is checked by eye.

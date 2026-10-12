@@ -6,13 +6,13 @@ The user-facing interface (copy and URLs) is in Spanish. Code, comments, and ide
 
 ## What it does today
 
-- **Survey authoring** — a reusable question/choice library whose templates are "stamped" into versioned surveys. Authoring happens through interactive terminal commands and the Django admin.
-- **Survey assignment** — a survey version is assigned to a company, making it available to that company's employees.
+- **Surveys** — a fixed instrument as a `Survey → Module → Question` tree, keyed by stable codes. The NOM-035 survey is seeded by `seed_nom035_survey`; the Django admin shows it for inspection.
+- **Survey assignment** — a survey is assigned to a company with a variant fixed by headcount, making it available to that company's employees.
 - **Survey taking** — employees answer assigned surveys in the browser, with autosave and resume of in-progress submissions. Answers are stored as JSON values typed by question type.
 - **Dashboards** — per-company completion stats (registration rate, completion rate per survey, representative-sample minimum) and per-employee progress/answer views, gated by role permissions.
-- **User onboarding** — passwordless email-OTP login (with password and one-time setup-access-code fallbacks), company reference-code activation, and bulk user import from CSV via the admin.
-
-NOM-035 valuation (scores → Nivel de Riesgo, plus the Guía I referral flag) is implemented in `apps/nom035` and surfaced as text-only insights in the dashboards. Report generation (`apps/reports`) is still a placeholder — an empty app, not yet registered in `INSTALLED_APPS`.
+- **User onboarding** — passwordless email-OTP login (with password and one-time setup-access-code fallbacks), activation with the company code, and bulk user import from CSV via the admin.
+- **NOM-035 results** — valuation (scores → Nivel de Riesgo, plus the Guía I referral flag) in `apps/nom035`, shown on a filterable results page with SVG charts and on each colaborador's detail page.
+- **Results report** — a formal NOM-035 report per closed assignment, drafted and published by an Administrador, read by the company's Ejecutivo principal and downloadable as a PDF (`apps/reports`).
 
 ## Tech stack
 
@@ -27,14 +27,14 @@ NOM-035 valuation (scores → Nivel de Riesgo, plus the Guía I referral flag) i
 config/          # Django settings, root urls, wsgi/asgi
 apps/
   accounts/      # Custom user, OTP/password/setup-code auth, companies, roles, CSV import
-  surveys/       # Question library, survey templates/versions/questions, survey taking
+  surveys/       # Survey → Module → Question, assignments, survey taking
   responses/     # SurveySubmission + Answer storage
-  core/          # Home/dashboards + interactive survey-authoring commands
-  nom035/        # NOM-035 valuation engine (scores → NDR) + Insights
-  reports/       # Placeholder (not registered)
+  core/          # Home, dashboards, roster, results page, design system + NOM-035 seed command
+  nom035/        # NOM-035 valuation engine (scores → NDR) + results-page data
+  reports/       # NOM-035 results report: draft/publish, snapshot, PDF
 templates/       # Django templates (Spanish UI)
 static/          # CSS (Tailwind input/output), TS sources, compiled JS
-docs/            # Specs and human-facing docs
+docs/            # platform/ (feature docs), adr/, internal/ (operator guides)
 ```
 
 Each app has its own `CLAUDE.md` with model and flow details.
@@ -89,7 +89,7 @@ Frontend assets:
 ```bash
 npm run build:css       # compile Tailwind (static/css/main.css → output.css)
 npm run build:js        # compile TypeScript (static/ts → static/js)
-npm run watch:css       # ...or watch variants
+npm run watch:css       # ...or watch variants (unminified; run build:css before committing)
 npm run watch:js
 ```
 

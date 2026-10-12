@@ -2,9 +2,9 @@
 
 How SOFIA-S represents survey instruments and presents them to respondents.
 Surveys are **fixed instruments** (NOM-035 today, an unrelated second survey
-later): operators seed them once and rarely change them. The decision to drop the
-former library/version/stamping authoring model in favor of this one is recorded
-in [`docs/adr/adr-0002-flatten-survey-authoring-model.md`](../adr/adr-0002-flatten-survey-authoring-model.md).
+later): operators seed them once and rarely change them. Why the model is a flat
+tree is recorded in
+[`docs/adr/adr-0002-flatten-survey-authoring-model.md`](../adr/adr-0002-flatten-survey-authoring-model.md).
 
 ## The instrument: Survey → Module → Question → Choice
 
@@ -246,7 +246,7 @@ that guard only cleans up a display symptom — the boundary is enforced here.
 Admins hold no `can_take_assigned_surveys` and have no profile, so they cannot
 open a survey at all; there is no operator preview path today.
 
-The *Tu respuesta* strip on each of the company dashboard's survey cards is
+The *Tus respuestas* strip on each of the company dashboard's survey cards is
 gated on the viewer holding the permission **and** having a profile in the
 company on screen, rather than on the permission alone. A superuser satisfies
 every `perms.*` check a template makes regardless of group, so the permission by
@@ -264,9 +264,8 @@ get its own engine app rather than adding scoring here.
 
 ## Out of scope
 
-The static PDF report and the second survey instrument remain unbuilt; the
-representative-sample math already lives in `apps/core`. The NOM-035 scoring / NDR
-engine (dimensión/dominio/categoría config and thresholds) is implemented in
-`apps/nom035`, deliberately outside `apps/surveys`. The survey model is built not to
-block any of these — chiefly via the stable `Question.code` and the survey-agnostic
+A second survey instrument. The representative-sample math lives in `apps/core`, the
+NOM-035 scoring / NDR engine (dimensión/dominio/categoría config and thresholds) in
+`apps/nom035`, and the results report in `apps/reports` — all deliberately outside
+`apps/surveys`. The survey model is built not to block a second instrument — chiefly via the stable `Question.code` and the survey-agnostic
 `visible_when`.

@@ -46,8 +46,8 @@ has one.
 
 ### The rule, enforced
 
-Every model in `apps/accounts`, `apps/surveys`, `apps/responses` and
-`apps/nom035` carries:
+Every model in `apps/accounts`, `apps/surveys`, `apps/responses`, `apps/nom035`
+and `apps/reports` carries:
 
 - an explicit lowercase Spanish `verbose_name` on **every** field,
 - a Spanish `Meta.verbose_name` / `verbose_name_plural`,
@@ -67,7 +67,7 @@ fails listing every field whose label Django derived from its English
 identifier, plus every `Meta` name the model did not declare. It checks the two
 `Meta` options through `original_attrs` — the record of what a model actually
 declared — because comparing rendered strings would call `áreas` an offender
-while missing `valoraciones`, `opciones` and `códigos temporales de acceso`,
+while missing `valoraciones`, `opciones` and `códigos de acceso`,
 which are exactly the plurals worth catching.
 
 `test_every_project_app_is_covered_by_the_label_guard` runs it over
@@ -81,10 +81,10 @@ it anywhere.
 
 - `LANGUAGE_CODE = "es-mx"`, so all of layer 1 is Spanish.
 - `TIME_ZONE = "America/Mexico_City"`.
-- Spanish metadata on **every model in the four apps** — including those with no
+- Spanish metadata on **every model in the five apps** — including those with no
   registered `ModelAdmin` (`EmailOTP`, `Role`, `CompanyArea`, `CompanyLocation`),
   whose auto-generated permissions appear in the Groups permission picker.
-- Spanish `AppConfig.verbose_name` on the four apps that own models.
+- Spanish `AppConfig.verbose_name` on the five apps that own models.
 - Branded admin chrome.
 - Spanish `auth_permission` names (see [Permission names](#permission-names)).
 - **Authorization role labels.** The four groups keep their English
@@ -118,7 +118,7 @@ An administrator opening the Django admin sees:
   seguro?", "Este campo es obligatorio.").
 - The admin branded `Administración SOFIA-S` rather than `Administración de
   Django`.
-- App groups named *Cuentas*, *Encuestas*, *Respuestas* and *NOM-035*.
+- App groups named *Cuentas*, *Encuestas*, *Respuestas*, *NOM-035* and *Reportes*.
 - Spanish model names in the index and breadcrumbs (*Empresas*, *Áreas*,
   *Perfiles de colaborador*, *Envíos de encuesta*, *Valoraciones*).
 - Spanish column headers on every changelist and Spanish labels on every form
@@ -230,7 +230,7 @@ The receiver is preferred for three reasons:
   granted access to it, and the breakage surfaces later as a puzzling
   authorization bug. Forgetting the receiver's app-label list costs an English
   label instead.
-- **Volume.** Four hardcoded strings on each of the seventeen models, versus one
+- **Volume.** Four hardcoded strings on each of the nineteen models, versus one
   ~45-line module.
 - **Drift.** Declared names are literals, so renaming a model's `verbose_name`
   silently leaves four stale permission strings behind. The receiver derives the
@@ -259,7 +259,7 @@ and is not subject to that lag.
   **Reason:** Already the project convention; `verbose_name` is the explicit
   bridge, so the two do not conflict.
 
-- **Decision:** Cover every model in the four apps, not only the operator-facing
+- **Decision:** Cover every model in the five apps, not only the operator-facing
   ones.
   **Reason:** Consistency, and the boundary leaks anyway — an unregistered
   model's auto-generated permissions still surface in the Groups picker.
@@ -269,7 +269,7 @@ and is not subject to that lag.
   **Reason:** Both produce the same codenames and names. The receiver wins on
   failure mode — an incomplete declaration creates no permissions at all, while a
   gap in the receiver's coverage only leaves an English label. It is also ~45
-  lines against four strings on each of seventeen models, and it derives names
+  lines against four strings on each of nineteen models, and it derives names
   from `verbose_name` instead of duplicating them. See
   [Why a receiver rather than declaring the names](#why-a-receiver-rather-than-declaring-the-names).
 
