@@ -135,6 +135,15 @@ otherwise.
 unless `brand.can_switch_palette(user)`. When a component changes, update the
 page too: `tests/test_styleguide.py` checks every class and icon appears.
 
+`PaletteProposalView` (`core:palette_proposal`, `/propuestas/paletas/`) draws one
+sample screen (`templates/core/proposal/_palette_specimen.html`, data in
+`palette_proposal.py`) under each candidate palette, each on its own wrapper
+element through `data-palette`, and 404s for the same visitors as the styleguide.
+The `navy` palette is defined only in `static/css/proposal-navy.css`, which the
+page loads through `base.html`'s `head_extra` block: it is not in
+`settings.BRAND_PALETTES`, not in `main.css`, and outside the contrast test.
+`tests/test_palette_proposal.py` pins that isolation.
+
 `templates/components/_alert.html` and `templates/_messages.html` (included by
 `base_app.html`, `base_auth.html` and `core/about.html`) draw alerts and Django messages;
 `static/ts/dismiss.ts` closes a message and `static/ts/busy_submit.ts` (loaded by

@@ -1,0 +1,56 @@
+{% extends "base_app.html" %}
+{% load icons static %}
+
+{% block title %}Comparación de paletas | {{ brand.name }}{% endblock %}
+
+{% block head_extra %}<link rel="stylesheet" href="{% static 'css/proposal-navy.css' %}">{% endblock %}
+
+{% comment %}
+The candidate palettes on one sample screen, from apps/core/palette_proposal.py.
+Shown to whoever may see /estilos/ (PaletteProposalView). Each palette paints a
+wrapper element through `data-palette`, so the three sit on one page whatever
+the visitor's cookie says. The navy palette is defined only in
+static/css/proposal-navy.css, loaded by this page alone.
+{% endcomment %}
+
+{% block content %}
+  {% include "components/_page_header.html" with title="Comparación de paletas" subtitle="La misma pantalla de ejemplo pintada con cada paleta evaluada." %}
+
+  {% include "components/_alert.html" with tone="info" body="Los datos son de ejemplo. Los colores de riesgo son los mismos en las tres paletas: la paleta de la marca debe convivir con ellos sin confundirse con un nivel." %}
+
+  <nav aria-label="Paletas" class="mt-6 grid gap-3 md:grid-cols-3">
+    {% for p in candidates %}
+      <a href="#{{ p.slug }}" class="card card-link group p-4">
+        <span data-palette="{{ p.slug }}" class="flex h-9 w-24 shrink-0 overflow-hidden rounded-md" aria-hidden="true">
+          <span class="flex-1 bg-primary-600"></span><span class="flex-1 bg-primary-300"></span><span class="flex-1 bg-accent-300"></span><span class="flex-1 bg-neutral-50"></span>
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block text-base font-semibold text-neutral-900">{{ p.name }}</span>
+          <span class="block text-sm text-neutral-600">{{ p.tagline }}</span>
+        </span>
+        {% icon "chevron-right" "size-5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600" %}
+      </a>
+    {% endfor %}
+  </nav>
+
+  <div class="mt-10 space-y-14">
+    {% for p in candidates %}
+      <section id="{{ p.slug }}" aria-labelledby="{{ p.slug }}-titulo" class="scroll-mt-20">
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h2 id="{{ p.slug }}-titulo" class="text-lg font-semibold text-neutral-900">{{ p.name }}</h2>
+          {% if p.selectable %}
+            <span class="pill pill-marker bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">En el selector de paleta</span>
+          {% else %}
+            <span class="pill pill-marker bg-neutral-100 text-neutral-600 ring-1 ring-inset ring-neutral-500/20">Solo en esta página</span>
+          {% endif %}
+        </div>
+        <div class="mt-3 grid gap-4 md:grid-cols-3 md:gap-6">
+          <div><h3 class="text-base font-semibold text-neutral-900">Carácter</h3><p class="mt-1 text-sm text-neutral-700">{{ p.character }}</p></div>
+          <div><h3 class="text-base font-semibold text-neutral-900">Frente a los colores de riesgo</h3><p class="mt-1 text-sm text-neutral-700">{{ p.risk }}</p></div>
+          <div><h3 class="text-base font-semibold text-neutral-900">Lectura</h3><p class="mt-1 text-sm text-neutral-700">{{ p.reading }}</p></div>
+        </div>
+        <div class="mt-4">{% include "core/proposal/_palette_specimen.html" %}</div>
+      </section>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -1,0 +1,39 @@
+/* Azul marino: a palette that was evaluated and not adopted.
+
+   Loaded only by /propuestas/paletas/ (templates/core/palette_proposal.html), so the
+   client can see it beside the two palettes in use. It is deliberately outside
+   main.css: it is not in settings.BRAND_PALETTES, the palette switch cannot pick
+   it, and the contrast test does not read it. Delete this file together with that
+   page's navy section when the comparison is no longer needed.
+
+   Same variables as the palettes in main.css; the page sets the attribute on a
+   wrapper element, not on <html>. */
+[data-palette="navy"] {
+  --brand-primary-50: #F1F4FA;
+  --brand-primary-100: #DFE6F3;
+  --brand-primary-200: #BFCCE6;
+  --brand-primary-300: #93A8D2;
+  --brand-primary-400: #6582B9;
+  --brand-primary-500: #46649F;
+  --brand-primary-600: #324E86;
+  --brand-primary-700: #283F6E;
+  --brand-primary-800: #20335A;
+  --brand-primary-900: #1A2947;
+  --brand-accent-100: #E3E8FD;
+  --brand-accent-200: #C9D2FC;
+  --brand-accent-300: #B3C0FB;
+  --brand-accent-500: #6B79D9;
+  --brand-accent-700: #444C97;
+  --brand-neutral-50: #F7F8FA;
+  --brand-neutral-100: #EEF0F4;
+  --brand-neutral-200: #DFE3EA;
+  --brand-neutral-300: #C6CCD7;
+  --brand-neutral-400: #8A93A3;
+  --brand-neutral-500: #6A7385;
+  --brand-neutral-600: #515A6B;
+  --brand-neutral-700: #3D4452;
+  --brand-neutral-800: #292E38;
+  --brand-neutral-900: #191D24;
+  --brand-series-1: #324E86;
+  --brand-series-2: #6B79D9;
+}

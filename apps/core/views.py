@@ -16,7 +16,7 @@ from django.views.generic import TemplateView
 from apps.accounts.demographics import AGE_BANDS
 from apps.accounts.models import Company, CompanyArea, CompanyLocation, UserProfile
 from apps.accounts.roles import ROLES, labels_for_names
-from apps.core import results_proposal, roster, styleguide
+from apps.core import palette_proposal, results_proposal, roster, styleguide
 from apps.core.brand import COOKIE as PALETTE_COOKIE
 from apps.core.brand import active_palette, can_switch_palette, palette_slugs
 from apps.core.query_params import SEX_SLUGS_TO_LABELS
@@ -830,6 +830,27 @@ class ResultsProposalView(TemplateView):
             ],
             **results_proposal.context(),
             **kwargs,
+        )
+
+
+class PaletteProposalView(TemplateView):
+    """The candidate palettes side by side on one sample screen (/propuestas/paletas/).
+
+    Each palette paints its own wrapper element, so the page needs no cookie. The
+    navy palette comes from its own stylesheet, loaded by this page only.
+    Shown to the same people as /estilos/; everyone else gets a 404.
+    """
+
+    template_name = "core/palette_proposal.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not can_switch_palette(request.user):
+            raise Http404
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        return super().get_context_data(
+            container_width="max-w-6xl", **palette_proposal.context(), **kwargs
         )
 
 
