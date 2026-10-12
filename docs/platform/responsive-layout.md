@@ -66,9 +66,11 @@ written for.
 
 **Out of scope:**
 
-- **Touch-target sizing outside the survey form and the header.** The roster filter
-  bar and the dashboard cards are sized for reading rather than for a thumb. An administrator reads those on a laptop and meets them rarely; a
-  respondent meets an answer control 87 times.
+- **A 44px guarantee for every control.** Buttons, form controls, filter chips, the
+  roster's sort control and the employee page's dominio rows are 44px on a phone
+  (`design-system.md`), but no test measures a rendered height, and dense desktop
+  rows (`btn-sm`, the chips from `sm`) are smaller on purpose. The survey's answer
+  rows are the contract here, because a respondent meets one 87 times.
 - **Tablet-specific layouts.** There are two cases — phone and desktop — and the
   breakpoint between them is chosen per page. Nothing is designed for the middle.
 - **Per-page layout prescriptions.** This doc does not say when to use a bottom

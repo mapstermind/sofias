@@ -460,6 +460,17 @@
   min-width: 0;
 }
 
+/* What a chart shows, under a heading that already names its subject. */
+.report-caption {
+  font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--brand-neutral-600);
+  margin: 0.5rem 0 0.25rem;
+  break-after: avoid;
+}
+
 /* A statistics row: label, the five figures, the range strip. One column on a
    phone; label and figures side by side above the strip in report-wide.css. */
 .report-stats {

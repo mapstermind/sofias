@@ -5,9 +5,10 @@
  * The NOM-035 results page (templates/core/company_results.html).
  *
  * Swaps #results-body with the fragment URL when the survey changes or the
- * filter form is applied, and keeps the address bar in step. Without this
- * script the form is a plain GET form and the page reloads; nothing here holds
- * state the server does not also render.
+ * filter form is applied, and keeps the address bar, the *Filtros* count and
+ * the inline *Limpiar filtros* in step. Without this script the form is a plain
+ * GET form and the page reloads; nothing here holds state the server does not
+ * also render. The filter dialog itself is filter_dialog.ts.
  */
 const FILTER_KEYS = ["sexo", "edad", "area", "localidad"];
 /** The form's non-empty values, in document order. */
@@ -19,16 +20,15 @@ function queryFromForm(form) {
     });
     return params;
 }
+/** Dimensions in use, not values chosen, as the server counts them. */
 function activeFilterCount(params) {
-    return FILTER_KEYS.reduce((n, key) => n + params.getAll(key).length, 0);
+    return FILTER_KEYS.filter((key) => params.has(key)).length;
 }
-/** Check exactly the controls `params` names; the "Todos" radio when no sexo. */
+/** Check exactly the controls `params` names. */
 function applyParamsToForm(form, params) {
     for (const element of Array.from(form.elements)) {
         if (element instanceof HTMLInputElement && (element.type === "checkbox" || element.type === "radio")) {
-            const chosen = params.getAll(element.name);
-            element.checked =
-                element.type === "radio" && element.value === "" ? chosen.length === 0 : chosen.includes(element.value);
+            element.checked = params.getAll(element.name).includes(element.value);
         }
         else if (element instanceof HTMLSelectElement) {
             const value = params.get(element.name);
@@ -68,12 +68,23 @@ function initFilters() {
             }
             body.innerHTML = await response.text();
             history.replaceState(null, "", withQuery(pageUrl, params));
+            const active = activeFilterCount(params);
             const count = form.querySelector("[data-filter-count]");
-            if (count)
-                count.textContent = String(activeFilterCount(params));
-            const panel = form.querySelector("details");
-            if (panel)
-                panel.open = false;
+            if (count instanceof HTMLElement) {
+                count.textContent = String(active);
+                count.hidden = active === 0;
+            }
+            const clear = form.querySelector(":scope > div [data-filter-clear]");
+            if (clear instanceof HTMLAnchorElement) {
+                clear.hidden = active === 0;
+                const kept = new URLSearchParams();
+                const encuesta = params.get("encuesta");
+                if (encuesta)
+                    kept.set("encuesta", encuesta);
+                form.querySelectorAll("[data-filter-clear]").forEach((link) => {
+                    link.href = withQuery(pageUrl, kept);
+                });
+            }
             const status = document.getElementById("results-status");
             const groupLine = body.querySelector("[data-group-line]");
             if (status && groupLine) {
@@ -93,8 +104,22 @@ function initFilters() {
         }
     }
     form.addEventListener("submit", (event) => {
+        var _a;
         event.preventDefault();
+        (_a = form.querySelector("dialog")) === null || _a === void 0 ? void 0 : _a.close();
         void update();
+    });
+    // *Limpiar filtros*, in the bar or the dialog: clear the chips and apply,
+    // keeping whichever survey is picked now rather than the one in the href.
+    form.addEventListener("click", (event) => {
+        const link = event.target instanceof Element ? event.target.closest("a[data-filter-clear]") : null;
+        if (!(link instanceof HTMLAnchorElement))
+            return;
+        event.preventDefault();
+        form.querySelectorAll("dialog input").forEach((input) => {
+            input.checked = false;
+        });
+        form.requestSubmit();
     });
     (_b = form.querySelector("select[name=encuesta]")) === null || _b === void 0 ? void 0 : _b.addEventListener("change", () => void update());
     body.addEventListener("click", (event) => {

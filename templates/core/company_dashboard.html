@@ -1,74 +1,99 @@
 {% extends "base_app.html" %}
-{% load icons %}
+{% load icons static %}
 
 {% block title %}{{ company.name }} | {{ brand.name }}{% endblock %}
 
 
 {% block content %}
-  <div class="mb-5">
+  {% if is_admin_view %}
+    {% url 'core:company_employee_list_for' company.reference_code as roster_url %}
+  {% else %}
+    {% url 'core:company_employee_list' as roster_url %}
+  {% endif %}
+
+  {% comment %}
+  The page header, with the reference code beside it: the code is what a
+  colaborador types to activate an account, so the executive hands it out.
+  Monospace keeps 0/O and 1/I apart. *Copiar* stays hidden until
+  static/ts/copy.ts finds a clipboard to write to.
+  {% endcomment %}
+  <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
     <h1 class="text-xl font-bold text-neutral-900">{{ company.name }}</h1>
+    <div class="rounded-lg border border-primary-200 bg-primary-50 px-4 py-3 sm:w-80 sm:shrink-0">
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-sm font-medium text-primary-700">Código de referencia</p>
+          <p data-copy-source class="mt-0.5 font-mono text-2xl font-semibold tracking-[0.2em] text-neutral-900">{{ company.reference_code }}</p>
+        </div>
+        <button type="button" data-copy="{{ company.reference_code }}" hidden class="btn btn-secondary btn-sm shrink-0">
+          {% icon "document-duplicate" "size-4 text-neutral-500" %}
+          <span data-copy-label aria-live="polite">Copiar</span>
+        </button>
+      </div>
+      <p class="mt-2 text-sm text-neutral-600">{% if is_admin_view %}Los{% else %}Tus{% endif %} colaboradores lo escriben al activar su cuenta.</p>
+    </div>
   </div>
 
-  {# Summary strip #}
-  <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+  {# Stats: numbers only. The sections themselves are in the header. #}
+  <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
     {% if perms.accounts.can_manage_employees %}
-      <a href="{% if is_admin_view %}{% url 'core:company_employee_list_for' company.reference_code %}{% else %}{% url 'core:company_employee_list' %}{% endif %}"
-         class="card group flex h-full flex-col justify-between border-2 border-primary-100 px-6 py-5 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
-        <div>
-          <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Colaboradores registrados</dt>
-          <dd class="mt-1 text-2xl font-bold text-neutral-900">
-            {{ activated_count }}
-            <span class="text-base font-normal text-neutral-500">&thinsp;/&thinsp;{{ member_count }}</span>
-          </dd>
+      <a href="{{ roster_url }}" class="card card-link group items-start px-5 py-4">
+    {% else %}
+      <div class="card flex items-start gap-4 px-5 py-4">
+    {% endif %}
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-neutral-600">Colaboradores registrados</p>
+          <p class="mt-1 text-2xl font-bold text-neutral-900 tabular-nums">
+            {{ activated_count }}<span class="text-base font-normal text-neutral-600">&thinsp;/&thinsp;{{ member_count }}</span>
+          </p>
+          {% if registration_rate is not None %}
+            <p class="mt-2 flex items-center gap-2">
+              <span class="h-1.5 min-w-0 flex-1 rounded-full bg-neutral-100" aria-hidden="true">
+                <span class="block h-1.5 rounded-full bg-primary-600" style="width: {{ registration_rate }}%"></span>
+              </span>
+              <span class="shrink-0 text-sm text-neutral-600 tabular-nums">{{ registration_rate }} %</span>
+            </p>
+          {% endif %}
         </div>
-        <p class="mt-3 text-sm font-semibold text-primary-600 group-hover:text-primary-700">Ver colaboradores &rarr;</p>
+    {% if perms.accounts.can_manage_employees %}
+        {% icon "chevron-right" "mt-0.5 size-5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600" %}
       </a>
     {% else %}
-      <div class="card flex h-full flex-col justify-center px-6 py-5">
-        <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Colaboradores registrados</dt>
-        <dd class="mt-1 text-2xl font-bold text-neutral-900">
-          {{ activated_count }}
-          <span class="text-base font-normal text-neutral-500">&thinsp;/&thinsp;{{ member_count }}</span>
-        </dd>
       </div>
     {% endif %}
-    <div class="card flex h-full flex-col justify-center px-6 py-5">
-      <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Tasa<br>de registro</dt>
-      {% if registration_rate is not None %}
-        <dd class="mt-1 text-2xl font-bold text-neutral-900">
-          {{ registration_rate }}%
-        </dd>
-        <div class="mt-2 h-1.5 w-full rounded-full bg-neutral-100">
-          <div class="h-1.5 rounded-full bg-primary-600 transition-all"
-               style="width: {{ registration_rate }}%"></div>
-        </div>
-      {% else %}
-        <dd class="mt-1 text-sm text-neutral-500 italic">Sin datos</dd>
-      {% endif %}
+
+    <div class="card px-5 py-4">
+      <p class="text-sm font-medium text-neutral-600">Encuestas asignadas</p>
+      <p class="mt-1 text-2xl font-bold text-neutral-900 tabular-nums">{{ assignment_data|length }}</p>
     </div>
-    <div class="card flex h-full flex-col justify-center px-6 py-5">
-      <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Encuestas<br>asignadas</dt>
-      <dd class="mt-1 text-2xl font-bold text-neutral-900">{{ assignment_data|length }}</dd>
-    </div>
-    <div class="card flex h-full flex-col justify-center px-6 py-5">
-      <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Código de referencia</dt>
-      <dd class="mt-1 text-2xl font-bold font-mono tracking-widest text-neutral-900">{{ company.reference_code }}</dd>
-    </div>
-    <button type="button" data-dialog-open="cochran-modal"
-            class="card group text-left w-full h-full flex flex-col justify-between border-2 border-primary-100 px-6 py-5 hover:border-primary-300 hover:shadow-md transition-all cursor-pointer">
-      <div>
-        <dt class="text-xs font-medium text-neutral-500 uppercase tracking-wide">Mínimo representativo</dt>
+
+    <button type="button" data-dialog-open="cochran-modal" class="card card-link group items-start px-5 py-4">
+      <span class="min-w-0 flex-1">
+        <span class="block text-sm font-medium text-neutral-600">Mínimo representativo</span>
         {% if representative_minimum is not None %}
-          <dd class="mt-1 text-2xl font-bold text-neutral-900">{{ representative_minimum }}</dd>
+          <span class="mt-1 block text-2xl font-bold text-neutral-900 tabular-nums">{{ representative_minimum }}</span>
         {% else %}
-          <dd class="mt-1 text-sm text-neutral-500 italic">Sin datos</dd>
+          <span class="mt-1 block text-sm text-neutral-600">Sin datos</span>
         {% endif %}
-      </div>
-      <span class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 group-hover:text-primary-700">
-        {% icon "calculator" "size-3.5 shrink-0" %}
-        Ver fórmula &rarr;
+      </span>
+      <span class="mt-0.5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600">
+        {% icon "calculator" "size-5" label="Ver fórmula" %}
       </span>
     </button>
+
+    {% if perms.accounts.can_view_insights %}
+      <a href="{{ results_url }}" class="card card-link group items-start px-5 py-4">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-neutral-600">Cuestionarios valorados</p>
+          {% if latest_scored_count is None %}
+            <p class="mt-1 text-sm text-neutral-600">Sin encuestas NOM-035</p>
+          {% else %}
+            <p class="mt-1 text-2xl font-bold text-neutral-900 tabular-nums">{{ latest_scored_count }}</p>
+          {% endif %}
+        </div>
+        {% icon "chevron-right" "mt-0.5 size-5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600" %}
+      </a>
+    {% endif %}
   </div>
 
   {# Cochran modal #}
@@ -90,122 +115,68 @@
       </p>
   </dialog>
 
-  {# Survey completion #}
-  <section class="mt-8">
-    <h2 class="text-base font-semibold text-neutral-900 mb-4">Estado de encuestas</h2>
+  <section>
+    <h2 class="mt-10 mb-4 text-lg font-semibold text-neutral-900">Estado de encuestas</h2>
 
     {% if assignment_data %}
-      <div class="space-y-3">
+      <div class="space-y-4">
         {% for item in assignment_data %}
-          <div class="flex gap-3">
-            {# Progress card — 75% #}
-            <div class="card px-6 py-5" style="flex: 3">
+          <article class="card">
+            <div class="px-5 py-4 sm:px-6 sm:py-5">
               <div class="flex items-start justify-between gap-4">
                 <div class="min-w-0">
-                  <p class="font-medium text-neutral-900 truncate">
+                  <h3 class="text-base font-semibold text-neutral-900">
                     {{ item.assignment.survey.title }}
-                    <span class="ml-1.5 text-sm font-semibold text-neutral-700">({{ item.assignment.get_variant_display }})</span>
-                  </p>
-                  <p class="mt-0.5 text-sm text-neutral-500">
-                    {% if item.assignment.status == "active" %}
-                      <span class="text-primary-700">Activa</span>
-                    {% else %}
-                      <span class="text-neutral-500">Cerrada</span>
-                    {% endif %}
-                    {% if item.assignment.due_date %}
-                      &middot; Fecha límite {{ item.assignment.due_date|date:"d/m/Y" }}
-                    {% endif %}
+                    <span class="font-normal text-neutral-600">({{ item.assignment.get_variant_display }})</span>
+                  </h3>
+                  <p class="mt-1 text-sm text-neutral-600">
+                    {% if item.assignment.status == "active" %}<span class="font-medium text-primary-700">Activa</span>{% else %}Cerrada{% endif %}{% if item.assignment.due_date %}, fecha límite {{ item.assignment.due_date|date:"d/m/Y" }}{% endif %}
                   </p>
                 </div>
-                <div class="text-right shrink-0">
-                  <span class="text-xl font-bold text-neutral-900">{{ item.completion_rate }}%</span>
-                  <p class="text-xs text-neutral-500">{{ item.completed_count }}&thinsp;/&thinsp;{{ item.member_count }}</p>
+                <div class="shrink-0 text-right">
+                  <p class="text-2xl font-bold text-neutral-900 tabular-nums">{{ item.completion_rate }} %</p>
+                  <p class="text-sm text-neutral-600 tabular-nums">{{ item.completed_count }}&thinsp;/&thinsp;{{ item.member_count }}</p>
                 </div>
               </div>
-              <div class="relative mt-4 h-2 w-full rounded-full bg-neutral-100">
-                <div class="h-2 rounded-full bg-primary-500 transition-all"
-                     style="width: {{ item.completion_rate }}%"></div>
+              <div class="relative mt-4 h-2 w-full rounded-full bg-neutral-100" aria-hidden="true">
+                <div class="h-2 rounded-full bg-primary-600" style="width: {{ item.completion_rate }}%"></div>
                 {% if representative_threshold_pct is not None %}
-                  <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-4 w-0.5 rounded-full bg-neutral-400"
-                       style="left: {{ representative_threshold_pct }}%"
-                       title="Mínimo representativo: {{ representative_minimum }} respuestas"></div>
+                  <div class="absolute top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-neutral-500"
+                       style="left: {{ representative_threshold_pct }}%"></div>
                 {% endif %}
               </div>
+              {% if representative_threshold_pct is not None %}
+                <p class="mt-2 flex items-center gap-2 text-xs text-neutral-600">
+                  <span class="h-3 w-0.5 rounded-full bg-neutral-500" aria-hidden="true"></span>
+                  Mínimo representativo: {{ representative_minimum }} respuestas
+                </p>
+              {% endif %}
             </div>
 
-            {# Take-survey card — 25%, only for members of this company #}
             {% if can_take_surveys %}
-              {% if item.assignment.status == "active" and not item.user_completed %}
-                <a href="{% url 'surveys:survey_detail' item.assignment.id %}"
-                   class="card flex flex-col justify-between px-5 py-5 hover:border-primary-300 hover:shadow-md transition-all" style="flex: 1">
-                  <div class="flex items-start justify-between gap-2">
-                    <p class="text-sm font-medium text-neutral-700 leading-snug">Mi respuesta</p>
-                    <span class="pill pill-marker shrink-0 bg-primary-50 text-primary-700 ring-1 ring-inset ring-primary-600/20">Activa</span>
-                  </div>
-                  <p class="mt-3 text-sm text-neutral-500">
-                    {% if item.assignment.due_date %}Fecha límite: <span class="font-medium text-neutral-600">{{ item.assignment.due_date|date:"d/m/Y" }}</span>{% else %}Sin fecha límite{% endif %}
+              <div class="flex flex-col gap-3 border-t border-neutral-100 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <p class="text-sm font-medium text-neutral-800">Tu respuesta</p>
+                {% if item.assignment.status == "active" and not item.user_completed %}
+                  <a href="{% url 'surveys:survey_detail' item.assignment.id %}" class="btn btn-primary btn-sm w-full sm:w-auto">Responder</a>
+                {% elif item.user_completed %}
+                  <p class="flex flex-wrap items-center gap-2 text-sm text-neutral-600">
+                    <span class="pill pill-marker bg-success-50 text-success-800 ring-1 ring-inset ring-success-600/20">Completada</span>
+                    Ya enviaste tus respuestas.
                   </p>
-                </a>
-              {% else %}
-                <div class="card relative group flex flex-col justify-between px-5 py-5 cursor-default opacity-60 select-none" style="flex: 1">
-                  <div class="flex items-start justify-between gap-2">
-                    <p class="text-sm font-medium text-neutral-700 leading-snug">Mi respuesta</p>
-                    {% if item.user_completed %}
-                      <span class="pill pill-marker shrink-0 bg-success-50 text-success-800 ring-1 ring-inset ring-success-600/20">Completada</span>
-                    {% else %}
-                      <span class="pill pill-marker shrink-0 bg-neutral-100 text-neutral-500 ring-1 ring-inset ring-neutral-500/20">Cerrada</span>
-                    {% endif %}
-                  </div>
-                  <p class="mt-3 text-sm text-neutral-500">
-                    {% if item.assignment.due_date %}Fecha límite: <span class="font-medium text-neutral-600">{{ item.assignment.due_date|date:"d/m/Y" }}</span>{% else %}Sin fecha límite{% endif %}
+                {% else %}
+                  <p class="flex flex-wrap items-center gap-2 text-sm text-neutral-600">
+                    <span class="pill pill-marker bg-neutral-100 text-neutral-600 ring-1 ring-inset ring-neutral-500/20">Cerrada</span>
+                    La encuesta cerró; ya no puedes ver tus respuestas.
                   </p>
-                  <div class="pointer-events-none absolute inset-x-0 bottom-full mb-2 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150 px-2">
-                    <div class="rounded-lg bg-black px-3 py-2 text-sm text-white shadow-lg text-center max-w-xs">
-                      Esta encuesta ha finalizado y no tiene acceso a ver sus respuestas.
-                    </div>
-                  </div>
-                </div>
-              {% endif %}
+                {% endif %}
+              </div>
             {% endif %}
-          </div>
+          </article>
         {% endfor %}
       </div>
     {% else %}
       {% include "components/_empty.html" with body="No hay encuestas asignadas a esta empresa." icon="clipboard-document-list" %}
     {% endif %}
   </section>
-
-  {# Valoración de resultados — only for users with can_view_insights #}
-  {% if perms.accounts.can_view_insights %}
-    <section class="mt-8">
-      <h2 class="text-base font-semibold text-neutral-900 mb-4">Valoración de resultados</h2>
-      <a href="{{ results_url }}"
-         class="card group flex flex-col gap-3 border-2 border-primary-100 px-6 py-5 transition-all hover:border-primary-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          {% if latest_scored_count is None %}
-            <p class="text-sm text-neutral-500">Esta empresa aún no tiene encuestas NOM-035 asignadas.</p>
-          {% else %}
-            <p class="text-xs font-medium uppercase tracking-wide text-neutral-500">Cuestionarios valorados</p>
-            <p class="mt-1 text-2xl font-bold text-neutral-900">{{ latest_scored_count }}</p>
-          {% endif %}
-        </div>
-        <span class="text-sm font-semibold text-primary-600 group-hover:text-primary-700">Ver resultados &rarr;</span>
-      </a>
-      {% if is_admin_view %}
-        <a href="{% url 'reports:admin_list' company.reference_code %}"
-           class="card mt-3 flex items-center justify-between px-6 py-4 text-sm font-semibold text-primary-600 transition-all hover:border-primary-300 hover:text-primary-700">
-          Reporte de resultados <span aria-hidden="true">&rarr;</span>
-        </a>
-      {% else %}
-        <a href="{% url 'reports:exec_list' %}"
-           class="card group mt-3 flex flex-col gap-3 border-2 border-primary-100 px-6 py-5 transition-all hover:border-primary-300 hover:shadow-md sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p class="text-sm font-semibold text-neutral-900">Reporte de resultados</p>
-            <p class="mt-1 text-sm text-neutral-500">Consulta y descarga los reportes publicados.</p>
-          </div>
-          <span class="text-sm font-semibold text-primary-600 group-hover:text-primary-700">Ver reportes &rarr;</span>
-        </a>
-      {% endif %}
-    </section>
-  {% endif %}
+  <script src="{% static 'js/copy.js' %}"></script>
 {% endblock %}

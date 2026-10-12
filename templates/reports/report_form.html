@@ -7,10 +7,7 @@
 {% endblock %}
 
 {% block content %}
-  <div class="mb-5">
-    <h1 class="text-xl font-bold text-neutral-900">Editar reporte</h1>
-    <p class="mt-1 text-sm text-neutral-500">{{ company.name }}</p>
-  </div>
+  {% include "components/_page_header.html" with title="Editar reporte" subtitle=company.name %}
 
 
   <form method="post" class="space-y-6" data-loading>
@@ -20,7 +17,7 @@
     {% endif %}
 
     <section class="space-y-4 card p-4 sm:p-6">
-      <h2 class="text-base font-semibold text-neutral-900">Datos del reporte</h2>
+      <h2 class="text-lg font-semibold text-neutral-900">Datos del reporte</h2>
       {% for field in form %}
         {% if "headcount" in field.name %}{% else %}
           {{ field.as_field_group }}
@@ -29,7 +26,7 @@
     </section>
 
     <section class="card p-4 sm:p-6">
-      <h2 class="text-base font-semibold text-neutral-900">Personal por modalidad</h2>
+      <h2 class="text-lg font-semibold text-neutral-900">Personal por modalidad</h2>
       <p class="mt-1 text-sm text-neutral-600">Cifras que reporta la empresa.</p>
       <div class="mt-4 grid gap-4 sm:grid-cols-3">
         {% for field in form %}
@@ -41,8 +38,8 @@
     </section>
 
     <section class="card p-4 sm:p-6">
-      <h2 class="text-base font-semibold text-neutral-900">Responsables de la empresa</h2>
-      <p class="mt-1 text-sm text-neutral-500">Aparecen en el orden mostrado. Siempre hay un renglón vacío: llénalo y guarda para agregar otro.</p>
+      <h2 class="text-lg font-semibold text-neutral-900">Responsables de la empresa</h2>
+      <p class="mt-1 text-sm text-neutral-600">Aparecen en el orden mostrado. Siempre hay un renglón vacío: llénalo y guarda para agregar otro.</p>
       {{ formset.management_form }}
       {% if formset.non_form_errors %}
         <div class="mt-3">{% include "components/_alert.html" with tone="danger" items=formset.non_form_errors only %}</div>

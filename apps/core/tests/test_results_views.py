@@ -1,3 +1,4 @@
+import re
 from html.parser import HTMLParser
 
 import pytest
@@ -235,3 +236,69 @@ def test_dominio_rows_draw_in_the_dominio_tier(client, setup, make_user_with_pro
     assert 'fill="#22C55E"' in body  # categoría Bajo column unchanged
     assert "bg-[#7A1010]" in body  # dominio legend swatch
     assert "Dominios:" in body
+
+
+def _results_page(client, setup, make_user_with_profile):
+    add_respondents(setup, make_user_with_profile, 6, area=setup["area"])
+    client.force_login(setup["exec"])
+    html = client.get(reverse("core:company_results")).content.decode()
+    return html[html.index("<main") :]
+
+
+def test_the_page_sections_are_headings_in_sentence_case(
+    client, setup, make_user_with_profile
+):
+    html = _results_page(client, setup, make_user_with_profile)
+    assert "uppercase" not in html
+    assert ">Empresa</h2>" in html
+    assert ">Por categoría</h2>" in html
+    assert "Distribución de la calificación final" in html
+    assert "Estadística de la calificación final" in html
+    assert "Guía I: acontecimientos traumáticos severos" in html
+
+
+def test_the_filters_are_the_rosters_dialog_of_chips(
+    client, setup, make_user_with_profile
+):
+    html = _results_page(client, setup, make_user_with_profile)
+    form = html[html.index('id="results-filters"') : html.index("</form>")]
+    assert 'data-dialog-open="results-filter-modal"' in form
+    assert '<dialog id="results-filter-modal"' in form
+    inputs = form.count('type="radio"') + form.count('type="checkbox"')
+    assert inputs and form.count('class="chip"') == inputs
+    # Sexo returns to "either" by un-choosing, as on the roster: no Todos chip.
+    assert "Todos" not in form
+    assert "<details" not in form
+
+
+def test_limpiar_filtros_is_in_the_bar_only_while_filtering(
+    client, setup, make_user_with_profile
+):
+    """It is rendered `hidden` rather than left out, so the script can show it
+    after an *Aplicar* that swaps the body without a reload."""
+    add_respondents(setup, make_user_with_profile, 6, area=setup["area"])
+    client.force_login(setup["exec"])
+    url = reverse("core:company_results")
+    pk = setup["assignment"].pk
+
+    wide = client.get(url).content.decode()
+    bar = wide[wide.index('id="results-filters"') : wide.index("<dialog")]
+    assert re.search(r"<a [^>]*data-filter-clear hidden", bar)
+
+    narrowed = client.get(
+        url, {"area": setup["area"].pk, "sexo": "femenino", "edad": ["18-19", "20-24"]}
+    ).content.decode()
+    bar = narrowed[narrowed.index('id="results-filters"') : narrowed.index("<dialog")]
+    link = re.search(r"<a [^>]*data-filter-clear[^>]*>", bar).group(0)
+    assert " hidden" not in link
+    assert f'href="{url}?encuesta={pk}"' in link
+    # Three dimensions, four values: the count is of dimensions, as on the roster.
+    assert re.search(r"data-filter-count[^>]*>3<", bar)
+
+
+def test_one_localidad_offers_no_localidad_filter(
+    client, setup, make_user_with_profile, make_location
+):
+    make_location(setup["company"], name="Matriz")
+    html = _results_page(client, setup, make_user_with_profile)
+    assert 'name="localidad"' not in html

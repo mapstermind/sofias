@@ -3,8 +3,7 @@
  * a spinner) so a second tap on a slow connection does not send the form
  * twice. Applies to forms carrying `data-loading`.
  *
- * A submit another handler cancelled — the unpublish form's confirm() — is
- * left alone. The busy state is cleared when the back button restores the page
+ * A submit another handler cancelled is left alone. The busy state is cleared when the back button restores the page
  * from the back/forward cache (`pageshow` with `persisted`), so it is usable
  * again; a fresh load keeps any `aria-busy` the server rendered.
  */

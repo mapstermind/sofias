@@ -1,0 +1,56 @@
+{% load icons %}
+{% comment %}
+The filter dialog shared by the roster and the results page. Include it inside
+the page's GET form, so *Aplicar filtros* is an ordinary submit and every chip
+is a field of that form:
+
+  {% include "components/_filter_dialog.html" with prefix="roster" groups=filter_groups clear_url=clear_url apply_name="orden" apply_value=… %}
+
+`groups` is a list of {key, label, multiple, options: [{value, label,
+selected}]}; walk it blindly, so a dimension added later is a view change.
+`apply_name`/`apply_value` are optional, for a submit that must carry a value.
+Ids are `<prefix>-filter-modal`, `<prefix>-filter-apply` and
+`<prefix>-pill-<key>-<value>`. static/ts/filter_dialog.ts restores the chips
+when the dialog is dismissed and lets a chosen radio be un-chosen.
+{% endcomment %}
+<dialog id="{{ prefix }}-filter-modal" aria-labelledby="{{ prefix }}-filter-title" data-filter-dialog
+        class="dialog max-w-lg overflow-hidden p-0">
+  <div class="flex max-h-[85vh] flex-col">
+    <div class="flex items-start justify-between gap-4 px-5 pt-5">
+      <h2 id="{{ prefix }}-filter-title" class="text-lg font-semibold text-neutral-900">Filtros</h2>
+      <button type="button" data-dialog-close aria-label="Cerrar"
+              class="btn btn-text btn-sm -mr-2 -mt-1 px-2 text-neutral-500">
+        {% icon "x-mark" "size-5" %}
+      </button>
+    </div>
+
+    <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+      {% for group in groups %}
+        {# Preflight leaves fieldset and legend with their browser defaults. #}
+        <fieldset class="m-0 min-w-0 border-0 p-0">
+          <legend class="m-0 p-0 text-sm font-medium text-neutral-800">{{ group.label }}</legend>
+          <div class="mt-2 mb-3 flex flex-wrap gap-x-2 gap-y-3">
+            {% for option in group.options %}
+              {% with field_id=prefix|add:"-pill-"|add:group.key|add:"-"|add:option.value %}
+                <span>
+                  <input class="peer sr-only" id="{{ field_id }}"
+                         type="{% if group.multiple %}checkbox{% else %}radio{% endif %}"
+                         name="{{ group.key }}" value="{{ option.value }}"{% if option.selected %} checked{% endif %}>
+                  <label for="{{ field_id }}" class="chip">{{ option.label }}</label>
+                </span>
+              {% endwith %}
+            {% endfor %}
+          </div>
+        </fieldset>
+      {% endfor %}
+    </div>
+
+    <div class="flex items-center justify-between gap-3 border-t border-neutral-100 px-5 py-4">
+      <a href="{{ clear_url }}" data-filter-clear class="btn btn-text">Limpiar filtros</a>
+      <button type="submit" id="{{ prefix }}-filter-apply"{% if apply_name %} name="{{ apply_name }}" value="{{ apply_value }}"{% endif %}
+              class="btn btn-primary">
+        Aplicar filtros
+      </button>
+    </div>
+  </div>
+</dialog>

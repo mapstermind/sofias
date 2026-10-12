@@ -211,16 +211,24 @@ def _published(scored_assignment, make_user):
     return report
 
 
-def test_unpublish_form_asks_for_confirmation(
+def test_unpublish_asks_for_confirmation_in_a_dialog(
     admin_client, urls, scored_assignment, make_user
 ):
     _published(scored_assignment, make_user)
     body = admin_client.get(urls["detail"]).content.decode()
-    assert (
-        "onsubmit=\"return confirm('¿Despublicar el reporte? El contenido congelado"
-        " se descartará y la empresa dejará de verlo hasta que se publique de"
-        " nuevo.')\"" in body
-    )
+    assert 'data-dialog-open="unpublish-dialog"' in body
+    dialog = body[body.index('<dialog id="unpublish-dialog"') : body.index("</dialog>")]
+    assert f'action="{urls["unpublish"]}"' in dialog
+    assert "la empresa dejará de verlo hasta que se publique de nuevo." in dialog
+    assert "onsubmit" not in body
+    # The sheet is a document with its own cover title (the PDF's too); the
+    # page around it has one.
+    page = body.split('<article class="report-sheet">')[0]
+    assert page.count("<h1") == 1
+
+
+def test_the_report_form_has_one_title(admin_client, urls):
+    assert admin_client.get(urls["edit"]).content.decode().count("<h1") == 1
 
 
 def test_double_publish_is_a_silent_success(admin_client, urls):

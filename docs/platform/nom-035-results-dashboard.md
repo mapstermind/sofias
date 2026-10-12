@@ -45,7 +45,7 @@ downloadable report in mind (`docs/internal/meetings/20260803.md`).
   columns, range strip) with their geometry in pure Python.
 - A stored `SubmissionScore.guia1_event` column and the `can_view_small_groups`
   permission.
-- The company dashboard's "Valoración de resultados" link card.
+- The company dashboard's *Cuestionarios valorados* stat card.
 
 **Out of scope:**
 
@@ -257,9 +257,8 @@ this page.
 ### On a phone
 
 At 360px the page reads as one column with no horizontal scroll. The filter bar
-stacks: the survey selector runs full width and the *Filtros (n)* disclosure sits
-below it, opening onto one column of fieldsets with a full-width *Aplicar*
-button. Participation rows become stacked cards — the área name on its own line,
+stacks: the survey selector runs full width, with *Filtros* and, while filtering,
+*Limpiar filtros* on the row beneath; the filter dialog fits the screen. Participation rows become stacked cards — the área name on its own line,
 then Registrados, Respondieron and Participación side by side, each with its
 label stacked above the value, then the level columns full width; the table's
 column header is hidden. The sex and age sections stack in one column (they sit side by side only
@@ -318,17 +317,21 @@ possible and are recorded as a known limitation in
 
 ### In-place filtering
 
-The filter bar (`<form id="results-filters">`) holds the survey selector and a
-**"Filtros (n)"** disclosure (a native `<details>`) at every width: opening it
-reveals radio buttons for sexo (with *Todos*), checkboxes for edad and área, and
-checkboxes for localidad when the company has any, plus an **Aplicar** button.
-*n* counts the active filter values. It is a plain GET form, so the page works
-without JavaScript by reloading.
+The filter bar (`<form id="results-filters">`) is the roster's: the survey
+selector, *Filtros* with a count of the dimensions in use, and *Limpiar filtros*
+while any filter is active, which keeps the survey. *Filtros* opens the shared
+filter dialog (`components/_filter_dialog.html`, `static/ts/filter_dialog.ts`;
+see `design-system.md`): chips for sexo (picking the chosen one again clears it),
+edad and área, and for localidad when the company has more than one, over
+*Limpiar filtros* and *Aplicar filtros*. The view builds the groups as
+`filter_groups` and the bare-survey link as `clear_url`. It is a plain GET form,
+so the page works without JavaScript by reloading.
 
 `static/ts/results_dashboard.ts` enhances it. Changing the survey or pressing
-Aplicar fetches the matching `…/fragmento/` URL (the form's
+*Aplicar filtros* fetches the matching `…/fragmento/` URL (the form's
 `data-fragment-url`), swaps `#results-body` with the response, closes the
-disclosure, refreshes the count in "Filtros (n)", and updates the address bar
+dialog, refreshes the count on *Filtros*, shows or hides the bar's *Limpiar
+filtros*, and updates the address bar
 with `history.replaceState` — a filtered view is a shareable link and survives a
 reload. A newer request aborts one still in flight; `#results-body` carries
 `aria-busy` while it loads; a failed request falls back to navigating to the
@@ -340,7 +343,8 @@ reader announces the new group once; `#results-body` itself is not a live region
 The active-filter pills (each with a × that removes that value) and the group
 line render inside `#results-body`, so the swap refreshes them. Pills and área
 links carry `data-results-link`: clicking one sets the form's controls from the
-link's query string and runs the same swap. The company's áreas and localidades
+link's query string and runs the same swap. *Limpiar filtros* clears the chips
+and applies, keeping whichever survey is selected. The company's áreas and localidades
 do not depend on the assignment, so the filter bar itself is never re-rendered.
 
 ### Chart components
@@ -435,13 +439,13 @@ because it describes `UserProfile`.
 
 ### Company dashboard
 
-`templates/core/company_dashboard.html` shows a compact "Valoración de
-resultados" card, gated on `can_view_insights`: under *Cuestionarios valorados*,
-the scored-questionnaire count of the assignment the results page opens on
+`templates/core/company_dashboard.html` shows a *Cuestionarios valorados* stat
+card, gated on `can_view_insights`: the scored-questionnaire count of the
+assignment the results page opens on
 (`select_assignment(assignment_options(company), None)` in
-`CompanyDashboardView`), and a *"Ver resultados →"* link to the results page.
-A company with no NOM-035 assignment reads *"Esta empresa aún no tiene encuestas
-NOM-035 asignadas."* on the card instead of a count.
+`CompanyDashboardView`). The whole card links to the results page. A company
+with no NOM-035 assignment reads *Sin encuestas NOM-035* instead of a count. The
+page itself is also the *Resultados* section of the company navigation.
 
 ## Schema
 
@@ -477,7 +481,7 @@ resultados de grupos pequeños")`, granted to Administrador by
 | `templates/core/company_results.html` | Page: selector, filter bar, `#results-status`, `#results-body` |
 | `templates/core/results/` | `_body.html` and one partial per section |
 | `templates/core/company_dashboard.html` | Link card |
-| `static/ts/results_dashboard.ts` | Fragment swap, URL sync, pills, status line (compiled to `static/js/results_dashboard.js`) |
+| `static/ts/results_dashboard.ts` | Fragment swap, URL sync, pills, *Limpiar filtros*, status line (compiled to `static/js/results_dashboard.js`) |
 
 Tests: `apps/nom035/tests/test_results.py` (the data layer, including a query
 cap), `apps/core/tests/test_results_views.py` (routes, authorization, rendering, no

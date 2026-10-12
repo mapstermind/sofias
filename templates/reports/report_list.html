@@ -1,31 +1,32 @@
 {% extends "base_app.html" %}
+{% load icons %}
 
 {% block title %}Reportes | {{ company.name }} | {{ brand.name }}{% endblock %}
 
 
 {% block content %}
-  <div class="mb-5">
-    <h1 class="text-xl font-bold text-neutral-900">Reportes de resultados</h1>
-    <p class="mt-1 text-sm text-neutral-500">{{ company.name }}</p>
-  </div>
+  {% include "components/_page_header.html" with title="Reportes de resultados" subtitle=company.name %}
 
 
   {% if not rows %}
     {% if is_admin_view %}{% include "components/_empty.html" with body="Esta empresa aún no tiene encuestas NOM-035 asignadas." icon="document-text" %}{% else %}{% include "components/_empty.html" with body="Aún no hay reportes publicados." icon="document-text" %}{% endif %}
   {% else %}
-    <ul class="card divide-y divide-neutral-100">
+    <ul class="card divide-y divide-neutral-100 overflow-hidden">
       {% for row in rows %}
-        <li class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <li>
+          <a href="{% if is_admin_view %}{% url 'reports:admin_detail' company.reference_code row.option.assignment.pk %}{% else %}{% url 'reports:exec_detail' row.option.assignment.pk %}{% endif %}"
+             class="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-neutral-50 sm:px-6">
+          <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between sm:gap-4">
           <div class="min-w-0">
-            <p class="text-sm font-medium text-neutral-900">{{ row.option.label }}</p>
+            <p class="text-base font-semibold text-neutral-900">{{ row.option.label }}</p>
             {# A published report counts its frozen respondents, not today's. #}
             {% if row.report.status == "published" %}{% with count=row.report.snapshot.responded %}
-            <p class="mt-1 text-sm text-neutral-500">{{ count }} cuestionario{{ count|pluralize }} valorado{{ count|pluralize }}</p>
+            <p class="mt-1 text-sm text-neutral-600">{{ count }} cuestionario{{ count|pluralize }} valorado{{ count|pluralize }}</p>
             {% endwith %}{% else %}
-            <p class="mt-1 text-sm text-neutral-500">{{ row.option.scored_count }} cuestionario{{ row.option.scored_count|pluralize }} valorado{{ row.option.scored_count|pluralize }}</p>
+            <p class="mt-1 text-sm text-neutral-600">{{ row.option.scored_count }} cuestionario{{ row.option.scored_count|pluralize }} valorado{{ row.option.scored_count|pluralize }}</p>
             {% endif %}
           </div>
-          <div class="flex items-center justify-between gap-4 sm:justify-end">
+          <div class="mt-2 sm:mt-0 sm:shrink-0">
             {% if not is_admin_view %}
               <span class="pill pill-marker bg-success-100 text-success-800">Publicado</span>
             {% elif not row.report %}
@@ -35,9 +36,10 @@
             {% else %}
               <span class="pill pill-marker bg-warning-100 text-warning-800">Borrador</span>
             {% endif %}
-            <a href="{% if is_admin_view %}{% url 'reports:admin_detail' company.reference_code row.option.assignment.pk %}{% else %}{% url 'reports:exec_detail' row.option.assignment.pk %}{% endif %}"
-               class="text-sm font-semibold text-primary-600 hover:text-primary-700">Abrir &rarr;</a>
           </div>
+          </div>
+          {% icon "chevron-right" "size-5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600" %}
+          </a>
         </li>
       {% endfor %}
     </ul>

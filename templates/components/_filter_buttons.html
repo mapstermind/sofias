@@ -1,0 +1,21 @@
+{% load icons %}
+{% comment %}
+*Filtros* and the inline *Limpiar filtros*, for the bar beside a search box or
+picker. Takes `prefix` (the dialog's, see _filter_dialog.html), `count` (the
+dimensions in use), `narrowed` (whether anything hides part of the list, a
+search included) and `clear_url`. The badge is left out at zero and the inline
+*Limpiar filtros* when nothing is narrowed; pass `live=True` to render them `hidden` instead, for a
+page whose script updates them without a reload.
+{% endcomment %}
+<button type="button" id="{{ prefix }}-filter-open" data-dialog-open="{{ prefix }}-filter-modal"
+        aria-haspopup="dialog" aria-controls="{{ prefix }}-filter-modal"
+        class="btn btn-secondary shrink-0">
+  {% icon "funnel" "size-4 text-neutral-500" %}
+  Filtros
+  {% if count or live %}
+    <span id="{{ prefix }}-filter-count" data-filter-count{% if not count %} hidden{% endif %} class="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-semibold text-white">{{ count }}</span>
+  {% endif %}
+</button>
+{% if narrowed or live %}
+  <a href="{{ clear_url }}" data-filter-clear{% if not narrowed %} hidden{% endif %} class="btn btn-text shrink-0">Limpiar filtros</a>
+{% endif %}

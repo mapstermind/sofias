@@ -11,12 +11,9 @@ static page, so they are tried live. See docs/platform/design-system.md.
 {% endcomment %}
 
 {% block content %}
-  <div class="mb-10">
-    <h1 class="text-xl font-bold text-neutral-900">Estilos</h1>
-    <p class="mt-1 max-w-prose text-sm text-neutral-600">
-      Los componentes de {{ brand.name }} con la paleta activa. Cambia de paleta con el selector de la esquina para compararlas.
-    </p>
-  </div>
+  {% with subtitle="Los componentes de "|add:brand.name|add:" con la paleta activa. Cambia de paleta con el selector de la esquina para compararlas." %}
+    {% include "components/_page_header.html" with title="Estilos" subtitle=subtitle %}
+  {% endwith %}
 
   <div class="space-y-12">
 
@@ -130,6 +127,59 @@ static page, so they are tried live. See docs/platform/design-system.md.
       <div class="mt-4">
         {% include "components/_empty.html" with title="Ningún colaborador coincide" body="Ningún colaborador coincide con la búsqueda." icon="users" action_url="#sg-cards" action_label="Limpiar filtros" %}
       </div>
+    </section>
+
+    <section aria-labelledby="sg-links">
+      <h2 id="sg-links" class="text-lg font-semibold text-neutral-900">Enlaces y opciones</h2>
+      <p class="mt-1 text-sm text-neutral-600">Una tarjeta que es un enlace, un <a href="#sg-links" class="link">enlace dentro de una frase</a>, y opciones como fichas.</p>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <a href="#sg-links" class="card card-link group items-start px-5 py-4">
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-medium text-neutral-600">Cuestionarios valorados</span>
+            <span class="mt-1 block text-2xl font-bold text-neutral-900">96</span>
+          </span>
+          {% icon "chevron-right" "mt-0.5 size-5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600" %}
+        </a>
+        <fieldset class="card m-0 min-w-0 p-5">
+          <legend class="sr-only">Edad</legend>
+          <p class="mb-2 text-sm font-medium text-neutral-800" aria-hidden="true">Edad</p>
+          <div class="flex flex-wrap gap-2">
+            <span><input class="peer sr-only" type="checkbox" id="sg-chip-1" checked><label for="sg-chip-1" class="chip">18 a 29</label></span>
+            <span><input class="peer sr-only" type="checkbox" id="sg-chip-2"><label for="sg-chip-2" class="chip">30 a 44</label></span>
+            <span><input class="peer sr-only" type="checkbox" id="sg-chip-3"><label for="sg-chip-3" class="chip">45 o más</label></span>
+          </div>
+        </fieldset>
+      </div>
+    </section>
+
+    <section aria-labelledby="sg-answers">
+      <h2 id="sg-answers" class="text-lg font-semibold text-neutral-900">Respuestas de la encuesta</h2>
+      <p class="mt-1 text-sm text-neutral-600">La fila completa es el área de toque y la elegida se marca. Desde pantallas anchas, una escala son cinco recuadros.</p>
+      <fieldset class="card m-0 mt-4 min-w-0 border-neutral-200 p-5">
+        <legend class="mb-3 block p-0 text-base font-semibold text-neutral-900">El espacio donde trabajo me permite realizar mis actividades de manera segura e higiénica.</legend>
+        <div class="flex flex-col gap-2 lg:grid lg:grid-cols-5">
+          <label class="answer lg:min-h-20 lg:flex-col lg:justify-center lg:gap-2 lg:px-2 lg:text-center">
+            <input type="radio" name="sg-answer">
+            <span class="text-base text-neutral-800 lg:text-sm lg:text-neutral-700">Siempre</span>
+          </label>
+          <label class="answer lg:min-h-20 lg:flex-col lg:justify-center lg:gap-2 lg:px-2 lg:text-center">
+            <input type="radio" name="sg-answer" checked>
+            <span class="text-base text-neutral-800 lg:text-sm lg:text-neutral-700">Casi siempre</span>
+          </label>
+          <label class="answer lg:min-h-20 lg:flex-col lg:justify-center lg:gap-2 lg:px-2 lg:text-center">
+            <input type="radio" name="sg-answer">
+            <span class="text-base text-neutral-800 lg:text-sm lg:text-neutral-700">Algunas veces</span>
+          </label>
+          <label class="answer lg:min-h-20 lg:flex-col lg:justify-center lg:gap-2 lg:px-2 lg:text-center">
+            <input type="radio" name="sg-answer">
+            <span class="text-base text-neutral-800 lg:text-sm lg:text-neutral-700">Casi nunca</span>
+          </label>
+          <label class="answer lg:min-h-20 lg:flex-col lg:justify-center lg:gap-2 lg:px-2 lg:text-center">
+            <input type="radio" name="sg-answer">
+            <span class="text-base text-neutral-800 lg:text-sm lg:text-neutral-700">Nunca</span>
+          </label>
+        </div>
+      </fieldset>
     </section>
 
     <section aria-labelledby="sg-dialog">

@@ -35,9 +35,11 @@ def test_dashboard_links_to_results(
     resp = client.get(
         reverse("core:company_dashboard_for", args=[company.reference_code])
     )
-    body = resp.content.decode()
-    assert "Valoración de resultados" in body
-    assert reverse("core:company_results_for", args=[company.reference_code]) in body
+    html = resp.content.decode()
+    body = html[html.index("<main") :]
+    results_url = reverse("core:company_results_for", args=[company.reference_code])
+    card = body[body.index(f'href="{results_url}"') :]
+    assert "Cuestionarios valorados" in card[: card.index("</a>")]
     assert resp.context["latest_scored_count"] == 1
 
 
@@ -51,4 +53,4 @@ def test_dashboard_hides_results_card_without_permission(
     user.groups.add(bootstrap_groups[ROLES[2].name])  # Ejecutivo secundario
     client.force_login(user)
     body = client.get(reverse("core:company_dashboard")).content.decode()
-    assert "Ver resultados" not in body
+    assert "Cuestionarios valorados" not in body

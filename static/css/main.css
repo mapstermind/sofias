@@ -281,9 +281,37 @@
   .card {
     @apply rounded-xl border border-neutral-200 bg-white shadow-sm;
   }
+  /* A card that is wholly a link or a button. The call site adds `group` and a
+     trailing chevron (or another icon) that answers the hover. */
+  .card-link {
+    @apply flex items-center gap-4 text-left transition-colors hover:border-primary-300;
+  }
+
+  /* A link inside a sentence. */
+  .link {
+    @apply font-medium text-primary-700 underline-offset-2 hover:underline;
+  }
+
+  /* The label of a visually hidden checkbox or radio (`peer sr-only`, just
+     before it): a choice worn as a pill. */
+  .chip {
+    @apply inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border border-neutral-300 bg-white px-4 text-sm text-neutral-700 transition-colors select-none hover:bg-neutral-50 sm:min-h-9;
+    @apply peer-checked:border-primary-600 peer-checked:bg-primary-600 peer-checked:text-white peer-checked:hover:bg-primary-700;
+    @apply peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-primary-500;
+  }
+
+  /* A survey option: the whole row is the tap target, and the chosen row is
+     marked. A selection, never a status, so it is primary whatever the answer. */
+  .answer {
+    @apply flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-neutral-200 bg-white px-3 py-2.5 transition-colors hover:bg-neutral-50;
+    @apply has-[:checked]:border-primary-600 has-[:checked]:bg-primary-50;
+  }
+  .answer > input {
+    @apply size-5 shrink-0 accent-primary-600;
+  }
 
   .pill {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap;
   }
   /* The squircle that opens a status pill; it takes the pill's ink unless a
      `before:bg-*` utility names another color. */
