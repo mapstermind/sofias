@@ -23,7 +23,8 @@ Django 6 points the control's aria-describedby at `<id>_helptext` and
     {% endif %}
     {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="mb-2 text-sm text-neutral-600">{{ field.help_text|safe }}</p>{% endif %}
     {# A multi-widget's parts stack on a phone: three selects across 328px truncate a month name. #}
-    {% if field.use_fieldset %}<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">{{ field }}</div>{% else %}{{ field }}{% endif %}
+    {# A password gets a show/hide button, `hidden` until static/ts/password_toggle.ts wires it up. #}
+    {% if field.use_fieldset %}<div class="grid grid-cols-1 gap-3 sm:grid-cols-3">{{ field }}</div>{% elif field.widget_type == "password" %}<div class="relative" data-password-toggle>{{ field }}<button type="button" class="btn btn-text btn-sm absolute top-1/2 right-1 -translate-y-1/2 px-2 text-neutral-500 hover:text-neutral-800" data-password-toggle-button aria-label="Mostrar contraseña" aria-pressed="false" hidden>{% icon "eye" "size-5" %}{% icon "eye-slash" "hidden size-5" %}</button></div>{% else %}{{ field }}{% endif %}
   {% endif %}
   {% if field.errors %}
     <div id="{{ field.auto_id }}_error" class="mt-2 space-y-1">

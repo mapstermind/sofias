@@ -282,6 +282,16 @@ def change_password(request):
     return _redirect_after_login(request.user, request)
 
 
+def _render_profile_setup(request, context):
+    # Nine fields, so the auth layout's long variant: a wider form column beside
+    # a panel that stays in view while it scrolls.
+    return render(
+        request,
+        "accounts/profile_setup.html",
+        {**context, "auth_variant": "long"},
+    )
+
+
 @login_required
 def setup_profile(request):
     """First-login activation — user confirms their company reference code."""
@@ -291,28 +301,20 @@ def setup_profile(request):
     try:
         profile = request.user.profile
     except UserProfile.DoesNotExist:
-        return render(
-            request,
-            "accounts/profile_setup.html",
-            {"no_profile": True},
-        )
+        return _render_profile_setup(request, {"no_profile": True})
 
     if profile.is_activated:
         return redirect(settings.LOGIN_REDIRECT_URL)
 
     if profile.company is None:
-        return render(
-            request,
-            "accounts/profile_setup.html",
-            {"no_company": True},
-        )
+        return _render_profile_setup(request, {"no_company": True})
 
     company = profile.company
 
     # Without áreas there is nothing to pick, and letting people through would
     # build a "Sin área" pile that can't be fixed without re-interviewing them.
     if not CompanyArea.objects.filter(company=company, is_active=True).exists():
-        return render(request, "accounts/profile_setup.html", {"no_areas": True})
+        return _render_profile_setup(request, {"no_areas": True})
 
     if request.method == "GET":
         # Prefill so a user whose details an admin already filled in by hand
@@ -325,15 +327,13 @@ def setup_profile(request):
             "sex": profile.sex,
             "date_of_birth": profile.date_of_birth,
         }
-        return render(
-            request,
-            "accounts/profile_setup.html",
-            {"form": ProfileActivationForm(company=company, initial=initial)},
+        return _render_profile_setup(
+            request, {"form": ProfileActivationForm(company=company, initial=initial)}
         )
 
     form = ProfileActivationForm(request.POST, company=company)
     if not form.is_valid():
-        return render(request, "accounts/profile_setup.html", {"form": form})
+        return _render_profile_setup(request, {"form": form})
 
     reference_code = form.cleaned_data["reference_code"]
     if reference_code != company.reference_code:
@@ -341,7 +341,7 @@ def setup_profile(request):
             "reference_code",
             "Ese código no corresponde a tu empresa. Revísalo o pídelo de nuevo a quien te invitó.",
         )
-        return render(request, "accounts/profile_setup.html", {"form": form})
+        return _render_profile_setup(request, {"form": form})
 
     # Both rows or neither: a half-activated profile with a name but no área
     # would pass the is_activated gate with nothing to aggregate on.

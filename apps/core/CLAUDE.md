@@ -64,7 +64,7 @@ empty state. `404.html` and `403.html` render through Django's handlers;
 
 A page opens with `templates/components/_page_header.html` (its one `h1` and an
 optional subtitle) unless its title sits inside a card (employee detail, the
-centered sign-in screens). `tests/test_pages.py` renders each main page for the
+about page) or in the account screens' form column (`base_auth.html`). `tests/test_pages.py` renders each main page for the
 role that sees it and fails a second `h1`.
 
 ## Page chrome: back-to-top button
@@ -136,7 +136,7 @@ unless `brand.can_switch_palette(user)`. When a component changes, update the
 page too: `tests/test_styleguide.py` checks every class and icon appears.
 
 `templates/components/_alert.html` and `templates/_messages.html` (included by
-`base_app.html` and `base_centered.html`) draw alerts and Django messages;
+`base_app.html`, `base_auth.html` and `base_centered.html`) draw alerts and Django messages;
 `static/ts/dismiss.ts` closes a message and `static/ts/busy_submit.ts` (loaded by
 `base.html`) marks the submit button of every `method="post"` form busy unless the
 form carries `data-no-busy`. **Run

@@ -292,6 +292,11 @@
   .field :is(input[type="checkbox"], input[type="radio"]) {
     @apply size-5 shrink-0 accent-primary-600;
   }
+  /* Room for the show/hide button templates/forms/field.html puts beside a
+     password; same specificity as the control rule above, so it comes after. */
+  .field [data-password-toggle] input {
+    @apply pr-12;
+  }
 
   .card {
     @apply rounded-xl border border-neutral-200 bg-white shadow-sm;
@@ -305,6 +310,42 @@
   /* A link inside a sentence. */
   .link {
     @apply font-medium text-primary-700 underline-offset-2 hover:underline;
+  }
+
+  /* The account screens' layout (templates/base_auth.html). The page tint and
+     the panel read only palette variables, so both repaint with the palette. */
+  .auth-backdrop {
+    background:
+      radial-gradient(60% 50% at 15% 0%, var(--brand-primary-100) 0%, transparent 70%),
+      radial-gradient(50% 45% at 100% 100%, var(--brand-accent-100) 0%, transparent 70%),
+      var(--brand-neutral-100);
+  }
+  /* The brand panel: a band above the form on a phone, the card's left column
+     from `lg`. White text sits over the primary-900 pool at the bottom left. */
+  .auth-panel {
+    @apply relative isolate flex flex-col justify-between gap-4 overflow-hidden rounded-[14px] p-5 text-white lg:rounded-2xl lg:p-8 xl:p-10;
+    background:
+      radial-gradient(90% 70% at 0% 100%, var(--brand-primary-900) 15%, transparent 65%),
+      radial-gradient(55% 45% at 88% 8%, var(--brand-accent-300) 0%, transparent 70%),
+      radial-gradient(60% 55% at 35% 38%, var(--brand-primary-500) 0%, transparent 72%),
+      radial-gradient(45% 40% at 95% 72%, var(--brand-accent-500) 0%, transparent 70%),
+      linear-gradient(165deg, var(--brand-primary-300), var(--brand-primary-800));
+  }
+  /* A soft blurred shape over the gradient. */
+  .auth-panel::before {
+    content: "";
+    @apply absolute top-[30%] -left-[10%] -z-10 aspect-square w-[70%] rounded-full opacity-70 blur-[60px];
+    background: var(--brand-primary-700);
+  }
+  /* Film grain, which keeps the gradient from banding. */
+  .auth-panel::after {
+    content: "";
+    @apply absolute inset-0 -z-10 opacity-20 mix-blend-overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  /* The main action's soft glow, on the account screens only. */
+  .btn-glow {
+    box-shadow: 0 10px 22px -12px var(--brand-primary-600);
   }
 
   /* The label of a visually hidden checkbox or radio (`peer sr-only`, just

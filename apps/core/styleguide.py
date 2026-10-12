@@ -28,6 +28,11 @@ class DemoForm(forms.Form):
         error_messages={"required": "Escribe tu nombre."},
     )
     maternal_last_name = forms.CharField(label="Apellido materno", required=False)
+    password = forms.CharField(
+        label="Contraseña",
+        widget=forms.PasswordInput,
+        error_messages={"required": "Escribe tu contraseña."},
+    )
     sex = forms.ChoiceField(
         label="Sexo",
         choices=[

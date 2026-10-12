@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% comment %}
+The account screens' layout: a white card split into the brand panel and the
+form column from `lg`; on a phone the panel is a short band above the form. A
+page fills `form_header` (its h1 and subtitle), `form_body` and `form_footer`.
+A view passes `auth_variant="long"` for a tall form: a wider card with a
+narrower panel that stays in view while the form scrolls.
+{% endcomment %}
+
+{% block body_class %}min-h-screen auth-backdrop{% endblock %}
+
+{% block body %}
+<main id="main" tabindex="-1" class="flex flex-1 items-center justify-center px-4 py-6 focus:outline-none lg:px-8 lg:py-12">
+  <div data-auth-variant="{{ auth_variant|default:"" }}"
+       class="grid w-full grid-cols-1 rounded-[20px] bg-white p-2 shadow-[0_0_0_1px_var(--color-neutral-200),0_30px_60px_-24px_color-mix(in_srgb,var(--color-primary-900)_35%,transparent)] lg:rounded-3xl lg:p-3 {% if auth_variant == "long" %}max-w-6xl lg:grid-cols-[2fr_3fr]{% else %}max-w-5xl lg:min-h-[620px] lg:grid-cols-2{% endif %}">
+
+    <aside data-auth-panel aria-label="{{ brand.name }}"
+           class="auth-panel{% if auth_variant == "long" %} lg:sticky lg:top-6 lg:h-[calc(100dvh-3rem)] lg:max-h-[760px] lg:self-start{% endif %}">
+      {% include "_logo.html" with css_class="h-9 w-auto self-start text-white lg:h-10" %}
+      <p class="max-w-[40ch] text-sm font-medium text-white/90 lg:max-w-[18ch] lg:text-2xl lg:font-semibold lg:text-balance lg:text-white{% if auth_variant != "long" %} xl:text-3xl{% endif %}">{{ brand.meaning }}</p>
+    </aside>
+
+    <div class="min-w-0 px-4 pt-7 pb-6 lg:flex lg:px-10 lg:py-12 {% if auth_variant == "long" %}lg:items-start{% else %}lg:items-center{% endif %}">
+      <div class="mx-auto w-full {% if auth_variant == "long" %}max-w-lg{% else %}max-w-sm{% endif %}">
+        {% include "_logo.html" with css_class="mb-5 hidden h-8 w-auto text-primary-600 lg:block" %}
+        {% block form_header %}{% endblock %}
+        <div class="mt-8">
+          {% include "_messages.html" %}
+          {% block form_body %}{% endblock %}
+        </div>
+        {% block form_footer %}{% endblock %}
+      </div>
+    </div>
+
+  </div>
+</main>
+{% include "_footer.html" %}
+{% endblock %}

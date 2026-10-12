@@ -52,6 +52,9 @@ def test_anyone_sees_it_in_debug(client):
         "btn-sm",
         "card",
         "pill-marker",
+        "btn-glow",
+        "auth-panel",
+        "data-password-toggle-button",
     ],
 )
 def test_it_shows_every_component(admin_page, name):

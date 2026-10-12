@@ -3,8 +3,9 @@
 ## Status
 
 Current — implemented in `static/css/main.css`, `apps/core` (`brand.py`, `context_processors.py`,
-`forms.py`, `styleguide.py`, `templatetags/brand.py`, `templatetags/icons.py`) and the partials in
-`templates/components/`, `templates/forms/` and `templates/icons/`.
+`forms.py`, `styleguide.py`, `templatetags/brand.py`, `templatetags/icons.py`), the partials in
+`templates/components/`, `templates/forms/` and `templates/icons/`, the account screens' layout
+`templates/base_auth.html`, and the scripts in `static/ts/`.
 
 ## What this does
 
@@ -235,8 +236,9 @@ be compared live on the real screens rather than in a mock-up.
     it, and the survey draws the same shape with its description at body size. The dashboard sets
     the company name beside a `primary-50` panel holding the *Código de empresa*: large
     monospace, so 0/O and 1/I stay apart, with a *Copiar* button (`static/ts/copy.ts`, shown only
-    where the Clipboard API exists) and one line saying colaboradores type it to activate. Employee detail, the confirmation page and the centered screens draw their
-    title inside a card. The report sheet keeps its cover's own title.
+    where the Clipboard API exists) and one line saying colaboradores type it to activate. Employee detail, the confirmation page and the about page draw their
+    title inside a card, and the account screens in their form column. The report sheet keeps its
+    cover's own title.
   - **Keyboard focus.** A base rule draws a 2px `primary-500` outline with a 2px offset on
     `:focus-visible` for every link, button, summary, checkbox and radio, so no template draws its
     own and a mouse click draws nothing.
@@ -253,6 +255,11 @@ be compared live on the real screens rather than in a mock-up.
     Django points the control's `aria-describedby` at the help and error ids, and sets
     `aria-invalid`. A multi-widget (the date of birth) is a `fieldset` with a `legend`, its parts
     stacked on a phone and side by side from `sm`. A checkbox sits before its label in a 44px row.
+    A password control carries a show/hide button inside its right edge: a `btn-text btn-sm` with
+    `eye`, then `eye-slash`, labelled *Mostrar contraseña* or *Ocultar contraseña* and marked with
+    `aria-pressed`. The field template renders it `hidden`, and `static/ts/password_toggle.ts`,
+    loaded on every page, reveals it and flips the input between hidden and plain text, so without
+    JavaScript the control is a plain password field.
     A field that is `required=False` for a widget's sake but validated as required, or one a draft
     may leave blank but publishing needs (the report's, with *Necesario para publicar.* as help),
     sets `shown_as_required = True` to drop *(opcional)*. A form that autofocuses a field mixes in
@@ -270,10 +277,10 @@ be compared live on the real screens rather than in a mock-up.
     the alert take keyboard focus on load (`static/ts/focus_on_load.ts`), for an error a form
     reloaded to report: a role read out on load is not announced reliably, focus is.
   - **Messages.** `templates/_messages.html` draws Django's messages as dismissible alerts at the
-    top of every page; `base_app.html` and `base_centered.html` include it. `error` maps to
+    top of every page; `base_app.html`, `base_auth.html` and `base_centered.html` include it. `error` maps to
     `danger` and `debug` to `info`. The close button (*Cerrar aviso*) is wired by
     `static/ts/dismiss.ts`, loaded on every page, which moves focus to the next message or to
-    `#main`, which both layouts have. Without
+    `#main`, which every layout has. Without
     JavaScript a message stays. Nothing hides on a timer.
   - **Icons.** `{% icon "name" "classes" %}` (`{% load icons %}`) inlines
     `templates/icons/<name>.svg`: Heroicons v2 outline, 24px, MIT (the `LICENSE` sits beside
@@ -284,7 +291,7 @@ be compared live on the real screens rather than in a mock-up.
   - **The styleguide.** `/estilos/` (`StyleguideView`) shows, in the active palette: the color
     scales with their hex values, the type sizes in use, every button variant and size (default,
     disabled, busy), a demo form (`apps/core/styleguide.py`) empty and with errors, every alert
-    tone, the status pills and risk badges, cards, a card link, a link and chips, a likert
+    tone, the status pills and risk badges, cards, the account screens' panel and `btn-glow`, a card link, a link and chips, a likert
     question's answer rows, a dialog, and every icon by name. It is shown to whoever
     may switch palettes (`brand.can_switch_palette`); everyone else gets a 404.
   - **Navigation.** Every signed-in page has one header row (`base_app.html`): the logo, the
@@ -343,8 +350,34 @@ be compared live on the real screens rather than in a mock-up.
     - a `btn-secondary` action
 
     The empty roster offers *Limpiar filtros* when it is filtered.
+  - **Account screens.** The ways to sign in (*Código por correo*, *Revisa tu correo*,
+    *Contraseña*, *Primer ingreso*), *Cambia tu contraseña* and *Activa tu cuenta* extend
+    `templates/base_auth.html`: a white card on `auth-backdrop`, the page's `neutral-100` tinted by
+    a `primary-100` glow at the top left and an `accent-100` glow at the bottom right. The card has
+    a 24px radius, a `neutral-200` ring and one large shadow tinted `primary-900`, and splits into
+    two columns from `lg`.
+    - **The panel:** `auth-panel` is the left column, inset 12px with a 16px radius. Its gradient
+      is layered from the palette's variables, with a `primary-900` pool at the bottom left under
+      the white text, `accent-300` and `accent-500` glows, a blurred `primary-700` shape and a
+      faint film grain, so it repaints with the palette. It holds the logo in white at the top
+      left and `brand.meaning` at the bottom, at `text-2xl` weight 600, `text-3xl` from `xl`,
+      wrapping in balanced lines.
+    - **The form column:** the logo in `primary-600` from `lg`, then the page's `h1` at
+      `text-xl` with a `text-sm` subtitle, the messages, the form and whatever follows it. The
+      blocks are `form_header`, `form_body` and `form_footer`. The main action is
+      `btn btn-primary btn-glow`: `btn-glow` adds a soft `primary-600` shadow beneath it and is
+      used only here.
+    - **Other ways in:** the three sign-in forms end with *Otras formas de ingresar*
+      (`accounts/_signin_alternatives.html`, given `current`). This is a heading between two
+      `neutral-200` rules over compact `card card-link shadow-none` rows for the other two
+      methods, each with a `primary-50` icon tile (`envelope`, `ticket`, `key`), a title, a line
+      and a chevron. *Revisa tu correo* offers *pide otro código* and *Usa otro correo* instead.
+    - **The long variant:** a view passes `auth_variant="long"` for a tall form (*Activa tu
+      cuenta*). The card widens to `max-w-6xl` with a 2:3 split, the form column to `max-w-lg`
+      starting at the top, and the panel becomes one screen tall and sticky, so the logo and the
+      name stay in view while the form scrolls.
   - **Error pages.** `templates/404.html`, `403.html` and `500.html` extend `base_error.html`,
-    the centered card of the login screens. Each holds:
+    a centered card. Each holds:
     - the logo
     - a `text-xl` title and one sentence (*No encontramos esta página*, *No tienes acceso a esta
       página*, *No pudimos cargar esta página*)
@@ -409,8 +442,13 @@ The header is one 56px row on a phone: the logo, the section switcher, the user 
 open below it; the section panel is 14rem wide and aligned to the switcher's left edge. The logo
 is a 44px target. Company context and
 back links sit at the top of the page, not in the header. A dialog keeps a 16px gutter on each
-side and scrolls inside itself when it is taller than 85% of the screen. Error pages are the
-centered login card.
+side and scrolls inside itself when it is taller than 85% of the screen. Error pages are a
+centered card.
+
+The account screens are one card on a phone: the panel is a short band at the top holding the
+logo and `brand.meaning` as one `text-sm` paragraph, and the form follows below it. The form
+column's own logo shows only from `lg`, where the panel becomes the left column. The *Otras
+formas de ingresar* rows are full width and at least 44px tall.
 
 The dashboard's stat cards sit two to a row on a phone and four from `lg`. Each survey on it is
 one card: its progress on top and, for a viewer who answers it, a *Tus respuestas* strip under a
@@ -498,6 +536,12 @@ spreads them across one row from `sm`.
   it. The results page lists statistics rows together, so there each keeps its name.
 - Decision: A closed survey explains itself in text, not a tooltip.
   Reason: A hover tooltip does not exist on a phone.
+- Decision: The password's show/hide button is rendered by the field template and revealed by a
+  script.
+  Reason: Every password field gets it with no per-form code, and a page whose script fails never
+  shows a button that does nothing.
+- Decision: The account panel's gradient is built from the palette's variables, not an image.
+  Reason: It repaints with the palette, and replacing the palette stays one edit to one CSS file.
 - Decision: Heroicons are copied in as SVG files, not installed.
   Reason: The app uses about ten icons; a file per icon needs no npm dependency, and the tag
   inlines it so it takes the text color.
@@ -541,8 +585,12 @@ spreads them across one row from `sm`.
   state by hand.
 - Tests cover the component classes in the built CSS, the field template (order, every error,
   *(opcional)*, the ARIA wiring, the fieldset, the admin left alone), the icon tag, each alert
-  tone and messages on both layouts, and the styleguide's access and contents. The busy, dismiss
-  and focus-on-load scripts have no test runner and are checked in the browser. No test reads the
+  tone and messages on the layouts, and the styleguide's access and contents. Tests check that
+  each account screen renders in `base_auth.html` with its panel, that the long variant is
+  activation's (its blocked states included), which other ways in each sign-in form offers, and
+  that a password field, and only a password field, renders its show/hide button `hidden`, after
+  the control and before the errors. The busy, dismiss, focus-on-load and password-toggle scripts
+  have no test runner and are checked in the browser. No test reads the
   copy against **Voz**; wording is checked in review.
 - Tests cover the context processor and the switch: cookie validation and the fallback, the
   switch rendered for admins only and never on the survey form, the return-address check, and
