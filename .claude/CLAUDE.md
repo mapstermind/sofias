@@ -161,8 +161,8 @@ sudo apt install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0
 ## Environment Variables
 
 Configuration is loaded from `.env` at the project root via `python-dotenv`. Key variables:
-- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` (all default to `sofias`/`localhost`/`5432`)
-- `SECRET_KEY`
+- `SECRET_KEY` and `DB_PASSWORD` — **required, no default**: settings raise `ImproperlyConfigured` at startup when either is missing or empty (`required_env` in `config/settings.py`)
+- `DB_NAME`, `DB_USER`, `DB_HOST`, `DB_PORT` (default to `sofias`/`sofias`/`localhost`/`5432`)
 - `DEBUG` (default: `True`)
 - `ALLOWED_HOSTS` (comma-separated, default: empty)
 

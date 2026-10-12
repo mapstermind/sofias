@@ -64,14 +64,15 @@ Settings are read from `.env` at the project root. Start from the example:
 cp .env.example .env
 ```
 
-Then edit it:
+Then edit it. `SECRET_KEY` and `DB_PASSWORD` have no default: if either is missing or empty, every `manage.py` command stops with an error naming it.
 
 | Variable | What to set |
 |---|---|
-| `SECRET_KEY` | A long random string. Generate one with `python -c "import secrets; print(secrets.token_urlsafe(50))"`. |
+| `SECRET_KEY` | **Required.** A long random string. Generate one with `python -c "import secrets; print(secrets.token_urlsafe(50))"`. |
 | `DEBUG` | `True` on a development machine, `False` anywhere real users connect. |
 | `ALLOWED_HOSTS` | Comma-separated hostnames/IPs the server answers to. Required when `DEBUG=False`. To reach a development server from another device, add this machine's LAN IP. |
-| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` | The database from step 2. **`DB_PASSWORD` in the example is a placeholder** — replace it with the password you created, or the connection fails. |
+| `DB_PASSWORD` | **Required.** The password from step 2. The example's value is a placeholder — replace it, or the connection fails. |
+| `DB_NAME`, `DB_USER`, `DB_HOST`, `DB_PORT` | The database from step 2. They default to `sofias`, `sofias`, `localhost` and `5432`. |
 | `EMAIL_BACKEND` | `django.core.mail.backends.console.EmailBackend` prints every email to the terminal running the server. `django.core.mail.backends.smtp.EmailBackend` sends real email. |
 | `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` | The SMTP server, used only with the SMTP backend. `EMAIL_USE_TLS` accepts `True` or `1`. |
 | `DEFAULT_FROM_EMAIL` | The sender address on login codes. |

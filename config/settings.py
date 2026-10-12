@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +21,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / ".env")
 
+
+def required_env(name):
+    """A secret with no safe default: refuse to start rather than fall back to one."""
+    value = os.environ.get(name)
+    if not value:
+        raise ImproperlyConfigured(
+            f"{name} is not set. Add it to .env (see .env.example)."
+        )
+    return value
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY", "django-insecure-quey9!al^q$lavft72m5bnk5@$_)vp1p-e=^bov(e@&&ynq6y3"
-)
+SECRET_KEY = required_env("SECRET_KEY")
 
 DEBUG = os.environ.get("DEBUG", "True").lower() in ("true", "1", "yes")
 
@@ -120,7 +130,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("DB_NAME", "sofias"),
         "USER": os.environ.get("DB_USER", "sofias"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", "sofias"),
+        "PASSWORD": required_env("DB_PASSWORD"),
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
