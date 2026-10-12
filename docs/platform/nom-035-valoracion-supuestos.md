@@ -153,3 +153,12 @@ vista completa revelaría a quienes quedaron fuera.
   ni reporte.
 - **Lo que necesitamos:** confirmar que así debe ser, o si un grupo con varias
   razones sociales necesita verse también en conjunto (reunión del 3 de agosto).
+
+## 10. Edad mínima para activar una cuenta 🟡
+
+- **Supuesto actual:** la fecha de nacimiento debe corresponder a una edad
+  **entre 15 y 99 años**. Usamos 15 porque es la edad mínima legal para trabajar
+  en México; es el único límite que podíamos fijar sin preguntar.
+- **Lo que necesitamos:** confirmar si la plantilla de los clientes es de
+  **18 años o más** por política. Si es así, subimos el mínimo a 18; hoy una
+  persona de 16 años pasaría la validación.

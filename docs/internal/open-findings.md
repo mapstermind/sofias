@@ -31,33 +31,3 @@ presentation-only work
 properly means picking Spanish names, updating `roles.py` and every string
 match, migrating the existing rows, and deciding whether the importer keeps
 accepting the English spellings.
-
----
-
-## 2. The minimum activation age of 15 is a legal floor, not a client policy 🟡
-
-**Where:** `apps/accounts/models.py` (`MIN_ACTIVATION_AGE`), enforced by
-`UserProfile.clean()` and by `ProfileActivationForm.clean_date_of_birth()`, and
-reflected in the Año dropdown's range.
-
-**What:** Fecha de nacimiento must fall in a 15-to-99-year window. 15 is Mexico's
-legal minimum working age, chosen because it is the only bound defensible without
-asking anyone. If the client's workforce is 18+ by policy, the floor should rise —
-a 16-year-old would currently pass validation.
-
-**Why it was left alone:** it needs the domain expert, not a developer. Raising it
-is a one-constant change plus its two boundary tests; the Año dropdown follows from
-the same constant.
-
----
-
-*Finding 4 — reading NOM-035 results by sex and age — is **resolved** by the
-results page, with its minimum group size of 5 awaiting the
-domain expert's confirmation. See
-[`docs/platform/nom-035-results-dashboard.md`](../platform/nom-035-results-dashboard.md)
-and [`docs/platform/nom-035-valoracion-supuestos.md`](../platform/nom-035-valoracion-supuestos.md).*
-
-*Finding 5 — grouping the employee roster by localidad → área — is **resolved**,
-by a different design than it sketched: the roster is narrowed with a search
-box, four filters and a sort control rather than split into sections. See
-[`docs/platform/employee-roster.md`](../platform/employee-roster.md).*
