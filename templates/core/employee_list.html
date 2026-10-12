@@ -2,7 +2,7 @@
 {% load icons %}
 {% load static %}
 
-{% block title %}Colaboradores — {{ company.name }} | {{ brand.name }}{% endblock %}
+{% block title %}Colaboradores | {{ company.name }} | {{ brand.name }}{% endblock %}
 
 
 {% block content %}
@@ -141,7 +141,7 @@
                         <span class="text-neutral-500">({{ prog.assignment.get_variant_display }})</span>
                       </span>
                       <span class="shrink-0 text-sm text-neutral-500 tabular-nums">
-                        <span class="font-semibold text-neutral-900">{{ prog.percent }}%</span>
+                        <span class="font-semibold text-neutral-900">{{ prog.percent }} %</span>
                         <span aria-hidden="true">·</span>
                         {{ prog.answered }}/{{ prog.total }}
                       </span>
@@ -165,9 +165,9 @@
     </div>
   {% else %}
     {% if roster_query.is_narrowed %}
-      {% include "components/_empty.html" with body="Ningún colaborador coincide con la búsqueda." icon="users" action_url=clear_url action_label="Limpiar filtros" %}
+      {% include "components/_empty.html" with body="Ningún colaborador coincide con la búsqueda o los filtros." icon="users" action_url=clear_url action_label="Limpiar filtros" %}
     {% else %}
-      {% with body="Aún no hay colaboradores vinculados a "|add:company.name|add:"." %}{% include "components/_empty.html" with body=body icon="users" %}{% endwith %}
+      {% with body="Aún no hay colaboradores en "|add:company.name|add:"." %}{% include "components/_empty.html" with body=body icon="users" %}{% endwith %}
     {% endif %}
   {% endif %}
 

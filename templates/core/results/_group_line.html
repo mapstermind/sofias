@@ -7,7 +7,7 @@
     </a>
   {% endfor %}
 </div>
-<p data-group-line class="mt-2 text-sm text-neutral-600">
+<p data-group-line tabindex="-1" class="mt-2 text-sm text-neutral-600 focus:outline-none">
   {% for pill in pills %}{{ pill.label }}{% if not forloop.last %} · {% endif %}{% empty %}Toda la empresa{% endfor %}
   — <span class="font-semibold text-neutral-900">{{ results.size }}</span> cuestionario{{ results.size|pluralize }}
 </p>

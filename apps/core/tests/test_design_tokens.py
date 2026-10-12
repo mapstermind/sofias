@@ -426,3 +426,15 @@ def test_the_small_text_guard_reads_past_tags_and_variables(markup):
     _, inner = SMALL_ELEMENT.search(markup).groups()
     text = _reading_text(inner)
     assert len(text.split()) >= 5 or text.endswith(".")
+
+
+def test_tab_titles_use_the_pipe_separator():
+    """Tab titles read `Página | Contexto | Marca` (design-system.md, Voz)."""
+    hits = []
+    for path in TEMPLATES:
+        match = re.search(
+            r"{% block title %}(.*?){% endblock %}", path.read_text(), re.S
+        )
+        if match and " — " in match.group(1):
+            hits.append(str(path.relative_to(REPO_ROOT)))
+    assert not hits, "use | in the title:\n" + "\n".join(hits)

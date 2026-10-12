@@ -42,8 +42,8 @@ def test_the_reference_code_sits_beside_the_title_with_a_copy_button(
     header hands it out, ready to copy."""
     viewer("Principal Exec")
     html = _get(client)
-    header = html[html.index("<h1") : html.index("Colaboradores registrados")]
-    assert ">Código de referencia</p>" in header
+    header = html[html.index("<h1") : html.index("Cuentas activadas")]
+    assert ">Código de empresa</p>" in header
     assert "data-copy-source" in header and company.reference_code in header
     assert f'data-copy="{company.reference_code}" hidden' in header
     assert "Tus colaboradores lo escriben al activar su cuenta." in header
@@ -55,7 +55,7 @@ def test_the_registered_stat_links_to_the_roster(client, viewer):
     html = _get(client)
     roster = reverse("core:company_employee_list")
     card = html[html.index(f'href="{roster}"') :]
-    assert "Colaboradores registrados" in card[: card.index("</a>")]
+    assert "Cuentas activadas" in card[: card.index("</a>")]
 
 
 def test_your_answer_shows_for_a_viewer_who_takes_surveys(
@@ -63,7 +63,7 @@ def test_your_answer_shows_for_a_viewer_who_takes_surveys(
 ):
     viewer("Principal Exec")
     html = _get(client)
-    assert "Tu respuesta" in html
+    assert "Tus respuestas" in html
     assert "Responder" in html
 
 
@@ -76,7 +76,7 @@ def test_your_answer_is_absent_for_an_admin(
     html = client.get(
         reverse("core:company_dashboard_for", args=[company.reference_code])
     ).content.decode()
-    assert "Tu respuesta" not in html
+    assert "Tus respuestas" not in html
 
 
 def test_the_threshold_tick_has_a_visible_caption(
@@ -87,3 +87,11 @@ def test_the_threshold_tick_has_a_visible_caption(
     viewer("Principal Exec")
     html = _get(client)
     assert "Mínimo representativo:" in html
+
+
+def test_the_cochran_note_counts_every_member(client, viewer):
+    """N is every member, activated or not: the formula reads member_count."""
+    viewer("Principal Exec")
+    html = _get(client)
+    assert "es el total de colaboradores de la empresa" in html
+    assert "Código de empresa" in html and "Cuentas activadas" in html

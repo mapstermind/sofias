@@ -24,7 +24,7 @@ def test_assignment_label_forms():
     created = date(2026, 1, 12)
     assert (
         assignment_label("Guía III", None, None, created)
-        == "Guía III · creada 12 ene 2026 · sin respuestas"
+        == "Guía III · creada 12 ene 2026 · sin cuestionarios contestados"
     )
     assert (
         assignment_label("Guía III", date(2026, 1, 12), date(2026, 2, 28), created)
@@ -64,7 +64,7 @@ def test_assignment_options_only_nom035_newest_first(
     assert options[1].label == "Guía III · aplicada 12 ene – 28 feb 2026"
     assert options[1].scored_count == 2
     assert options[0].scored_count == 0
-    assert options[0].label.endswith("sin respuestas")
+    assert options[0].label.endswith("sin cuestionarios contestados")
 
 
 def test_select_assignment_prefers_request_then_latest_scored(

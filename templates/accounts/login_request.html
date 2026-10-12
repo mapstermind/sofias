@@ -1,16 +1,16 @@
 {% extends "base_centered.html" %}
 {% load icons %}
 
-{% block title %}Inicio Sesión | {{ brand.name }}{% endblock %}
+{% block title %}Iniciar sesión | {{ brand.name }}{% endblock %}
 
 {% block brand_line %}
   <p class="-mt-3 mb-6 text-sm text-neutral-600">{{ brand.meaning }}</p>
 {% endblock %}
 
 {% block card_header %}
-  <h1 class="text-xl font-bold text-neutral-900">Inicio de sesión por correo</h1>
+  <h1 class="text-xl font-bold text-neutral-900">Iniciar sesión con un código por correo</h1>
   <p class="mt-2 text-sm text-neutral-600">
-    Usa esta opción si puedes recibir correos de {{ brand.name }}. Te enviaremos un código a tu correo institucional.
+    Te enviaremos un código de 6 dígitos a tu correo de trabajo.
   </p>
 {% endblock %}
 
@@ -21,14 +21,14 @@
       <a href="{% url 'accounts:setup_access_code_login' %}" class="card card-link group px-4 py-4">
         <span class="min-w-0 flex-1">
           <span class="block text-sm font-semibold text-primary-700">Primer ingreso</span>
-          <span class="mt-1 block text-base font-semibold text-neutral-900">Tengo un código temporal de acceso</span>
-          <span class="mt-1 block text-sm text-neutral-600">Usa esta opción si tu administrador o RH te entregó un código de 9 dígitos.</span>
+          <span class="mt-1 block text-base font-semibold text-neutral-900">Tengo un código de acceso</span>
+          <span class="mt-1 block text-sm text-neutral-600">Usa esta opción si quien te invitó te entregó un código de acceso de 9 dígitos.</span>
         </span>
         {% icon "chevron-right" "size-5 shrink-0 text-neutral-400 transition-colors group-hover:text-primary-600" %}
       </a>
       <a href="{% url 'accounts:password_login' %}" class="card card-link group px-4 py-4">
         <span class="min-w-0 flex-1">
-          <span class="block text-sm font-semibold text-neutral-700">Ingresar con contraseña</span>
+          <span class="block text-sm font-semibold text-neutral-700">Iniciar sesión con contraseña</span>
           <span class="mt-1 block text-base font-semibold text-neutral-900">Ya creé mi contraseña</span>
           <span class="mt-1 block text-sm text-neutral-600">Usa esta opción si ya hiciste tu primer ingreso y creaste una contraseña.</span>
         </span>
@@ -39,9 +39,9 @@
 {% endblock %}
 
 {% block card_body %}
-  <form method="post" novalidate data-loading>
+  <form method="post" novalidate>
     {% csrf_token %}
     {{ form }}
-    <button type="submit" class="btn btn-primary mt-8 w-full">Enviar código de inicio de sesión</button>
+    <button type="submit" class="btn btn-primary mt-8 w-full">Enviarme un código</button>
   </form>
 {% endblock %}

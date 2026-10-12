@@ -32,7 +32,7 @@ class Report(models.Model):
         "personal presencial", null=True, blank=True
     )
     headcount_home_office = models.PositiveIntegerField(
-        "personal en home office", null=True, blank=True
+        "personal en teletrabajo", null=True, blank=True
     )
     headcount_hybrid = models.PositiveIntegerField(
         "personal híbrido", null=True, blank=True
@@ -78,7 +78,7 @@ class ReportSignatory(models.Model):
         related_name="signatories",
         verbose_name="reporte",
     )
-    title = models.CharField("cargo", max_length=200)
+    title = models.CharField("puesto", max_length=200)
     name = models.CharField("nombre", max_length=200)
     order = models.PositiveSmallIntegerField("orden", default=0)
 

@@ -24,11 +24,12 @@
 @source inline("max-w-5xl max-w-6xl");
 
 /* ── Figtree ────────────────────────────────────────────────────────────────
-   Variable TrueType, weights 300–900 (SIL OFL, static/fonts/figtree/OFL.txt).
-   base.html preloads the upright file. */
+   Variable WOFF2, weights 300–900 (SIL OFL, static/fonts/figtree/OFL.txt).
+   base.html preloads the upright file. The TTFs beside them are the PDF's:
+   WeasyPrint reads report.css, which names them. */
 @font-face {
   font-family: "Figtree";
-  src: url("../fonts/figtree/Figtree-VariableFont_wght.ttf") format("truetype");
+  src: url("../fonts/figtree/Figtree-VariableFont_wght.woff2") format("woff2");
   font-weight: 300 900;
   font-style: normal;
   font-display: swap;
@@ -36,7 +37,7 @@
 
 @font-face {
   font-family: "Figtree";
-  src: url("../fonts/figtree/Figtree-Italic-VariableFont_wght.ttf") format("truetype");
+  src: url("../fonts/figtree/Figtree-Italic-VariableFont_wght.woff2") format("woff2");
   font-weight: 300 900;
   font-style: italic;
   font-display: swap;
@@ -203,9 +204,23 @@
    One keyboard focus ring for every interactive element, so no template has to
    draw its own. `focus-visible` only: a mouse click draws nothing. */
 @layer base {
-  :where(a, button, summary, [role="button"], input[type="checkbox"], input[type="radio"]):focus-visible {
+  :where(a, button, summary, [role="button"], input[type="checkbox"], input[type="radio"], [data-focus-on-load]):focus-visible {
     outline: 2px solid var(--color-primary-500);
     outline-offset: 2px;
+  }
+
+  /* The survey's action bar is fixed to the bottom below `lg`; the scroll
+     padding keeps a question reached by Tab or a link above it. */
+  @media (width < 64rem) {
+    html:has(#survey-actions) {
+      scroll-padding-bottom: 10rem;
+    }
+  }
+
+  /* The results body while a new view loads (results_dashboard.ts). */
+  #results-body[aria-busy="true"] {
+    opacity: 0.5;
+    transition: opacity 150ms;
   }
 }
 

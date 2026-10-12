@@ -56,5 +56,5 @@ def test_the_empty_roster_offers_to_clear_its_filters(
     viewer.groups.add(bootstrap_groups["Principal Exec"])
     client.force_login(viewer)
     html = client.get("/tablero-empresa/colaboradores/?q=zzzz-nadie").content.decode()
-    assert "Ningún colaborador coincide con la búsqueda." in html
+    assert "Ningún colaborador coincide con la búsqueda o los filtros." in html
     assert "Limpiar filtros" in html and "border-dashed" in html

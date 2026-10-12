@@ -8,6 +8,7 @@ from django.db import transaction
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import redirect, render
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from apps.accounts.emails import send_otp_email
 from apps.accounts.forms import (
@@ -27,27 +28,44 @@ from apps.accounts.models import (
 )
 
 _RATE_LIMIT_SECONDS = 30
+OTP_INVALID = (
+    "El código no es correcto o ya venció. Revisa los 6 dígitos o pide uno nuevo."
+)
 
 
-def _redirect_after_login(user):
+# Where a signed-out visitor was headed, kept in the session across the
+# sign-in pages (the emailed code alone takes two) and the steps that follow
+# them: a new password, then activation.
+_NEXT_KEY = "login_next"
+
+
+def _remember_next(request):
+    """Keep `?next=` for after sign-in, if it points at this site."""
+    target = request.GET.get("next")
+    if target and url_has_allowed_host_and_scheme(
+        target, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        request.session[_NEXT_KEY] = target
+
+
+def _redirect_after_login(user, request):
     if user.must_change_password:
         return redirect("accounts:change_password")
 
-    if user.groups.filter(name="Admins").exists():
-        return redirect(settings.LOGIN_REDIRECT_URL)
+    if not user.groups.filter(name="Admins").exists():
+        try:
+            profile = user.profile
+        except UserProfile.DoesNotExist:
+            return redirect("accounts:setup_profile")
+        if not profile.is_activated:
+            return redirect("accounts:setup_profile")
 
-    try:
-        profile = user.profile
-    except UserProfile.DoesNotExist:
-        return redirect("accounts:setup_profile")
-
-    if not profile.is_activated:
-        return redirect("accounts:setup_profile")
-    return redirect(settings.LOGIN_REDIRECT_URL)
+    return redirect(request.session.pop(_NEXT_KEY, None) or settings.LOGIN_REDIRECT_URL)
 
 
 def request_otp(request):
     """Step 1 — user enters their email and receives a 6-digit code."""
+    _remember_next(request)
     if request.user.is_authenticated:
         return redirect(settings.LOGIN_REDIRECT_URL)
 
@@ -67,14 +85,14 @@ def request_otp(request):
     if EmailOTP.objects.filter(email=email, created_at__gte=cutoff).exists():
         form.add_error(
             None,
-            f"Un código fue enviado recientemente. Por favor, espera {_RATE_LIMIT_SECONDS} segundos antes de solicitar uno nuevo.",
+            f"Ya te enviamos un código hace unos segundos. Revisa tu correo o espera {_RATE_LIMIT_SECONDS} segundos para pedir otro.",
         )
         return render(request, "accounts/login_request.html", {"form": form})
 
     if not User.objects.filter(email=email).exists():
         form.add_error(
             None,
-            "No se encontró una cuenta con este correo electrónico. Si esto es un error, por favor contacta a tu administrador.",
+            "No hay ninguna cuenta con este correo. Revisa que esté bien escrito o avisa a quien te invitó.",
         )
         return render(request, "accounts/login_request.html", {"form": form})
 
@@ -89,7 +107,8 @@ def request_otp(request):
     except SMTPException:
         otp.delete()
         form.add_error(
-            None, "No pudimos enviar el correo. Por favor, intenta de nuevo."
+            None,
+            "No pudimos enviar el código a tu correo. Intenta de nuevo en unos minutos.",
         )
         return render(request, "accounts/login_request.html", {"form": form})
 
@@ -99,6 +118,7 @@ def request_otp(request):
 
 def password_login(request):
     """Fallback login for pre-created users with password auth enabled."""
+    _remember_next(request)
     if request.user.is_authenticated:
         return redirect(settings.LOGIN_REDIRECT_URL)
 
@@ -115,13 +135,14 @@ def password_login(request):
 
     user = form.cleaned_data["user"]
     login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-    return _redirect_after_login(user)
+    return _redirect_after_login(user, request)
 
 
 def setup_access_code_login(request):
     """First login for users who received an internal setup access code."""
+    _remember_next(request)
     if request.user.is_authenticated:
-        return _redirect_after_login(request.user)
+        return _redirect_after_login(request.user, request)
 
     if request.method == "GET":
         return render(
@@ -156,7 +177,11 @@ def setup_access_code_login(request):
             or not user.is_active
             or not access_code.is_valid(code)
         ):
-            form.add_error(None, "El código temporal de acceso es inválido.")
+            form.add_error(
+                None,
+                "El correo y el código de acceso no coinciden, o el código ya se usó. "
+                "Revisa ambos o pide uno nuevo a quien te invitó.",
+            )
             return render(
                 request,
                 "accounts/login_setup_access_code.html",
@@ -202,7 +227,7 @@ def verify_otp(request):
     code = form.cleaned_data["code"]
 
     if submitted_email != email:
-        form.add_error(None, "El código es inválido o ha expirado.")
+        form.add_error(None, OTP_INVALID)
         return _render_verify_otp(request, form, email)
 
     dev_bypass = settings.DEBUG and code == "000000"
@@ -216,7 +241,7 @@ def verify_otp(request):
             )
 
             if otp is None or not otp.is_valid():
-                form.add_error(None, "El código es inválido o ha expirado.")
+                form.add_error(None, OTP_INVALID)
                 return _render_verify_otp(request, form, email)
 
         user = User.objects.get(email=submitted_email)
@@ -232,14 +257,14 @@ def verify_otp(request):
     except KeyError:
         pass
 
-    return _redirect_after_login(user)
+    return _redirect_after_login(user, request)
 
 
 @login_required
 def change_password(request):
     """Required password change for users who must create a permanent password."""
     if not request.user.must_change_password:
-        return _redirect_after_login(request.user)
+        return _redirect_after_login(request.user, request)
 
     if request.method == "GET":
         return render(
@@ -254,7 +279,7 @@ def change_password(request):
 
     form.save()
     update_session_auth_hash(request, request.user)
-    return _redirect_after_login(request.user)
+    return _redirect_after_login(request.user, request)
 
 
 @login_required
@@ -314,7 +339,7 @@ def setup_profile(request):
     if reference_code != company.reference_code:
         form.add_error(
             "reference_code",
-            "El código no coincide con tu empresa asignada. Por favor, verifica con tu administrador.",
+            "Ese código no corresponde a tu empresa. Revísalo o pídelo de nuevo a quien te invitó.",
         )
         return render(request, "accounts/profile_setup.html", {"form": form})
 
@@ -346,7 +371,7 @@ def setup_profile(request):
             ]
         )
 
-    return redirect(settings.LOGIN_REDIRECT_URL)
+    return _redirect_after_login(request.user, request)
 
 
 def logout_view(request):

@@ -1,7 +1,7 @@
 {% extends "base_app.html" %}
 {% load icons %}
 
-{% block title %}Mis Encuestas | {{ brand.name }}{% endblock %}
+{% block title %}Mis encuestas | {{ brand.name }}{% endblock %}
 
 {% block content %}
   {% with subtitle="Encuestas asignadas a "|add:company.name|add:"." %}
@@ -31,7 +31,7 @@
                 <p class="mt-3 text-sm text-neutral-600">Ya enviaste tus respuestas.</p>
               {% else %}
                 <span class="pill pill-marker mt-2 bg-neutral-100 text-neutral-600 ring-1 ring-inset ring-neutral-500/20">Cerrada</span>
-                <p class="mt-3 text-sm text-neutral-600">La encuesta cerró; ya no puedes ver tus respuestas.</p>
+                <p class="mt-3 text-sm text-neutral-600">La encuesta cerró antes de que enviaras tus respuestas.</p>
               {% endif %}
             </div>
           {% endif %}
@@ -39,6 +39,6 @@
       {% endfor %}
     </div>
   {% else %}
-    {% include "components/_empty.html" with body="No hay encuestas asignadas a tu empresa aún." icon="clipboard-document-list" %}
+    {% include "components/_empty.html" with body="Aún no tienes encuestas por responder. Cuando tu empresa te asigne una, aparecerá aquí." icon="clipboard-document-list" %}
   {% endif %}
 {% endblock %}

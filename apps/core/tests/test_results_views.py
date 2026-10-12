@@ -14,7 +14,7 @@ from apps.surveys.models import Survey, SurveyAssignment
 
 pytestmark = pytest.mark.django_db
 
-MESSAGE = "Grupo demasiado pequeño para mostrar resultados sin identificar a las personas (mínimo 5)"
+MESSAGE = "Grupo muy pequeño: ocultamos sus resultados para no identificar a nadie (mínimo 5 personas)."
 
 
 @pytest.fixture
@@ -169,7 +169,8 @@ def test_filtered_empty_group_blames_the_filters(client, setup, make_user_with_p
 
 
 class _SummaryContents(HTMLParser):
-    """Tags opened inside each <summary>, and every tabindex on the page."""
+    """Tags opened inside each <summary>, and every tabindex that puts an element
+    in the tab order (`-1`, focusable only by script, does not)."""
 
     def __init__(self):
         super().__init__()
@@ -178,7 +179,7 @@ class _SummaryContents(HTMLParser):
         self.tabindexes = 0
 
     def handle_starttag(self, tag, attrs):
-        if any(name == "tabindex" for name, _ in attrs):
+        if any(name == "tabindex" and value != "-1" for name, value in attrs):
             self.tabindexes += 1
         if tag == "summary":
             self.depth += 1
@@ -253,7 +254,7 @@ def test_the_page_sections_are_headings_in_sentence_case(
     assert ">Empresa</h2>" in html
     assert ">Por categoría</h2>" in html
     assert "Distribución de la calificación final" in html
-    assert "Estadística de la calificación final" in html
+    assert "Estadísticas de la calificación final" in html
     assert "Guía I: acontecimientos traumáticos severos" in html
 
 
@@ -302,3 +303,13 @@ def test_one_localidad_offers_no_localidad_filter(
     make_location(setup["company"], name="Matriz")
     html = _results_page(client, setup, make_user_with_profile)
     assert 'name="localidad"' not in html
+
+
+def test_a_filtered_empty_group_offers_to_clear(client, setup, make_user_with_profile):
+    add_respondents(setup, make_user_with_profile, 6)
+    client.force_login(setup["exec"])
+    body = client.get(
+        reverse("core:company_results") + f"?area={setup['area'].pk}"
+    ).content.decode()
+    empty = body[body.index("Ningún cuestionario coincide") :]
+    assert "Limpiar filtros" in empty[:600]

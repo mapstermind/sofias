@@ -4,7 +4,7 @@
 {% block title %}Empresas | {{ brand.name }}{% endblock %}
 
 {% block content %}
-  {% include "components/_page_header.html" with title="Empresas" subtitle="Selecciona una empresa para ver su tablero con análisis." %}
+  {% include "components/_page_header.html" with title="Empresas" subtitle="Selecciona una empresa para ver su tablero." %}
 
   {% if companies %}
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -25,7 +25,7 @@
                 <dd class="mt-0.5 text-lg font-semibold text-neutral-900 tabular-nums">{{ company.active_assignment_count }}</dd>
               </div>
               <div>
-                <dt class="text-sm text-neutral-600">Respuestas</dt>
+                <dt class="text-sm text-neutral-600">Cuestionarios contestados</dt>
                 <dd class="mt-0.5 text-lg font-semibold text-neutral-900 tabular-nums">{{ company.completed_submission_count }}</dd>
               </div>
             </dl>
@@ -35,6 +35,7 @@
       {% endfor %}
     </div>
   {% else %}
-    {% include "components/_empty.html" with body="No hay empresas creadas aún." icon="building-office-2" %}
+    {% url "admin:accounts_company_add" as add_company_url %}
+    {% include "components/_empty.html" with body="Aún no hay empresas. Dalas de alta en el panel de administración." icon="building-office-2" action_url=add_company_url action_label="Agregar empresa" %}
   {% endif %}
 {% endblock %}

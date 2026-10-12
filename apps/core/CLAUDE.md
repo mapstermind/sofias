@@ -29,11 +29,11 @@ All are `LoginRequiredMixin` class-based views that authorize via the custom per
 assignment the results page opens on, from `select_assignment(assignment_options(company), None)`
 — and links to the results page. The dashboard holds numbers, not links the
 header already offers: its other stat cards link only where they carry a figure
-(*Colaboradores registrados* to the roster, *Mínimo representativo* to the
+(*Cuentas activadas* to the roster, *Mínimo representativo* to the
 Cochran dialog).
 
 `CompanyDashboardView` computes `can_take_surveys` — the permission **plus**
-membership in the company being viewed — and the *Tu respuesta* strip on each
+membership in the company being viewed — and the *Tus respuestas* strip on each
 survey card is gated on it. Do not gate that strip on `perms.accounts.can_take_assigned_surveys`: a
 superuser passes every `perms.*` check in a template whatever their group, which
 would show an admin a link `apps.surveys.views._respondent_company` refuses.
@@ -57,7 +57,10 @@ outside click, and `static/ts/dialog.ts` opens and closes every `<dialog class="
 from `data-dialog-*` attributes. `base.html` loads both. **Run `npm run build:js` and
 commit `static/js/` when touching them.** `templates/components/_empty.html` is the
 empty state. `404.html` and `403.html` render through Django's handlers;
-`views.server_error` is `handler500` and renders `500.html` with no database query.
+`views.server_error` is `handler500` and renders `500.html` with no database query;
+`views.csrf_failure` is `CSRF_FAILURE_VIEW` and renders `403_csrf.html` (*Recargar*).
+`base.html` opens every page with the *Saltar al contenido* skip link and loads
+`static/ts/focus_on_load.ts`, which focuses an alert included with `focus=True`.
 
 A page opens with `templates/components/_page_header.html` (its one `h1` and an
 optional subtitle) unless its title sits inside a card (employee detail, the
@@ -117,6 +120,10 @@ wrapper in `main.css`, so widget `attrs` carry no styling classes —
 `test_design_tokens.py` fails one that does. `django.forms` is in
 `INSTALLED_APPS` so the `TemplatesSetting` renderer finds Django's widget
 templates; none is overridden, which is what leaves the admin untouched.
+`forms.ErrorFocusMixin` moves a form's `autofocus` to its first field in error
+after a failed submit (a form-wide error leaves it alone);
+`forms.LabelledSelectDateWidget` is `SelectDateWidget` with each select named
+*Día*, *Mes*, *Año* for a screen reader. The accounts forms use both.
 
 `{% icon "name" "classes" label="…" %}` (`{% load icons %}`) inlines
 `templates/icons/<name>.svg` (Heroicons outline, copied in). `ICON_DIR` is also

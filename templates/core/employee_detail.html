@@ -2,7 +2,7 @@
 {% load icons %}
 {% load survey_extras valuation_extras %}
 
-{% block title %}{{ employee_profile.user.get_full_name }} — {{ company.name }} | {{ brand.name }}{% endblock %}
+{% block title %}{{ employee_profile.user.get_full_name }} | {{ company.name }} | {{ brand.name }}{% endblock %}
 
 {% block page_context %}
   <a href="{% if is_admin_view %}{% url 'core:company_employee_list_for' company.reference_code %}{% else %}{% url 'core:company_employee_list' %}{% endif %}{% if roster_querystring %}?{{ roster_querystring }}{% endif %}" class="btn btn-text btn-sm -ml-3 mb-2">&larr; Colaboradores</a>
@@ -32,12 +32,12 @@
 
     <dl class="mt-6 space-y-4">
       <div class="min-w-0">
-        <dt class="text-sm font-medium text-neutral-600">Cargo</dt>
+        <dt class="text-sm font-medium text-neutral-600">Puesto</dt>
         <dd class="mt-1 text-sm font-medium text-neutral-900">
           {% if employee_profile.position %}
             {{ employee_profile.position }}
           {% else %}
-            <span class="text-neutral-600 font-normal">Sin asignar</span>
+            <span class="text-neutral-600 font-normal">Sin capturar</span>
           {% endif %}
         </dd>
       </div>
@@ -47,7 +47,7 @@
           {% if employee_profile.area %}
             {{ employee_profile.area.name }}
           {% else %}
-            <span class="text-neutral-600 font-normal">Sin asignar</span>
+            <span class="text-neutral-600 font-normal">Sin capturar</span>
           {% endif %}
         </dd>
       </div>
@@ -57,7 +57,7 @@
           {% if employee_profile.location %}
             {{ employee_profile.location.name }}
           {% else %}
-            <span class="text-neutral-600 font-normal">Sin asignar</span>
+            <span class="text-neutral-600 font-normal">Sin capturar</span>
           {% endif %}
         </dd>
       </div>
@@ -65,9 +65,9 @@
         <dt class="text-sm font-medium text-neutral-600">Estado de cuenta</dt>
         <dd class="mt-1">
           {% if employee_profile.is_activated %}
-            <span class="pill pill-marker bg-success-50 text-success-800 ring-1 ring-inset ring-success-600/20">Activado</span>
+            <span class="pill pill-marker bg-success-50 text-success-800 ring-1 ring-inset ring-success-600/20">Activada</span>
           {% else %}
-            <span class="pill pill-marker bg-neutral-100 text-neutral-500 ring-1 ring-inset ring-neutral-500/20">No activado</span>
+            <span class="pill pill-marker bg-neutral-100 text-neutral-500 ring-1 ring-inset ring-neutral-500/20">Sin activar</span>
           {% endif %}
         </dd>
       </div>
@@ -88,7 +88,7 @@
                       style="stroke-dasharray: {% widthratio prog.percent 100 276 %} 276"></circle>
             </svg>
             <div class="absolute inset-0 flex items-center justify-center">
-              <span class="text-lg font-bold tabular-nums text-neutral-900">{{ prog.percent }}%</span>
+              <span class="text-lg font-bold tabular-nums text-neutral-900">{{ prog.percent }} %</span>
             </div>
           </div>
 
@@ -115,7 +115,7 @@
         </div>
       {% endfor %}
     {% else %}
-      {% include "components/_empty.html" with body="No hay encuestas asignadas a esta empresa." compact=True %}
+      {% include "components/_empty.html" with body="Aún no hay encuestas asignadas a esta empresa." compact=True %}
     {% endif %}
   </div>
 </div>
@@ -143,7 +143,7 @@
     </div>
 
     {% if valuation.guia1_positive %}
-      <div class="mt-4">{% include "components/_alert.html" with tone="danger" body="Usuario positivo a un acontecimiento traumático severo." %}</div>
+      <div class="mt-4">{% include "components/_alert.html" with tone="danger" body="Requiere valoración clínica: reportó un acontecimiento traumático severo (Guía I)." %}</div>
     {% endif %}
 
     {# One card per categoría #}
@@ -204,7 +204,7 @@
       {% endfor %}
     </div>
   {% else %}
-    {% include "components/_empty.html" with body="La valoración se genera al completar la encuesta." icon="chart-bar" %}
+    {% include "components/_empty.html" with body="La valoración aparece cuando el colaborador envía la encuesta." icon="chart-bar" %}
   {% endif %}
 </section>
 {% endif %}
@@ -236,7 +236,7 @@
 
           {% if not item.submission %}
             <div class="px-6 py-8 text-center">
-              <p class="text-sm text-neutral-600">Este colaborador aún no ha iniciado esta encuesta.</p>
+              <p class="text-sm text-neutral-600">Aún no empieza esta encuesta.</p>
             </div>
           {% else %}
             <div class="px-6 py-5 space-y-6">
@@ -274,7 +274,7 @@
       {% endfor %}
     </div>
   {% else %}
-    {% include "components/_empty.html" with body="No hay encuestas asignadas a esta empresa." icon="clipboard-document-list" %}
+    {% include "components/_empty.html" with body="Aún no hay encuestas asignadas a esta empresa." icon="clipboard-document-list" %}
   {% endif %}
 </section>
 {% endif %}

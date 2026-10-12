@@ -49,12 +49,14 @@ be compared live on the real screens rather than in a mock-up.
 - **The logo partial.** `templates/_logo.html` is the only place the logo is drawn. It inlines the
   SVG with `fill="currentColor"`, so it takes the color of its context (`text-primary-700` in the
   header). The favicon points at the same file, so it draws in the browser's default black.
-- **Typography.** Figtree is self-hosted from `static/fonts/figtree/` as two variable TrueType
-  files, upright and italic, with weights 300–900. The app declares one `@font-face` per file with
-  the weight range and `font-display: swap`, preloads the upright file in `base.html`, and sets
-  Figtree as Tailwind's `--font-sans`. The results report uses Figtree for headings, tables and
-  figures and keeps Source Serif 4 for prose. Its `@font-face` rules declare one face per weight,
-  because WeasyPrint rejects the range form.
+- **Typography.** Figtree is self-hosted from `static/fonts/figtree/` as two variable fonts,
+  upright and italic, with weights 300–900. The browser gets the WOFF2 files: the app declares one
+  `@font-face` per file with the weight range and `font-display: swap`, preloads the upright file
+  in `base.html`, and sets Figtree as Tailwind's `--font-sans`. The results report uses the TTF
+  files beside them for headings, tables and figures and keeps Source Serif 4 for prose. Its
+  `@font-face` rules declare one face per weight, because WeasyPrint rejects the range form.
+  `npm run build:css` minifies `output.css`.
+- **Voice.** How the product speaks, under **Voz** below.
 - **Type scale.** Tailwind's size classes carry the scale's values, declared as `--text-*`
   tokens in `main.css`. The sizes are in `rem`, so a reader who raises their browser's or phone's
   text size scales every step. Each class names a role:
@@ -118,6 +120,8 @@ be compared live on the real screens rather than in a mock-up.
   - **Layout is classes.** An inline `style` carries only a computed value (a bar's width, a
     tick's offset, a ring's dash), never layout. No template carries an inline `on*=` handler;
     behaviour lives in `static/ts/`.
+  - **Skip link.** `base.html` opens every page with *Saltar al contenido*, hidden until it has
+    keyboard focus, pointing at the layout's `<main id="main" tabindex="-1">`.
   - Page background `neutral-100`; cards white with a `neutral-200` border; headings and primary
     text `neutral-900`; body copy `neutral-700`; secondary text `neutral-600`. `neutral-500` is the
     lightest step used for text, for captions, hints and placeholders.
@@ -174,13 +178,13 @@ be compared live on the real screens rather than in a mock-up.
       border, `neutral-800` text, hover `neutral-50`) is every other action: *Cancelar*,
       *Descargar PDF*, *Filtros*. `btn-text` (no box, `primary-700` text, hover `primary-50`) is an
       action inside a row or a dialog: *Limpiar filtros*, a close button. `btn-danger`
-      (`danger-600` fill, white text, hover `danger-800`) undoes or removes: *Despublicar*. Buttons
+      (`danger-600` fill, white text, hover `danger-800`) undoes or removes: *Retirar publicación*. Buttons
       have an 8px radius, weight 500 and 14px text, and are 44px tall; `btn-sm` is 36px, for dense
       desktop rows. A leading icon is 20px. A disabled button is at half opacity and ignores hover.
       A busy button (`aria-busy="true"`) shows a spinner and ignores clicks;
-      `static/ts/busy_submit.ts` sets it on the submit button of a form carrying `data-loading`
-      (the login code request, publish and unpublish, the report form) and clears it when the
-      back button restores the page from the browser's cache. A submit another handler cancelled
+      `static/ts/busy_submit.ts` sets it on the submit button of every `method="post"` form, unless
+      the form carries `data-no-busy`, and clears it when the back button restores the page from
+      the browser's cache. A GET form (a search, the filters) is never marked. A submit another handler cancelled
       is left alone. Under `prefers-reduced-motion` the spinner does not spin.
     - **The form control:** white, a `neutral-300` border, an 8px radius, 44px tall, 16px text.
       Focus draws a `primary-500` border and ring, keeping a transparent outline that
@@ -229,7 +233,7 @@ be compared live on the real screens rather than in a mock-up.
     `subtitle`: the page's one `h1` and a `text-sm` `neutral-600` line under it, 24px above the
     content. The company pages, the report pages, *Mis encuestas* and the styleguide open with
     it, and the survey draws the same shape with its description at body size. The dashboard sets
-    the company name beside a `primary-50` panel holding the *Código de referencia*: large
+    the company name beside a `primary-50` panel holding the *Código de empresa*: large
     monospace, so 0/O and 1/I stay apart, with a *Copiar* button (`static/ts/copy.ts`, shown only
     where the Clipboard API exists) and one line saying colaboradores type it to activate. Employee detail, the confirmation page and the centered screens draw their
     title inside a card. The report sheet keeps its cover's own title.
@@ -249,8 +253,12 @@ be compared live on the real screens rather than in a mock-up.
     Django points the control's `aria-describedby` at the help and error ids, and sets
     `aria-invalid`. A multi-widget (the date of birth) is a `fieldset` with a `legend`, its parts
     stacked on a phone and side by side from `sm`. A checkbox sits before its label in a 44px row.
-    A field that is `required=False` for a widget's sake but validated as required sets
-    `shown_as_required = True` to drop *(opcional)*. Widget `attrs` carry no styling classes, only
+    A field that is `required=False` for a widget's sake but validated as required, or one a draft
+    may leave blank but publishing needs (the report's, with *Necesario para publicar.* as help),
+    sets `shown_as_required = True` to drop *(opcional)*. A form that autofocuses a field mixes in
+    `apps.core.forms.ErrorFocusMixin`, which moves the autofocus to the first field in error after
+    a failed submit. A date as three selects is `LabelledSelectDateWidget`, which names each part
+    (*Día*, *Mes*, *Año*) for a screen reader. Widget `attrs` carry no styling classes, only
     real extras such as the large centered digits of a login code. A page that lays fields out
     itself (the report form's grid and signatory rows) places each with
     `{{ field.as_field_group }}`. The Django admin keeps its own markup.
@@ -258,6 +266,9 @@ be compared live on the real screens rather than in a mock-up.
     `danger`), an optional `title`, and `body` or `items`. It draws a 50 fill, a 200 border and a
     12px radius, the tone's icon in its 500 and the text in its 800. `info` takes `primary`.
     `danger` is `role="alert"`, the rest `role="status"`. An inline alert is never dismissible.
+    `link_url` with `link_label` adds one link after the body (*Ir a la primera*). `focus` makes
+    the alert take keyboard focus on load (`static/ts/focus_on_load.ts`), for an error a form
+    reloaded to report: a role read out on load is not announced reliably, focus is.
   - **Messages.** `templates/_messages.html` draws Django's messages as dismissible alerts at the
     top of every page; `base_app.html` and `base_centered.html` include it. `error` maps to
     `danger` and `debug` to `info`. The close button (*Cerrar aviso*) is wired by
@@ -319,9 +330,9 @@ be compared live on the real screens rather than in a mock-up.
       inline script: `data-dialog-open="<id>"` opens, `data-dialog-close` closes,
       `data-open-on-load` opens when the page loads (the survey's confirmation and
       saved-progress dialogs), a click on the backdrop closes, and `data-dialog-static` ignores
-      Esc and the backdrop (*Sesión expirada*, which only offers to sign in again).
+      Esc and the backdrop (*Tu sesión se cerró*, which only offers to sign in again).
     - **Confirmations.** A destructive action asks inside a dialog that holds the form itself:
-      *Despublicar* on a report opens `unpublish-dialog`, whose own `btn-danger` submits. Without
+      *Retirar publicación* on a report opens `unpublish-dialog`, whose own `btn-danger` submits. Without
       JavaScript the dialog never opens, so nothing is undone unconfirmed.
   - **Empty states.** `templates/components/_empty.html` takes `body`, and optionally `icon`,
     `title`, `action_url` with `action_label`, and `compact`. It draws a dashed `neutral-300`
@@ -353,12 +364,37 @@ be compared live on the real screens rather than in a mock-up.
   phone, so there is no table component. Nothing paginates; paginating the roster is a feature of
   its own, with its queries, addresses and filters.
 - **A loading skeleton.** The one asynchronous swap, the results filters, marks itself
-  `aria-busy`.
-- **Copy.** The wording of pages, buttons and messages is reviewed on its own, not as part of the
-  design system.
+  `aria-busy`, which dims the body while it loads.
+- **The NOM-035 questions' wording.** They are the norm's text, verbatim, and speak *usted*.
 - **Dark mode.** The token layer makes it a later addition of one more variable block.
 - **The Django admin.** It keeps Django's own styling.
 - **Final name, logo and palette.** They stay placeholders until the client confirms them.
+
+## Voz
+
+How the product speaks, on every screen, message and email. The words are the
+product's voice, so a wording change is reviewed like a layout change.
+
+- **Tú, always.** The NOM-035 questions keep the norm's own wording, which speaks *usted*; the
+  survey's instructions say they are the official questions.
+- **Buttons are verbs** in sentence case, naming what happens: *Guardar reporte*, *Enviar
+  respuestas*, *Retirar publicación*. The confirmation reuses the button's word: *Reporte
+  guardado.*, *Respuestas enviadas*, *Publicación retirada.* One action keeps one name through a
+  flow: *Seguir respondiendo* in every dialog that returns to the survey.
+- **No ¡…!, no *por favor*, no *lo sentimos*, no *exitosamente*.** Thanks are said once, plainly.
+- **An error says what happened and how to fix it**: *El código no es correcto o ya venció.
+  Revisa los 6 dígitos o pide uno nuevo.* Never *Error* or *inválido* alone.
+- **An empty screen offers the next step** when the reader has one (*Limpiar filtros*, *Agregar
+  empresa*); otherwise it says when the space fills.
+- **Plain words over system words**: no *vinculado*, *configurado*, *congelado*, *usuario* for a
+  person, or an identifier such as *UserProfile*.
+- **Punctuation.** A full sentence in a message ends with a period; a button, label or heading
+  does not. A space goes before `%`. Tab titles read `Página | Contexto | Marca`. A year range
+  takes an en dash. A question opens with `¿`.
+- **One word per concept.** The glossary is in [`localization.md`](localization.md). The names
+  of the three codes are *código de empresa* (5 characters, typed at activation), *código de
+  acceso* (9 digits, the first sign-in) and *código de inicio de sesión* (6 digits, emailed). A
+  colaborador who needs a code or access is sent to *quien te invitó*.
 
 ## Phone shape
 
@@ -377,7 +413,7 @@ side and scrolls inside itself when it is taller than 85% of the screen. Error p
 centered login card.
 
 The dashboard's stat cards sit two to a row on a phone and four from `lg`. Each survey on it is
-one card: its progress on top and, for a viewer who answers it, a *Tu respuesta* strip under a
+one card: its progress on top and, for a viewer who answers it, a *Tus respuestas* strip under a
 divider, its action full-width on a phone. A closed survey says why in a line of text, never in a
 hover tooltip. The survey's answers are full-width rows on a phone; likert and rating become five
 tiles from `lg`. Filter chips wrap. The footer stacks its three items, centered, on a phone, and
@@ -405,9 +441,9 @@ spreads them across one row from `sm`.
 - Decision: Both palettes ship together behind one attribute, on one branch.
   Reason: The client compares them on the real application. Retiring one is a small deletion
   rather than a branch to keep in sync.
-- Decision: Figtree ships as TrueType variable files, not WOFF2.
-  Reason: The two files are 62 KB each, WeasyPrint reads them directly, and one format serves both
-  the browser and the PDF.
+- Decision: Figtree ships to the browser as WOFF2 and to the PDF as TTF.
+  Reason: WOFF2 halves each file (about 28 KB against 62 KB) on the first page a respondent opens;
+  WeasyPrint reads the TTFs from disk, where size costs nothing.
 - Decision: The palette switch is a cookie read by a context processor, not a per-company or
   per-user setting.
   Reason: The switch exists only for the decision period and must not need a migration.
@@ -497,13 +533,17 @@ spreads them across one row from `sm`.
 - Guards fail a template that writes a label in capitals (`uppercase`, outside the avatar),
   uses black, lays out with an inline `style`, carries an inline `on*=` handler, draws a focus
   ring on an `input`, or types the brand's meaning. A test renders each main page for the role
-  that sees it and fails a second `h1`. Tests check the dashboard's cards and *Tu respuesta*
+  that sees it and fails a second `h1`. Tests check the dashboard's cards and *Tus respuestas*
   strip, that every survey option is an `answer` row, that the report names each categoría,
-  dominio and the final score once, and that *Despublicar* is a dialog.
+  dominio and the final score once, and that *Retirar publicación* is a dialog. A guard fails a
+  tab title that separates with `—` instead of `|`. Tests check the skip link, the Spanish CSRF
+  page, the autofocus move and the date parts' labels, and that no template opts into the busy
+  state by hand.
 - Tests cover the component classes in the built CSS, the field template (order, every error,
   *(opcional)*, the ARIA wiring, the fieldset, the admin left alone), the icon tag, each alert
-  tone and messages on both layouts, and the styleguide's access and contents. The busy and
-  dismiss scripts have no test runner and are checked in the browser.
+  tone and messages on both layouts, and the styleguide's access and contents. The busy, dismiss
+  and focus-on-load scripts have no test runner and are checked in the browser. No test reads the
+  copy against **Voz**; wording is checked in review.
 - Tests cover the context processor and the switch: cookie validation and the fallback, the
   switch rendered for admins only and never on the survey form, the return-address check, and
   `lang="es"`.

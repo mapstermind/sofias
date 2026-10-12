@@ -90,7 +90,9 @@ class AdminReportEditView(AdminMixin, View):
 
     def _locked(self, report):
         if report.status == Report.Status.PUBLISHED:
-            messages.error(self.request, "Despublica el reporte para editarlo.")
+            messages.error(
+                self.request, "Retira la publicación del reporte para editarlo."
+            )
             return redirect(self._detail_url())
         return None
 
@@ -158,8 +160,8 @@ class AdminReportEditView(AdminMixin, View):
                 # Another request created this assignment's report first.
                 messages.error(
                     request,
-                    "El reporte se guardó desde otra sesión; revísalo antes de "
-                    "editarlo de nuevo.",
+                    "Alguien más guardó este reporte al mismo tiempo. Revisa lo "
+                    "que quedó guardado antes de editarlo de nuevo.",
                 )
                 return redirect(self._detail_url())
             messages.success(request, "Reporte guardado.")
@@ -200,7 +202,7 @@ class AdminUnpublishView(AdminMixin, View):
         report = self.report(self.assignment())
         if report.pk is not None and report.status == Report.Status.PUBLISHED:
             publishing.unpublish(report)
-            messages.success(request, "Reporte despublicado.")
+            messages.success(request, "Publicación retirada.")
         return redirect("reports:admin_detail", reference_code, assignment_id)
 
 

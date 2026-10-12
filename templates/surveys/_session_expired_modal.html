@@ -6,12 +6,12 @@
         {% icon "exclamation-triangle" "size-7 text-warning-500" %}
       </div>
     </div>
-    <h2 id="session-expired-modal-title" class="text-lg font-semibold text-neutral-900 text-center mb-2">Sesión expirada</h2>
+    <h2 id="session-expired-modal-title" class="text-lg font-semibold text-neutral-900 text-center mb-2">Tu sesión se cerró</h2>
     <p class="text-base text-neutral-600 text-center">
-      Tu sesión ha expirado por inactividad. Tu progreso guardado está a salvo — inicia sesión de nuevo para continuar.
+      Se cerró por inactividad. Las respuestas que ya guardaste están a salvo; inicia sesión de nuevo para continuar.
     </p>
     <div class="mt-6">
-      <a href="{% url 'accounts:request_otp' %}"
+      <a href="{% url 'accounts:request_otp' %}?next={{ request.get_full_path|urlencode }}"
          class="btn btn-primary w-full">
         Iniciar sesión de nuevo
       </a>

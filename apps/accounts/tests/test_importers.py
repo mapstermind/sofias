@@ -49,7 +49,7 @@ class TestImportUsersFromCSV:
     def test_import_leaves_self_reported_details_empty(
         self, make_company, bootstrap_groups
     ):
-        """Name, cargo, área and localidad belong to activation, not the CSV."""
+        """Name, puesto, área and localidad belong to activation, not the CSV."""
         company = make_company()
         import_users_from_csv(
             _csv_text(

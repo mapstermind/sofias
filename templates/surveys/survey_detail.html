@@ -1,7 +1,7 @@
 {% extends "base_app.html" %}
 {% load static survey_extras %}
 
-{% block title %}{{ survey.title }}{% endblock %}
+{% block title %}{{ survey.title }} | {{ brand.name }}{% endblock %}
 
 
 {# The phone bottom bar owns the corner, and respondents move forward, not up. #}
@@ -13,12 +13,57 @@
 
 <div class="flex flex-col lg:flex-row gap-6">
 
+<!-- `pb-40` clears the action bar, which floats over the page below `lg:`;
+     without it the bar covers the last question. -->
+<div class="max-w-2xl w-full mx-auto min-w-0 pb-40 lg:pb-0">
+
+  {# The page header's shape, with the description at body size: respondents read it. #}
+  <div class="mb-6">
+    <h1 class="text-xl font-bold text-neutral-900">{{ survey.title }}</h1>
+    {% if survey.description %}<p class="mt-2 text-base text-neutral-700">{{ survey.description }}</p>{% endif %}
+  </div>
+
+  {% if errors %}
+    <div class="mb-6">{% include "components/_alert.html" with tone="danger" body=error_summary focus=True link_url=first_error_anchor link_label="Ir a la primera" %}</div>
+  {% endif %}
+
+  <form id="survey-form" method="post" novalidate data-autosave-url="{% url 'surveys:autosave_survey' assignment.id %}">
+    {% csrf_token %}
+
+    {% for module in modules %}
+      <div class="module-card mb-8" data-module-key="{{ module.key }}" data-visible-when="{{ module.visible_when|as_json }}">
+        {% if module.intro %}
+          <p class="mb-3 text-base font-semibold text-neutral-900">{{ module.intro }}</p>
+        {% endif %}
+        {% if module.title %}
+          <div class="mb-4 border-b border-neutral-200 pb-2">
+            <h2 class="text-lg font-semibold text-neutral-900">{{ module.title }}</h2>
+            {% if module.description %}
+              <p class="text-base text-neutral-600 mt-1">{{ module.description }}</p>
+            {% endif %}
+          </div>
+        {% elif module.description %}
+          <p class="text-base text-neutral-600 mb-4">{{ module.description }}</p>
+        {% else %}
+          <div class="border-t border-neutral-200 mb-4"></div>
+        {% endif %}
+
+        {% for question in module.questions.all %}
+          {% include "surveys/_question.html" %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+  </form>
+</div><!-- end max-w-2xl -->
+
 {% comment %}
-Sidebar: the sticky right column on a wide screen. Below `lg:` the wrapper
-stacks and `order-last` drops this after the form, so the pendientes panel is
+Sidebar: the sticky right column on a wide screen. It follows the form in the
+source as on screen, so a keyboard or a screen reader meets the title and the
+questions first; below `lg:` the wrapper stacks and the pendientes panel is
 what a respondent meets on reaching the end of the questions.
 {% endcomment %}
-<div class="flex flex-col items-end order-last w-full lg:w-96 lg:shrink-0">
+<div class="flex flex-col items-end w-full lg:w-96 lg:shrink-0">
   {% comment %}
   The column caps itself at the viewport and scrolls internally, so a sidebar
   taller than the window stays reachable instead of being cut off by
@@ -58,6 +103,8 @@ what a respondent meets on reaching the end of the questions.
         </div>
       </div>
       {% endif %}
+      {# Filled by survey_progress.ts as each answer autosaves. #}
+      <p id="save-status" aria-live="polite" class="min-h-5 text-sm text-neutral-600"></p>
       <div class="flex gap-2 lg:flex-col">
         <button type="button"
           data-dialog-open="instrucciones-modal"
@@ -82,55 +129,12 @@ what a respondent meets on reaching the end of the questions.
       <p id="pending-more" class="mt-2 text-sm text-neutral-500" hidden></p>
       <button type="button" id="pending-next"
         class="btn btn-secondary btn-sm mt-3 w-full">
-        Ir a la siguiente &darr;
+        Ir a la siguiente pendiente &darr;
       </button>
     </div>
   </div>
 </div>
 
-<!-- `pb-40` clears the action bar, which floats over the page below `lg:`;
-     without it the bar covers the last question. -->
-<div class="max-w-2xl w-full mx-auto min-w-0 pb-40 lg:pb-0">
-
-  {# The page header's shape, with the description at body size: respondents read it. #}
-  <div class="mb-6">
-    <h1 class="text-xl font-bold text-neutral-900">{{ survey.title }}</h1>
-    {% if survey.description %}<p class="mt-2 text-base text-neutral-700">{{ survey.description }}</p>{% endif %}
-  </div>
-
-  {% if errors %}
-    <div class="mb-6">{% include "components/_alert.html" with tone="danger" body="Favor de corregir las preguntas resaltadas abajo antes de enviar." %}</div>
-  {% endif %}
-
-  <form id="survey-form" method="post" novalidate data-autosave-url="{% url 'surveys:autosave_survey' assignment.id %}">
-    {% csrf_token %}
-
-    {% for module in modules %}
-      <div class="module-card mb-8" data-module-key="{{ module.key }}" data-visible-when="{{ module.visible_when|as_json }}">
-        {% if module.intro %}
-          <p class="mb-3 text-base font-semibold text-neutral-900">{{ module.intro }}</p>
-        {% endif %}
-        {% if module.title %}
-          <div class="mb-4 border-b border-neutral-200 pb-2">
-            <h2 class="text-lg font-semibold text-neutral-900">{{ module.title }}</h2>
-            {% if module.description %}
-              <p class="text-base text-neutral-600 mt-1">{{ module.description }}</p>
-            {% endif %}
-          </div>
-        {% elif module.description %}
-          <p class="text-base text-neutral-600 mb-4">{{ module.description }}</p>
-        {% else %}
-          <div class="border-t border-neutral-200 mb-4"></div>
-        {% endif %}
-
-        {% for question in module.questions.all %}
-          {% include "surveys/_question.html" %}
-        {% endfor %}
-      </div>
-    {% endfor %}
-
-  </form>
-</div><!-- end max-w-2xl -->
 </div><!-- end flex wrapper -->
 
 {% include "surveys/_instrucciones_modal.html" %}

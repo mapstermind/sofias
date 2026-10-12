@@ -1,7 +1,7 @@
 {% if results %}
   {% include "core/results/_group_line.html" %}
   {% if results.empty %}
-    <div class="mt-6">{% if results.filtered %}{% include "components/_empty.html" with body="Ningún cuestionario coincide con los filtros." icon="chart-bar" %}{% else %}{% include "components/_empty.html" with body="Esta encuesta aún no tiene cuestionarios contestados." icon="chart-bar" %}{% endif %}</div>
+    <div class="mt-6">{% if results.filtered %}{% include "components/_empty.html" with body="Ningún cuestionario coincide con los filtros." icon="chart-bar" action_url=clear_url action_label="Limpiar filtros" %}{% else %}{% include "components/_empty.html" with body="Esta encuesta aún no tiene cuestionarios contestados." icon="chart-bar" %}{% endif %}</div>
   {% else %}
     <h2 class="mt-10 mb-4 text-lg font-semibold text-neutral-900">Empresa</h2>
     {% include "core/results/_participation.html" %}

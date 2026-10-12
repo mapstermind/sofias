@@ -62,6 +62,7 @@ AUTHENTICATION_BACKENDS = [
 
 LOGIN_URL = "accounts:request_otp"
 LOGIN_REDIRECT_URL = "core:home"
+CSRF_FAILURE_VIEW = "apps.core.views.csrf_failure"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

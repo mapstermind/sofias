@@ -23,7 +23,7 @@ Each company's `reference_code` is an auto-generated 5-character code (uppercase
 
 1. Open Django Admin.
 2. Go to **Empresas**.
-3. Open the target company and copy its **Código de referencia**.
+3. Open the target company and copy its **Código de empresa**.
 
 Case does not matter in the CSV — the importer uppercases `company_reference_code` before lookup — but the value must match an existing company exactly.
 
@@ -31,7 +31,7 @@ Case does not matter in the CSV — the importer uppercases `company_reference_c
 
 The file needs exactly four columns, and every one of them is required:
 
-- `email`: the user’s institutional email. Must be unique.
+- `email`: the user’s work email. Must be unique.
 - `company_reference_code`: the `Company.reference_code` used to link the profile.
 - `group`: one Django group name to assign to the user.
 - `auth_method`: either `otp` or `password`.
@@ -51,7 +51,7 @@ carlos.ruiz@empresa.com,A1B2C,Principal Exec,otp
 maria.santos@empresa.com,A1B2C,Employees,password
 ```
 
-Use `otp` when the user can receive the login code by email. Use `password` only when the company blocks external email delivery and HR needs to distribute a código temporal de acceso internally.
+Use `otp` when the user can receive the login code by email. Use `password` only when the company blocks external email delivery and HR needs to distribute a código de acceso internally.
 
 ## Upload Procedure
 
@@ -74,7 +74,7 @@ The downloaded report includes:
 - `username`
 - `setup_access_code`
 
-For `auth_method=password` rows that are created successfully, `setup_access_code` contains the generated 9-digit código temporal de acceso. The unused code is also visible in Django Admin for authorized support users.
+For `auth_method=password` rows that are created successfully, `setup_access_code` contains the generated 9-digit código de acceso. The unused code is also visible in Django Admin for authorized support users.
 
 ## After Import
 
@@ -89,7 +89,7 @@ Until a user activates, the roster shows them as *Sin nombre* — that is expect
 For setup-code fallback users:
 
 1. Send the report, or only the relevant setup access codes, to the company’s trusted HR contact through an approved internal channel.
-2. HR distributes each código temporal de acceso to the correct employee.
+2. HR distributes each código de acceso to the correct employee.
 3. Users log in at `/cuentas/primer-ingreso/`.
 4. SOFIA-S forces them to create a contraseña before continuing.
 5. Future fallback logins use `/cuentas/ingresar-con-contrasena/`.

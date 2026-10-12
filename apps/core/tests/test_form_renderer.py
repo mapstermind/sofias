@@ -5,6 +5,8 @@ import re
 import pytest
 from django import forms
 
+from apps.core.forms import ErrorFocusMixin, LabelledSelectDateWidget
+
 
 class DemoForm(forms.Form):
     name = forms.CharField(
@@ -113,3 +115,40 @@ def test_a_hidden_field_error_shows_at_the_top():
     html = str(HiddenForm(data={"email": "no-es-correo"}))
     assert 'role="alert"' in html
     assert "(Campo oculto email)" in html
+
+
+class FocusForm(ErrorFocusMixin, forms.Form):
+    email = forms.EmailField(widget=forms.EmailInput(attrs={"autofocus": True}))
+    born = forms.DateField(widget=LabelledSelectDateWidget(years=range(2000, 1990, -1)))
+
+
+def test_autofocus_moves_to_the_first_field_in_error():
+    form = FocusForm(
+        data={"email": "a@x.mx", "born_day": "", "born_month": "", "born_year": ""}
+    )
+    assert not form.is_valid()
+    html = str(form)
+    email = re.search(r'<input[^>]*name="email"[^>]*>', html).group(0)
+    assert "autofocus" not in email
+    born = re.findall(r'<select[^>]*name="born_[a-z]+"[^>]*>', html)
+    assert born and all("autofocus" in tag for tag in born)
+
+
+def test_a_form_wide_error_leaves_autofocus_alone():
+    class Wide(FocusForm):
+        born = forms.DateField(required=False, widget=LabelledSelectDateWidget())
+
+        def clean(self):
+            raise forms.ValidationError("No.")
+
+    form = Wide(data={"email": "a@x.mx"})
+    assert not form.is_valid()
+    email = re.search(r'<input[^>]*name="email"[^>]*>', str(form)).group(0)
+    assert "autofocus" in email
+
+
+def test_each_date_part_is_named():
+    html = str(FocusForm()["born"])
+    for name, label in (("day", "Día"), ("month", "Mes"), ("year", "Año")):
+        select = re.search(rf'<select[^>]*name="born_{name}"[^>]*>', html).group(0)
+        assert f'aria-label="{label}"' in select

@@ -25,11 +25,11 @@
          class="btn btn-secondary">Descargar PDF</a>
       {% if is_admin_view %}
       {% if report.status == "published" %}
-        <button type="button" data-dialog-open="unpublish-dialog" class="btn btn-danger">Despublicar</button>
+        <button type="button" data-dialog-open="unpublish-dialog" class="btn btn-danger">Retirar publicación</button>
       {% else %}
         <a href="{% url 'reports:admin_edit' company.reference_code report.assignment.pk %}"
            class="btn btn-secondary">Editar</a>
-        <form method="post" action="{% url 'reports:admin_publish' company.reference_code report.assignment.pk %}" data-loading>
+        <form method="post" action="{% url 'reports:admin_publish' company.reference_code report.assignment.pk %}">
           {% csrf_token %}
           <button type="submit" class="btn btn-primary">Publicar</button>
         </form>
@@ -39,19 +39,19 @@
   </div>
 
   {% if is_admin_view and blockers %}
-    <div class="mb-5">{% include "components/_alert.html" with tone="warning" title="Para publicar falta:" items=blockers %}</div>
+    <div class="mb-5">{% include "components/_alert.html" with tone="warning" title="Antes de publicar, falta:" items=blockers %}</div>
   {% endif %}
 
   {% if is_admin_view and report.status == "published" %}
     {# The submit lives inside the dialog: without JavaScript the dialog never opens, so nothing unpublishes unconfirmed. #}
     <dialog id="unpublish-dialog" class="dialog" aria-labelledby="unpublish-dialog-title">
-      <h2 id="unpublish-dialog-title" class="text-lg font-semibold text-neutral-900">¿Despublicar el reporte?</h2>
-      <p class="mt-2 text-base text-neutral-700">El contenido congelado se descartará y la empresa dejará de verlo hasta que se publique de nuevo.</p>
-      <form method="post" action="{% url 'reports:admin_unpublish' company.reference_code report.assignment.pk %}" data-loading
+      <h2 id="unpublish-dialog-title" class="text-lg font-semibold text-neutral-900">¿Retirar la publicación del reporte?</h2>
+      <p class="mt-2 text-base text-neutral-700">Se descartará la versión publicada y la empresa dejará de ver el reporte hasta que lo publiques de nuevo.</p>
+      <form method="post" action="{% url 'reports:admin_unpublish' company.reference_code report.assignment.pk %}"
             class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         {% csrf_token %}
         <button type="button" data-dialog-close class="btn btn-secondary">Cancelar</button>
-        <button type="submit" class="btn btn-danger">Despublicar</button>
+        <button type="submit" class="btn btn-danger">Retirar publicación</button>
       </form>
     </dialog>
   {% endif %}

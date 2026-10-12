@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -64,7 +65,7 @@ def _parse_value(question, post):
         try:
             return int(raw), None
         except ValueError:
-            return None, "Please enter a whole number."
+            return None, "Escribe un número entero, sin decimales."
     if qt == Question.QuestionType.DECIMAL:
         raw = post.get(form_key, "").strip()
         if not raw:
@@ -72,7 +73,7 @@ def _parse_value(question, post):
         try:
             return float(raw), None
         except ValueError:
-            return None, "Please enter a number."
+            return None, "Escribe un número; usa punto para los decimales."
     if qt == Question.QuestionType.LIKERT:
         raw = post.get(form_key, "").strip()
         if not raw:
@@ -80,7 +81,7 @@ def _parse_value(question, post):
         try:
             return int(raw), None
         except ValueError:
-            return None, "Please select a valid option."
+            return None, "Elige una de las opciones."
 
     raw = post.get(form_key, "").strip()
     return (raw or None), None
@@ -107,6 +108,7 @@ def survey_detail(request, assignment_id):
     assignment = get_object_or_404(SurveyAssignment, id=assignment_id, company=company)
 
     if assignment.status == SurveyAssignment.Status.CLOSED:
+        messages.info(request, "Esta encuesta ya cerró.")
         return redirect("core:home")
 
     survey = assignment.survey
@@ -121,6 +123,7 @@ def survey_detail(request, assignment_id):
     existing_answers = {}  # by question_id
     if existing_submission:
         if existing_submission.status == SurveySubmission.Status.COMPLETED:
+            messages.info(request, "Ya enviaste tus respuestas a esta encuesta.")
             return redirect("core:home")
         existing_answers = {
             a.question_id: a.value for a in existing_submission.answers.all()
@@ -137,7 +140,18 @@ def survey_detail(request, assignment_id):
                 continue
             answer_values[q.id] = value
 
-        if not errors:
+        if errors:
+            # Nothing is saved, so the page shows what was just posted rather
+            # than the stored answers: a typo costs one correction, not a redo.
+            existing_answers = {
+                **existing_answers,
+                **answer_values,
+                **{
+                    qid: request.POST.get(f"question_{qid}", "").strip()
+                    for qid in errors
+                },
+            }
+        else:
             # Determine which questions are visible given the submitted answers.
             answers_by_code = {q.code: answer_values.get(q.id) for q in all_questions}
             visible = visible_questions(assignment, answers_by_code)
@@ -201,6 +215,11 @@ def survey_detail(request, assignment_id):
             "survey": survey,
             "modules": modules,
             "errors": errors,
+            "error_summary": (
+                f"Corrige {len(errors)} respuesta{'s' if len(errors) != 1 else ''} "
+                "para poder guardar."
+            ),
+            "first_error_anchor": f"#q-{next(iter(errors))}" if errors else "",
             "existing_answers": existing_answers,
             "is_edit": existing_submission is not None,
             "total_questions": total_questions,

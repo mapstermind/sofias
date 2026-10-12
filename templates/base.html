@@ -6,14 +6,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}{{ brand.name }}{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="{% static brand.logo %}">
-  <link rel="preload" href="{% static 'fonts/figtree/Figtree-VariableFont_wght.ttf' %}" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="{% static 'fonts/figtree/Figtree-VariableFont_wght.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'css/output.css' %}">
   <script src="{% static 'js/busy_submit.js' %}" defer></script>
   <script src="{% static 'js/dismiss.js' %}" defer></script>
   <script src="{% static 'js/disclosure.js' %}" defer></script>
   <script src="{% static 'js/dialog.js' %}" defer></script>
+  <script src="{% static 'js/focus_on_load.js' %}" defer></script>
 </head>
 <body class="{% block body_class %}min-h-screen bg-neutral-100{% endblock %} flex flex-col">
+{# The first tab stop on every page; every layout's <main id="main" tabindex="-1"> takes the focus. #}
+<a href="#main" class="btn btn-secondary sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">Saltar al contenido</a>
   {% block body %}{% endblock %}
   {% block palette_switch %}{% if show_palette_switch %}{% include "_palette_switch.html" %}{% endif %}{% endblock %}
 </body>

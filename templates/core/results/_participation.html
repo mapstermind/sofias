@@ -2,8 +2,8 @@
 <section class="card p-5">
   <h3 class="text-base font-semibold text-neutral-900">Participación por área</h3>
   <div class="mt-4 hidden items-end gap-4 border-b border-neutral-100 pb-2 text-xs font-medium text-neutral-600 md:grid md:grid-cols-[minmax(0,1.2fr)_5.5rem_6.5rem_6.5rem_minmax(0,2fr)]">
-    <span>Área</span><span class="text-right">Registrados</span><span class="text-right">Respondieron</span><span class="text-right">Participación</span>
-    <div><span class="mb-1 block text-xs font-medium text-neutral-600">Distribución (final)</span>{% include "core/results/_ndr_columns.html" %}</div>
+    <span>Área</span><span class="text-right">Cuentas activadas</span><span class="text-right">Respondieron</span><span class="text-right">Participación</span>
+    <div><span class="mb-1 block text-xs font-medium text-neutral-600">Nivel de riesgo final</span>{% include "core/results/_ndr_columns.html" %}</div>
   </div>
   <ul class="divide-y divide-neutral-100">
     {% for item in participation_rows %}{% with row=item.row %}
@@ -15,7 +15,7 @@
             <span class="font-medium text-neutral-900">{{ row.label }}</span>
           {% endif %}
         </div>
-        <div class="text-sm text-neutral-900 md:text-right"><span class="block text-xs text-neutral-500 md:hidden">Registrados</span>{{ row.registered|default_if_none:"—" }}</div>
+        <div class="text-sm text-neutral-900 md:text-right"><span class="block text-xs text-neutral-500 md:hidden">Cuentas activadas</span>{{ row.registered|default_if_none:"—" }}</div>
         <div class="text-sm text-neutral-900 md:text-right"><span class="block text-xs text-neutral-500 md:hidden">Respondieron</span>{{ row.responded }}</div>
         <div class="text-sm text-neutral-900 md:text-right"><span class="block text-xs text-neutral-500 md:hidden">Participación</span>{% if row.participation is not None %}{{ row.participation }} %{% else %}—{% endif %}</div>
         <div class="col-span-3 min-w-0 md:col-span-1">
@@ -29,7 +29,7 @@
         </div>
       </li>
     {% endwith %}{% empty %}
-      <li class="py-3 text-sm text-neutral-500">Esta empresa no tiene áreas registradas.</li>
+      <li class="py-3 text-sm text-neutral-500">Esta empresa aún no tiene áreas.</li>
     {% endfor %}
   </ul>
 </section>

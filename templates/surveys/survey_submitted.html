@@ -1,7 +1,7 @@
 {% extends "base_app.html" %}
 {% load icons %}
 
-{% block title %}¡Gracias! — {{ survey.title }}{% endblock %}
+{% block title %}Respuestas enviadas | {{ brand.name }}{% endblock %}
 
 
 {% block content %}
@@ -12,9 +12,9 @@
       {% icon "check" "size-6 text-success-600" %}
     </div>
 
-    <h1 class="text-xl font-bold text-neutral-900">¡Gracias!</h1>
+    <h1 class="text-xl font-bold text-neutral-900">Respuestas enviadas</h1>
     <p class="mt-3 text-base text-neutral-700">
-      Tu respuesta a <span class="font-medium text-neutral-900">{{ survey.title }}</span> ha sido registrada.
+      Enviaste tus respuestas a <span class="font-medium text-neutral-900">{{ survey.title }}</span>. Gracias por participar.
     </p>
 
     <div class="mt-8 flex items-center justify-center">
