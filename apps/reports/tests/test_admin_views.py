@@ -115,6 +115,22 @@ def test_executive_cannot_use_admin_routes(
     assert client.post(urls["publish"]).status_code == 403
 
 
+def test_anonymous_redirects_to_login(client, urls):
+    resp = client.get(urls["list"])
+    assert resp.status_code == 302
+    assert "login" in resp["Location"] or "cuentas" in resp["Location"]
+
+
+def test_secondary_executive_cannot_use_admin_routes(
+    client, urls, make_user_with_profile, bootstrap_groups, scored_assignment
+):
+    user = make_user_with_profile(email="s@x.mx", company=scored_assignment.company)
+    user.groups.add(bootstrap_groups[ROLES[2].name])
+    client.force_login(user)
+    for name in ("list", "detail", "edit"):
+        assert client.get(urls[name]).status_code == 403
+
+
 def test_survey_manager_without_the_report_permission_is_refused(
     client, urls, make_user
 ):
