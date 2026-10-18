@@ -17,7 +17,7 @@ from apps.accounts.models import (
 from apps.accounts.utils import generate_unique_username
 
 # The whole contract. Everything the employee knows about themselves — name,
-# puesto, área, localidad — is collected at activation instead, so the admin
+# área, localidad — is collected at activation instead, so the admin
 # only has to supply what identifies the account and grants it access.
 REQUIRED_HEADERS = ("email", "company_reference_code", "group", "auth_method")
 REPORT_HEADERS = [

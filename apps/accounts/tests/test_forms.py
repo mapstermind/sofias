@@ -89,7 +89,7 @@ class TestProfileActivationFormCleanReferenceCode:
 
 @pytest.mark.django_db
 class TestProfileActivationFormIdentityFields:
-    """Name and puesto are collected here, so the CSV import doesn't carry them."""
+    """Name is collected here, so the CSV import doesn't carry it."""
 
     @pytest.fixture
     def company_with_area(self, make_company, make_area):
@@ -126,12 +126,6 @@ class TestProfileActivationFormIdentityFields:
         assert form.is_valid(), form.errors
         assert form.cleaned_data["maternal_last_name"] == ""
 
-    def test_cargo_is_optional_and_defaults_to_blank(self, company_with_area):
-        company, area = company_with_area
-        form = ProfileActivationForm(data=self._data(company, area), company=company)
-        assert form.is_valid(), form.errors
-        assert form.cleaned_data["position"] == ""
-
     def test_values_are_stripped(self, company_with_area):
         company, area = company_with_area
         form = ProfileActivationForm(
@@ -141,7 +135,6 @@ class TestProfileActivationFormIdentityFields:
                 first_name="  Ana  ",
                 paternal_last_name="  López  ",
                 maternal_last_name="  Núñez  ",
-                position="  Analista  ",
             ),
             company=company,
         )
@@ -149,7 +142,6 @@ class TestProfileActivationFormIdentityFields:
         assert form.cleaned_data["first_name"] == "Ana"
         assert form.cleaned_data["paternal_last_name"] == "López"
         assert form.cleaned_data["maternal_last_name"] == "Núñez"
-        assert form.cleaned_data["position"] == "Analista"
 
 
 @pytest.mark.django_db

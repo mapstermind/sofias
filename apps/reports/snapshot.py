@@ -205,7 +205,6 @@ def load(raw: dict) -> ReportData:
                 area_id=a["area_id"],
                 label=a["label"],
                 n=a["n"],
-                suppressed=a["suppressed"],
                 final=_distribution(a["final"]),
                 categorias=tuple(_distribution(d) for d in a["categorias"]),
                 guia1=_guia1(a["guia1"]),

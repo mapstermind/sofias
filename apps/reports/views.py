@@ -1,4 +1,4 @@
-"""Report pages: Administrador (any company) and Ejecutivo principal (own company)."""
+"""Report pages: Administrador only, any company (`can_edit_report`)."""
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -22,10 +22,7 @@ from apps.surveys.models import SurveyAssignment
 class AdminMixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         user = request.user
-        if user.is_authenticated and not (
-            user.has_perm("accounts.can_manage_surveys")
-            and user.has_perm("accounts.can_view_insights")
-        ):
+        if user.is_authenticated and not user.has_perm("accounts.can_edit_report"):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -220,77 +217,3 @@ def _pdf_response(request, report):
 class AdminReportPdfView(AdminMixin, View):
     def get(self, request, reference_code, assignment_id):
         return _pdf_response(request, self.report(self.assignment()))
-
-
-class ExecutiveMixin(LoginRequiredMixin):
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated and not request.user.has_perm(
-            "accounts.can_view_insights"
-        ):
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
-
-    def own_company(self):
-        profile = getattr(self.request.user, "profile", None)
-        return profile.company if profile is not None and profile.company_id else None
-
-    def published(self, company):
-        return get_object_or_404(
-            Report.objects.select_related("assignment__company"),
-            assignment_id=self.kwargs["assignment_id"],
-            assignment__company=company,
-            assignment__survey__key=NOM035_SURVEY_KEY,
-            status=Report.Status.PUBLISHED,
-        )
-
-
-class ExecutiveReportListView(ExecutiveMixin, View):
-    def get(self, request):
-        company = self.own_company()
-        if company is None:
-            return redirect("accounts:setup_profile")
-        published = {
-            r.assignment_id: r
-            for r in Report.objects.filter(
-                assignment__company=company, status=Report.Status.PUBLISHED
-            )
-        }
-        rows = [
-            {"option": o, "report": published[o.assignment.pk]}
-            for o in assignment_options(company)
-            if o.assignment.pk in published
-        ]
-        return render(
-            request,
-            "reports/report_list.html",
-            {"company": company, "rows": rows, "is_admin_view": False},
-        )
-
-
-class ExecutiveReportDetailView(ExecutiveMixin, View):
-    def get(self, request, assignment_id):
-        company = self.own_company()
-        if company is None:
-            return redirect("accounts:setup_profile")
-        report = self.published(company)
-        ctx = context_for(report)
-        return render(
-            request,
-            "reports/report_detail.html",
-            {
-                "company": company,
-                "report": report,
-                "ctx": ctx,
-                "sections": render_sections(ctx),
-                "blockers": [],
-                "is_admin_view": False,
-            },
-        )
-
-
-class ExecutiveReportPdfView(ExecutiveMixin, View):
-    def get(self, request, assignment_id):
-        company = self.own_company()
-        if company is None:
-            return redirect("accounts:setup_profile")
-        return _pdf_response(request, self.published(company))

@@ -14,12 +14,12 @@ folder; for the reasoning behind a structural choice see the ADRs in `docs/adr/`
 
 | App | Role | Registered |
 |---|---|---|
-| `accounts` | Custom user (email + OTP login, three-part Mexican name), companies and their área/localidad catalogs, roles/permissions, CSV import, employee position/área/localidad metadata and demographics | ✅ |
+| `accounts` | Custom user (email + OTP login, three-part Mexican name), companies and their área/localidad catalogs, roles/permissions, CSV import, employee área/localidad metadata and demographics | ✅ |
 | `surveys` | The **instrument authoring/structure base**: `Survey → Module → Question → Choice`, assignments, and survey-taking | ✅ |
 | `responses` | Response storage: `SurveySubmission` + `Answer` | ✅ |
 | `nom035` | The **NOM-035 valuation engine**: answers → scores → Nivel de Riesgo (NDR) + Guía I referral flag | ✅ |
 | `core` | Home routing, company/employee dashboards, and the NOM-035 instrument seed | ✅ |
-| `reports` | The **NOM-035 results report**: Administrador drafts and publishes one report per closed assignment, a frozen data snapshot, the Ejecutivo principal's read-only pages, and the letter-size PDF (WeasyPrint) | ✅ |
+| `reports` | The **NOM-035 results report**: Administrador drafts and publishes one report per closed assignment, a frozen data snapshot, Administrador-only pages, and the letter-size PDF (WeasyPrint) | ✅ |
 
 ## Architectural shape: a shared base with per-instrument engines
 

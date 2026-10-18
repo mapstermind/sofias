@@ -138,15 +138,15 @@ Activation behavior:
 - A user whose profile has no company sees the profile activation page with the same generic account-not-linked error.
 - A user whose profile is already activated is redirected to the app home route.
 - A user whose company has **no active áreas** sees a blocked-activation notice telling them to contact their administrator; activation is not possible until an admin loads at least one área.
-- A user with an inactive profile and linked company sees the activation form: company reference code, nombre(s), apellido paterno, apellido materno, puesto, sexo, fecha de nacimiento, área picker, and — only when the company has more than one active localidad — a localidad picker.
-- Activation is where a user supplies everything only they know about themselves. Nombre(s), apellido paterno, sexo and fecha de nacimiento are required; apellido materno and puesto are optional and saved as empty when blank. Every one of them is prefilled from any value already on the `User`/`UserProfile`, so a user an admin filled in by hand is not made to retype them.
+- A user with an inactive profile and linked company sees the activation form: company reference code, nombre(s), apellido paterno, apellido materno, sexo, fecha de nacimiento, área picker, and — only when the company has more than one active localidad — a localidad picker.
+- Activation is where a user supplies everything only they know about themselves. Nombre(s), apellido paterno, sexo and fecha de nacimiento are required; apellido materno is optional and saved as empty when blank. Every one of them is prefilled from any value already on the `User`/`UserProfile`, so a user an admin filled in by hand is not made to retype them.
 - Fecha de nacimiento is entered as three dropdowns (Día, Mes, Año) and must fall in a 15-to-99-year working-age window. The Año list is only bounded to that plausible range — a year alone can't settle whether the birthday has passed — so `ProfileActivationForm` is a plain form rather than a `ModelForm` and checks the exact window itself, answering the employee in Spanish; `UserProfile.clean()` applies the same bound to the admin and the shell. A date in the future sits below the minimum, so the one bound covers it too.
 - The submitted reference code is stripped, uppercased, must be exactly 5 characters, and must be alphanumeric.
 - The área and localidad choices are restricted to the **active entries of the user's own company**. A submitted primary key belonging to another company (or to an inactive entry) is rejected as an invalid choice and the profile remains inactive.
 - Área is always required. Localidad is required only when the company has more than one active localidad; when it has exactly one, that localidad is auto-assigned and the field is not rendered; when it has none, `location` stays null.
 - A submission that carries a `location` when the picker is not rendered is refused with a form-level notice asking the user to review and confirm, and the profile stays inactive. Only a picker the user was shown could have produced that value, so its presence means the localidad catalog shrank to one entry (or to none) while the form was open: auto-assigning the survivor would record a localidad the user never chose. The re-rendered form offers no picker, so confirming it activates normally.
 - If the code does not match the linked company's `reference_code`, the form is re-rendered and the profile remains inactive.
-- If everything validates, `User.first_name`/`paternal_last_name`/`maternal_last_name` and `UserProfile.position`/`sex`/`date_of_birth`/`area`/`location`/`is_activated` are saved in a single transaction, and the user is redirected to the app home route. The two rows commit together or not at all — a profile that passed the `is_activated` gate with no área would have nothing to aggregate on.
+- If everything validates, `User.first_name`/`paternal_last_name`/`maternal_last_name` and `UserProfile.sex`/`date_of_birth`/`area`/`location`/`is_activated` are saved in a single transaction, and the user is redirected to the app home route. The two rows commit together or not at all — a profile that passed the `is_activated` gate with no área would have nothing to aggregate on.
 
 ### Logout
 
@@ -170,7 +170,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Password fallback email and password.
 - New password and confirmation.
 - Company reference code.
-- Nombre(s), apellido paterno, optional apellido materno, and optional puesto.
+- Nombre(s), apellido paterno, and optional apellido materno.
 - Sexo and fecha de nacimiento.
 - Área selection (and localidad selection when the company has more than one).
 - Session value `otp_email`.
@@ -184,7 +184,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Created and updated `SetupAccessCode` records.
 - Updated Django session authentication state.
 - Updated `User.password`, `User.must_change_password`, `User.first_name`, `User.paternal_last_name`, and `User.maternal_last_name`.
-- Updated `UserProfile.is_activated`, `UserProfile.position`, `UserProfile.sex`, `UserProfile.date_of_birth`, `UserProfile.area`, and `UserProfile.location`.
+- Updated `UserProfile.is_activated`, `UserProfile.sex`, `UserProfile.date_of_birth`, `UserProfile.area`, and `UserProfile.location`.
 - OTP email sent through Django's configured email backend.
 
 ## API / routes / commands
@@ -202,7 +202,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | `/cuentas/cambiar-contrasena/` | GET | authenticated user | Password-change form or redirect | Requires login. Users without `must_change_password` are rerouted through post-login routing. |
 | `/cuentas/cambiar-contrasena/` | POST | `new_password1`, `new_password2` | Redirect or form errors | Uses Django password validators. |
 | `/cuentas/completar-perfil/` | GET | authenticated user | Activation form, account-linked error, no-áreas notice, or redirect | Requires login. Admins skip activation. Localidad picker rendered only when the company has >1. |
-| `/cuentas/completar-perfil/` | POST | `reference_code`, `first_name`, `paternal_last_name`, optional `maternal_last_name`, optional `position`, `sex`, `date_of_birth`, `area`, optional `location` | Activate profile and redirect or form errors | Admins skip activation even on POST. Área/localidad pks are validated against the user's own company. User and profile rows are written in one transaction. |
+| `/cuentas/completar-perfil/` | POST | `reference_code`, `first_name`, `paternal_last_name`, optional `maternal_last_name`, `sex`, `date_of_birth`, `area`, optional `location` | Activate profile and redirect or form errors | Admins skip activation even on POST. Área/localidad pks are validated against the user's own company. User and profile rows are written in one transaction. |
 | `/cuentas/cerrar-sesion/` | POST | authenticated or anonymous session | Logout and redirect | GET and other methods return 405. |
 | `python manage.py bootstrap_groups` | command | none | Creates or syncs auth groups | Idempotently assigns custom `accounts.Role` permissions. |
 
@@ -314,7 +314,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Users with `must_change_password=True` must change their password before using normal non-admin, non-static app routes.
 - `must_change_password` must be cleared only after a valid password change.
 - Non-admin users must not complete first-login activation unless their entered reference code matches their linked company.
-- Activation must not complete without nombre(s), apellido paterno, sexo and fecha de nacimiento; apellido materno and puesto may stay blank.
+- Activation must not complete without nombre(s), apellido paterno, sexo and fecha de nacimiento; apellido materno may stay blank.
 - A stored `date_of_birth` must correspond to between 15 and 99 completed years, at the form layer for an employee and in `UserProfile.clean()` everywhere else.
 - Age is always derived from `date_of_birth` and never stored, so it cannot go stale.
 - Activation must only accept área/localidad entries that are active and belong to the user's own company.
@@ -336,7 +336,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 - Given a setup-code user submits a valid new password twice, when the password-change form is posted, then the password changes, `must_change_password` is cleared, and the user is routed onward.
 - Given a non-admin user with an inactive profile and linked company, when they submit the matching company reference code, then their profile is activated and they are routed onward.
 - Given a non-admin user submits the wrong company reference code, when the activation form is posted, then the profile remains inactive.
-- Given a non-admin user with an inactive profile, when they post a complete activation form, then nombre(s), apellido paterno, apellido materno, puesto, sexo and fecha de nacimiento are written to the `User` and `UserProfile` rows in one transaction.
+- Given a non-admin user with an inactive profile, when they post a complete activation form, then nombre(s), apellido paterno, apellido materno, sexo and fecha de nacimiento are written to the `User` and `UserProfile` rows in one transaction.
 - Given an activation form posted without sexo or without fecha de nacimiento, when it is submitted, then the field shows a Spanish error and the profile remains inactive.
 - Given a fecha de nacimiento outside the 15-to-99-year window, when the activation form is posted, then it is rejected and the profile remains inactive.
 - Given a profile that already carries a name, sexo or fecha de nacimiento, when the activation form is rendered, then those values are prefilled.
@@ -385,7 +385,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | Inactive área not selectable | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_inactive_area_is_not_selectable` |
 | Conditional localidad picker | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_single_location_is_auto_assigned_and_not_rendered`, `test_posted_location_never_assigned_when_field_hidden`, `test_several_locations_require_a_choice`, `test_zero_locations_activates_with_null_location` |
 | Localidad retired while the form is open | `apps/accounts/tests/test_views.py`, `apps/accounts/tests/test_forms.py` | `TestSetupProfileView::test_location_retired_mid_session_is_not_substituted`, `TestProfileActivationFormScoping::test_location_posted_while_picker_is_gone_is_rejected` |
-| Name and puesto saved at activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_activation_saves_name_and_puesto`, `test_activation_without_puesto_leaves_it_blank` |
+| Name saved at activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_activation_saves_name` |
 | Name is required to activate | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_missing_name_blocks_activation` |
 | Sexo and fecha de nacimiento saved at activation | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_activation_saves_demographics` |
 | Sexo is required to activate | `apps/accounts/tests/test_views.py` | `TestSetupProfileView::test_missing_sex_blocks_activation` |
@@ -397,7 +397,7 @@ Logout is POST-only at `/cuentas/cerrar-sesion/`.
 | OTP code validation | `apps/accounts/tests/test_forms.py` | `TestOTPVerifyFormCleanCode::*` |
 | Reference code normalization and validation | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormCleanReferenceCode::*` |
 | Activation picker scoping | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormScoping::*` |
-| Name/puesto field rules | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormIdentityFields::*` |
+| Name field rules | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormIdentityFields::*` |
 | Sexo and fecha de nacimiento field rules | `apps/accounts/tests/test_forms.py` | `TestProfileActivationFormDemographics::*` |
 | Full name joins the three parts | `apps/accounts/tests/test_models.py` | `TestUserFullName::*` |
 | Initials come from the nombre and the apellido paterno | `apps/accounts/tests/test_models.py` | `TestUserGetInitials::*` |

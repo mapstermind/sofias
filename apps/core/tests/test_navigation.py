@@ -53,7 +53,10 @@ def test_an_admin_sees_every_section(admin, company):
 
 @pytest.mark.parametrize(
     "group, expected",
-    [("Principal Exec", ALL), ("Secondary Exec", ["Tablero", "Colaboradores"])],
+    [
+        ("Principal Exec", ["Tablero", "Colaboradores", "Resultados"]),
+        ("Secondary Exec", ["Tablero", "Colaboradores"]),
+    ],
 )
 def test_an_executive_sees_the_sections_they_may_open(member, company, group, expected):
     user = member(group)
@@ -92,7 +95,6 @@ def test_every_offered_section_opens_for_an_admin(client, admin, company):
         ("/tablero-empresa/colaboradores/1/", "Colaboradores"),
         ("/tablero-empresa/resultados/", "Resultados"),
         ("/tablero-empresa/resultados/fragmento/", "Resultados"),
-        ("/tablero-empresa/reportes/", "Reportes"),
     ],
 )
 def test_the_page_lights_its_section(member, company, path, active):

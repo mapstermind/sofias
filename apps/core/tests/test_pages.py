@@ -36,7 +36,6 @@ def _h1_count(client, url):
         "core:company_dashboard",
         "core:company_employee_list",
         "core:company_results",
-        "reports:exec_list",
     ],
 )
 def test_an_executive_page_has_one_title(client, as_group, name):

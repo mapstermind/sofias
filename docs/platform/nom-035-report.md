@@ -3,7 +3,7 @@
 ## Status
 
 Current — implemented in `apps/reports`; aggregates in `apps/nom035/results.py`;
-pages at `/empresas/<código>/reportes/` and `/tablero-empresa/reportes/`.
+pages at `/empresas/<código>/reportes/`.
 
 ## What this does
 
@@ -13,9 +13,10 @@ figure-bearing sentence from the survey data, and the Administrador adds the
 facts the platform does not hold — the place of issue, the company's main
 activities and headcount by work modality, the evaluator and their cédula, the
 client's signatories, conclusions and any extra recommendations. Publishing
-freezes the figures; from then on the company's Ejecutivo principal reads the
-same report on the platform and downloads it as a letter-size PDF, page for
-page identical every time. The report states risk as **distributions of
+freezes the figures; from then on the report downloads as a letter-size PDF,
+page for page identical every time, which the Administrador delivers to the
+company. Only the Administrador reads the report on the platform
+(`can_edit_report`). The report states risk as **distributions of
 workers across the five Niveles de Riesgo**, never as a single company level,
 and draws the results with the same chart components as the results dashboard.
 
@@ -38,13 +39,12 @@ them — which generating every figure-bearing sentence from data removes.
 - Two `Company` fields: `industry` (actividad principal) and `work_center`
   (centro de trabajo).
 - Company-level aggregates in `apps/nom035`: dimensión results, final-score and
-  categoría NDR distributions per área, and Guía I outcomes per área — all under
-  the small-group rule.
+  categoría NDR distributions per área, and Guía I outcomes per área — every área
+  shown, however few workers it has.
 - The report's sections, generated sentences, recommendations matrix and fixed
   text, declared as an ordered section registry.
 - Administrador pages to list, preview, edit, publish, unpublish and download a
-  report; Ejecutivo principal pages to list, read and download published reports,
-  reached from the header's *Reportes* section.
+  report, reached from the header's *Reportes* section.
 - PDF rendering with WeasyPrint, from the same partials as the screen.
 
 **Out of scope:**
@@ -58,8 +58,8 @@ them — which generating every figure-bearing sentence from data removes.
 - Filters (sexo, edad, área, localidad) on the report; it always covers the
   whole assignment.
 - A report for any instrument other than NOM-035.
-- Ejecutivo secundario access, and unsuppressed reports for Administración (see
-  Open questions).
+- Report access for the company's own users (Ejecutivo principal or secundario);
+  the Administrador delivers the PDF.
 - Editing the generated text, the recommendations matrix or the fixed text from
   the platform; they change in code.
 
@@ -75,7 +75,6 @@ A report has two states.
   recent other report, when there is one; every other field starts empty.
   Saving it creates the report. A draft computes every figure live from the
   current scores, so the preview always shows what publishing would freeze.
-  Executives cannot see it.
 - **Publicado.** *Publicar* stores the snapshot, `published_at` and
   `published_by`. The published report renders only from the snapshot, so later
   submissions or a `recompute_nom035_scores` run never change it. Its fields
@@ -84,10 +83,9 @@ A report has two states.
   read-only as well. Clicking *Publicar* again on a published report changes
   nothing and says nothing. *Retirar publicación* opens a dialog that asks to
   confirm (*¿Retirar la publicación del reporte?* — *Se descartará la versión
-  publicada y la empresa dejará de ver el reporte hasta que lo publiques de
-  nuevo.*); its own *Retirar publicación* discards the snapshot and returns the
-  report to Borrador (*Publicación retirada.*), and executives lose access until
-  it is published again.
+  publicada. El reporte vuelve a ser un borrador hasta que lo publiques de nuevo.*);
+  its own *Retirar publicación* discards the snapshot and returns the report to
+  Borrador (*Publicación retirada.*).
 
 *Publicar* is refused, with one Spanish message per unmet condition, while any
 of these holds:
@@ -106,8 +104,7 @@ optional block is left out of the report, never printed blank.
 
 ### Pages and routes
 
-Administrador — requires `can_manage_surveys` and `can_view_insights`, the same
-guard as the admin results route:
+Administrador — requires `can_edit_report`, held by the Administrador alone:
 
 | Route | Purpose |
 |---|---|
@@ -117,19 +114,10 @@ guard as the admin results route:
 | `…/publicar/`, `…/despublicar/` | POST only |
 | `…/pdf/` | The PDF; a draft carries a *BORRADOR* watermark on every page |
 
-Ejecutivo principal — requires `can_view_insights`, scoped to the viewer's own
-company (a viewer with no company is sent to profile setup):
-
-| Route | Purpose |
-|---|---|
-| `tablero-empresa/reportes/` | Published reports only, each with its frozen count of scored questionnaires |
-| `tablero-empresa/reportes/<assignment>/` | The frozen report, with *Descargar PDF* |
-| `tablero-empresa/reportes/<assignment>/pdf/` | Its PDF |
-
-A draft, a missing report, a non-NOM-035 assignment or another company's
-assignment is a 404. Entry point: the *Reportes* section of the company
-navigation (`{% company_nav %}`, see `design-system.md`), offered to the
-Administrador on any company and to the Ejecutivo principal on their own.
+A non-NOM-035 assignment or another company's assignment is a 404, and any
+viewer without `can_edit_report` is refused with a 403. Entry point: the
+*Reportes* section of the company navigation (`{% company_nav %}`, see
+`design-system.md`), offered to the Administrador on any company.
 
 ### Report contents
 
@@ -173,7 +161,7 @@ from data, **A** = written by the Administrador, **F** = fixed text.
       the statistics row with a single neutral band up to the highest possible
       score. No level: the norm publishes no dimensión thresholds.
    7. *Resultados por área* — final-score distribution per área, then each
-      visible área's categoría distributions.
+      área's categoría distributions.
    8. *Guía I* — the company's three outcomes (sin acontecimiento /
       acontecimiento sin requerir valoración / requiere valoración clínica),
       then the same counts per área.
@@ -212,7 +200,7 @@ prints is the row's largest-remainder percents summed — the same figures the
 chart beside it prints. Ranking and ties are decided on the exact fractions.
 
 - **Calificación final** — *"De los N colaboradores evaluados, el X % presentó
-  niveles de riesgo Nulo o Bajo; el Y % restante, Medio, Alto o Muy alto."*
+  niveles de riesgo Nulo o Bajo; el Y % Medio; el Z % Alto o Muy alto."*
   (*"De 1 colaborador evaluado, …"* for a single worker.)
 - **Categoría** — names the categoría with the largest share of workers at Alto
   plus Muy alto, with that share. Tied categorías are named together: with one
@@ -245,7 +233,7 @@ The snapshot stores **data**, not rendered output: `ReportData`
 (`apps/reports/snapshot.py`) — the company facts printed on the report, the
 variant and its label, the period label, registered, responded and
 participation, the computation date, the sex and age slices, the participation
-rows with their suppression state, the final and categoría distributions and
+rows, the final and categoría distributions and
 statistics (dominios as their children), the dimensión groups, the área rows and
 the Guía I counts. Strip bands are clamped to the highest possible score, since
 JSON holds no infinity. `dump` and `load` round-trip exactly, so a draft and a
@@ -257,19 +245,17 @@ snapshot's shape is not migrated; the report is unpublished and published again.
 
 ### Small groups
 
-The report is always computed with the small-group and complement rule
-(`shows`, `_hide_until_safe` in `apps/nom035/results.py`), whoever views it,
-the Administrador's preview included — so the preview is exactly what the client
-receives. It affects only per-área content: the participation rows (5.2), the
-per-área distributions (5.7) and the per-área Guía I counts (5.8). A hidden área
-keeps its registered and responded counts and shows the dashboard's suppression
-message. Company-wide sections use the whole assignment.
+The report is computed with the whole assignment and shows every área, however
+few workers it has: the small-group rule belongs to the results page, whose
+viewers are company users. It affects per-área content only: the participation
+rows (5.2), the per-área distributions (5.7) and the per-área Guía I counts
+(5.8). Company-wide sections use the whole assignment.
 
 ### Visual design
 
 **Finding first, chart as evidence.** Each results section with a finding opens
 with its generated sentence, set larger in the serif, then the chart, then the
-small print (*n*, base, suppression note). The five-level NDR palette is the
+small print (*n*, base). The five-level NDR palette is the
 only meaning-bearing color and appears only where a risk level is meant. It
 has two tiers: categorías and the final score draw in the base tier, dominios
 in a deeper variant of the same five levels, so a reader can tell a dominio's
@@ -331,7 +317,7 @@ dashboard's partials, which carry filter, disclosure and fragment logic:
 | 5.4 Categoría | `level_columns` and the statistics row per categoría |
 | 5.5 Dominio | `level_columns` (sm) and the statistics row per dominio under its categoría, in the dominio tier; always expanded; a *Dominios* legend |
 | 5.6 Dimensión | the statistics row, `range_strip` with a single neutral gray band from 0 to the highest possible score |
-| 5.7 Por área | one `stacked_bar` row per área for the final score; then small `level_columns` per categoría under each visible área |
+| 5.7 Por área | one `stacked_bar` row per área for the final score; then small `level_columns` per categoría under each área |
 | 5.8 Guía I | `stacked_bar` for the company; count table per área |
 | 6 Criterios de acción | NDR badge and text, with a left rule in the level's color |
 | 7 Recomendaciones | per dominio: a solid dominio-tier badge, the share, the matrix text, a left rule in the dominio tier; refers back to 5.5 |
@@ -467,12 +453,13 @@ the admin) with Spanish model metadata.
 - Decision: Facts are stored where they stay true — industry and work centre on
   `Company`; headcount, signatories and evaluator on `Report`.
   Reason: Round-specific facts on `Company` would rewrite older reports.
-- Decision: Only the Ejecutivo principal reads reports, through
-  `can_view_insights`.
-  Reason: The report holds the results page's data, so it shares its audience.
-- Decision: The small-group rule always applies, preview included.
+- Decision: Only an Administrador reads reports, through the `can_edit_report`
+  permission, which only the Administrador group holds.
+  Reason: The report shows every área without small-group suppression, so it
+  goes to the company as a PDF the Administrador delivers.
+- Decision: The report shows every group, preview included.
   Reason: One frozen version per report, and the Administrador writes against
-  the figures the client sees.
+  the figures the client receives.
 - Decision: WeasyPrint renders the PDF server-side from the screen partials.
   Reason: A real download, identical every time, with paged-media headers,
   footers and page numbers, without shipping a browser.
@@ -496,10 +483,9 @@ the admin) with Spanish model metadata.
 
 ## Open questions
 
-- Domain points awaiting the expert are tracked in
-  [`nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md):
-  unsuppressed reports for Administración, the Objetivo text, and stating each
-  level in the final-score sentence.
+- The Objetivo text is awaiting the expert; it is one fixed text for every
+  report. Tracked in
+  [`nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md).
 
 ## Linked ADRs
 

@@ -12,8 +12,8 @@
       {% for a in data.areas %}
         <tr>
           <th scope="row">{{ a.label }}</th>
-          {% if a.suppressed or not a.guia1 %}
-            <td colspan="3" data-label="Resultados">{% include "reports/sections/results/_suppressed.html" %}</td>
+          {% if not a.guia1 %}
+            <td colspan="3" data-label="Resultados">—</td>
           {% else %}
             <td data-label="Sin acontecimiento" class="report-cell-num">{{ a.guia1.none }}</td>
             <td data-label="Acontecimiento sin requerir valoración" class="report-cell-num">{{ a.guia1.event }}</td>

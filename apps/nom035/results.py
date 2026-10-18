@@ -613,7 +613,6 @@ class AreaResults:
     area_id: int | None
     label: str
     n: int
-    suppressed: bool
     final: DistributionRow | None = None
     categorias: tuple[DistributionRow, ...] = ()
     guia1: Guia1 | None = None
@@ -691,16 +690,12 @@ def _areas(assignment, scores, participation) -> tuple[AreaResults, ...]:
         area_scores = by_area.get(p.area_id, [])
         if not area_scores:
             continue
-        if p.suppressed:
-            rows.append(AreaResults(p.area_id, p.label, len(area_scores), True))
-            continue
         ids = [s.pk for s in area_scores]
         rows.append(
             AreaResults(
                 area_id=p.area_id,
                 label=p.label,
                 n=len(area_scores),
-                suppressed=False,
                 final=_distribution(
                     FINAL, "Calificación final", [s.final_ndr for s in area_scores]
                 ),
@@ -719,8 +714,8 @@ def _areas(assignment, scores, participation) -> tuple[AreaResults, ...]:
 
 
 def report_results(assignment) -> ReportResults:
-    """Everything the report reads: the whole assignment, small groups always hidden."""
-    results = results_for(assignment, WHOLE_ASSIGNMENT, suppress_small_groups=True)
+    """Everything the report reads: the whole assignment, every group shown."""
+    results = results_for(assignment, WHOLE_ASSIGNMENT, suppress_small_groups=False)
     scores = list(
         SubmissionScore.objects.filter(submission__assignment=assignment)
         .select_related(f"{_PROFILE}area")

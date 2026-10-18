@@ -70,7 +70,7 @@ Every client user — executives and employees alike — is created by importing
 
 | Group (in the CSV) | Shown as | What they can do |
 |---|---|---|
-| `Principal Exec` | Ejecutivo principal | Their company's dashboard, the roster of collaborators, the NOM-035 results, and the published reports. Answers the survey. |
+| `Principal Exec` | Ejecutivo principal | Their company's dashboard, the roster of collaborators and the NOM-035 results. Answers the survey. |
 | `Secondary Exec` | Ejecutivo secundario | The dashboard and the roster. No results or reports. Answers the survey. |
 | `Employees` | Empleado | Answers the survey. |
 
@@ -83,7 +83,7 @@ Executives answer the survey too — they are workers at the company like everyo
 
 ### Import
 
-Build a file with four columns — `email`, `company_reference_code`, `group`, `auth_method` — and upload it from **Cuentas → Usuarios → Importar colaboradores**. You do not upload names, puestos, áreas or localidades: each person enters those when they activate their account.
+Build a file with four columns — `email`, `company_reference_code`, `group`, `auth_method` — and upload it from **Cuentas → Usuarios → Importar colaboradores**. You do not upload names, áreas or localidades: each person enters those when they activate their account.
 
 ```csv
 email,company_reference_code,group,auth_method
@@ -148,7 +148,6 @@ The código de empresa is not a password. Share it only with the company itself.
 
 - **Código de empresa** — must match the company their account belongs to.
 - **Nombre(s)** and **Apellido paterno** — required. **Apellido materno** — optional.
-- **Puesto** — optional.
 - **Sexo** and **Fecha de nacimiento** — required. The date is three lists (Día, Mes, Año); the years offered keep the person's age between 15 and 99.
 - **Área** — required, from the company's list.
 - **Localidad** — only asked when the company has more than one.

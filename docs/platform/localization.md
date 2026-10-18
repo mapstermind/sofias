@@ -147,7 +147,7 @@ population.
 | One respondent's attempt at an assignment | **envío de encuesta** | respuesta, participación |
 | One answer within an attempt | **respuesta** | contestación |
 | The NOM-035 result for a submission | **valoración** | puntuación, evaluación |
-| A person's job title, a colaborador's or a report signatory's | **puesto** | cargo, posición |
+| A report signatory's job title | **puesto** | cargo, posición |
 | The `Employees` role specifically | **empleado** | colaborador, operativo |
 | One person's completed survey, counted for an executive | **cuestionario contestado** | respuesta |
 | The 5-character code typed at activation | **código de empresa** | código de referencia |

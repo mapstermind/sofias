@@ -115,7 +115,6 @@ def make_user_with_profile(db, make_user):
     def factory(
         email="emp@example.com",
         company=None,
-        position="Analyst",
         area=None,
         location=None,
         is_activated=True,
@@ -131,7 +130,6 @@ def make_user_with_profile(db, make_user):
         # activation itself pass is_activated=False.
         user = make_user(email=email, **kwargs)
         profile, _ = UserProfile.objects.get_or_create(user=user)
-        profile.position = position
         profile.company = company
         profile.area = area
         profile.location = location

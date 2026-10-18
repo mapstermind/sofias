@@ -95,23 +95,16 @@ def test_published_pdf_has_no_watermark(make_user, scored_assignment):
     assert "BORRADOR" not in pdf.report_html(report)
 
 
-def test_exec_pdf_only_when_published(
-    client,
-    make_user_with_profile,
-    make_user,
-    bootstrap_groups,
-    scored_assignment,
-    monkeypatch,
+def test_executive_cannot_download_the_pdf(
+    client, make_user_with_profile, bootstrap_groups, scored_assignment, monkeypatch
 ):
     monkeypatch.setattr(pdf, "_write_pdf", lambda html: b"%PDF-1.7")
     user = make_user_with_profile(email="e@x.mx", company=scored_assignment.company)
     user.groups.add(bootstrap_groups[ROLES[1].name])
     client.force_login(user)
-    url = reverse("reports:exec_pdf", args=[scored_assignment.pk])
-    report = Report.objects.create(assignment=scored_assignment, **READY)
-    assert client.get(url).status_code == 404
-    publishing.publish(report, make_user(email="op@x.mx"))
-    assert client.get(url).status_code == 200
+    code = scored_assignment.company.reference_code
+    url = reverse("reports:admin_pdf", args=[code, scored_assignment.pk])
+    assert client.get(url).status_code == 403
 
 
 def test_detail_page_links_the_pdf(

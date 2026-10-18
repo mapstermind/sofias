@@ -62,7 +62,6 @@ Extends `User` with business context. Created separately from the auth user.
 |---|---|---|
 | `id` | BigAutoField | PK |
 | `user` | OneToOneField → `User` | Cascades on user delete |
-| `position` | CharField(255) | Job title, optional |
 | `sex` | CharField(6) | `male` / `female`, labelled Masculino / Femenino; supplied by the employee at activation |
 | `date_of_birth` | DateField | Nullable; supplied at activation. The `age` property derives completed years from it against today's date in `America/Mexico_City`, so no age is stored |
 | `is_activated` | BooleanField | First-login activation flag, default `False` |
@@ -340,7 +339,7 @@ Company.create(name, legal_name)              ← reference_code auto-generated
   ├─ CompanyArea.create(company, name)        ← at least one, or activation is blocked
   ├─ CompanyLocation.create(company, name)    ← optional
   └─ User.create(username, email, password, ...)
-       └─ UserProfile.create(user, position, company, is_activated=False)
+       └─ UserProfile.create(user, company, is_activated=False)
 ```
 
 A `Company` is created first, **together with its áreas and localidades** — these are curated as inlines on the Company change page in the admin. Loading at least one área matters: an employee whose company has no active área cannot complete activation (the activation screen tells them to tell whoever invited them). The Company changelist shows área/localidad counts so the gap is visible before anyone hits it.

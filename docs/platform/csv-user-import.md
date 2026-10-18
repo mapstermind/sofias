@@ -9,7 +9,7 @@ The CSV user import feature lets platform admins bulk-create pre-approved users 
 - one group assignment
 - optional setup-code fallback access for users who cannot receive OTP emails
 
-The import carries **only what grants access to an account**: who it is (`email`), which company it belongs to, what it may do (`group`), and how it logs in (`auth_method`). Everything an employee knows about themselves — nombre, puesto, área, localidad — is collected from them at activation instead, which keeps the admin's roster to four columns and makes the employee the source of their own details. See `docs/platform/auth-and-onboarding.md` §Profile activation for the other half of the flow.
+The import carries **only what grants access to an account**: who it is (`email`), which company it belongs to, what it may do (`group`), and how it logs in (`auth_method`). Everything an employee knows about themselves — nombre, área, localidad — is collected from them at activation instead, which keeps the admin's roster to four columns and makes the employee the source of their own details. See `docs/platform/auth-and-onboarding.md` §Profile activation for the other half of the flow.
 
 This document captures the current behavior so future refactors can safely add fields, rename columns, or move the feature to another UI without changing core guarantees unintentionally.
 
@@ -105,7 +105,7 @@ For every created row:
   - `company`: company matched by `company_reference_code`
   - `is_activated=False`
 
-`User.first_name`, `User.paternal_last_name`, `User.maternal_last_name`, `UserProfile.position`, `UserProfile.sex`, `UserProfile.date_of_birth`, `UserProfile.area`, and `UserProfile.location` are left at their blank/null defaults. The employee fills them in at activation; until they do, the roster lists them by correo and the detail page reads *Sin nombre*.
+`User.first_name`, `User.paternal_last_name`, `User.maternal_last_name`, `UserProfile.sex`, `UserProfile.date_of_birth`, `UserProfile.area`, and `UserProfile.location` are left at their blank/null defaults. The employee fills them in at activation; until they do, the roster lists them by correo and the detail page reads *Sin nombre*.
 
 For `auth_method=otp`:
 
@@ -162,7 +162,7 @@ The current feature does not:
 - persist import batches or upload history
 - preview imports before creation
 - let company managers upload users from the platform UI
-- carry any employee-supplied detail (nombre, puesto, área, localidad)
+- carry any employee-supplied detail (nombre, área, localidad)
 
 ## Acceptance Criteria
 
@@ -178,7 +178,7 @@ Given a row with an unknown company reference code, unknown group, invalid email
 
 Given a CSV carrying extra columns, when the CSV is imported, then those columns are ignored, the rows are created, and no área is assigned from them.
 
-Given a created row, when the import finishes, then the user has no name, puesto, área, or localidad, and the report message is exactly `Usuario creado.`
+Given a created row, when the import finishes, then the user has no name, área, or localidad, and the report message is exactly `Usuario creado.`
 
 Given an email local part collides with an existing username, when the row is valid, then the importer generates a unique username.
 

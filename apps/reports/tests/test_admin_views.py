@@ -110,7 +110,26 @@ def test_executive_cannot_use_admin_routes(
     user = make_user_with_profile(email="e@x.mx", company=scored_assignment.company)
     user.groups.add(bootstrap_groups[ROLES[1].name])
     client.force_login(user)
-    assert client.get(urls["detail"]).status_code == 403
+    for name in ("list", "detail", "edit"):
+        assert client.get(urls[name]).status_code == 403
+    assert client.post(urls["publish"]).status_code == 403
+
+
+def test_survey_manager_without_the_report_permission_is_refused(
+    client, urls, make_user
+):
+    from django.contrib.auth.models import Permission
+
+    user = make_user(email="mgr@x.mx")
+    user.user_permissions.add(
+        *Permission.objects.filter(
+            codename__in=["can_manage_surveys", "can_view_insights"]
+        )
+    )
+    client.force_login(user)
+    for name in ("list", "detail", "edit"):
+        assert client.get(urls[name]).status_code == 403
+    assert client.post(urls["publish"]).status_code == 403
 
 
 def test_foreign_or_non_nom035_assignment_is_404(
@@ -220,7 +239,7 @@ def test_unpublish_asks_for_confirmation_in_a_dialog(
     dialog = body[body.index('<dialog id="unpublish-dialog"') : body.index("</dialog>")]
     assert f'action="{urls["unpublish"]}"' in dialog
     assert (
-        "la empresa dejará de ver el reporte hasta que lo publiques de nuevo." in dialog
+        "El reporte vuelve a ser un borrador hasta que lo publiques de nuevo." in dialog
     )
     assert "onsubmit" not in body
     # The sheet is a document with its own cover title (the PDF's too); the
@@ -269,30 +288,6 @@ def test_first_save_after_a_concurrent_create_does_not_fail(
     assert resp.status_code == 302
     assert resp["Location"] == urls["detail"]
     assert Report.objects.count() == 1
-
-
-def test_list_counts_the_frozen_respondents_once_published(
-    client,
-    make_user_with_profile,
-    bootstrap_groups,
-    scored_assignment,
-    make_user,
-):
-    from apps.nom035.tests.factories import make_score
-
-    report = _published(scored_assignment, make_user)
-    frozen = report.snapshot["responded"]
-    exec_user = make_user_with_profile(
-        email="ex@x.mx", company=scored_assignment.company
-    )
-    exec_user.groups.add(bootstrap_groups[ROLES[1].name])
-    client.force_login(exec_user)
-    url = reverse("reports:exec_list")
-    assert f"{frozen} cuestionarios valorados" in client.get(url).content.decode()
-    make_score(scored_assignment, make_user_with_profile(email="late@x.mx"))
-    body = client.get(url).content.decode()
-    assert f"{frozen} cuestionarios valorados" in body
-    assert f"{frozen + 1} cuestionarios" not in body
 
 
 def test_admin_list_counts_the_frozen_respondents_once_published(

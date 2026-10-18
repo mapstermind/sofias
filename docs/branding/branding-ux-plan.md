@@ -96,8 +96,8 @@ redesigned page.
 
 - Final name and logo (placeholders today; `settings.BRAND`, `static/img/logo.svg`).
 - The survey instructions' final text and video, the confidentiality wording
-  and *quien te invitó* — `docs/platform/nom-035-valoracion-supuestos.md` §8.
-- One company per razón social — same doc, §9.
+  and *quien te invitó* — `docs/platform/nom-035-valoracion-supuestos.md` §3.
+- One report per company when it has several localidades — same doc, §4.
 
 ## 5. Remove the `/propuestas/` pages
 

@@ -323,7 +323,6 @@ def setup_profile(request):
             "first_name": request.user.first_name,
             "paternal_last_name": request.user.paternal_last_name,
             "maternal_last_name": request.user.maternal_last_name,
-            "position": profile.position,
             "sex": profile.sex,
             "date_of_birth": profile.date_of_birth,
         }
@@ -354,7 +353,6 @@ def setup_profile(request):
             update_fields=["first_name", "paternal_last_name", "maternal_last_name"]
         )
 
-        profile.position = form.cleaned_data["position"]
         profile.sex = form.cleaned_data["sex"]
         profile.date_of_birth = form.cleaned_data["date_of_birth"]
         profile.area = form.cleaned_data["area"]
@@ -362,7 +360,6 @@ def setup_profile(request):
         profile.is_activated = True
         profile.save(
             update_fields=[
-                "position",
                 "sex",
                 "date_of_birth",
                 "area",

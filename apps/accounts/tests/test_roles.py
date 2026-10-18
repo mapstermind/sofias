@@ -80,3 +80,24 @@ class TestSmallGroupsPermission:
 
         perm = Permission.objects.get(codename="can_view_small_groups")
         assert perm.content_type.app_label == "accounts"
+
+
+class TestEditReportPermission:
+    def test_only_admins_may_edit_the_report(self):
+        from apps.accounts.management.commands.bootstrap_groups import (
+            GROUP_PERMISSIONS,
+        )
+
+        holders = {
+            name
+            for name, codenames in GROUP_PERMISSIONS.items()
+            if "can_edit_report" in codenames
+        }
+        assert holders == {"Admins"}
+
+    @pytest.mark.django_db
+    def test_edit_report_permission_exists(self):
+        from django.contrib.auth.models import Permission
+
+        perm = Permission.objects.get(codename="can_edit_report")
+        assert perm.content_type.app_label == "accounts"

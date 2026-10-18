@@ -831,7 +831,7 @@ class TestSetupProfileView:
         assert user.profile.is_activated is True
         assert user.profile.location is None
 
-    def test_activation_saves_name_and_puesto(
+    def test_activation_saves_name(
         self, client, make_user_with_profile, make_company, make_area
     ):
         company = make_company()
@@ -849,7 +849,6 @@ class TestSetupProfileView:
                 first_name="Ana",
                 paternal_last_name="López",
                 maternal_last_name="Núñez",
-                position="Analista",
             ),
         )
 
@@ -858,7 +857,6 @@ class TestSetupProfileView:
         assert user.first_name == "Ana"
         assert user.paternal_last_name == "López"
         assert user.maternal_last_name == "Núñez"
-        assert user.profile.position == "Analista"
 
     def test_missing_name_blocks_activation(
         self, client, make_user_with_profile, make_company, make_area
@@ -882,22 +880,6 @@ class TestSetupProfileView:
         assert user.profile.is_activated is False
         assert "first_name" in response.context["form"].errors
 
-    def test_activation_without_puesto_leaves_it_blank(
-        self, client, make_user_with_profile, make_company, make_area
-    ):
-        company = make_company()
-        area = make_area(company, name="Ventas")
-        user = make_user_with_profile(
-            email="nocargo@example.com", company=company, is_activated=False
-        )
-        client.force_login(user)
-
-        client.post(SETUP_PROFILE_URL, _activation_post(company, area=area.pk))
-
-        user.profile.refresh_from_db()
-        assert user.profile.is_activated is True
-        assert user.profile.position == ""
-
     def test_form_prefills_details_already_on_record(
         self, client, make_user_with_profile, make_company, make_area
     ):
@@ -913,8 +895,6 @@ class TestSetupProfileView:
         user.save(
             update_fields=["first_name", "paternal_last_name", "maternal_last_name"]
         )
-        user.profile.position = "Analista"
-        user.profile.save(update_fields=["position"])
         client.force_login(user)
 
         form = client.get(SETUP_PROFILE_URL).context["form"]
@@ -922,7 +902,6 @@ class TestSetupProfileView:
         assert form.initial["first_name"] == "Ana"
         assert form.initial["paternal_last_name"] == "López"
         assert form.initial["maternal_last_name"] == "Núñez"
-        assert form.initial["position"] == "Analista"
 
     def test_name_is_not_saved_when_activation_fails(
         self, client, make_user_with_profile, make_company, make_area

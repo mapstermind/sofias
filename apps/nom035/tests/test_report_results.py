@@ -38,22 +38,22 @@ def two_areas(make_company, make_user_with_profile, make_area, nom035_survey):
     return {"assignment": assignment, "ops": ops, "dir": dir_}
 
 
-def test_report_results_is_the_whole_assignment_suppressed(two_areas):
+def test_report_results_is_the_whole_assignment(two_areas):
     data = report_results(two_areas["assignment"])
     assert data.results.size == 8
     assert data.results.filtered is False
     assert data.registered == 8
 
 
-def test_area_results_follow_participation_visibility(two_areas):
+def test_every_area_shows_its_numbers_however_small(two_areas):
     data = report_results(two_areas["assignment"])
     by_label = {a.label: a for a in data.areas}
-    # Dirección (2) is hidden; hiding it leaves 2 hidden, so Operaciones hides too.
-    assert by_label["Dirección"].suppressed is True
-    assert by_label["Operaciones"].suppressed is True
-    assert by_label["Dirección"].final is None
-    assert by_label["Dirección"].categorias == ()
-    assert by_label["Dirección"].guia1 is None
+    assert by_label["Dirección"].n == 2
+    assert by_label["Dirección"].final is not None
+    assert by_label["Dirección"].categorias
+    assert by_label["Dirección"].guia1 is not None
+    assert by_label["Operaciones"].final is not None
+    assert not any(row.suppressed for row in data.results.participation)
 
 
 def test_area_results_numbers_when_visible(
@@ -77,7 +77,6 @@ def test_area_results_numbers_when_visible(
             )
     data = report_results(assignment)
     row = next(x for x in data.areas if x.label == "A")
-    assert row.suppressed is False
     assert row.n == 5
     assert dict(row.final.counts)[c.NDR_MEDIO] == 5
     assert [cat.key for cat in row.categorias][0] == cfg.CAT_AMBIENTE

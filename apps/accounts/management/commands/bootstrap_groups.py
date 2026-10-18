@@ -22,6 +22,7 @@ GROUP_PERMISSIONS: dict[str, list[str]] = {
         "can_manage_employees",
         "can_view_submissions",
         "can_view_small_groups",
+        "can_edit_report",
     ],
     ROLES[1].name: [  # Ejecutivo principal
         "can_view_dashboard",

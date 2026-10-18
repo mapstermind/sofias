@@ -250,7 +250,6 @@ class CompanyAdmin(admin.ModelAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
         "user",
-        "position",
         "sex",
         "date_of_birth",
         "area",
@@ -264,7 +263,6 @@ class UserProfileAdmin(admin.ModelAdmin):
     search_fields = (
         "user__username",
         "user__email",
-        "position",
         "area__name",
         "location__name",
     )

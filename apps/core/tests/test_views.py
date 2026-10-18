@@ -245,7 +245,6 @@ class TestCompanyDashboardView:
         # Give the user a profile linked to the company so the view can find their company
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.company = company
-        profile.position = "Analyst"
         profile.is_activated = True
         profile.save()
 
@@ -257,7 +256,6 @@ class TestCompanyDashboardView:
         user = _give_perm(make_user(), "can_view_dashboard")
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.company = company
-        profile.position = "Analyst"
         profile.is_activated = True
         profile.save()
         client.force_login(user)
@@ -294,7 +292,6 @@ class TestCompanyDashboardView:
         user = _give_perm(user, "can_manage_employees")
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.company = company
-        profile.position = "Analyst"
         profile.is_activated = True
         profile.save()
         client.force_login(user)
@@ -1294,7 +1291,6 @@ class TestCompanyEmployeeListView:
         ana = make_user_with_profile(
             email="ana@example.com",
             company=company,
-            position="Analista",
         )
         ana.groups.add(bootstrap_groups["Principal Exec"])
         viewer = self._make_viewer(make_user, company)
