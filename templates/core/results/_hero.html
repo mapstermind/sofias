@@ -1,0 +1,98 @@
+{% load charts icons l10n %}
+{% comment %}
+The main box: the final score, or the categoría chosen in *Ver*. Both views are
+drawn and results_dashboard.ts shows one: Distribución (a stem per level, the
+chosen level's figures beside it) or Estadísticas. Takes `hero`. The stem a
+reader starts on is the level holding the most colaboradores.
+{% endcomment %}
+{% with group=hero.group chart=hero.chart %}
+<section class="min-w-0 rounded-3xl bg-white p-5 shadow-xl shadow-primary-900/10 sm:p-7" data-hero>
+  <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div class="flex min-w-0 items-start gap-3">
+      <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-700">{% icon "chart-bar" "size-6" %}</span>
+      <div class="min-w-0">
+        <h2 class="text-2xl font-medium text-neutral-900">{{ group.label }}</h2>
+        <p class="mt-1 max-w-prose text-sm text-neutral-600" data-hero-caption="dist">Cómo se reparten los colaboradores entre los cinco niveles de riesgo. Toca un nivel para ver su detalle.</p>
+        <p class="mt-1 max-w-prose text-sm text-neutral-600" data-hero-caption="stats" hidden>Los puntos de los cuestionarios frente a los rangos de cada nivel.</p>
+      </div>
+    </div>
+    <div class="inline-flex shrink-0 self-start rounded-full bg-neutral-100 p-1 text-sm font-medium" role="group" aria-label="Qué mostrar" data-hero-views hidden>
+      <button type="button" class="min-h-11 rounded-full px-4 text-neutral-600 aria-pressed:bg-white aria-pressed:text-neutral-900 aria-pressed:shadow-sm" data-hero-view="dist" aria-pressed="true">Distribución</button>
+      <button type="button" class="min-h-11 rounded-full px-4 text-neutral-600 aria-pressed:bg-white aria-pressed:text-neutral-900 aria-pressed:shadow-sm" data-hero-view="stats" aria-pressed="false">Estadísticas</button>
+    </div>
+  </div>
+
+  <div class="mt-6" data-hero-panel="dist">
+    {% if group.dist.n %}
+    <div class="flex flex-col-reverse gap-6 md:flex-row md:items-end md:gap-8">
+      <div class="md:w-44 md:shrink-0 md:pb-16" aria-live="polite">
+        {% for s in chart.stems %}
+          <div data-level-panel="{{ s.key }}"{% if forloop.counter0 != chart.peak %} hidden{% endif %}>
+            <p class="text-3xl font-medium text-neutral-900 tabular-nums">{{ s.percent }} %</p>
+            <p class="mt-2 text-sm text-neutral-600">de los colaboradores presenta un nivel {{ s.label|lower }}.</p>
+            <p class="mt-1 text-sm text-neutral-500 tabular-nums">{{ s.value }} de {{ group.dist.n }}</p>
+          </div>
+        {% endfor %}
+      </div>
+      <figure class="m-0 min-w-0 flex-1">
+        {% localize off %}
+        <div class="relative pl-10">
+          <div class="absolute inset-x-0 top-0 h-56 border-b border-neutral-300 sm:h-64" aria-hidden="true">
+            <span class="absolute bottom-0 left-0 translate-y-1/2 text-xs text-neutral-500 tabular-nums">0 %</span>
+            {% for line in chart.gridlines %}
+              <div class="absolute inset-x-0" style="bottom: {{ line.bottom }}%">
+                <span class="absolute left-0 -translate-y-1/2 text-xs text-neutral-500 tabular-nums">{{ line.label }}</span>
+                <span class="absolute right-0 left-10 border-t border-dotted border-neutral-300"></span>
+              </div>
+            {% endfor %}
+          </div>
+          <ul class="relative grid grid-cols-5 gap-1 sm:gap-2" role="group" aria-label="Nivel de riesgo">
+            {% for s in chart.stems %}
+              <li class="flex min-w-0 flex-col items-center">
+                <button type="button" data-level="{{ s.key }}" aria-pressed="{% if forloop.counter0 == chart.peak %}true{% else %}false{% endif %}"
+                        class="group flex w-full min-w-0 flex-col items-center gap-4 rounded-2xl">
+                  <span class="flex h-56 w-full max-w-16 flex-col items-center justify-end rounded-full group-aria-pressed:bg-neutral-100 sm:h-64" aria-hidden="true">
+                    <span class="relative flex flex-col items-center" style="height: {{ s.height }}%">
+                      <span class="pill absolute bottom-full mb-4 hidden bg-neutral-900 text-white tabular-nums group-aria-pressed:inline-flex">{{ s.value }}</span>
+                      <span class="size-4 shrink-0 -translate-y-1/2 rounded-full ring-4 ring-white {{ s.color|swatch }}"></span>
+                      <span class="w-0.5 flex-1 bg-neutral-300"></span>
+                    </span>
+                  </span>
+                  <span class="flex w-full max-w-24 flex-col items-center gap-1 rounded-2xl bg-neutral-100 px-1.5 py-2 text-center text-xs leading-tight font-medium text-neutral-700 group-aria-pressed:bg-neutral-900 group-aria-pressed:text-white">
+                    <span class="size-2.5 shrink-0 rounded-xs {{ s.color|swatch }}" aria-hidden="true"></span>
+                    <span aria-hidden="true">{% if s.key == "muy_alto" %}M. alto{% else %}{{ s.label }}{% endif %}</span>
+                    <span class="tabular-nums" aria-hidden="true">{{ s.percent }} %</span>
+                  </span>
+                  <span class="sr-only">{{ s.description }}</span>
+                </button>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endlocalize %}
+        <figcaption class="mt-3 text-sm text-neutral-500 md:pl-10">Porcentaje de colaboradores en cada nivel, en una escala de 0 a {{ chart.ceiling }} %.</figcaption>
+      </figure>
+    </div>
+    {% else %}
+      <p class="text-sm text-neutral-600">Ningún colaborador del grupo tiene esta calificación.</p>
+    {% endif %}
+  </div>
+
+  <div class="mt-6" data-hero-panel="stats" hidden>
+    {% with st=group.stats %}
+      <dl class="grid grid-cols-2 gap-4 sm:grid-cols-5">
+        <div class="border-l border-neutral-200 pl-3"><dt class="text-sm text-neutral-500">Cuestionarios</dt><dd class="mt-1 text-2xl font-medium text-neutral-900 tabular-nums">{{ st.n }}</dd></div>
+        <div class="border-l-2 border-primary-600 pl-3"><dt class="text-sm text-neutral-500">Promedio</dt><dd class="mt-1 text-2xl font-medium text-neutral-900 tabular-nums">{{ st.mean|default_if_none:"—" }}</dd></div>
+        <div class="border-l border-neutral-200 pl-3"><dt class="text-sm text-neutral-500">Mediana</dt><dd class="mt-1 text-2xl font-medium text-neutral-900 tabular-nums">{{ st.median|default_if_none:"—" }}</dd></div>
+        <div class="border-l border-neutral-200 pl-3"><dt class="text-sm text-neutral-500">Mínimo</dt><dd class="mt-1 text-2xl font-medium text-neutral-900 tabular-nums">{{ st.minimum|default_if_none:"—" }}</dd></div>
+        <div class="border-l border-neutral-200 pl-3"><dt class="text-sm text-neutral-500">Máximo</dt><dd class="mt-1 text-2xl font-medium text-neutral-900 tabular-nums">{{ st.maximum|default_if_none:"—" }}</dd></div>
+      </dl>
+      {% if st.n %}
+        <div class="mt-8">{% range_strip st.strip_bands st.scale_max st.strip_points %}</div>
+        <p class="mt-3 text-sm text-neutral-500">Puntos, de 0 a {{ st.scale_max }}. Las bandas son los rangos de cada nivel en la guía.</p>
+        {% include "core/results/_ndr_legend.html" %}
+      {% endif %}
+    {% endwith %}
+  </div>
+</section>
+{% endwith %}

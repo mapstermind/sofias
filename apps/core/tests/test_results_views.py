@@ -71,7 +71,7 @@ def test_executive_sees_own_company_results(client, setup, make_user_with_profil
     resp = client.get(reverse("core:company_results"))
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert "Participación por área" in body
+    assert "Por área" in body
     assert "Calificación final" in body
     assert 'id="results-body"' in body
 
@@ -94,7 +94,7 @@ def test_small_filtered_group_locked_for_executive_not_admin(
         reverse("core:company_results_fragment"), params
     ).content.decode()
     assert MESSAGE in locked
-    assert "Distribución por categoría" not in locked
+    assert "Categorías" not in locked
 
     client.force_login(setup["admin"])
     url = reverse(
@@ -102,7 +102,7 @@ def test_small_filtered_group_locked_for_executive_not_admin(
     )
     free = client.get(url, params).content.decode()
     assert MESSAGE not in free
-    assert "Distribución por categoría" in free
+    assert "Categorías" in free
 
 
 def test_fragment_is_a_fragment(client, setup, make_user_with_profile):
@@ -233,10 +233,14 @@ def test_dominio_rows_draw_in_the_dominio_tier(client, setup, make_user_with_pro
         )
     client.force_login(setup["exec"])
     body = client.get(reverse("core:company_results")).content.decode()
-    assert 'fill="#7A1010"' in body  # dominio Muy alto column
-    assert 'fill="#22C55E"' in body  # categoría Bajo column unchanged
-    assert "bg-[#7A1010]" in body  # dominio legend swatch
-    assert "Dominios:" in body
+    assert "bg-[#7A1010]" in body  # dominio Muy alto segment
+    assert (
+        "bg-green-500" in body or "bg-success" in body or "bg-[#22C55E]" in body
+    )  # categoría Bajo, base tier
+    chosen = client.get(
+        reverse("core:company_results"), {"ver": cfg.CAT_AMBIENTE}
+    ).content.decode()
+    assert "Dominios:" in chosen  # the dominio legend heads the dominio column
 
 
 def _results_page(client, setup, make_user_with_profile):
@@ -251,18 +255,19 @@ def test_the_page_sections_are_headings_in_sentence_case(
 ):
     html = _results_page(client, setup, make_user_with_profile)
     assert "uppercase" not in html
-    assert ">Empresa</h2>" in html
-    assert ">Por categoría</h2>" in html
-    assert "Distribución de la calificación final" in html
-    assert "Estadísticas de la calificación final" in html
+    assert ">Calificación final</h2>" in html
+    assert ">Categorías</h2>" in html
+    assert ">Participación</h2>" in html
+    assert ">Por área</h2>" in html
     assert "Guía I: acontecimientos traumáticos severos" in html
+    assert ">Quienes respondieron</h2>" in html
 
 
 def test_the_filters_are_the_rosters_dialog_of_chips(
     client, setup, make_user_with_profile
 ):
     html = _results_page(client, setup, make_user_with_profile)
-    form = html[html.index('id="results-filters"') : html.index("</form>")]
+    form = html[html.index('id="results-filters"') : html.index("</dialog>")]
     assert 'data-dialog-open="results-filter-modal"' in form
     assert '<dialog id="results-filter-modal"' in form
     inputs = form.count('type="radio"') + form.count('type="checkbox"')
@@ -313,3 +318,71 @@ def test_a_filtered_empty_group_offers_to_clear(client, setup, make_user_with_pr
     ).content.decode()
     empty = body[body.index("Ningún cuestionario coincide") :]
     assert "Limpiar filtros" in empty[:600]
+
+
+def test_the_sticky_strip_says_what_is_shown_and_for_whom(
+    client, setup, make_user_with_profile
+):
+    from apps.nom035 import _nom035_scoring as cfg
+
+    add_respondents(setup, make_user_with_profile, 6, area=setup["area"])
+    client.force_login(setup["exec"])
+    url = reverse("core:company_results")
+    plain = client.get(url).content.decode()
+    strip = plain[plain.index('id="results-strip"') : plain.index("<dialog")]
+    assert "sticky top-0" in strip
+    assert "Mostrando: Calificación final" in strip
+    assert "Toda la empresa" in strip and "6</span> colaboradores" in strip
+    assert "data-filter-count" in strip  # Filtros lives in the strip
+
+    chosen = client.get(
+        url, {"ver": cfg.CAT_AMBIENTE, "area": setup["area"].pk}
+    ).content.decode()
+    strip = chosen[chosen.index('id="results-strip"') : chosen.index("<dialog")]
+    assert "Mostrando: Ambiente de trabajo" in strip
+    assert "Volver a la calificación final" in strip
+    assert setup["area"].name in strip and "Quitar filtro" in strip
+
+
+def test_the_fragment_parks_the_summary_for_the_script_to_move(
+    client, setup, make_user_with_profile
+):
+    add_respondents(setup, make_user_with_profile, 6)
+    client.force_login(setup["exec"])
+    body = client.get(reverse("core:company_results_fragment")).content.decode()
+    assert body.lstrip().startswith("<div data-results-summary hidden>")
+    assert body.index("data-group-line") < body.index("data-hero")
+
+
+def test_a_filtered_group_is_marked_and_sized_against_the_whole(
+    client, setup, make_user_with_profile
+):
+    add_respondents(setup, make_user_with_profile, 6, area=setup["area"], prefix="ops")
+    add_respondents(setup, make_user_with_profile, 6, prefix="rest")
+    client.force_login(setup["admin"])
+    url = reverse("core:company_results")
+    plain = client.get(url).content.decode()
+    assert 'id="results-strip" data-filtered="false"' in plain
+    assert "12</span> colaboradores" in plain
+
+    filtered = client.get(url, {"area": setup["area"].pk}).content.decode()
+    assert 'id="results-strip" data-filtered="true"' in filtered
+    assert f"Área: {setup['area'].name}" in filtered
+    assert "6</span> de 12 colaboradores" in filtered
+    # The área's own row offers to remove the filter instead of adding it.
+    assert f"Quitar el filtro de {setup['area'].name}" in filtered
+    assert f"Filtrar por {setup['area'].name}" not in filtered
+
+
+def test_choosing_a_categoria_marks_the_strip_without_turning_filtros_solid(
+    client, setup, make_user_with_profile
+):
+    from apps.nom035 import _nom035_scoring as cfg
+
+    add_respondents(setup, make_user_with_profile, 6)
+    client.force_login(setup["exec"])
+    url = reverse("core:company_results")
+    plain = client.get(url).content.decode()
+    assert 'data-filtered="false" data-active="false"' in plain
+    chosen = client.get(url, {"ver": cfg.CAT_AMBIENTE}).content.decode()
+    assert 'data-filtered="false" data-active="true"' in chosen

@@ -1,0 +1,47 @@
+{% load charts icons valuation_extras %}
+{% comment %}
+The third row: one row per área, drawn for what *Ver* measures. The round button
+adds the área to the filters, as the name does. A suppressed área keeps its
+headcounts and shows no distribution.
+{% endcomment %}
+<section class="rounded-3xl bg-white p-6" aria-labelledby="areas-titulo">
+  <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <h2 id="areas-titulo" class="text-base font-semibold text-neutral-900">Por área</h2>
+    <span class="text-sm text-neutral-500">{% if ver %}{{ hero.group.label }}{% else %}Calificación final{% endif %}, en alto o muy alto a la derecha.</span>
+  </div>
+  <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-600">
+    {% for level, label in ndr_levels %}<li class="flex items-center gap-1.5"><span class="size-2.5 shrink-0 rounded-xs {{ level|ndr_bar }}" aria-hidden="true"></span>{{ label }}</li>{% endfor %}
+  </ul>
+  <ul class="mt-4 space-y-2">
+    {% for item in area_rows %}{% with area=item.area row=item.area.row %}
+      <li class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-2xl {% if item.remove_url %}bg-primary-50 ring-1 ring-primary-200{% else %}bg-neutral-50{% endif %} py-3 pr-3 pl-4 md:grid-cols-[11rem_9rem_minmax(0,1fr)_5.5rem_auto] md:gap-x-6">
+        <span class="min-w-0 text-base font-semibold text-neutral-900">
+          {% if item.filter_url %}<a href="{{ item.filter_url }}" data-results-link class="link">{{ row.label }}</a>{% else %}{{ row.label }}{% endif %}
+        </span>
+        {% if item.filter_url %}
+          {% with filter_label="Filtrar por "|add:row.label %}<a href="{{ item.filter_url }}" data-results-link class="btn btn-secondary size-11 rounded-full px-0 md:order-last">{% icon "funnel" "size-5" label=filter_label %}</a>{% endwith %}
+        {% elif item.remove_url %}
+          {% with remove_label="Quitar el filtro de "|add:row.label %}<a href="{{ item.remove_url }}" data-results-link class="btn btn-primary size-11 rounded-full px-0 md:order-last">{% icon "x-mark" "size-5" label=remove_label %}</a>{% endwith %}
+        {% else %}
+          <span class="size-11 md:order-last" aria-hidden="true"></span>
+        {% endif %}
+        <span class="col-span-2 text-sm text-neutral-600 tabular-nums md:col-span-1">{{ row.responded }}{% if row.registered is not None %} de {{ row.registered }}{% endif %} respondieron</span>
+        <span class="col-span-2 min-w-0 md:col-span-1">
+          {% if row.suppressed %}
+            <span class="text-sm text-neutral-500">Grupo muy pequeño: ocultamos sus resultados (mínimo 5 personas).</span>
+          {% elif area.slices and area.n %}
+            {% include "core/results/_level_bar.html" with group=area height="h-2.5" %}
+            <dl class="mt-2 grid grid-cols-5 gap-1 text-sm tabular-nums text-neutral-700">
+              {% for lv in area.levels %}<div class="flex min-w-0 items-center gap-1"><dt class="sr-only">{{ lv.label }}</dt><dd class="flex items-center gap-1"><span class="size-2.5 shrink-0 rounded-xs {{ lv.color|swatch }}" aria-hidden="true"></span>{{ lv.percent }} %</dd></div>{% endfor %}
+            </dl>
+          {% else %}
+            <span class="text-sm text-neutral-500">—</span>
+          {% endif %}
+        </span>
+        <span class="col-span-2 text-sm font-semibold tabular-nums md:col-span-1 md:text-right">{% if area.at_risk_percent is not None %}{{ area.at_risk_percent }} %<span class="sr-only"> en alto o muy alto</span>{% endif %}</span>
+      </li>
+    {% endwith %}{% empty %}
+      <li class="text-sm text-neutral-500">Esta empresa aún no tiene áreas.</li>
+    {% endfor %}
+  </ul>
+</section>

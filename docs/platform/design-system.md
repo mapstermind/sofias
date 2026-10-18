@@ -211,8 +211,9 @@ be compared live on the real screens rather than in a mock-up.
       just before it): a pill-shaped choice with a `neutral-300` border, 44px tall on a phone and
       36px from `sm`, filled `primary-600` with white text when chosen, with the base rule's focus
       outline when its input has keyboard focus. The roster's and the results page's filters are
-      chips. The removable filters above the results are chip-shaped links in `primary-50` with an
-      `x-mark`.
+      chips. The removable filters on the results page are chip-shaped links in solid `primary-700`
+      with white text, the dimension's name before the value and an `x-mark`; what the page
+      measures is a dark `neutral-900` chip beside them, so a measure never reads as a filter.
     - **The filter bar:** a list a person narrows (the roster, the results page) has one bar: its
       field (the search box, the survey picker), then *Filtros*, then *Limpiar filtros* while
       anything is narrowed, all from `components/_filter_buttons.html`. *Filtros* carries a count
@@ -222,7 +223,9 @@ be compared live on the real screens rather than in a mock-up.
       `static/ts/filter_dialog.ts` puts the chips back when the dialog is dismissed and lets a
       chosen radio be un-chosen, which is how sexo returns to "either". On a phone the results
       picker has its own row, its survey names being long; the roster's bar is sticky, so its
-      search keeps *Filtros* beside it.
+      search keeps *Filtros* beside it. On the results page the pickers scroll away and a sticky
+      strip holds *Filtros* and the active filters as chips, turning pale primary while the page is
+      narrowed.
     - **The answer row:** `answer` is a survey option's `<label>` wrapping its input: a 44px row
       with a `neutral-200` border, a `neutral-50` hover and a 20px radio or checkbox in
       `primary-600`. The chosen row takes a `primary-600` border and a `primary-50` fill from

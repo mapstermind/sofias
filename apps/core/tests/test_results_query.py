@@ -88,3 +88,37 @@ def test_filter_pills_label_and_remove_one_value():
     )
     assert [p.label for p in pills] == ["Masculino", "30–34", "Operaciones", "Matriz"]
     assert pills[2].remove_url == "/r/?encuesta=7&sexo=masculino&edad=30-34&localidad=5"
+
+
+def test_ver_names_a_categoria_and_is_not_a_filter():
+    query = _parse({"ver": "ambiente_de_trabajo"})
+    assert query.ver == "ambiente_de_trabajo"
+    assert not query.is_filtered
+    assert ("ver", "ambiente_de_trabajo") in query.params()
+
+
+def test_ver_ignores_an_unknown_value_and_takes_the_first_known_one():
+    assert _parse({"ver": "nonsense"}).ver == ""
+    assert _parse(
+        {"ver": ["nonsense", "liderazgo_y_relaciones_en_el_trabajo"]}
+    ).ver == ("liderazgo_y_relaciones_en_el_trabajo")
+
+
+def test_urls_keep_ver():
+    query = ResultsQuery(assignment_id=7, ver="ambiente_de_trabajo")
+    assert results_url("/r/", query, add=("area", "2")) == (
+        "/r/?encuesta=7&ver=ambiente_de_trabajo&area=2"
+    )
+
+
+def test_pills_name_the_dimension_they_filter():
+    query = _parse({"sexo": "femenino", "edad": "25-29", "area": "1", "localidad": "5"})
+    pills = filter_pills(
+        query, "/r/", area_names={1: "Ventas"}, location_names={5: "Matriz"}
+    )
+    assert [(p.dimension, p.label) for p in pills] == [
+        ("Sexo", "Femenino"),
+        ("Edad", "25–29"),
+        ("Área", "Ventas"),
+        ("Localidad", "Matriz"),
+    ]

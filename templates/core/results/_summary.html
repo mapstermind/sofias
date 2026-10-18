@@ -1,0 +1,25 @@
+{% load icons %}
+{% comment %}
+What the page is showing and for whom, in the sticky strip: the *Mostrando*
+chip (dark, because it is what is measured, not a filter), then the group's
+filters as removable chips, then how many colaboradores they leave. On a phone
+the row scrolls sideways inside the strip; from `sm` it wraps.
+{% endcomment %}
+<div data-group-line data-filtered="{% if pills %}true{% else %}false{% endif %}" tabindex="-1" class="flex min-w-0 items-center gap-2 overflow-x-auto py-1 text-sm text-neutral-600 [scrollbar-width:none] focus:outline-none sm:flex-wrap sm:overflow-visible">
+  {% if ver %}
+    <a href="{{ ver_clear_url }}" data-results-link class="chip shrink-0 border-neutral-900 bg-neutral-900 text-white hover:bg-neutral-700">
+      Mostrando: {{ ver_label }} {% icon "x-mark" "size-4" %}<span class="sr-only">Volver a la calificación final</span>
+    </a>
+  {% else %}
+    <span class="pill shrink-0 bg-white text-neutral-900">Mostrando: Calificación final</span>
+  {% endif %}
+  {% for pill in pills %}
+    <a href="{{ pill.remove_url }}" data-results-link
+       class="chip shrink-0 border-primary-700 bg-primary-700 text-white hover:border-primary-800 hover:bg-primary-800">
+      {{ pill.dimension }}: {{ pill.label }} {% icon "x-mark" "size-4" %}<span class="sr-only">Quitar filtro</span>
+    </a>
+  {% empty %}
+    <span class="shrink-0">Toda la empresa</span>
+  {% endfor %}
+  {% if results %}<span class="shrink-0 whitespace-nowrap">— <span class="font-semibold text-neutral-900">{{ results.size }}</span>{% if results.filtered %} de {{ results.whole_size }}{% endif %} colaborador{% if results.filtered %}{{ results.whole_size|pluralize:"es" }}{% else %}{{ results.size|pluralize:"es" }}{% endif %}</span>{% endif %}
+</div>

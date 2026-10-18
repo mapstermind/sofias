@@ -268,3 +268,68 @@ def range_strip(bands, scale_max, points) -> Strip | None:
         ticks=tuple(ticks),
         scale_max=scale_max,
     )
+
+
+@dataclass(frozen=True)
+class Stem:
+    key: str
+    label: str
+    value: int
+    percent: int
+    height: float  # % of the plot's height, on the chart's own 0–ceiling scale
+    color: str
+    description: str
+
+
+@dataclass(frozen=True)
+class Gridline:
+    label: str
+    bottom: float  # % of the plot's height
+
+
+@dataclass(frozen=True)
+class StemChart:
+    ceiling: int
+    gridlines: list[Gridline]
+    stems: list[Stem]
+    peak: int  # index of the stem with the most; where a reader starts
+
+
+def stem_chart(items, unit) -> StemChart:
+    """One stem per item on a 0–ceiling % scale that fits the largest share.
+
+    The ceiling is the next multiple of 10 above the largest percent (at least
+    10), so a distribution concentrated in one level is not squeezed under a
+    0–100 % axis. Gridlines fall on every multiple of 10 up to it. Unlike
+    `level_columns`, two charts built this way are compared by their printed
+    values, not by height.
+    """
+    items = list(items)
+    percents = largest_remainder([item.value for item in items])
+    ceiling = max(10, -(-max(percents, default=0) // 10) * 10)
+    stems = [
+        Stem(
+            key=item.key,
+            label=item.label,
+            value=item.value,
+            percent=percent,
+            height=round(
+                item.value * 100 / sum(i.value for i in items) * 100 / ceiling, 2
+            )
+            if item.value
+            else 0.0,
+            color=item.color,
+            description=f"{item.label} · {_count(item.value, unit)} · {percent} %",
+        )
+        for item, percent in zip(items, percents)
+    ]
+    peak = max(range(len(items)), key=lambda i: items[i].value, default=0)
+    return StemChart(
+        ceiling=ceiling,
+        gridlines=[
+            Gridline(f"{v} %", round(v * 100 / ceiling, 2))
+            for v in range(10, ceiling + 1, 10)
+        ],
+        stems=stems,
+        peak=peak,
+    )

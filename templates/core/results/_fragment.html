@@ -1,0 +1,6 @@
+{% comment %}
+The fragment results_dashboard.ts swaps in: the sticky strip's summary, parked in
+a hidden element for the script to move, then the body.
+{% endcomment %}
+<div data-results-summary hidden>{% include "core/results/_summary.html" %}</div>
+{% include "core/results/_body.html" %}

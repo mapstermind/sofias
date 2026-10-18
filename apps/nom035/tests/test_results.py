@@ -500,3 +500,77 @@ def test_empty_dominio_row_keeps_the_dominio_palette(scored_large):
     ]
     assert empty
     assert all(s.color.startswith("dom-") for s in empty[0].slices)
+
+
+@pytest.fixture
+def areas_with_categoria(
+    make_company, make_user_with_profile, make_area, nom035_survey
+):
+    """Six respondents in Operaciones and two in Ventas, each with an Ambiente categoría."""
+    company = make_company()
+    ops = make_area(company, name="Operaciones")
+    ventas = make_area(company, name="Ventas")
+    assignment = make_assignment(company, nom035_survey, variant="large")
+    amb = cfg.CAT_AMBIENTE
+    specs = (
+        [(ops, c.NDR_NULO)] * 3 + [(ops, c.NDR_ALTO)] * 3 + [(ventas, c.NDR_MEDIO)] * 2
+    )
+    for i, (area, ndr) in enumerate(specs):
+        user = make_user_with_profile(email=f"c{i}@x.mx", company=company, area=area)
+        make_score(
+            assignment,
+            user,
+            final_ndr=c.NDR_BAJO,
+            groups=[(c.LEVEL_CATEGORIA, amb, 5, ndr)],
+        )
+    return assignment
+
+
+def test_participation_row_carries_a_distribution_for_each_categoria(
+    areas_with_categoria,
+):
+    results = results_for(
+        areas_with_categoria, ResultsQuery(), suppress_small_groups=False
+    )
+    rows = {r.label: r for r in results.participation}
+    ops = dict(rows["Operaciones"].categoria_counts[cfg.CAT_AMBIENTE])
+    assert ops[c.NDR_NULO] == 3 and ops[c.NDR_ALTO] == 3 and ops[c.NDR_MEDIO] == 0
+    assert [
+        s.color for s in rows["Operaciones"].categoria_slices(cfg.CAT_AMBIENTE)
+    ] == [f"ndr-{lvl}" for lvl in c.NDR_ORDER]
+
+
+def test_suppressed_participation_row_carries_no_categoria_distribution(
+    areas_with_categoria,
+):
+    results = results_for(
+        areas_with_categoria, ResultsQuery(), suppress_small_groups=True
+    )
+    ventas = next(r for r in results.participation if r.label == "Ventas")
+    assert ventas.suppressed
+    assert ventas.categoria_counts == {}
+    assert ventas.categoria_slices(cfg.CAT_AMBIENTE) == ()
+
+
+def test_participation_query_count_does_not_grow_with_categorias(
+    areas_with_categoria, django_assert_max_num_queries
+):
+    assignment = SurveyAssignment.objects.select_related("company").get(
+        pk=areas_with_categoria.pk
+    )
+    with django_assert_max_num_queries(8):
+        results_for(assignment, ResultsQuery(), suppress_small_groups=False)
+
+
+def test_distribution_row_counts_alto_and_muy_alto():
+    from apps.nom035.results import DistributionRow
+
+    row = DistributionRow(
+        key="x",
+        label="X",
+        n=10,
+        counts=tuple(zip(c.NDR_ORDER, (4, 2, 1, 2, 1))),
+    )
+    assert row.at_risk == 3
+    assert row.at_risk_percent == 30
+    assert DistributionRow(key="x", label="X", n=0, counts=()).at_risk_percent == 0

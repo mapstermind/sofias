@@ -153,3 +153,35 @@ def test_format_number():
     assert format_number(81.0) == "81"
     assert format_number(81.5) == "81.5"
     assert format_number(84.25) == "84.2"
+
+
+def test_stem_chart_scales_to_the_next_decena_above_the_largest_share():
+    from apps.core.charts import stem_chart
+
+    chart = stem_chart(
+        [Item("a", "Nulo", 12), Item("b", "Bajo", 29), Item("c", "Medio", 5)], UNIT
+    )
+    # 12/46 = 26 %, 29/46 = 63 %, 5/46 = 11 % → the ceiling is 70.
+    assert [s.percent for s in chart.stems] == [26, 63, 11]
+    assert chart.ceiling == 70
+    assert [g.label for g in chart.gridlines] == [f"{v} %" for v in range(10, 80, 10)]
+    assert chart.gridlines[-1].bottom == 100.0
+    assert chart.stems[1].height == round(29 / 46 * 100 * 100 / 70, 2)
+    assert chart.peak == 1
+    assert chart.stems[0].description == "Nulo · 12 cuestionarios · 26 %"
+
+
+def test_stem_chart_with_nothing_counted_keeps_a_ten_percent_axis():
+    from apps.core.charts import stem_chart
+
+    chart = stem_chart([Item("a", "Nulo", 0), Item("b", "Bajo", 0)], UNIT)
+    assert chart.ceiling == 10
+    assert [s.height for s in chart.stems] == [0.0, 0.0]
+    assert [g.label for g in chart.gridlines] == ["10 %"]
+
+
+def test_stem_chart_ceiling_on_an_exact_decena_gets_no_headroom_decena():
+    from apps.core.charts import stem_chart
+
+    chart = stem_chart([Item("a", "A", 1), Item("b", "B", 1)], UNIT)
+    assert chart.ceiling == 50
