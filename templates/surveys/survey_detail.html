@@ -38,14 +38,13 @@
         {% if module.title %}
           <div class="mb-4 border-b border-neutral-200 pb-2">
             <h2 class="text-lg font-semibold text-neutral-900">{{ module.title }}</h2>
-            {% if module.description %}
-              <p class="text-base text-neutral-600 mt-1">{{ module.description }}</p>
-            {% endif %}
           </div>
-        {% elif module.description %}
-          <p class="text-base text-neutral-600 mb-4">{{ module.description }}</p>
-        {% else %}
-          <div class="border-t border-neutral-200 mb-4"></div>
+        {% endif %}
+        {% if module.description %}
+          {# Seed text; may carry <strong> to stress a phrase (e.g. the 3-month window). #}
+          <p class="mb-4 border-t-2 border-neutral-300 pt-4 text-lg text-neutral-700 [&_strong]:font-semibold [&_strong]:text-neutral-900">{{ module.description|safe }}</p>
+        {% elif not module.title %}
+          <div class="mb-4 border-t-2 border-neutral-300"></div>
         {% endif %}
 
         {% for question in module.questions.all %}

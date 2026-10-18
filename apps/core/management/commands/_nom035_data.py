@@ -296,7 +296,7 @@ def build_modules():
             "description": (
                 "Para responder las preguntas siguientes considere las "
                 "condiciones de su centro de trabajo, así como la cantidad y "
-                "ritmo de trabajo en los últimos 3 meses."
+                "ritmo de trabajo en los últimos <strong>3 meses</strong>."
             ),
             "applies_to": "small",
             "questions": _likert_block("g2", GUIA_II_MAIN[0:9], 1),
