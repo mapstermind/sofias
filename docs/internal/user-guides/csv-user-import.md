@@ -38,7 +38,7 @@ The file has four columns, all required on every row:
 - `otp` — the person logs in with a code sent to their email. Use it whenever their email accepts external mail.
 - `password` — for companies that block external email. The import generates a 9-digit **código de acceso**; the person uses it once at `/cuentas/primer-ingreso/` and sets their own password.
 
-**Not in the file:** names, puestos, sexo, fecha de nacimiento, área and localidad. Each person enters these when they activate their account.
+**Not in the file:** names, sexo, fecha de nacimiento, área and localidad. Each person enters these when they activate their account.
 
 ### Header rules
 

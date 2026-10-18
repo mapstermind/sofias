@@ -30,8 +30,8 @@ threshold table.
 All scoring reference data (inverted items, taxonomy, threshold tables) and the
 Guía I referral rule are transcribed from the single source of truth,
 [`docs/internal/Guias de Referencia.md`](../internal/Guias%20de%20Referencia.md)
-(Guía II and Guía III). Stakeholder-facing tracking of the scoring assumptions
-lives in Spanish at
+(Guía II and Guía III). Stakeholder-facing tracking of the points still
+awaiting the domain expert lives in Spanish at
 [`docs/platform/nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md).
 
 ## How it works
@@ -168,13 +168,12 @@ Progress/assignment rows elsewhere in `core` display the assignment's variant as
 **"Guía II"** or **"Guía III"** (`SurveyAssignment.Variant`'s labels), so admins
 can see at a glance which guía a company's employees were assigned.
 
-### Known limitation — skipped conditional blocks
+### Skipped conditional blocks
 
 A respondent who skips a conditional block (e.g. not a jefe, or does not attend
-clientes) leaves those items absent. The MVP sums only the present items but still
-compares against the full fixed threshold tables — a known scoring bias, flagged for
-the domain expert in
-[`nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md).
+clientes) leaves those items absent. Scoring sums only the present items and
+compares the sum against the full fixed threshold tables, as the norm's
+procedure does.
 
 ## Where the code lives
 

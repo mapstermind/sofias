@@ -12,7 +12,7 @@ The user-facing interface (copy and URLs) is in Spanish. Code, comments, and ide
 - **Dashboards** — per-company completion stats (registration rate, completion rate per survey, representative-sample minimum) and per-employee progress/answer views, gated by role permissions.
 - **User onboarding** — passwordless email-OTP login (with password and one-time setup-access-code fallbacks), activation with the company code, and bulk user import from CSV via the admin.
 - **NOM-035 results** — valuation (scores → Nivel de Riesgo, plus the Guía I referral flag) in `apps/nom035`, shown on a filterable results page with SVG charts and on each colaborador's detail page.
-- **Results report** — a formal NOM-035 report per closed assignment, drafted and published by an Administrador, read by the company's Ejecutivo principal and downloadable as a PDF (`apps/reports`).
+- **Results report** — a formal NOM-035 report per closed assignment, drafted, published and read by an Administrador and downloadable as a PDF (`apps/reports`).
 
 ## Tech stack
 

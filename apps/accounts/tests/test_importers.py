@@ -49,7 +49,7 @@ class TestImportUsersFromCSV:
     def test_import_leaves_self_reported_details_empty(
         self, make_company, bootstrap_groups
     ):
-        """Name, puesto, área and localidad belong to activation, not the CSV."""
+        """Name, área and localidad belong to activation, not the CSV."""
         company = make_company()
         import_users_from_csv(
             _csv_text(
@@ -69,7 +69,6 @@ class TestImportUsersFromCSV:
         assert user.first_name == ""
         assert user.paternal_last_name == ""
         assert user.maternal_last_name == ""
-        assert profile.position == ""
         assert profile.area is None
         assert profile.location is None
 

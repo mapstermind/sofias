@@ -4,7 +4,7 @@
 {% block title %}Reporte | {{ company.name }} | {{ brand.name }}{% endblock %}
 
 {% block page_context %}
-  <a href="{% if is_admin_view %}{% url 'reports:admin_list' company.reference_code %}{% else %}{% url 'reports:exec_list' %}{% endif %}" class="btn btn-text btn-sm -ml-3 mb-2">&larr; Reportes</a>
+  <a href="{% url 'reports:admin_list' company.reference_code %}" class="btn btn-text btn-sm -ml-3 mb-2">&larr; Reportes</a>
 {% endblock %}
 
 {% block content %}
@@ -21,9 +21,8 @@
       <span class="pill pill-marker bg-warning-100 text-warning-800">Borrador</span>
     {% endif %}
     <div class="flex flex-wrap gap-2 sm:ml-auto">
-      <a href="{% if is_admin_view %}{% url 'reports:admin_pdf' company.reference_code report.assignment.pk %}{% else %}{% url 'reports:exec_pdf' report.assignment.pk %}{% endif %}"
+      <a href="{% url 'reports:admin_pdf' company.reference_code report.assignment.pk %}"
          class="btn btn-secondary">Descargar PDF</a>
-      {% if is_admin_view %}
       {% if report.status == "published" %}
         <button type="button" data-dialog-open="unpublish-dialog" class="btn btn-danger">Retirar publicación</button>
       {% else %}
@@ -34,19 +33,18 @@
           <button type="submit" class="btn btn-primary">Publicar</button>
         </form>
       {% endif %}
-      {% endif %}
     </div>
   </div>
 
-  {% if is_admin_view and blockers %}
+  {% if blockers %}
     <div class="mb-5">{% include "components/_alert.html" with tone="warning" title="Antes de publicar, falta:" items=blockers %}</div>
   {% endif %}
 
-  {% if is_admin_view and report.status == "published" %}
+  {% if report.status == "published" %}
     {# The submit lives inside the dialog: without JavaScript the dialog never opens, so nothing unpublishes unconfirmed. #}
     <dialog id="unpublish-dialog" class="dialog" aria-labelledby="unpublish-dialog-title">
       <h2 id="unpublish-dialog-title" class="text-lg font-semibold text-neutral-900">¿Retirar la publicación del reporte?</h2>
-      <p class="mt-2 text-base text-neutral-700">Se descartará la versión publicada y la empresa dejará de ver el reporte hasta que lo publiques de nuevo.</p>
+      <p class="mt-2 text-base text-neutral-700">Se descartará la versión publicada. El reporte vuelve a ser un borrador hasta que lo publiques de nuevo.</p>
       <form method="post" action="{% url 'reports:admin_unpublish' company.reference_code report.assignment.pk %}"
             class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         {% csrf_token %}

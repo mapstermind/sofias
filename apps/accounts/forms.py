@@ -216,7 +216,7 @@ class ProfileActivationForm(ErrorFocusMixin, forms.Form):
             }
         ),
     )
-    # Name and puesto are collected here rather than at import: the admin's roster
+    # Name is collected here rather than at import: the admin's roster
     # only has to carry what identifies the account, and the employee is the
     # authority on their own name anyway.
     first_name = forms.CharField(
@@ -240,17 +240,6 @@ class ProfileActivationForm(ErrorFocusMixin, forms.Form):
         widget=forms.TextInput(
             attrs={
                 "autocomplete": "off",
-            }
-        ),
-    )
-    position = forms.CharField(
-        label="Puesto",
-        help_text="El puesto que ocupas en tu empresa.",
-        max_length=255,
-        required=False,
-        widget=forms.TextInput(
-            attrs={
-                "autocomplete": "organization-title",
             }
         ),
     )

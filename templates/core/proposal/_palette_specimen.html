@@ -1,0 +1,126 @@
+{% load icons l10n valuation_extras %}{% localize off %}
+{% comment %}
+One sample screen under the palette `p`: a results panel, a report section, a form,
+the four alerts and a survey question at phone width. The wrapper's `data-palette`
+repaints everything inside it; `p.slug` also keeps ids and radio names unique when
+the screen appears three times on a page.
+{% endcomment %}
+<div data-palette="{{ p.slug }}" class="rounded-3xl bg-neutral-100 p-3 text-neutral-800 sm:p-6">
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22.5rem] lg:items-start">
+
+    <div class="min-w-0 space-y-6">
+      <dl class="card grid divide-y divide-neutral-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div class="p-4">
+          <dt class="text-sm font-medium text-neutral-600">Participación</dt>
+          <dd class="mt-1 text-lg font-semibold text-neutral-900 tabular-nums">{{ total }} <span class="text-sm font-normal text-neutral-600">de {{ registered }}</span></dd>
+          <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-primary-100" aria-hidden="true"><div class="h-full bg-primary-600" style="width: {{ participation }}%"></div></div>
+        </div>
+        <div class="p-4">
+          <dt class="text-sm font-medium text-neutral-600">Calificación final promedio</dt>
+          <dd class="mt-1 flex flex-wrap items-center gap-2 text-lg font-semibold text-neutral-900 tabular-nums">88.6 <span class="pill ring-1 ring-inset {{ average_level|ndr_badge }}">Medio</span></dd>
+        </div>
+        <div class="p-4">
+          <dt class="text-sm font-medium text-neutral-600">Canalizaciones (Guía I)</dt>
+          <dd class="mt-1 text-lg font-semibold text-neutral-900 tabular-nums">4 <span class="text-sm font-normal text-neutral-600">personas</span></dd>
+        </div>
+      </dl>
+
+      <div class="grid gap-6 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <section class="card min-w-0 space-y-3 p-5">
+          <div>
+            <h3 class="text-base font-semibold text-neutral-900">Distribución de la calificación final</h3>
+            <p class="mt-0.5 text-sm text-neutral-600">{{ total }} cuestionarios completos</p>
+          </div>
+          {% include "core/proposal/_level_bar.html" with levels=levels tier="" height="h-7" %}
+          <ul class="flex flex-wrap gap-2">
+            {% for lv in levels %}<li class="pill ring-1 ring-inset {{ lv.level|ndr_badge }}">{{ lv.label }} {{ lv.count }}</li>{% endfor %}
+          </ul>
+        </section>
+        <section class="card min-w-0 space-y-3 p-5">
+          <div>
+            <h3 class="text-base font-semibold text-neutral-900">Participación por sexo</h3>
+            <p class="mt-0.5 text-sm text-neutral-600">Los colores de la marca llevan datos que no son un nivel de riesgo.</p>
+          </div>
+          <div class="space-y-3 text-sm text-neutral-700 tabular-nums">
+            <div class="grid grid-cols-[4.5rem_minmax(0,1fr)_2.5rem] items-center gap-3"><span>Mujeres</span><span class="h-3.5 overflow-hidden rounded-xs bg-neutral-100"><span class="block h-full bg-series-1" style="width: 88%"></span></span><span class="text-right font-medium text-neutral-900">88%</span></div>
+            <div class="grid grid-cols-[4.5rem_minmax(0,1fr)_2.5rem] items-center gap-3"><span>Hombres</span><span class="h-3.5 overflow-hidden rounded-xs bg-neutral-100"><span class="block h-full bg-series-2" style="width: 81%"></span></span><span class="text-right font-medium text-neutral-900">81%</span></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="card min-w-0 p-5">
+        <h3 class="text-base font-semibold text-neutral-900">Calificación por categoría</h3>
+        <table class="mt-3 w-full text-left text-sm">
+          <thead><tr class="border-b border-neutral-200 text-neutral-600"><th scope="col" class="py-2 pr-3 font-medium">Categoría</th><th scope="col" class="px-3 py-2 text-right font-medium">Promedio</th><th scope="col" class="py-2 pl-3 font-medium">Nivel</th></tr></thead>
+          <tbody class="divide-y divide-neutral-100">
+            {% for row in categories %}
+              <tr{% if row.selected %} class="bg-primary-50"{% endif %}>
+                <th scope="row" class="py-2.5 pr-3 font-normal text-neutral-800">{{ row.label }}</th>
+                <td class="px-3 py-2.5 text-right tabular-nums">{{ row.mean }}</td>
+                <td class="py-2.5 pl-3"><span class="pill ring-1 ring-inset {{ row.level|ndr_badge }}">{{ row.level_label }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <article class="card min-w-0 space-y-3 p-5 sm:p-6">
+        <p class="text-sm font-medium text-primary-700">Sección 3</p>
+        <h3 class="text-base font-semibold text-neutral-900">Hallazgos por categoría</h3>
+        <p class="text-base text-neutral-800">La categoría «Organización del tiempo de trabajo» alcanza un nivel alto. Las respuestas señalan jornadas que se extienden más allá del horario y dificultad para atender responsabilidades familiares. Se recomienda revisar la distribución de turnos en el área de almacén.</p>
+        <p class="rounded-lg bg-accent-100 px-4 py-3 text-sm text-neutral-800">Nota del administrador: el programa de intervención se presentará a la dirección el 15 de noviembre.</p>
+      </article>
+
+      <div class="grid gap-6 md:grid-cols-2">
+        <section class="card min-w-0 space-y-4 p-5">
+          <h3 class="text-base font-semibold text-neutral-900">Publicar reporte</h3>
+          {{ p.form }}
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary">Publicar reporte</button>
+            <button type="button" class="btn btn-secondary">Guardar borrador</button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn btn-text">Ver vista previa</button>
+            <button type="button" class="btn btn-danger">Eliminar borrador</button>
+            <button type="button" class="btn btn-secondary" disabled>Descargar PDF</button>
+          </div>
+        </section>
+        <section class="card min-w-0 space-y-3 p-5">
+          <h3 class="text-base font-semibold text-neutral-900">Mensajes del sistema</h3>
+          {% include "components/_alert.html" with tone="success" title="Reporte publicado." body="La dirección ya puede consultarlo." %}
+          {% include "components/_alert.html" with tone="info" body="La encuesta cierra el 31 de octubre a las 23:59." %}
+          {% include "components/_alert.html" with tone="warning" body="Faltan 26 personas por responder." %}
+          {% include "components/_alert.html" with tone="danger" body="No se importó el archivo: la fila 14 no tiene correo." %}
+        </section>
+      </div>
+    </div>
+
+    <div class="mx-auto w-full max-w-90 lg:mx-0">
+      <p class="mb-2 text-sm text-neutral-600">La encuesta en una pantalla de 360 px</p>
+      <div class="card overflow-hidden">
+        <div class="flex items-center gap-2 border-b border-neutral-200 px-4 py-3">
+          {% include "_logo.html" with css_class="h-6 w-auto text-primary-700" %}
+          <span class="text-base font-semibold text-neutral-900">{{ brand.name }}</span>
+        </div>
+        <div class="space-y-4 p-4">
+          <div>
+            <p class="text-sm text-neutral-600">Sección 3 de 10 · tu avance se guarda solo</p>
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-primary-100" aria-hidden="true"><div class="h-full bg-primary-600" style="width: 31%"></div></div>
+          </div>
+          <fieldset class="m-0 min-w-0 space-y-2 border-0 p-0">
+            <legend class="mb-2 p-0 text-base font-semibold text-neutral-900">Mi trabajo me exige hacer mucho esfuerzo físico.</legend>
+            <label class="answer text-base"><input type="radio" name="q-{{ p.slug }}">Siempre</label>
+            <label class="answer text-base"><input type="radio" name="q-{{ p.slug }}" checked>Casi siempre</label>
+            <label class="answer text-base"><input type="radio" name="q-{{ p.slug }}">Algunas veces</label>
+            <label class="answer text-base"><input type="radio" name="q-{{ p.slug }}">Casi nunca</label>
+            <label class="answer text-base"><input type="radio" name="q-{{ p.slug }}">Nunca</label>
+          </fieldset>
+          <button type="button" class="btn btn-primary w-full">Siguiente sección</button>
+          <p class="text-sm text-neutral-600">Tus respuestas son confidenciales. Tu empresa solo ve resultados agrupados.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endlocalize %}

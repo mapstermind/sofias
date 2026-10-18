@@ -72,7 +72,7 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
   Section II, or ≥3 in Section III, or ≥2 in Section IV). `guia1_positive` implies
   `guia1_event`. After a scoring change, `recompute_nom035_scores` refreshes both.
 - Scoring data is transcribed from the source of truth (`Guias de Referencia.md`);
-  the remaining open assumption (partial/skipped conditional blocks) is tracked in
-  `docs/platform/nom-035-valoracion-supuestos.md` (Spanish, for the domain expert).
+  the points still awaiting the domain expert are tracked in
+  `docs/platform/nom-035-valoracion-supuestos.md` (Spanish).
 - Full design: `docs/platform/nom-035-analytics.md` (engine and employee card) and
   `docs/platform/nom-035-results-dashboard.md` (company results page).

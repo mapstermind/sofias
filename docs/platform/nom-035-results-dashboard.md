@@ -563,11 +563,9 @@ runner; its behavior is checked in the browser.
 
 ## Open questions
 
-None blocking. Assumptions awaiting confirmation from the domain expert are
-tracked in [`nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md):
-the small-group threshold and its exemption, the complement rule and the
-subtraction limitation, the respondent-based demographics and "Sin dato"
-buckets, and the three Guía I outcomes.
+None blocking. The small-group threshold and its exemption, the complement rule
+and the subtraction limitation await confirmation from the domain expert and are
+tracked in [`nom-035-valoracion-supuestos.md`](./nom-035-valoracion-supuestos.md).
 
 ## Linked ADRs
 

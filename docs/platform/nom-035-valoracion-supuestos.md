@@ -1,21 +1,10 @@
 # Valoración NOM-035 — Supuestos y puntos por validar
 
-> 🟡 = por validar. Última actualización: 2026-10-12.
+> 🟡 = por validar. Última actualización: 2026-10-17.
 
 ---
 
-## 1. Bloques que no aplican a todos (jefes / atención a clientes) 🟡
-
-Algunas personas **no responden ciertos bloques** (por ejemplo, quien no es jefe o
-no atiende clientes no ve esas preguntas).
-
-- **Supuesto actual:** sumamos solamente los ítems que la persona **sí** respondió,
-  pero comparamos esa suma contra los **umbrales completos**. Esto puede
-  **subestimar el riesgo** de quienes no respondieron todos los bloques.
-- **Lo que necesitamos:** confirmar cómo trata la norma estos casos (¿umbrales
-  ajustados?, ¿promedios?, ¿se excluye la dimensión?).
-
-## 2. Grupos pequeños y límite conocido 🟡
+## 1. Grupos pequeños y límite conocido 🟡
 
 En la página de Resultados se pueden filtrar los resultados por sexo, edad, área
 y localidad. Un grupo filtrado muy pequeño permitiría reconocer a las personas
@@ -54,48 +43,14 @@ vista completa revelaría a quienes quedaron fuera.
   esa área quedó oculta en la vista completa (más protección, pero el Ejecutivo
   principal vería menos áreas).
 
-## 3. Quiénes se cuentan 🟡
-
-- **Supuesto actual:** las gráficas de **sexo** y **edad** y la tabla **por área**
-  cuentan a **quienes respondieron la encuesta seleccionada**, no a toda la
-  plantilla; la tabla por área muestra al lado cuántas personas están
-  registradas en cada área. Los datos faltantes —y los cuestionarios de cuentas
-  eliminadas— se agrupan como **"Sin dato"** (sexo y edad) o **"Sin área"**. La
-  **edad se calcula a la fecha de consulta**, no a la fecha en que se respondió: la
-  misma consulta puede dar otro reparto por edad un año después.
-- **Lo que necesitamos:** confirmar que así debe leerse el perfil de quienes
-  respondieron, y si la edad debería fijarse a la fecha de respuesta.
-
-## 4. Reporte: grupos pequeños también para Administración 🟡
-
-- **Supuesto actual:** el Reporte de resultados se calcula **siempre** con la
-  regla de grupos pequeños del punto 2, también en la vista previa de
-  Administración. Así existe una sola versión del reporte y quien lo redacta ve
-  exactamente las cifras que recibirá la empresa. Solo afecta a lo que se
-  muestra **por área** (participación, distribuciones y Guía I por área).
-- **Lo que necesitamos:** confirmar si el reporte entregado debería mostrar
-  **todos los grupos sin ocultar**, como creemos que corresponde. Si es así,
-  falta decidir quién lo recibe y si el Ejecutivo principal seguiría viendo la
-  versión con grupos ocultos.
-
-## 5. Reporte: texto del Objetivo 🟡
+## 2. Reporte: texto del Objetivo 🟡
 
 - **Supuesto actual:** la sección **Objetivo** es un texto fijo, igual para todos
   los reportes, y por ahora es un texto provisional.
-- **Lo que necesitamos:** el texto definitivo, y confirmar si basta con un texto
-  fijo o si debe cambiar según el tamaño de la empresa y las guías aplicadas
-  (Guía I con Guía II o con Guía III).
+- **Lo que necesitamos:** el texto definitivo. Ya está decidido que el texto es
+  fijo y no cambia según el tamaño de la empresa ni las guías aplicadas.
 
-## 6. Reporte: cómo describir la calificación final 🟡
-
-- **Supuesto actual:** el reporte resume la calificación final agrupando niveles:
-  *"De los N colaboradores evaluados, el X % presentó niveles de riesgo Nulo o
-  Bajo; el Y % restante, Medio, Alto o Muy alto."*
-- **Lo que necesitamos:** confirmar si es preferible describir el porcentaje de
-  **cada nivel por separado**, sin agruparlos (por ejemplo, *"48 % Nulo, 28 %
-  Bajo, 14 % Medio, 8 % Alto y 2 % Muy alto"*).
-
-## 7. Encuesta: instrucciones para quien responde 🟡
+## 3. Encuesta: instrucciones para quien responde 🟡
 
 - **Supuesto actual:** la primera vez que alguien abre la encuesta ve unas
   instrucciones redactadas a partir de los puntos que la propia norma pide
@@ -116,30 +71,15 @@ vista completa revelaría a quienes quedaron fuera.
   el nivel de riesgo individual; y si "quien te invitó" basta o
   conviene nombrar un área (por ejemplo, Recursos Humanos).
 
-## 8. Qué abarca una empresa y su reporte 🟡
+## 4. Reporte por localidad 🟡
 
-- **Supuesto actual:** cada empresa registrada en la plataforma tiene su propio
-  código de empresa, sus colaboradores, su página de Resultados y **un solo
-  Reporte de resultados**, que la cubre completa.
-  - **Varias razones sociales:** cada razón social se registra como una
-    **empresa distinta**. Dos razones sociales de un mismo grupo no comparten
-    tablero ni reporte.
-  - **Varias localidades:** una empresa puede registrar varias localidades y
-    filtrar por localidad en la página de Resultados, pero el reporte es uno
-    solo para toda la empresa. Si se necesita un reporte separado por localidad
-    (por ejemplo, un centro de trabajo por planta), cada localidad se registra
-    como una **empresa distinta**.
-- **Lo que necesitamos:** confirmar que así debe ser en los dos sentidos:
-  - si un grupo con varias razones sociales necesita verse también en conjunto;
-  - si un solo reporte por empresa es aceptable para la norma cuando hay varias
-    localidades, o si cada centro de trabajo debe tener su propio reporte.
-
-## 9. Puesto al activar la cuenta 🟡
-
-- **Supuesto actual:** al activar su cuenta, la persona puede escribir su
-  **puesto**, pero el campo es **opcional**. El puesto solo aparece en la lista
-  de colaboradores y en su página de detalle; no se usa en la valoración, en los
-  filtros de Resultados ni en el Reporte.
-- **Lo que necesitamos:** confirmar si el puesto sirve para algo. Si sirve, lo
-  hacemos **obligatorio** al activar la cuenta. Si no sirve, **lo quitamos** del
-  formulario para pedir un dato menos.
+- **Supuesto actual:** cada empresa registrada en la plataforma tiene **un solo
+  Reporte de resultados**, que la cubre completa. Una empresa puede registrar
+  varias localidades y filtrar por localidad en la página de Resultados, pero el
+  reporte es uno solo para toda la empresa. Si se necesita un reporte separado
+  por localidad (por ejemplo, un centro de trabajo por planta), cada localidad se
+  registra como una **empresa distinta**. Cada razón social también se registra
+  como una empresa distinta.
+- **Lo que necesitamos:** confirmar si un solo reporte por empresa es aceptable
+  para la norma cuando hay varias localidades, o si cada centro de trabajo debe
+  tener su propio reporte.

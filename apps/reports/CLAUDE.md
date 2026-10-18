@@ -1,8 +1,8 @@
 # reports
 
 The **NOM-035 results report**: one `Report` per NOM-035 `SurveyAssignment`,
-drafted and published by an Administrador, read by the company's Ejecutivo
-principal, and downloadable as a letter-size PDF. It reads its figures from
+drafted, published and read by an Administrador (`can_edit_report`), and
+downloadable as a letter-size PDF. It reads its figures from
 `apps/nom035` (`report_results`) and draws them with `apps/core`'s chart
 components. Registered as `apps.reports` (label `reports`, admin heading
 *Reportes*). Full design: `docs/platform/nom-035-report.md`.
@@ -37,10 +37,8 @@ components. Registered as `apps.reports` (label `reports`, admin heading
   (discards it).
 - `pdf.py` — `render_report_pdf(report)` renders `reports/report_pdf.html` with
   WeasyPrint; `ReportURLFetcher` serves only static files; `filename(report)`.
-- `views.py`, `urls.py` — Administrador views (`AdminMixin`: `can_manage_surveys`
-  and `can_view_insights`, any company, under `empresas/<código>/reportes/`) and
-  Ejecutivo principal views (`ExecutiveMixin`: `can_view_insights`, own company,
-  published only, under `tablero-empresa/reportes/`). The URLs are included at the
+- `views.py`, `urls.py` — Administrador views (`AdminMixin`: `can_edit_report`,
+  any company, under `empresas/<código>/reportes/`). The URLs are included at the
   site root.
 - `forms.py` — `ReportForm` and `SignatoryFormSet` (rows keep the order shown;
   an untouched blank row is skipped).
@@ -108,8 +106,9 @@ unpublish form.
 - **WeasyPrint loads lazily.** `views._pdf_response` imports `pdf` inside the
   function; keep `weasyprint` out of module-level imports elsewhere. Pango is a
   system dependency (`.claude/CLAUDE.md`, *PDF rendering setup*).
-- **Small groups always apply**, preview included: the rule lives in
-  `apps/nom035/results.py`, never in a report template.
+- **No group is ever hidden** in the report, preview included: `report_results`
+  asks `apps/nom035/results.py` for unsuppressed figures, and a report template
+  never hides a group itself.
 
 ## Tests
 
@@ -118,7 +117,7 @@ two áreas and one respondent without área), `test_models.py`,
 `test_snapshot.py` (build and JSON round trip), `test_text.py` (sentences),
 `test_content.py` (matrix covers every dominio, fixed text present), `test_sections.py` (registry, numbering,
 section contexts), `test_results_sections.py` (results partials),
-`test_publishing.py`, `test_admin_views.py`, `test_executive_views.py`,
+`test_publishing.py`, `test_admin_views.py`,
 `test_dominio_palette.py` (the dominio tier's colors), `test_page_breaks.py` and
 `test_pdf.py` (a real WeasyPrint render, the fetcher, the filename, the
 watermark). The suite asserts the rendered HTML and that a PDF is produced; the

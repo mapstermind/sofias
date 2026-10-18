@@ -9,12 +9,12 @@
 
 
   {% if not rows %}
-    {% if is_admin_view %}{% include "components/_empty.html" with body="Esta empresa aún no tiene encuestas NOM-035 asignadas." icon="document-text" %}{% else %}{% include "components/_empty.html" with body="Aún no hay reportes publicados. Aquí aparecerán cuando estén listos." icon="document-text" %}{% endif %}
+    {% include "components/_empty.html" with body="Esta empresa aún no tiene encuestas NOM-035 asignadas." icon="document-text" %}
   {% else %}
     <ul class="card divide-y divide-neutral-100 overflow-hidden">
       {% for row in rows %}
         <li>
-          <a href="{% if is_admin_view %}{% url 'reports:admin_detail' company.reference_code row.option.assignment.pk %}{% else %}{% url 'reports:exec_detail' row.option.assignment.pk %}{% endif %}"
+          <a href="{% url 'reports:admin_detail' company.reference_code row.option.assignment.pk %}"
              class="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-neutral-50 sm:px-6">
           <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between sm:gap-4">
           <div class="min-w-0">
@@ -27,9 +27,7 @@
             {% endif %}
           </div>
           <div class="mt-2 sm:mt-0 sm:shrink-0">
-            {% if not is_admin_view %}
-              <span class="pill pill-marker bg-success-100 text-success-800">Publicado</span>
-            {% elif not row.report %}
+            {% if not row.report %}
               <span class="pill pill-marker bg-neutral-100 text-neutral-600">Sin borrador</span>
             {% elif row.report.status == "published" %}
               <span class="pill pill-marker bg-success-100 text-success-800">Publicado</span>

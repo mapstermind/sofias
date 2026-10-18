@@ -1,0 +1,22 @@
+{% comment %}
+The decisions the proposal raises, numbered because the conversation refers to
+them by number. Each states today's page, the proposal, what it costs and the
+question to settle.
+{% endcomment %}
+<section id="decisiones" aria-labelledby="decisiones-titulo" class="scroll-mt-20">
+  <h2 id="decisiones-titulo" class="text-lg font-semibold text-neutral-900">Decisiones por revisar</h2>
+  <p class="mt-1 text-sm text-neutral-600">Lo que la propuesta cambia respecto al tablero actual y lo que hay que decidir antes de construirla.</p>
+  <ol class="mt-4 space-y-4">
+    {% for d in decisions %}
+      <li class="card p-5">
+        <h3 class="text-base font-semibold text-neutral-900"><span class="mr-2 tabular-nums text-primary-700">{{ forloop.counter }}.</span>{{ d.title }}</h3>
+        <dl class="mt-3 grid gap-3 text-sm md:grid-cols-[9rem_minmax(0,1fr)]">
+          <dt class="font-medium text-neutral-500">Hoy</dt><dd class="text-neutral-800">{{ d.today }}</dd>
+          <dt class="font-medium text-neutral-500">Propuesta</dt><dd class="text-neutral-800">{{ d.proposal }}</dd>
+          <dt class="font-medium text-neutral-500">Qué implica</dt><dd class="text-neutral-800">{{ d.cost }}</dd>
+          <dt class="font-medium text-neutral-500">A decidir</dt><dd class="font-medium text-neutral-900">{{ d.question }}</dd>
+        </dl>
+      </li>
+    {% endfor %}
+  </ol>
+</section>

@@ -5,7 +5,7 @@ from apps.reports.models import Report
 from apps.reports.sections import context_for, render_sections
 
 pytestmark = pytest.mark.django_db
-SUPPRESSED = "Grupo demasiado pequeño"
+SMALL_GROUP_NOTICE = "Grupo demasiado pequeño"
 
 
 def _html(report):
@@ -38,17 +38,13 @@ def _slice(html, key):
     return html.split(f'id="sec-{key}"')[1].split("</section>")[0]
 
 
-def test_area_sections_hide_small_groups(scored_assignment):
+def test_area_sections_show_every_group(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
     area = _slice(html, "resultadosarea")
     assert "Operaciones" in area and "Ventas" in area and "Sin área" in area
-    # Ventas is hidden too: "Sin área" (1 respondent) alone would be deducible.
-    assert area.count(SUPPRESSED) == 2
-    assert SUPPRESSED in _slice(html, "resultadosguia1")
-    # Only a visible área gets its categoría distributions.
-    assert '<h4 class="report-h4">Operaciones</h4>' in area
-    assert '<h4 class="report-h4">Ventas</h4>' not in area
-    assert '<h4 class="report-h4">Sin área</h4>' not in area
+    assert SMALL_GROUP_NOTICE not in html
+    for label in ("Operaciones", "Ventas", "Sin área"):
+        assert f'<h4 class="report-h4">{label}</h4>' in area
 
 
 def test_per_area_sections_close_with_the_ndr_legend(scored_assignment):

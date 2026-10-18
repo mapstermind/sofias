@@ -1,0 +1,28 @@
+{% load icons l10n %}
+{% comment %}The third row: one row per área, with a button that adds it to the filters.{% endcomment %}
+<section class="rounded-3xl bg-white p-6">
+  <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <h3 class="text-base font-semibold text-neutral-900">Por área</h3>
+    <span class="text-sm text-neutral-500">El botón de cada fila agrega el área a los filtros.</span>
+  </div>
+  <ul class="mt-4 space-y-2">
+    {% for row in areas %}
+      <li class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 rounded-2xl bg-neutral-50 py-3 pr-3 pl-4 md:grid-cols-[11rem_10rem_9rem_minmax(0,1fr)_auto] md:gap-x-6">
+        <span class="min-w-0 text-base font-semibold text-neutral-900">{{ row.label }}</span>
+        {% with filter_label="Filtrar por "|add:row.label %}<button type="button" class="btn btn-secondary size-11 rounded-full px-0 md:order-last">{% icon "funnel" "size-5" label=filter_label %}</button>{% endwith %}
+        <span class="col-span-2 text-sm text-neutral-600 tabular-nums md:col-span-1">{{ row.responded }} de {{ row.registered }} respondieron</span>
+        <span class="col-span-2 flex items-center gap-2 md:col-span-1">
+          {% localize off %}<span class="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-200"><span class="block h-full rounded-full bg-primary-600" style="width: {{ row.participation }}%"></span></span>{% endlocalize %}
+          <span class="text-sm font-semibold tabular-nums">{{ row.participation }} %</span>
+        </span>
+        <span class="col-span-2 min-w-0 md:col-span-1">
+          {% if row.levels %}
+            {% include "core/proposal/_level_bar.html" with levels=row.levels tier="" height="h-2.5" %}
+          {% else %}
+            <span class="text-sm text-neutral-500">Grupo muy pequeño: ocultamos sus resultados (mínimo 5 personas).</span>
+          {% endif %}
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+</section>

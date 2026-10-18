@@ -39,7 +39,7 @@ def test_final_sentence():
     )
     assert text.final_sentence(r) == (
         f"De los 250 colaboradores evaluados, el 76{NB}% presentó niveles de riesgo "
-        f"Nulo o Bajo; el 24{NB}% restante, Medio, Alto o Muy alto."
+        f"Nulo o Bajo; el 14{NB}% Medio; el 10{NB}% Alto o Muy alto."
     )
 
 

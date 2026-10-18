@@ -267,7 +267,6 @@ class TestCompanyCatalogAdmin:
             reverse("admin:accounts_userprofile_add"),
             {
                 "user": str(user.pk),
-                "position": "Analista",
                 "company": str(company.pk),
                 "area": str(foreign.pk),
                 "location": "",

@@ -13,7 +13,7 @@
           <th scope="row">{{ a.label }}</th>
           <td data-label="n" class="report-cell-num">{{ a.n }}</td>
           <td data-label="Calificación final" class="report-cell-chart">
-            {% if a.suppressed %}{% include "reports/sections/results/_suppressed.html" %}{% elif a.final %}{% stacked_bar a.final.slices %}{% else %}—{% endif %}
+            {% if a.final %}{% stacked_bar a.final.slices %}{% else %}—{% endif %}
           </td>
         </tr>
       {% empty %}
@@ -21,7 +21,7 @@
       {% endfor %}
     </tbody>
   </table>
-  {% for a in data.areas %}{% if not a.suppressed and a.categorias %}
+  {% for a in data.areas %}{% if a.categorias %}
     <h4 class="report-h4">{{ a.label }}</h4>
     {% for cat in a.categorias %}
       <div class="report-group report-group--nested">
@@ -31,5 +31,4 @@
     {% endfor %}
   {% endif %}{% endfor %}
   {% include "reports/sections/results/_legend.html" with legend=c.legend %}
-  <p class="report-small">Un área con menos de cinco cuestionarios, o cuya distribución permitiría deducir por diferencia la de otras personas, no muestra sus resultados.</p>
 {% endif %}

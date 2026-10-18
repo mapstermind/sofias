@@ -20,7 +20,7 @@ register = template.Library()
 class Section:
     label: str
     admin_url: str  # an Administrador viewing any company (`is_admin_view`)
-    own_url: str  # an executive viewing their own company
+    own_url: str | None  # an executive viewing their own company; None: admin only
     admin_perms: tuple[str, ...]
     own_perms: tuple[str, ...]
     lit_by: tuple[str, ...]  # view names, child pages included, that light it
@@ -64,15 +64,13 @@ SECTIONS = (
     Section(
         "Reportes",
         "reports:admin_list",
-        "reports:exec_list",
-        ("can_manage_surveys", "can_view_insights"),
-        ("can_view_insights",),
+        None,
+        ("can_edit_report",),
+        (),
         (
             "reports:admin_list",
             "reports:admin_detail",
             "reports:admin_edit",
-            "reports:exec_list",
-            "reports:exec_detail",
         ),
     ),
 )
@@ -87,6 +85,8 @@ def sections(request, company, is_admin_view) -> list[dict]:
     current = match.view_name if match else ""
     items = []
     for section in SECTIONS:
+        if section.own_url is None and not is_admin_view:
+            continue
         perms = section.admin_perms if is_admin_view else section.own_perms
         if not all(user.has_perm(f"accounts.{p}") for p in perms):
             continue

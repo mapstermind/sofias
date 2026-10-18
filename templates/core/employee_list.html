@@ -126,7 +126,7 @@
                 one.
                 {% endcomment %}
                 <p class="mt-1 truncate text-sm text-neutral-500">
-                  {% if item.role_labels %}{{ item.role_labels|join:", " }}{% else %}Sin rol{% endif %}{% if profile.position %} <span aria-hidden="true">·</span> {{ profile.position }}{% endif %}{% if profile.area %} <span aria-hidden="true">·</span> {{ profile.area.name }}{% endif %}{% if profile.location %} <span aria-hidden="true">·</span> {{ profile.location.name }}{% endif %}
+                  {% if item.role_labels %}{{ item.role_labels|join:", " }}{% else %}Sin rol{% endif %}{% if profile.area %} <span aria-hidden="true">·</span> {{ profile.area.name }}{% endif %}{% if profile.location %} <span aria-hidden="true">·</span> {{ profile.location.name }}{% endif %}
                 </p>
               </div>
             </div>

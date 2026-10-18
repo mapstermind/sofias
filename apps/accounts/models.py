@@ -215,7 +215,6 @@ class UserProfile(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="profile", verbose_name="usuario"
     )
-    position = models.CharField("puesto", max_length=255, blank=True)
     # Blank/null here and required in `ProfileActivationForm`: the CSV importer
     # creates this row before the employee has answered anything. This is the
     # same split `area` uses.
@@ -364,6 +363,7 @@ class Role(models.Model):
             ("can_manage_employees", "Puede administrar colaboradores"),
             ("can_view_submissions", "Puede ver los envíos"),
             ("can_view_small_groups", "Puede ver resultados de grupos pequeños"),
+            ("can_edit_report", "Puede editar el reporte de resultados"),
         ]
 
 

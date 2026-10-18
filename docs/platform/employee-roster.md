@@ -26,7 +26,7 @@ the chosen values are OR-ed and across dimensions they are AND-ed, so *Producci�
 o Logística, and only empleados* is one reading of the roster rather than three.
 
 Each card carries a circular avatar of the person's initials, their name and
-correo, a single metadata line reading *Rol · Puesto · Área · Localidad*, and a
+correo, a single metadata line reading *Rol · Área · Localidad*, and a
 progress bar per assigned survey.
 
 The same Rol appears in the Django admin, as a column and a filter on the
@@ -78,8 +78,6 @@ time would answer half the question and send the operator back for the rest.
 - Renaming `auth.Group.name`. The four English names stay the lookup keys and
   the CSV importer's accepted values — only their presentation is Spanish.
   The rename remains open finding #1.
-- Filtering by puesto. It is free text typed per person, not a catalog, so it
-  offers no stable set of options; the search box reaches it instead.
 - Filtering by edad or by date ranges, and any segmented *aggregate* of the
   demographics. NOM-035 results by age band and sex are read on the results
   page ([`nom-035-results-dashboard.md`](./nom-035-results-dashboard.md)), which
@@ -233,9 +231,9 @@ One card per person:
 - Name, with a *Tú* badge on the viewer's own card, and the correo below it.
   Someone with no name recorded is listed by correo alone, which is then not
   repeated underneath.
-- One metadata line: *Rol · Puesto · Área · Localidad*, with separators between
-  whichever of the four are recorded. A value that is absent is omitted rather
-  than printed as *Sin puesto*.
+- One metadata line: *Rol · Área · Localidad*, with separators between
+  whichever of the three are recorded. A value that is absent is omitted rather
+  than printed as *Sin área*.
 - A progress bar per assignment, labelled with the survey title, its variante,
   the percent, and the answered-over-total count.
 

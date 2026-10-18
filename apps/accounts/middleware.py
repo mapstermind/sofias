@@ -6,7 +6,7 @@ from django.urls import reverse
 class RequireProfileActivationMiddleware:
     """Keep users who have not activated their profile on the activation flow.
 
-    Activation is where an employee supplies their nombre, puesto, área and
+    Activation is where an employee supplies their nombre, área and
     localidad. Routing them there at login is not enough on its own — a user can
     navigate away and reach the rest of the app with `is_activated=False`, and
     every survey they answer then scores with `area=None` and lands in the "Sin

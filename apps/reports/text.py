@@ -46,11 +46,13 @@ def _share_text(row: DistributionRow) -> str:
 def final_sentence(row: DistributionRow) -> str:
     pct = _row_percents(row)
     low = sum(pct[lvl] for lvl in LOW)
+    medio = pct[c.NDR_MEDIO]
+    high = sum(pct[lvl] for lvl in HIGH)
     noun = "colaborador evaluado" if row.n == 1 else "colaboradores evaluados"
     lead = "De" if row.n == 1 else "De los"
     return (
         f"{lead} {row.n} {noun}, el {low}{NBSP}% presentó niveles de riesgo Nulo o "
-        f"Bajo; el {100 - low}{NBSP}% restante, Medio, Alto o Muy alto."
+        f"Bajo; el {medio}{NBSP}% Medio; el {high}{NBSP}% Alto o Muy alto."
     )
 
 
