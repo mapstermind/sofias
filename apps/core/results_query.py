@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 
 from apps.accounts.demographics import AGE_BANDS, band_by_slug
 from apps.core.query_params import SEX_SLUGS_TO_LABELS, first_sex, valid_pks, values
+from apps.nom035._nom035_scoring import CATEGORIA_ORDER
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,9 @@ class ResultsQuery:
     age_slugs: tuple[str, ...] = ()
     area_ids: tuple[int, ...] = ()
     location_ids: tuple[int, ...] = ()
+    # What is measured, not who is counted: a categoría key, or "" for the final
+    # score. It is not a filter.
+    ver: str = ""
 
     @property
     def is_filtered(self) -> bool:
@@ -29,6 +33,8 @@ class ResultsQuery:
         pairs = []
         if self.assignment_id is not None:
             pairs.append(("encuesta", str(self.assignment_id)))
+        if self.ver:
+            pairs.append(("ver", self.ver))
         if self.sex_slug:
             pairs.append(("sexo", self.sex_slug))
         pairs += [("edad", slug) for slug in self.age_slugs]
@@ -43,6 +49,7 @@ def parse_results_query(
     assignment = valid_pks(values(params, "encuesta")[:1], assignment_ids)
     sex, sex_slug = first_sex(params)
     wanted = {raw.strip() for raw in values(params, "edad")}
+    ver = next((v for v in values(params, "ver") if v in CATEGORIA_ORDER), "")
     return ResultsQuery(
         assignment_id=assignment[0] if assignment else None,
         sex=sex,
@@ -50,6 +57,7 @@ def parse_results_query(
         age_slugs=tuple(band.slug for band in AGE_BANDS if band.slug in wanted),
         area_ids=valid_pks(values(params, "area"), area_ids),
         location_ids=valid_pks(values(params, "localidad"), location_ids),
+        ver=ver,
     )
 
 
@@ -64,15 +72,22 @@ def results_url(base, query, *, drop=None, add=None) -> str:
 class Pill:
     label: str
     remove_url: str
+    dimension: str = ""  # what the value filters: Sexo, Edad, Área, Localidad
 
 
 def filter_pills(query, base, *, area_names, location_names) -> list[Pill]:
     entries = []
     if query.sex_slug:
-        entries.append((SEX_SLUGS_TO_LABELS[query.sex_slug], ("sexo", query.sex_slug)))
-    entries += [(band_by_slug(s).label, ("edad", s)) for s in query.age_slugs]
-    entries += [(area_names[pk], ("area", str(pk))) for pk in query.area_ids]
+        entries.append(
+            ("Sexo", SEX_SLUGS_TO_LABELS[query.sex_slug], ("sexo", query.sex_slug))
+        )
+    entries += [("Edad", band_by_slug(s).label, ("edad", s)) for s in query.age_slugs]
+    entries += [("Área", area_names[pk], ("area", str(pk))) for pk in query.area_ids]
     entries += [
-        (location_names[pk], ("localidad", str(pk))) for pk in query.location_ids
+        ("Localidad", location_names[pk], ("localidad", str(pk)))
+        for pk in query.location_ids
     ]
-    return [Pill(label, results_url(base, query, drop=pair)) for label, pair in entries]
+    return [
+        Pill(label, results_url(base, query, drop=pair), dimension)
+        for dimension, label, pair in entries
+    ]

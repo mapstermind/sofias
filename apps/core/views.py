@@ -16,7 +16,12 @@ from django.views.generic import TemplateView
 from apps.accounts.demographics import AGE_BANDS
 from apps.accounts.models import Company, CompanyArea, CompanyLocation, UserProfile
 from apps.accounts.roles import ROLES, labels_for_names
-from apps.core import palette_proposal, results_proposal, roster, styleguide
+from apps.core import (
+    palette_proposal,
+    results_page,
+    roster,
+    styleguide,
+)
 from apps.core.brand import COOKIE as PALETTE_COOKIE
 from apps.core.brand import active_palette, can_switch_palette, palette_slugs
 from apps.core.query_params import SEX_SLUGS_TO_LABELS
@@ -31,6 +36,7 @@ from apps.nom035 import constants as nom035_constants
 from apps.nom035.results import (
     NOM035_SURVEY_KEY,
     assignment_options,
+    categoria_options,
     results_for,
     select_assignment,
 )
@@ -701,8 +707,11 @@ def _results_context(request, company, reference_code) -> dict:
     )
     selected = select_assignment(options, query.assignment_id)
     results = None
+    ver_options = ()
     if selected is not None:
+        ver_options = categoria_options(selected.assignment)
         query = replace(query, assignment_id=selected.assignment.pk)
+        query = results_page.with_valid_ver(query, {key for key, _ in ver_options})
         results = results_for(
             selected.assignment,
             query,
@@ -710,17 +719,44 @@ def _results_context(request, company, reference_code) -> dict:
                 "accounts.can_view_small_groups"
             ),
         )
-    participation_rows = [
-        {
-            "row": row,
-            "filter_url": (
-                results_url(page_url, query, add=("area", str(row.area_id)))
-                if row.area_id is not None and row.area_id not in query.area_ids
-                else None
+    page = {}
+    if results is not None and not results.empty:
+        page["area_rows"] = [
+            {
+                "area": area,
+                "filter_url": (
+                    results_url(page_url, query, add=("area", str(area.row.area_id)))
+                    if area.row.area_id is not None
+                    and area.row.area_id not in query.area_ids
+                    else None
+                ),
+                "remove_url": (
+                    results_url(page_url, query, drop=("area", str(area.row.area_id)))
+                    if area.row.area_id in query.area_ids
+                    else None
+                ),
+            }
+            for area in results_page.area_rows(results, query.ver)
+        ]
+        page["participation_card"] = results_page.participation_card(results)
+        page["sex_card"] = results_page.sex_card(results)
+        page["age_card"] = results_page.age_card(
+            results,
+            query.age_slugs,
+            lambda slug, on: results_url(
+                page_url,
+                query,
+                drop=("edad", slug) if on else None,
+                add=None if on else ("edad", slug),
             ),
-        }
-        for row in (results.participation if results else ())
-    ]
+        )
+        if not results.suppressed:
+            page["hero"], page["column"] = results_page.hero_for(
+                results,
+                query.ver,
+                lambda key: results_url(page_url, replace(query, ver=key)),
+            )
+            page["guia1_card"] = results_page.guia1_card(results)
     return {
         "company": company,
         "is_admin_view": reference_code is not None,
@@ -728,8 +764,12 @@ def _results_context(request, company, reference_code) -> dict:
         "selected": selected,
         "filter_groups": _results_filter_groups(query, areas, locations),
         "clear_url": results_url(
-            page_url, ResultsQuery(assignment_id=query.assignment_id)
+            page_url, ResultsQuery(assignment_id=query.assignment_id, ver=query.ver)
         ),
+        "ver": query.ver,
+        "ver_options": ver_options,
+        "ver_label": dict(ver_options).get(query.ver, ""),
+        "ver_clear_url": results_url(page_url, replace(query, ver="")),
         "query": query,
         "results": results,
         "pills": filter_pills(
@@ -738,7 +778,7 @@ def _results_context(request, company, reference_code) -> dict:
             area_names={a.pk: a.name for a in areas},
             location_names={loc.pk: loc.name for loc in locations},
         ),
-        "participation_rows": participation_rows,
+        **page,
         # Dimensions in use, not values chosen, as on the roster.
         "active_filter_count": sum(
             (
@@ -779,7 +819,7 @@ class CompanyResultsView(LoginRequiredMixin, View):
 class CompanyResultsFragmentView(CompanyResultsView):
     """The results body alone, swapped into the page by results_dashboard.ts."""
 
-    template_name = "core/results/_body.html"
+    template_name = "core/results/_fragment.html"
 
 
 class PaletteSwitchView(View):
@@ -804,33 +844,6 @@ class PaletteSwitchView(View):
                 PALETTE_COOKIE, chosen, max_age=60 * 60 * 24 * 365, samesite="Lax"
             )
         return response
-
-
-class ResultsProposalView(TemplateView):
-    """A proposed layout for the results page, drawn from sample data (/propuestas/resultados/).
-
-    A static page for the client to compare with the real results page, with the
-    decisions the proposal raises. Shown to the same people as /estilos/;
-    everyone else gets a 404.
-    """
-
-    template_name = "core/results_proposal.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        if not can_switch_palette(request.user):
-            raise Http404
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(
-            container_width="max-w-6xl",
-            ndr_levels=[
-                (level, nom035_constants.NDR_LABELS[level])
-                for level in nom035_constants.NDR_ORDER
-            ],
-            **results_proposal.context(),
-            **kwargs,
-        )
 
 
 class PaletteProposalView(TemplateView):

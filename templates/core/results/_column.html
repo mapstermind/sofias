@@ -1,0 +1,69 @@
+{% load charts icons valuation_extras %}
+{% comment %}
+The column beside the main box. With the final score chosen in *Ver* it lists
+the categorías, each opening to its levels and its dominios; with a categoría
+chosen it lists that categoría's dominios, each opening to its levels and its
+statistics. Takes `column` (results_page.Group) and `hero`.
+{% endcomment %}
+<aside class="min-w-0">
+  <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <h2 class="text-lg font-semibold text-neutral-900">{% if ver %}Dominios{% else %}Categorías{% endif %}</h2>
+    <span class="text-sm text-neutral-600">En alto o muy alto</span>
+  </div>
+  {% if ver %}<p class="mt-1 text-sm text-neutral-600">De {{ hero.group.label|lower }}.</p>{% endif %}
+  <ul class="mt-2 divide-y divide-neutral-200 border-b border-neutral-200">
+    {% for g in column %}
+      <li class="py-3">
+        <details class="group"{% if forloop.first %} open{% endif %}>
+          <summary class="grid min-h-11 cursor-pointer list-none grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg [&::-webkit-details-marker]:hidden">
+            <span class="min-w-0">
+              <span class="block text-base font-semibold text-neutral-900">{{ g.label }}</span>
+              <span class="mt-2 block">{% include "core/results/_level_bar.html" with group=g height="h-2" %}</span>
+            </span>
+            <span class="pill bg-white text-neutral-900 tabular-nums">{{ g.dist.at_risk_percent }} %<span class="sr-only"> en alto o muy alto</span></span>
+            <span class="flex size-9 items-center justify-center rounded-full bg-white text-neutral-700">{% icon "chevron-down" "size-4 transition-transform group-open:rotate-180" %}</span>
+          </summary>
+          <div class="mt-4 space-y-4">
+            {% include "core/results/_level_cells.html" with group=g %}
+            {% if ver %}
+              {% with st=g.stats %}
+                <dl class="grid grid-cols-4 gap-2 text-center">
+                  <div class="rounded-xl bg-white py-2"><dt class="text-xs text-neutral-500">Promedio</dt><dd class="text-base font-semibold tabular-nums">{{ st.mean|default_if_none:"—" }}</dd></div>
+                  <div class="rounded-xl bg-white py-2"><dt class="text-xs text-neutral-500">Mediana</dt><dd class="text-base font-semibold tabular-nums">{{ st.median|default_if_none:"—" }}</dd></div>
+                  <div class="rounded-xl bg-white py-2"><dt class="text-xs text-neutral-500">Mínimo</dt><dd class="text-base font-semibold tabular-nums">{{ st.minimum|default_if_none:"—" }}</dd></div>
+                  <div class="rounded-xl bg-white py-2"><dt class="text-xs text-neutral-500">Máximo</dt><dd class="text-base font-semibold tabular-nums">{{ st.maximum|default_if_none:"—" }}</dd></div>
+                </dl>
+                {% if st.n %}
+                  <div class="rounded-xl bg-white px-3 pt-2 pb-1">{% range_strip st.strip_bands st.scale_max st.strip_points %}</div>
+                  <p class="text-sm text-neutral-500">Puntos, de 0 a {{ st.scale_max }}.</p>
+                {% endif %}
+              {% endwith %}
+            {% else %}
+              {% if g.stats.n %}<p class="text-sm text-neutral-600">Promedio <span class="font-semibold text-neutral-900">{{ g.stats.mean }}</span>, mediana <span class="font-semibold text-neutral-900">{{ g.stats.median }}</span>, de 0 a {{ g.stats.scale_max }} puntos.</p>{% endif %}
+              {% if g.children %}
+                <div>
+                  <p class="text-sm font-semibold text-neutral-700">Dominios ({{ g.children|length }})</p>
+                  <ul class="mt-2 space-y-3 border-l border-neutral-300 pl-3">
+                    {% for dom in g.children %}
+                      <li>
+                        <span class="flex justify-between gap-2 text-sm text-neutral-700"><span>{{ dom.label }}</span><span class="font-semibold tabular-nums">{{ dom.dist.at_risk_percent }} %</span></span>
+                        <span class="mt-1.5 block">{% include "core/results/_level_bar.html" with group=dom height="h-1.5" %}</span>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+              {% if g.view_url %}<p class="text-sm"><a href="{{ g.view_url }}" data-results-link class="link">Mostrar esta categoría, con sus estadísticas</a></p>{% endif %}
+            {% endif %}
+          </div>
+        </details>
+      </li>
+    {% endfor %}
+  </ul>
+  {% with legend_tier=column.0.tier|default:"" %}
+  <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-600">
+    {% if ver %}<li class="font-medium text-neutral-700">Dominios:</li>{% endif %}
+    {% for level, label in ndr_levels %}<li class="flex items-center gap-1.5"><span class="size-2.5 shrink-0 rounded-xs {{ level|ndr_bar:legend_tier }}" aria-hidden="true"></span>{{ label }}</li>{% endfor %}
+  </ul>
+  {% endwith %}
+</aside>

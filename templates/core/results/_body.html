@@ -1,25 +1,18 @@
 {% if results %}
-  {% include "core/results/_group_line.html" %}
   {% if results.empty %}
     <div class="mt-6">{% if results.filtered %}{% include "components/_empty.html" with body="Ningún cuestionario coincide con los filtros." icon="chart-bar" action_url=clear_url action_label="Limpiar filtros" %}{% else %}{% include "components/_empty.html" with body="Esta encuesta aún no tiene cuestionarios contestados." icon="chart-bar" %}{% endif %}</div>
   {% else %}
-    <h2 class="mt-10 mb-4 text-lg font-semibold text-neutral-900">Empresa</h2>
-    {% include "core/results/_participation.html" %}
-    <div class="mt-4 grid gap-4 lg:grid-cols-2">
-      {% include "core/results/_sex_profile.html" %}
-      {% include "core/results/_age_profile.html" %}
+    <div class="mt-6 space-y-6">
+      {% if results.suppressed %}
+        <section class="rounded-3xl bg-white px-6 py-8 text-center">{% include "core/results/_suppressed.html" %}</section>
+      {% else %}
+        <div class="grid gap-8 lg:grid-cols-12">
+          <div class="min-w-0 lg:col-span-7">{% include "core/results/_hero.html" %}</div>
+          <div class="min-w-0 lg:col-span-5">{% include "core/results/_column.html" %}</div>
+        </div>
+      {% endif %}
+      {% include "core/results/_cards.html" %}
+      {% include "core/results/_areas.html" %}
     </div>
-    {% if results.suppressed %}
-      <div class="card mt-4 px-6 py-8 text-center">
-        {% include "core/results/_suppressed.html" %}
-      </div>
-    {% else %}
-      {% include "core/results/_final_distribution.html" %}
-      {% include "core/results/_final_stats.html" %}
-      {% include "core/results/_guia1.html" %}
-      <h2 class="mt-10 mb-4 text-lg font-semibold text-neutral-900">Por categoría</h2>
-      {% include "core/results/_categoria_distribution.html" %}
-      {% include "core/results/_categoria_stats.html" %}
-    {% endif %}
   {% endif %}
 {% endif %}

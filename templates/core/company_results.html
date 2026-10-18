@@ -11,14 +11,15 @@
     {% include "components/_empty.html" with body="Esta empresa aún no tiene encuestas NOM-035 asignadas." icon="chart-bar" %}
   {% else %}
     {% comment %}
-    The roster's bar: a field, *Filtros* opening a dialog of chips, and
-    *Limpiar filtros* while any filter is in use. The survey names are long, so
-    on a phone the picker has its own row and the buttons sit beneath it.
-    static/ts/results_dashboard.ts swaps the body instead of reloading.
+    One form around the whole board, so the sticky strip can hold *Filtros*:
+    the pickers scroll away, the strip does not. The strip says what is shown
+    (*Mostrando*) and for whom (the filters as removable chips) wherever the page
+    is scrolled to. static/ts/results_dashboard.ts swaps the strip's summary and
+    the body instead of reloading.
     {% endcomment %}
     <form method="get" action="{{ page_url }}" id="results-filters" data-fragment-url="{{ fragment_url }}"
-          class="card p-3">
-      <div class="flex flex-wrap items-center gap-2">
+          class="space-y-6 rounded-3xl bg-neutral-100 p-3 sm:p-6">
+      <div class="flex flex-wrap items-center gap-2 rounded-3xl bg-white p-3">
         <label class="w-full sm:w-auto sm:min-w-48 sm:flex-1">
           <span class="sr-only">Encuesta</span>
           <select name="encuesta" class="control">
@@ -27,15 +28,29 @@
             {% endfor %}
           </select>
         </label>
-        {% include "components/_filter_buttons.html" with prefix="results" count=active_filter_count narrowed=active_filter_count clear_url=clear_url live=True %}
+        <label class="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:min-w-64 sm:flex-1">
+          <span class="shrink-0 text-sm font-medium text-neutral-700">Mostrando</span>
+          <select name="ver" class="control">
+            <option value=""{% if not ver %} selected{% endif %}>Calificación final</option>
+            {% for key, label in ver_options %}<option value="{{ key }}"{% if key == ver %} selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <div id="results-strip" data-filtered="{% if active_filter_count %}true{% else %}false{% endif %}" data-active="{% if active_filter_count or ver %}true{% else %}false{% endif %}"
+           class="sticky top-0 z-20 -mx-3 flex items-center gap-2 border-y border-neutral-200 bg-neutral-100 px-3 py-1.5 data-[active=true]:border-primary-200 data-[active=true]:bg-primary-50 sm:-mx-6 sm:px-6 data-[filtered=true]:[&_#results-filter-count]:bg-white data-[filtered=true]:[&_#results-filter-count]:text-primary-700 data-[filtered=true]:[&_#results-filter-open]:border-primary-600 data-[filtered=true]:[&_#results-filter-open]:bg-primary-600 data-[filtered=true]:[&_#results-filter-open]:text-white data-[filtered=true]:[&_#results-filter-open_svg]:text-white">
+        <div id="results-summary" class="min-w-0 flex-1">{% include "core/results/_summary.html" %}</div>
+        <div class="flex shrink-0 items-center gap-1 [&_[data-filter-clear]]:hidden sm:[&_[data-filter-clear]]:inline-flex">
+          {% include "components/_filter_buttons.html" with prefix="results" count=active_filter_count narrowed=active_filter_count clear_url=clear_url live=True %}
+        </div>
       </div>
       {% include "components/_filter_dialog.html" with prefix="results" groups=filter_groups clear_url=clear_url %}
-    </form>
 
-    <p id="results-status" class="sr-only" aria-live="polite"></p>
-    <div id="results-body" class="mt-6">
-      {% include "core/results/_body.html" %}
-    </div>
+      <p id="results-status" class="sr-only" aria-live="polite"></p>
+      <div id="results-body">
+        {% include "core/results/_body.html" %}
+      </div>
+    </form>
     <script src="{% static 'js/filter_dialog.js' %}"></script>
     <script src="{% static 'js/results_dashboard.js' %}"></script>
   {% endif %}

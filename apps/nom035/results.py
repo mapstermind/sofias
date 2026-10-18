@@ -8,7 +8,7 @@ See docs/platform/nom-035-results-dashboard.md.
 
 import statistics
 from collections import Counter, defaultdict
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 
 from django.db.models import Count, Max, Min, Q
 from django.utils import timezone
@@ -24,6 +24,8 @@ NOM035_SURVEY_KEY = "nom035"
 NO_DATA = "Sin dato"
 NO_AREA = "Sin área"
 FINAL = "final"
+# The two levels the page adds up as "en alto o muy alto".
+AT_RISK = (c.NDR_ALTO, c.NDR_MUY_ALTO)
 _PROFILE = "submission__user__profile__"
 
 _MONTHS = (
@@ -159,6 +161,15 @@ class DistributionRow:
     def slices(self) -> tuple[Slice, ...]:
         return _ndr_slices(self.counts, self.palette)
 
+    @property
+    def at_risk(self) -> int:
+        """Questionnaires in Alto or Muy alto: a sum of the distribution, not a verdict."""
+        return sum(n for level, n in self.counts if level in AT_RISK)
+
+    @property
+    def at_risk_percent(self) -> int:
+        return round(self.at_risk * 100 / self.n) if self.n else 0
+
 
 @dataclass(frozen=True)
 class StatsRow:
@@ -219,10 +230,16 @@ class ParticipationRow:
     participation: int | None
     counts: tuple[tuple[str, int], ...]
     suppressed: bool
+    # categoría key -> counts in c.NDR_ORDER; empty while the row is suppressed.
+    categoria_counts: dict = field(default_factory=dict, compare=False)
 
     @property
     def slices(self) -> tuple[Slice, ...]:
         return _ndr_slices(self.counts)
+
+    def categoria_slices(self, key) -> tuple[Slice, ...]:
+        counts = self.categoria_counts.get(key)
+        return _ndr_slices(counts) if counts else ()
 
 
 def _area_of(profile, company):
@@ -247,9 +264,11 @@ def _participation(assignment, query, scores, today, *, group_suppressed, suppre
         .values_list("area_id", "n")
     )
     by_area = defaultdict(list)
+    score_ids = defaultdict(list)
     for score in scores:
         area = _area_of(_profile(score), company)
         by_area[area.pk if area else None].append(score.final_ndr)
+        score_ids[area.pk if area else None].append(score.pk)
 
     group_size = len(scores)
     areas = CompanyArea.objects.filter(company=company).order_by("name")
@@ -273,6 +292,14 @@ def _participation(assignment, query, scores, today, *, group_suppressed, suppre
     if suppress:
         _hide_until_safe(entries, by_area, visible)
 
+    area_of_score = {pk: area_id for area_id in visible for pk in score_ids[area_id]}
+    by_categoria = defaultdict(lambda: defaultdict(Counter))  # area -> key -> levels
+    if area_of_score:
+        for score_id, key, ndr in GroupScore.objects.filter(
+            submission_score_id__in=list(area_of_score), level=c.LEVEL_CATEGORIA
+        ).values_list("submission_score_id", "key", "ndr"):
+            by_categoria[area_of_score[score_id]][key][ndr] += 1
+
     def row(area_id, label, registered_count):
         ndrs = by_area.get(area_id, [])
         counted = Counter(ndrs)
@@ -287,6 +314,12 @@ def _participation(assignment, query, scores, today, *, group_suppressed, suppre
             else None,
             counts=tuple((lvl, counted[lvl]) for lvl in c.NDR_ORDER) if shown else (),
             suppressed=bool(ndrs) and not shown,
+            categoria_counts={
+                key: tuple((lvl, levels[lvl]) for lvl in c.NDR_ORDER)
+                for key, levels in by_categoria[area_id].items()
+            }
+            if shown
+            else {},
         )
 
     return tuple(row(*entry) for entry in entries)
@@ -730,3 +763,9 @@ def report_results(assignment) -> ReportResults:
         dimensions=_dimensions(assignment, scores) if scores else (),
         areas=_areas(assignment, scores, results.participation),
     )
+
+
+def categoria_options(assignment) -> tuple[tuple[str, str], ...]:
+    """(key, label) of each categoría the assignment's variant measures, in order."""
+    categorias, _dominios, _items, _total = _structure(assignment.variant)
+    return tuple((key, cfg.group_label(key)) for key in categorias)

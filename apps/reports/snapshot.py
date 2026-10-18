@@ -123,6 +123,9 @@ def build_report_data(assignment) -> ReportData:
 
 def dump(data: ReportData) -> dict:
     raw = asdict(data)
+    # The dashboard's per-área categoría counts are not part of a report.
+    for row in raw["participation"]:
+        row.pop("categoria_counts", None)
     raw["computed_on"] = data.computed_on.isoformat()
     return raw
 

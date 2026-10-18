@@ -1,0 +1,74 @@
+{% load charts l10n %}
+{% comment %}
+The second row: participation, Guía I and who answered. None of it changes with
+*Ver*. A suppressed group has no Guía I card (its answers would identify people).
+{% endcomment %}
+{% localize off %}
+<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+  <section class="min-w-0 rounded-3xl bg-white p-6" aria-labelledby="participacion-titulo">
+    <div class="flex items-baseline justify-between gap-3">
+      <h2 id="participacion-titulo" class="text-base font-semibold text-neutral-900">Participación</h2>
+      {% if participation_card.percent is not None %}<span class="text-2xl font-medium text-neutral-900 tabular-nums">{{ participation_card.percent }} %</span>{% endif %}
+    </div>
+    <dl class="mt-4 grid grid-cols-3 gap-2">
+      <div class="border-l border-neutral-300 pl-2.5"><dt class="text-sm text-neutral-500">Cuentas activadas</dt><dd class="mt-1 text-2xl font-medium tabular-nums">{{ participation_card.registered }}</dd></div>
+      <div class="border-l-2 border-primary-600 pl-2.5"><dt class="text-sm text-neutral-500">Respondieron</dt><dd class="mt-1 text-2xl font-medium tabular-nums">{{ participation_card.responded }}</dd></div>
+      <div class="border-l border-neutral-300 pl-2.5"><dt class="text-sm text-neutral-500">Pendientes</dt><dd class="mt-1 text-2xl font-medium tabular-nums">{{ participation_card.pending }}</dd></div>
+    </dl>
+    {% if participation_card.ticks %}
+      <div class="mt-5 flex h-11 items-end justify-between" role="img" aria-label="{{ participation_card.responded }} de {{ participation_card.registered }} cuentas activadas respondieron">
+        {% for on in participation_card.ticks %}<span class="w-[3px] rounded-full {% if on %}h-11 bg-primary-600{% else %}h-7 bg-neutral-300{% endif %}"></span>{% endfor %}
+      </div>
+      <p class="mt-2 text-sm text-neutral-500">Cada marca equivale a {{ participation_card.per_tick }} cuenta{{ participation_card.per_tick|pluralize }} activada{{ participation_card.per_tick|pluralize }}.</p>
+    {% endif %}
+  </section>
+
+  {% if guia1_card %}
+  <section class="min-w-0 rounded-3xl bg-neutral-200 bg-[radial-gradient(var(--color-neutral-300)_1px,transparent_1.5px)] bg-[length:12px_12px] p-6" aria-labelledby="guia1-titulo">
+    <h2 id="guia1-titulo" class="text-base font-semibold text-neutral-900">Guía I: acontecimientos traumáticos severos</h2>
+    <div class="mt-4 flex items-baseline gap-3">
+      <span class="text-3xl font-medium text-neutral-900 tabular-nums">{{ guia1_card.positive }}</span>
+      <span class="text-sm text-neutral-700">colaborador{{ guia1_card.positive|pluralize:"es" }} requiere{{ guia1_card.positive|pluralize:"n" }} valoración clínica</span>
+    </div>
+    <span class="mt-5 flex h-3 gap-0.5 overflow-hidden rounded-full bg-white" aria-hidden="true">
+      {% for s in guia1_card.slices %}<span class="shrink-0 {{ s.color|swatch }}" style="width: {{ s.share }}%"></span>{% endfor %}
+    </span>
+    <ul class="mt-3 space-y-2 rounded-2xl bg-white p-3.5 text-sm text-neutral-700">
+      {% for s in guia1_card.slices %}
+        <li class="flex items-center gap-2"><span class="size-2.5 shrink-0 rounded-xs {{ s.color|swatch }}" aria-hidden="true"></span><span class="flex-1">{{ s.label }}</span><span class="tabular-nums">{{ s.percent }} %</span><span class="w-8 text-right text-neutral-500 tabular-nums">{{ s.value }}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="min-w-0 rounded-3xl bg-white p-6{% if not guia1_card %} lg:col-span-2{% endif %}" aria-labelledby="perfil-titulo">
+    <h2 id="perfil-titulo" class="text-base font-semibold text-neutral-900">Quienes respondieron</h2>
+    {% if query.sex_slug %}<p class="mt-1 text-sm text-neutral-500">Esta gráfica no aplica el filtro de sexo.</p>{% endif %}
+    <dl class="mt-4 grid grid-cols-2 gap-2">
+      {% for s in sex_card %}
+        <div>
+          <dt class="flex items-center gap-1.5 text-sm text-neutral-600"><span class="size-2.5 shrink-0 rounded-xs {{ s.color|swatch }}" aria-hidden="true"></span>{{ s.label }}</dt>
+          <dd class="mt-0.5 text-2xl font-medium tabular-nums">{{ s.percent }} % <span class="text-sm font-normal text-neutral-500">{{ s.value }}</span></dd>
+        </div>
+      {% endfor %}
+    </dl>
+    <span class="mt-3 flex h-2.5 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
+      {% for s in sex_card %}<span class="shrink-0 {{ s.color|swatch }}" style="width: {{ s.share }}%"></span>{% endfor %}
+    </span>
+    <p class="mt-5 text-sm text-neutral-600">Por edad{% if query.age_slugs %} <span class="text-neutral-500">· esta gráfica no aplica el filtro de edad</span>{% endif %}</p>
+    <p class="mt-1 text-sm text-neutral-500">Toca una columna para filtrar todo el tablero por esa edad; tócala de nuevo para quitar el filtro.</p>
+    <div class="mt-2 grid grid-flow-col auto-cols-fr gap-1">
+      {% for a in age_card %}
+        {% if a.url %}<a href="{{ a.url }}" data-results-link{% else %}<div{% endif %} class="flex min-w-0 flex-col rounded-lg{% if a.selected %} bg-primary-50{% endif %}">
+          <span class="flex h-28 flex-col items-center justify-end gap-0.5 border-b border-neutral-300">
+            {% if a.value %}<span class="text-xs text-neutral-600 tabular-nums">{{ a.value }}</span>{% endif %}
+            <span class="block min-h-0.5 w-full rounded-t-md rounded-b-xs {% if a.name == 'Sin dato' %}bg-neutral-300{% else %}bg-series-1{% endif %}" style="height: {{ a.height }}%"></span>
+          </span>
+          <span class="mt-1.5 text-center text-xs text-neutral-500" aria-hidden="true">{{ a.label }}</span>
+          <span class="sr-only">{{ a.name }}: {{ a.value }} colaboradores{% if a.url %}. {% if a.selected %}Quitar el filtro de esta edad{% else %}Filtrar por esta edad{% endif %}{% endif %}</span>
+        {% if a.url %}</a>{% else %}</div>{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endlocalize %}

@@ -76,6 +76,12 @@ UNITS = {
 }
 
 
+@register.filter
+def swatch(color_key) -> str:
+    """The background class of a chart color key, for a legend swatch or a bar."""
+    return _COLORS.get(color_key, _FALLBACK)[1]
+
+
 def _tokens(context) -> dict[str, str]:
     """The active palette's token values; the default palette's for a missing or unknown slug."""
     slug = context.get("palette")

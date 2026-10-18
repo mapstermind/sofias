@@ -1,0 +1,8 @@
+{% load charts l10n %}
+{% comment %}
+A distribution as one thin bar split by level. Takes `group` (a results_page.Group)
+and `height` (an h-* class). Each segment's width is its share of the group.
+{% endcomment %}
+{% localize off %}<span class="flex {{ height }} gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
+  {% for lv in group.levels %}{% if lv.count %}<span class="shrink-0 {{ lv.color|swatch }}" style="width: {{ lv.share }}%"></span>{% endif %}{% endfor %}
+</span>{% endlocalize %}

@@ -18,7 +18,7 @@ page for page identical every time, which the Administrador delivers to the
 company. Only the Administrador reads the report on the platform
 (`can_edit_report`). The report states risk as **distributions of
 workers across the five Niveles de Riesgo**, never as a single company level,
-and draws the results with the same chart components as the results dashboard.
+and draws the results with the shared SVG chart components of `apps/core`.
 
 ## Why we're building it
 
@@ -304,10 +304,10 @@ discards a media list that contains one, so no breakpoint applies in the PDF
 and the letter page always gets the wide layout. The page chrome around the
 report (header, action bar, messages) is the app's Tailwind.
 
-Chart placement reuses the dashboard's template tags and geometry
-(`apps/core/templatetags/charts.py`, `apps/core/charts.py`) unchanged, through
+Chart placement uses the shared SVG template tags and geometry
+(`apps/core/templatetags/charts.py`, `apps/core/charts.py`) through
 report-specific partials in `templates/reports/sections/results/` — never the
-dashboard's partials, which carry filter, disclosure and fragment logic:
+results page's partials, which carry filter, disclosure and fragment logic:
 
 | Section | Components |
 |---|---|
@@ -471,8 +471,11 @@ the admin) with Spanish model metadata.
   Reason: WeasyPrint ignores Tailwind's `fill-*` utilities, matches no width
   media query, and rejects a `font-weight` range; bundled fonts keep the PDF
   independent of the server's installed fonts.
-- Decision: Reuse the dashboard's chart tags and geometry, not its partials.
-  Reason: The dashboard and the report can evolve independently.
+- Decision: Draw with the shared SVG chart tags and geometry, not the results
+  page's partials.
+  Reason: The results page draws its main chart and bars in HTML and CSS for
+  the screen, which the PDF renderer cannot reproduce, so the two evolve
+  independently.
 - Decision: Where the template names the implementing business, the report
   prints the client company's `name`.
   Reason: Decided with the product owner; the platform already shows that name
