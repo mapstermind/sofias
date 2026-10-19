@@ -52,6 +52,10 @@ def test_level_columns_keep_every_slot_on_a_fixed_scale():
     assert [c.height for c in cols] == [25.0, 0.0, 75.0]
     assert cols[2].y == 25.0
     assert cols[0].x < cols[1].x < cols[2].x
+    # Each column fills 72 % of its slot, centred.
+    slot = 100 / 3
+    assert cols[0].width == round(slot * 0.72, 3)
+    assert cols[1].x == round(slot + slot * 0.14, 3)
     assert cols[1].description == "Medio · 0 cuestionarios · 0 %"
 
 

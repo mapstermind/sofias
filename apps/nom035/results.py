@@ -636,7 +636,6 @@ class AreaResults:
     area_id: int | None
     label: str
     n: int
-    final: DistributionRow | None = None
     categorias: tuple[DistributionRow, ...] = ()
     guia1: Guia1 | None = None
 
@@ -680,9 +679,6 @@ def _areas(assignment, scores, participation) -> tuple[AreaResults, ...]:
                 area_id=p.area_id,
                 label=p.label,
                 n=len(area_scores),
-                final=_distribution(
-                    FINAL, "Calificación final", [s.final_ndr for s in area_scores]
-                ),
                 categorias=tuple(
                     _distribution(
                         cat,

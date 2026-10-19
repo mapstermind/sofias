@@ -397,7 +397,7 @@ draws all but the range strip:
 |---|---|---|
 | `{% stacked_bar items unit="cuestionario" legend=False %}` | `stacked_bar.html` | `stacked_segments()` — widths, largest-remainder percents; 2px white gaps between segments |
 | `{% column_chart items unit="persona" %}` | `column_chart.html` | `columns()` — heights against the tallest column |
-| `{% level_columns items unit="cuestionario" names="always" size="md" %}` | `level_columns.html` | `level_columns()` — one slot per item, empty ones included; heights as shares of a fixed 0–100 % scale, at least `LEVEL_MIN_HEIGHT` (4 %) when non-empty; largest-remainder percents |
+| `{% level_columns items unit="cuestionario" size="md" %}` | `level_columns.html` | `level_columns()` — one slot per item, empty ones included; heights as shares of a fixed 0–100 % scale, at least `LEVEL_MIN_HEIGHT` (4 %) when non-empty; largest-remainder percents |
 | `{% range_strip bands scale_max points %}` | `range_strip.html` | `range_strip()` — band positions, boundary ticks, marker positions, label lanes |
 
 Each input item carries a key, a label, a value and a **color key**; the tag
@@ -409,11 +409,12 @@ text. Each tag also takes an optional `label` for that `aria-label`, which
 otherwise joins every mark's description (*"Alto · 14 cuestionarios · 23 %"*; a
 range strip adds each band's span, *"Medio: 75 a 99"*).
 
-`level_columns` draws the slots and, beneath them, a `<dl>` with one
-equal-width column per item — the item's name with its swatch, its percent, and
-its count. `names="phone"` hides the names from `md` up (they stay readable by
-screen readers); `size` is the plot height: `sm` (32px), `md` (40px) or `lg`
-(96px).
+`level_columns` draws the slots — each column 72 % of its slot — with faint
+gridlines at 0, 50 and 100 %, and beneath them a `<dl>` with one equal-width
+column per item: the item's name with its swatch, its percent, and its count.
+`size` is the plot height: `sm` (72px), `md` (112px) or `lg` (160px); `md` and
+`lg` also label the gridlines on a scale at the left, which the `<dl>` is
+indented to match.
 
 Each SVG is one `role="img"` element with an `aria-label`; its marks carry no
 `aria-label`, `tabindex`, `data-tooltip` or SVG `<title>`, and no mark reacts

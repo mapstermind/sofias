@@ -25,7 +25,7 @@ headcounts and shows no distribution.
         {% else %}
           <span class="size-11 md:order-last" aria-hidden="true"></span>
         {% endif %}
-        <span class="col-span-2 text-sm text-neutral-600 tabular-nums md:col-span-1">{{ row.responded }}{% if row.registered is not None %} de {{ row.registered }}{% endif %} respondieron</span>
+        <span class="col-span-2 text-sm text-neutral-600 tabular-nums md:col-span-1">{{ row.responded }}{% if row.registered is not None %} de {{ row.registered }}{% endif %} respondi{{ row.responded|pluralize:"ó,eron" }}</span>
         <span class="col-span-2 min-w-0 md:col-span-1">
           {% if row.suppressed %}
             <span class="text-sm text-neutral-500">Grupo muy pequeño: ocultamos sus resultados (mínimo 5 personas).</span>

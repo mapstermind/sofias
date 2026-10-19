@@ -21,9 +21,39 @@ def _html(report):
 def test_results_use_the_dashboard_charts(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
     assert html.count("<svg") >= 10
-    assert "De los 12 colaboradores evaluados" in html
-    assert "concentra la mayor proporción" in html
+    assert "Nivel de riesgo de los 12 colaboradores evaluados:" in html
+    assert "La categoría con mayor proporción" in html
     assert "Los dominios con mayor proporción" in html or "El dominio con mayor" in html
+
+
+def test_a_finding_is_a_lead_and_a_list(scored_assignment):
+    final = _slice(_html(Report(assignment=scored_assignment)), "resultadosfinal")
+    lead = final.index('class="report-finding-lead"')
+    items = final.index('class="report-finding-list"')
+    assert lead < items
+    assert final.count('class="report-finding-share"') == 3
+    assert "Alto o Muy alto</li>" in final.replace("\n", "").replace("  ", "")
+
+
+def test_participation_rows_follow_the_dashboard(scored_assignment):
+    section = _slice(
+        _html(Report(assignment=scored_assignment)), "resultadosparticipacion"
+    )
+    assert "<table" not in section
+    rows = section.split("report-legend")[0].split('class="report-area-row"')[1:]
+    assert len(rows) == 3  # Operaciones, Ventas, Sin área
+    for r in rows:
+        assert "respondieron" in r or "respondió" in r
+        assert "<svg" in r  # the stacked bar
+        assert r.count("report-swatch--") == 5  # one percent per level
+        assert 'class="report-area-risk"' in r
+    assert "level_columns" not in section and "h-8" not in section
+
+
+def test_per_area_section_has_no_final_score_table(scored_assignment):
+    section = _slice(_html(Report(assignment=scored_assignment)), "resultadosarea")
+    assert "<table" not in section
+    assert "Calificación final" not in section
 
 
 def test_dominios_are_always_expanded(scored_assignment):
@@ -85,7 +115,7 @@ def _blocks(section, css_class):
 def test_a_categoria_block_names_its_categoria_once(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
     section = _slice(html, "resultadoscategoria")
-    blocks = _blocks(section, "report-group report-page-group")
+    blocks = _blocks(section, 'report-group"')
     assert blocks
     for block in blocks:
         label = block.split('<h4 class="report-h4">')[1].split("</h4>")[0]

@@ -15,6 +15,7 @@ PRINT_CSS = Path(__file__).resolve().parents[3] / "static/css/report-print.css"
 
 BREAK_BEFORE = {
     "resultados",
+    "resultados.categoria",
     "resultados.dominio",
     "resultados.area",
     "resultados.guia1",
@@ -66,12 +67,13 @@ def test_toc_ends_its_page(scored_assignment):
     assert "report-break-after" in toc.split()
 
 
-def test_each_categoria_and_dominio_group_is_a_page_group(scored_assignment):
+def test_categorias_flow_and_each_dominio_group_is_a_page_group(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
     categorias = _section_body(html, "resultados.categoria", "resultados.dominio")
     dominios = _section_body(html, "resultados.dominio", "resultados.area")
     data = context_for(Report(assignment=scored_assignment)).data
-    assert categorias.count("report-page-group") == len(data.categoria_distribution)
+    assert "report-page-group" not in categorias  # categorías flow, never split
+    assert categorias.count('class="report-group"') == len(data.categoria_distribution)
     assert dominios.count("report-page-group") == len(data.categoria_distribution)
 
 

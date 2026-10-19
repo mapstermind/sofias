@@ -3,7 +3,7 @@
 {% if not data.final_distribution %}
   <p class="report-small">Aún no hay cuestionarios valorados en esta encuesta.</p>
 {% else %}
-  {% if c.finding %}<p class="report-finding">{{ c.finding }}</p>{% endif %}
+  {% include "reports/sections/results/_finding.html" with finding=c.finding %}
   {% for g in c.groups %}
     <div class="report-page-group">
       <h4 class="report-h4">{{ g.label }}</h4>

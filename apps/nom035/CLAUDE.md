@@ -49,9 +49,9 @@ generalization of this one (see `docs/adr/adr-0003-per-instrument-survey-process
   `docs/platform/nom-035-results-dashboard.md`.
 - `report_results(assignment) -> ReportResults` in `results.py` — the NOM-035
   report's read (`apps/reports/snapshot.py` is its only caller): `Results` for the
-  whole assignment (`WHOLE_ASSIGNMENT`, small groups always hidden), `registered`
-  (activated members) and per-área final and categoría distributions plus Guía I counts (`AreaResults`,
-  `suppressed` with no numbers wherever the participation table hides the área).
+  whole assignment (`WHOLE_ASSIGNMENT`, every área shown however small),
+  `registered` (activated members) and per-área categoría distributions plus
+  Guía I counts (`AreaResults`).
   `period_span(first, last)` formats the application span ("3 feb – 10 mar 2026",
   "" when nothing was answered) and `local_date` converts a timestamp to a local
   date; both serve the survey selector and the report's *Selección de la

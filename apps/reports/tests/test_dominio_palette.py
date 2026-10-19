@@ -84,12 +84,22 @@ def test_document_prints_no_template_comment_markup(scored_assignment):
     assert "{#" not in html and "#}" not in html
 
 
-def test_every_page_group_carries_its_legend(scored_assignment):
+def test_every_group_carries_its_legend(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
-    for key, next_key, legend in (
-        ("resultadoscategoria", "resultadosdominio", "report-legend"),
-        ("resultadosdominio", "resultadosarea", "report-legend--dom"),
+    for key, next_key, marker, legend in (
+        (
+            "resultadoscategoria",
+            "resultadosdominio",
+            'class="report-group"',
+            "report-legend",
+        ),
+        (
+            "resultadosdominio",
+            "resultadosarea",
+            "report-page-group",
+            "report-legend--dom",
+        ),
     ):
-        groups = _between(html, key, next_key).split("report-page-group")[1:]
+        groups = _between(html, key, next_key).split(marker)[1:]
         assert groups
         assert all(legend in g for g in groups), key
