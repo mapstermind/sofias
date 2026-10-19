@@ -124,31 +124,19 @@ def action_criteria(data: ReportData) -> list[tuple[str, str, str]]:
 
 @dataclass(frozen=True)
 class Recommendation:
-    categoria_label: str
-    dominio_key: str
-    dominio_label: str
     level: str
     level_label: str
-    share: str
     text: str
 
 
-def recommendations(data: ReportData) -> list[Recommendation]:
-    out = []
-    for cat in data.categoria_distribution:
-        for dom in cat.children:
-            pct = _row_percents(dom)
-            for lvl, n in dom.counts:
-                if lvl in RECOMMENDED and n:
-                    out.append(
-                        Recommendation(
-                            categoria_label=cat.label,
-                            dominio_key=dom.key,
-                            dominio_label=dom.label,
-                            level=lvl,
-                            level_label=c.NDR_LABELS[lvl],
-                            share=f"{pct[lvl]}{NBSP}%",
-                            text=RECOMMENDATIONS[dom.key][lvl],
-                        )
-                    )
-    return out
+def recommendations(dominio: DistributionRow) -> list[Recommendation]:
+    """The matrix text for each recommended level at least one worker reached."""
+    return [
+        Recommendation(
+            level=lvl,
+            level_label=c.NDR_LABELS[lvl],
+            text=RECOMMENDATIONS[dominio.key][lvl],
+        )
+        for lvl, n in dominio.counts
+        if lvl in RECOMMENDED and n
+    ]

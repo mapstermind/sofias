@@ -28,10 +28,17 @@ def test_round_trip_is_lossless(scored_assignment):
     assert load(raw) == data
 
 
-def test_infinite_band_is_clamped_for_json(scored_assignment):
+def test_the_snapshot_carries_no_statistics(scored_assignment):
     raw = dump(build_report_data(scored_assignment))
-    text = json.dumps(raw, allow_nan=False)  # raises on inf
-    assert "Infinity" not in text
+    assert not {"final_stats", "categoria_stats", "dimensions"} & raw.keys()
+    json.dumps(raw, allow_nan=False)  # raises on inf
+
+
+def test_a_snapshot_stored_with_statistics_still_loads(scored_assignment):
+    data = build_report_data(scored_assignment)
+    raw = json.loads(json.dumps(dump(data)))
+    raw.update(final_stats={"mean": 1.0}, categoria_stats=[], dimensions=[])
+    assert load(raw) == data
 
 
 def test_empty_assignment(company, nom035_survey):

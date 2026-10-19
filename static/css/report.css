@@ -450,48 +450,6 @@
   break-after: avoid;
 }
 
-/* A statistics row: label, the five figures, the range strip. One column on a
-   phone; label and figures side by side above the strip in report-wide.css. */
-.report-stats {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.5rem;
-  padding: 0.5rem 0;
-  margin: 0 0 0.5rem;
-  border-bottom: 1px solid var(--brand-neutral-200);
-  break-inside: avoid;
-}
-
-.report-stats-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--brand-neutral-900);
-}
-
-.report-stats-figures {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin: 0;
-  text-align: center;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.report-stats-figures dt {
-  color: var(--brand-neutral-600);
-}
-
-.report-stats-figures dd {
-  margin: 0;
-  font-weight: 600;
-  color: var(--brand-neutral-900);
-}
-
-.report-stats-strip {
-  min-width: 0;
-}
-
 /* The NDR legend that closes the final, categoría and dominio sections. */
 .report-legend {
   display: flex;

@@ -18,7 +18,9 @@ page for page identical every time, which the Administrador delivers to the
 company. Only the Administrador reads the report on the platform
 (`can_edit_report`). The report states risk as **distributions of
 workers across the five Niveles de Riesgo**, never as a single company level,
-and draws the results with the shared SVG chart components of `apps/core`.
+and draws the results with the shared SVG chart components of `apps/core`. It
+prints no score statistics — mean, median, minimum, maximum — which stay on the
+results dashboard.
 
 ## Why we're building it
 
@@ -38,7 +40,7 @@ them — which generating every figure-bearing sentence from data removes.
   client signatories.
 - Two `Company` fields: `industry` (actividad principal) and `work_center`
   (centro de trabajo).
-- Company-level aggregates in `apps/nom035`: dimensión results, final-score and
+- Company-level aggregates in `apps/nom035`: final-score and
   categoría NDR distributions per área, and Guía I outcomes per área — every área
   shown, however few workers it has.
 - The report's sections, generated sentences, recommendations matrix and fixed
@@ -146,33 +148,29 @@ from data, **A** = written by the Administrador, **F** = fixed text.
 5. **Resultados**
    1. *Perfil de quienes respondieron* — sex and age band.
    2. *Participación por área*.
-   3. *Calificación final* — distribution and statistics.
-   4. *Resultados por categoría* — distribution and statistics per categoría.
-   5. *Resultados por dominio* — distribution and statistics per dominio,
-      grouped under its categoría.
+   3. *Calificación final* — distribution by level.
+   4. *Resultados por categoría* — distribution by level per categoría.
+   5. *Resultados por dominio* — per dominio, grouped under its categoría: its
+      recommendations, then its distribution by level. For each of Medio, Alto
+      and Muy alto that at least one worker reached in the dominio, a
+      dominio-tier badge and the recommendations-matrix text for that dominio
+      and level (G); a dominio with no worker at those levels shows only its
+      chart.
 
    Each subject is named once: the section's heading, a categoría's `h4` or a
-   dominio's label. Its two charts are captioned by what they show,
-   *Distribución por nivel* and *Calificación* (`report-caption`), and the
-   statistics row under them drops its own label (`_stats.html` with
-   `hide_label=True`). *Resultados por dimensión* lists several dimensiones
-   under one heading, so each of its statistics rows keeps its label.
-   6. *Resultados por dimensión* — per dimensión, grouped under its dominio:
-      the statistics row with a single neutral band up to the highest possible
-      score. No level: the norm publishes no dimensión thresholds.
-   7. *Resultados por área* — final-score distribution per área, then each
+   dominio's label. Its blocks are captioned by what they show,
+   *Recomendaciones* and *Distribución por nivel* (`report-caption`).
+   6. *Resultados por área* — final-score distribution per área, then each
       área's categoría distributions.
-   8. *Guía I* — the company's three outcomes (sin acontecimiento /
+   7. *Guía I* — the company's three outcomes (sin acontecimiento /
       acontecimiento sin requerir valoración / requiere valoración clínica),
       then the same counts per área.
 6. **Criterios de acción** (F, from `action_text`) — the norm's verbatim action
    criteria, only for the levels that at least one worker reached in the final
    score or in any categoría or dominio.
-7. **Recomendaciones según riesgo identificado** — grouped by categoría and
-   dominio: for each of Medio, Alto and Muy alto that at least one worker
-   reached in a dominio, the share of workers at that level, then the
-   recommendations-matrix text for that dominio and level (G); followed by the
-   additional recommendations (A).
+7. **Recomendaciones adicionales** (A) — present only when the Administrador
+   wrote some; otherwise the section is left out and the ones after it close
+   up.
 8. **Conclusiones** (A).
 9. **Responsables** — the client's signatories, then under *Implementación
    externa y apoyo logístico* the company's `name`, the evaluator and their
@@ -184,14 +182,12 @@ from data, **A** = written by the Administrador, **F** = fixed text.
     scoring-direction table, and the final, categoría and dominio threshold
     tables.
 
-Every statistics row prints *n*, *Prom.*, *Mediana*, *Mín*, *Máx* and *Máx.
-posible*, with the range strip below. Each results section that has no scored
-questionnaire prints *Aún no hay cuestionarios valorados en esta encuesta.*
+Each results section that has no scored questionnaire prints *Aún no hay cuestionarios valorados en esta encuesta.*
 
 Counting follows the results dashboard (*Who is counted*): respondents are the
 assignment's scored questionnaires; *registrados* are activated members; age is
-computed on the day the data is built and frozen with the snapshot. Statistics,
-distributions and percent rounding (largest remainder) are the dashboard's.
+computed on the day the data is built and frozen with the snapshot.
+Distributions and percent rounding (largest remainder) are the dashboard's.
 
 ### Generated sentences
 
@@ -211,8 +207,9 @@ chart beside it prints. Ranking and ties are decided on the exact fractions.
   share, each with its share, ties at the cut-off included, skipping any at 0 %;
   when none qualifies, it says so instead.
 
-A recommendation's share is the dominio row's largest-remainder percent at that
-level. Sentences name categorías and dominios only, never an área.
+Sentences name categorías and dominios only, never an área.
+`recommendations(dominio)` returns the level, its label and the matrix text for
+each recommended level the dominio row reached.
 
 ### Section registry
 
@@ -220,12 +217,14 @@ level. Sentences name categorías and dominios only, never an área.
 `REGISTRY`. Each `Section` has a key, a title, a partial template, a function
 building that section's context from a `ReportContext` (the report, its data,
 the draft flag, the issue date and the signatories), and optional children
-(*Resultados* holds its eight). Numbers derive from position: every titled
+(*Resultados* holds its seven). Numbers derive from position: every titled
 section is numbered, the untitled portada is not. The screen, the PDF and the
 table of contents all iterate the registry through `templates/reports/_document.html`,
 so reordering, removing or adding a section is a registry change plus a
 partial. The screen and the PDF share every partial. A section's
-`break_before` flag makes it start a new page in the PDF (see *PDF*).
+`break_before` flag makes it start a new page in the PDF (see *PDF*); its
+`shown` predicate, given the `ReportContext`, leaves it out of the rendered
+report and the numbering when false.
 
 ### Snapshot
 
@@ -233,10 +232,8 @@ The snapshot stores **data**, not rendered output: `ReportData`
 (`apps/reports/snapshot.py`) — the company facts printed on the report, the
 variant and its label, the period label, registered, responded and
 participation, the computation date, the sex and age slices, the participation
-rows, the final and categoría distributions and
-statistics (dominios as their children), the dimensión groups, the área rows and
-the Guía I counts. Strip bands are clamped to the highest possible score, since
-JSON holds no infinity. `dump` and `load` round-trip exactly, so a draft and a
+rows, the final and categoría distributions (dominios as their children), the
+área rows and the Guía I counts. `dump` and `load` round-trip exactly, so a draft and a
 published report render through the same dataclasses. Generated sentences, the
 levels for *Criterios de acción*, the recommendations matrix and fixed text
 render from the snapshot at view time, so a published report's figures never
@@ -248,8 +245,8 @@ snapshot's shape is not migrated; the report is unpublished and published again.
 The report is computed with the whole assignment and shows every área, however
 few workers it has: the small-group rule belongs to the results page, whose
 viewers are company users. It affects per-área content only: the participation
-rows (5.2), the per-área distributions (5.7) and the per-área Guía I counts
-(5.8). Company-wide sections use the whole assignment.
+rows (5.2), the per-área distributions (5.6) and the per-área Guía I counts
+(5.7). Company-wide sections use the whole assignment.
 
 ### Visual design
 
@@ -269,8 +266,7 @@ level from a categoría's at a glance.
 | Alto | `#F97316` | `#B5531F` |
 | Muy alto | `#EF4444` | `#7A1010` |
 
-Dominio marks — the 5.5 columns and statistics bands, the recommendation
-badges and left rules, the annex's dominio threshold headers — use the dominio
+Dominio marks — the 5.5 columns, the recommendation badges and left rules, the annex's dominio threshold headers — use the dominio
 tier; everything else uses the base tier. Categoría badges are tinted; dominio
 badges are solid, with white text on Bajo, Alto and Muy alto and `#111827` on
 Nulo and Medio. Every block of colored marks closes with the legend of its
@@ -297,7 +293,7 @@ The report partials carry only `report-*` classes, defined in plain CSS:
 | File | Holds |
 |---|---|
 | `static/css/report.css` | The fonts and every report class, phone first |
-| `static/css/report-wide.css` | The wide layout: real tables, two-column people lists, single-row statistics |
+| `static/css/report-wide.css` | The wide layout: real tables, two-column people lists |
 | `static/css/report-print.css` | Paged media; the PDF only |
 
 The screen page links `report-wide.css` with `media="print, (min-width: 768px)"`.
@@ -315,14 +311,12 @@ results page's partials, which carry filter, disclosure and fragment logic:
 |---|---|
 | 5.1 Perfil | `stacked_bar` (sex), `column_chart` (age), stacked at full width |
 | 5.2 Participación | table, `level_columns` (sm) per área row |
-| 5.3 Calificación final | `level_columns` (lg) and the statistics row with `range_strip` |
-| 5.4 Categoría | `level_columns` and the statistics row per categoría |
-| 5.5 Dominio | `level_columns` (sm) and the statistics row per dominio under its categoría, in the dominio tier; always expanded; a *Dominios* legend |
-| 5.6 Dimensión | the statistics row, `range_strip` with a single neutral gray band from 0 to the highest possible score |
-| 5.7 Por área | one `stacked_bar` row per área for the final score; then small `level_columns` per categoría under each área |
-| 5.8 Guía I | `stacked_bar` for the company; count table per área |
+| 5.3 Calificación final | `level_columns` (lg) |
+| 5.4 Categoría | `level_columns` per categoría |
+| 5.5 Dominio | per dominio under its categoría: each recommendation as a solid dominio-tier badge and the matrix text with a left rule in the dominio tier, then `level_columns` (sm) in the dominio tier; always expanded; a *Dominios* legend |
+| 5.6 Por área | one `stacked_bar` row per área for the final score; then small `level_columns` per categoría under each área |
+| 5.7 Guía I | `stacked_bar` for the company; count table per área |
 | 6 Criterios de acción | NDR badge and text, with a left rule in the level's color |
-| 7 Recomendaciones | per dominio: a solid dominio-tier badge, the share, the matrix text, a left rule in the dominio tier; refers back to 5.5 |
 | Anexo, Método | numeric tables; threshold header cells carry a bar in each level's color — the dominio table in the dominio tier |
 
 ### On a phone
@@ -330,8 +324,7 @@ results page's partials, which carry filter, disclosure and fragment logic:
 One column at 360 px. The per-área tables (participation, por área, Guía I)
 become stacked rows — one block per área, each value labelled. The two-column
 tables (Datos del centro de trabajo, Número de trabajadores) stay tables: they
-fit at 360 px. Statistics rows put the label above three figures per line and
-the strip below; signatories list in one column; the action bar wraps. The PDF
+fit at 360 px. Signatories list in one column; the action bar wraps. The PDF
 keeps the letter-page layout.
 
 ### PDF
@@ -360,12 +353,12 @@ Paged media (`report-print.css`):
   leaders and page numbers from `target-counter()`;
 - a new page after the portada and after the table of contents;
 - a new page for every section whose registry entry sets `break_before`:
-  *Resultados*, 5.5 to 5.8, and sections 6 to 10 (*Criterios de acción*,
-  *Recomendaciones*, *Conclusiones*, *Responsables*, *Anexo*);
-- inside 5.4, 5.5 and 5.6, each repeated group — a categoría, a categoría's
-  dominios, a dominio's dimensiones — is a `report-page-group`, and every group
-  after the first starts a new page, so the first follows its section heading;
-- finding blocks, charts, statistics rows, criteria and table rows never split;
+  *Resultados*, 5.5 to 5.7, and every numbered section from *Criterios de
+  acción* to *Anexo*;
+- inside 5.4 and 5.5, each repeated group — a categoría, a categoría's
+  dominios — is a `report-page-group`, and every group after the first starts a
+  new page, so the first follows its section heading;
+- finding blocks, charts, criteria and table rows never split;
   table headers repeat;
 - drafts carry a fixed-position *BORRADOR* watermark, repeated on every page.
 
@@ -400,7 +393,7 @@ note (*Interpretación de Riesgo*), both kept in the project's shared Drive.
 
 | Path | Holds |
 |---|---|
-| `apps/nom035/results.py` | `report_results` and its dataclasses (`ReportResults`, `DimensionGroup`, `AreaResults`); `period_span`, `local_date` |
+| `apps/nom035/results.py` | `report_results` and its dataclasses (`ReportResults`, `AreaResults`); `period_span`, `local_date` |
 | `apps/nom035/_nom035_scoring.py` | `action_text`, the norm's action criteria |
 | `apps/reports/models.py` | `Report`, `ReportSignatory` |
 | `apps/reports/snapshot.py` | `ReportData`, building it from the aggregates, `dump`/`load`, `data_for` |
@@ -428,14 +421,18 @@ the admin) with Spanish model metadata.
   Medio is the closest pair across tiers (ΔE 7.8), so the tier is never carried
   by color alone: the legend names it and dominio badges are solid.
 
-- Decision: Risk is stated as the distribution of workers across levels; the
-  mean is a plain number with no level attached, and there is no company verdict.
-  Reason: The norm assigns levels to workers only, and the results dashboard
-  already decided against labelling the mean.
+- Decision: Risk is stated as the distribution of workers across levels, with no
+  company verdict; the report prints no score statistics.
+  Reason: The norm assigns levels to workers only. Mean, median and range are
+  not shared with the client; they stay on the results dashboard.
 - Decision: Criterios de acción and recommendations appear for every level any
-  worker reached, with the share stated.
+  worker reached.
   Reason: The norm's analysis is per worker; a minimum share would hide
   individual workers at Muy alto.
+- Decision: A dominio's recommendations sit above its chart in 5.5, without a
+  share.
+  Reason: The reader meets the action beside the evidence for it, and the chart
+  directly below prints the share.
 - Decision: Rankings in generated sentences use Alto plus Muy alto.
   Reason: The norm calls for a categoría and dominio analysis at both levels.
 - Decision: A sentence prints the chart's largest-remainder percents and ranks

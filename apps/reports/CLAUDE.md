@@ -19,7 +19,8 @@ components. Registered as `apps.reports` (label `reports`, admin heading
   and builds a draft's data live.
 - `text.py` — the generated sentences (`final_sentence`, `categoria_sentence`,
   `dominio_sentence`), `action_criteria` (the norm's `action_text` for each level
-  reached) and `recommendations`. Pure functions of `ReportData`. Shares are the
+  reached) and `recommendations` (one dominio row's matrix text per recommended
+  level reached). Pure functions of report data. Shares are the
   row's largest-remainder percents, as the charts print them; ranking and ties
   use exact fractions.
 - `content.py` — fixed consultancy text as constants: `RECOMMENDATIONS` (dominio
@@ -28,9 +29,10 @@ components. Registered as `apps.reports` (label `reports`, admin heading
   the client's report template (*Ejemplo Reporte Resultados*, in the shared Drive). The norm's own action criteria stay in
   `apps/nom035/_nom035_scoring.py`.
 - `sections.py` — **the report's structure.** `REGISTRY` is one ordered tuple of
-  `Section(key, title, template, build, children)`; `context_for(report)` makes
-  the `ReportContext` and `render_sections(ctx)` numbers the registry by position
-  and builds each section's context. `method_tables` builds the annex's tables
+  `Section(key, title, template, build, children, break_before, shown)`;
+  `context_for(report)` makes the `ReportContext` and `render_sections(ctx)`
+  numbers the registry by position, leaving out a section whose `shown(ctx)` is
+  false, and builds each section's context. `method_tables` builds the annex's tables
   from the scoring constants.
 - `publishing.py` — `blockers(report)` (the Spanish reasons *Publicar* is
   refused), `publish(report, user)` (stores the snapshot) and `unpublish(report)`
@@ -50,10 +52,10 @@ Templates are in `templates/reports/`: the list, detail and form pages,
 `_document.html` (the registry loop, with the TOC right after the portada —
 shared by screen and PDF), `base_report.html` and `report_pdf.html` (the PDF
 document), and `sections/` (one partial per section; `sections/results/` holds
-the results partials and the shared statistics row, `_stats.html`). A report
-names each subject once: where a heading already names the row, the caller
-captions the charts (`report-caption`: *Distribución por nivel*,
-*Calificación*) and includes `_stats.html` with `hide_label=True`. On the detail
+the results partials). A report names each subject once: where a heading
+already names the row, the blocks under it are captioned by what they show
+(`report-caption`: *Recomendaciones*, *Distribución por nivel*). The report
+prints no score statistics; those stay on the results dashboard. On the detail
 page *Retirar publicación* opens `<dialog id="unpublish-dialog">`, which holds the
 unpublish form.
 
@@ -86,11 +88,9 @@ unpublish form.
   `npm run build:css` does not touch these files.
 - **WeasyPrint limits.** It ignores Tailwind `fill-*` classes (charts carry hex
   `fill` attributes — see `apps/core/CLAUDE.md`, Charts), collapses
-  `minmax()` grid tracks (`.report-stats` is flex in the wide layout), and
-  ignores `background-size`, flex `margin-top: auto` (the cover foot is
-  absolutely positioned), the `translate` property (`report-print.css` gives
-  the range strip's `-translate-x-*` tick labels an equivalent `transform`) and
-  `position: sticky`. Check a layout change in the PDF, not only on screen.
+  `minmax()` grid tracks (use flex in the wide layout), and ignores
+  `background-size`, flex `margin-top: auto` (the cover foot is absolutely
+  positioned), the `translate` property and `position: sticky`. Check a layout change in the PDF, not only on screen.
 - **Fonts.** Figtree alone, from its variable TTF in `static/fonts/figtree/`
   (OFL). The chart components'
   `<text>` elements name Figtree in their `font-family` attribute, which is what

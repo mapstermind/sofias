@@ -1,6 +1,9 @@
 import pytest
 from django.template.loader import render_to_string
 
+from apps.nom035 import _nom035_scoring as cfg
+from apps.nom035 import constants as c
+from apps.reports.content import RECOMMENDATIONS
 from apps.reports.models import Report
 from apps.reports.sections import context_for, render_sections
 
@@ -29,9 +32,23 @@ def test_dominios_are_always_expanded(scored_assignment):
     assert "Condiciones en el ambiente de trabajo" in html
 
 
-def test_dimension_strip_is_neutral(scored_assignment):
+def test_the_report_prints_no_statistics(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
-    assert "Sin umbral oficial" in html
+    for absent in (
+        "report-stats",
+        "Mediana",
+        "Prom.",
+        "Máx. posible",
+        "Calificación</p>",
+    ):
+        assert absent not in html, absent
+
+
+def test_the_report_has_no_dimension_section(scored_assignment):
+    html = _html(Report(assignment=scored_assignment))
+    assert 'id="sec-resultadosdimension"' not in html
+    assert "Resultados por dimensión" not in html
+    assert "Sin umbral oficial" not in html
 
 
 def _slice(html, key):
@@ -51,14 +68,6 @@ def test_per_area_sections_close_with_the_ndr_legend(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
     for key in ("resultadosparticipacion", "resultadosarea"):
         assert 'class="report-legend"' in _slice(html, key)
-
-
-def test_stats_rows_print_the_highest_possible_score(scored_assignment):
-    html = _html(Report(assignment=scored_assignment))
-    dims = _slice(html, "resultadosdimension")
-    # Condiciones peligrosas e inseguras: items 1 and 3, so 2 × 4 = 8.
-    assert "<dt>Máx. posible</dt><dd>8</dd>" in dims
-    assert "Máx. posible" in _slice(html, "resultadosfinal")
 
 
 def test_empty_assignment_shows_empty_states(company, nom035_survey):
@@ -82,7 +91,25 @@ def test_a_categoria_block_names_its_categoria_once(scored_assignment):
         label = block.split('<h4 class="report-h4">')[1].split("</h4>")[0]
         assert block.count(label) == 1, label
         assert "Distribución por nivel" in block
-        assert '<p class="report-caption">Calificación</p>' in block
+
+
+def test_a_dominio_block_opens_with_its_recommendations(scored_assignment):
+    html = _html(Report(assignment=scored_assignment))
+    section = _slice(html, "resultadosdominio")
+    blocks = _blocks(section, "report-group report-group--nested")
+    by_label = {
+        b.split('<p class="report-group-label">')[1].split("</p>")[0]: b for b in blocks
+    }
+    condiciones = by_label["Condiciones en el ambiente de trabajo"]
+    assert condiciones.index("Recomendaciones") < condiciones.index(
+        "Distribución por nivel"
+    )
+    assert RECOMMENDATIONS[cfg.DOM_CONDICIONES][c.NDR_ALTO] in condiciones
+    assert "report-badge--dom-alto" in condiciones
+    assert " en Alto" not in condiciones  # the chart below prints the share
+    for label, block in by_label.items():
+        if "report-badge--dom-" not in block:
+            assert "Recomendaciones" not in block, label
 
 
 def test_a_dominio_block_names_its_dominio_once(scored_assignment):
@@ -99,4 +126,3 @@ def test_the_final_score_is_named_once(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
     section = _slice(html, "resultadosfinal")
     assert section.count("Calificación final") == 1
-    assert "report-stats-label" not in section

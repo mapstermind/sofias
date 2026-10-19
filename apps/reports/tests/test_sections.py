@@ -54,7 +54,6 @@ def test_document_renders_every_section(report):
         "Selección de la población",
         "Resultados",
         "Criterios de acción",
-        "Recomendaciones según riesgo identificado",
         "Conclusiones",
         "Responsables",
         "Anexo",
@@ -79,6 +78,21 @@ def test_optional_blocks_are_left_out(report):
     assert "Responsables de la empresa" not in html
     assert "Número de trabajadores" not in html  # no headcounts entered
     assert "Recomendaciones adicionales" not in html
+    assert 'id="sec-recomendaciones"' not in html
+
+
+def test_without_additional_recommendations_the_later_sections_close_up(report):
+    numbers = {s.key: s.number for s in render_sections(context_for(report))}
+    assert "recomendaciones" not in numbers
+    assert numbers["conclusiones"] == "7"
+    assert numbers["anexo"] == "9"
+
+
+def test_additional_recommendations_are_section_7(report):
+    report.additional_recommendations = "Revisar turnos."
+    numbers = {s.key: s.number for s in render_sections(context_for(report))}
+    assert numbers["recomendaciones"] == "7"
+    assert numbers["conclusiones"] == "8"
 
 
 def test_optional_blocks_render_when_filled(report):
@@ -139,6 +153,7 @@ def test_reordering_the_registry_renumbers():
 def test_render_sections_numbers_like_number_sections(report):
     from apps.reports.sections import number_sections
 
+    report.additional_recommendations = "Revisar turnos."
     rendered = [
         (s.key, s.number) for s in _flatten(render_sections(context_for(report)))
     ]

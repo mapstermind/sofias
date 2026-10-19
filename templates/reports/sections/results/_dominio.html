@@ -10,9 +10,17 @@
       {% for r in g.rows %}
         <div class="report-group report-group--nested">
           <p class="report-group-label">{{ r.dist.label }}</p>
+          {% if r.recommendations %}
+            <p class="report-caption">Recomendaciones</p>
+            {% for rec in r.recommendations %}
+              <div class="report-criterion report-criterion--dom-{{ rec.level }}">
+                <p class="report-figure">{% include "reports/_badge.html" with level=rec.level label=rec.level_label tier="dom" %}</p>
+                <p class="report-prose">{{ rec.text }}</p>
+              </div>
+            {% endfor %}
+          {% endif %}
           <p class="report-caption">Distribución por nivel</p>
           <div class="report-chart">{% level_columns r.dist.slices size="sm" %}</div>
-          {% if r.stats %}<p class="report-caption">Calificación</p>{% include "reports/sections/results/_stats.html" with row=r.stats hide_label=True %}{% endif %}
         </div>
       {% endfor %}
       {% include "reports/sections/results/_legend.html" with legend=c.legend tier="dom" heading="Dominios" %}

@@ -16,7 +16,6 @@ PRINT_CSS = Path(__file__).resolve().parents[3] / "static/css/report-print.css"
 BREAK_BEFORE = {
     "resultados",
     "resultados.dominio",
-    "resultados.dimension",
     "resultados.area",
     "resultados.guia1",
     "criterios",
@@ -70,21 +69,19 @@ def test_toc_ends_its_page(scored_assignment):
 def test_each_categoria_and_dominio_group_is_a_page_group(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
     categorias = _section_body(html, "resultados.categoria", "resultados.dominio")
-    dominios = _section_body(html, "resultados.dominio", "resultados.dimension")
-    dimensiones = _section_body(html, "resultados.dimension", "resultados.area")
+    dominios = _section_body(html, "resultados.dominio", "resultados.area")
     data = context_for(Report(assignment=scored_assignment)).data
     assert categorias.count("report-page-group") == len(data.categoria_distribution)
     assert dominios.count("report-page-group") == len(data.categoria_distribution)
-    assert dimensiones.count("report-page-group") == len(data.dimensions)
 
 
 def test_small_variant_groups_render(company, nom035_survey):
     assignment = make_assignment(company, nom035_survey, variant="small")
     make_score(assignment)
     html = _html(Report(assignment=assignment))
-    dimensiones = _section_body(html, "resultados.dimension", "resultados.area")
-    assert dimensiones.count("report-page-group") == len(
-        context_for(Report(assignment=assignment)).data.dimensions
+    dominios = _section_body(html, "resultados.dominio", "resultados.area")
+    assert dominios.count("report-page-group") == len(
+        context_for(Report(assignment=assignment)).data.categoria_distribution
     )
 
 

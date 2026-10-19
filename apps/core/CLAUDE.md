@@ -172,7 +172,7 @@ order, filled up to the reached one; render it through
 
 ## Charts (`charts.py`, `templatetags/charts.py`)
 
-The results page's own main chart is HTML and CSS, not one of the SVG components below: `charts.stem_chart` gives its stems, ceiling and gridlines, and `results_page.py` its bars and cards. Only `range_strip` is shared with it; the report draws all four SVG components.
+The results page's own main chart is HTML and CSS, not one of the SVG components below: `charts.stem_chart` gives its stems, ceiling and gridlines, and `results_page.py` its bars and cards. Only `range_strip` is shared with it; the report draws the other three SVG components.
 
 Instrument-agnostic, server-rendered SVG components. `charts.py` holds the pure
 geometry — `stacked_segments`, `columns`, `level_columns`, `range_strip`,
