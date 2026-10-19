@@ -1,9 +1,0 @@
-{% load l10n valuation_extras %}{% localize off %}
-{% comment %}
-A distribution as one thin bar split by level. Takes `levels` (each with
-`level` and `share`), `tier` ("" or "dominio") and `height` (an h-* class).
-{% endcomment %}
-<span class="flex {{ height }} gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
-  {% for lv in levels %}<span class="shrink-0 {{ lv.level|ndr_bar:tier }}" style="width: {{ lv.share }}%"></span>{% endfor %}
-</span>
-{% endlocalize %}
