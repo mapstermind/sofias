@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from apps.core.charts import (
+    CHAR_WIDTH,
     columns,
     format_number,
     largest_remainder,
@@ -137,6 +138,47 @@ def test_range_strip_markers_band_and_lanes():
     assert by_key["median"].lane != by_key["mean"].lane
     assert by_key["min"].lane == "above"
     assert by_key["mean"].description == "Prom.: 84.3 · Medio"
+
+
+def _label_span(marker):
+    width = len(f"{marker.label} {marker.display}") * CHAR_WIDTH
+    if marker.anchor == "start":
+        return marker.label_x, marker.label_x + width
+    if marker.anchor == "end":
+        return marker.label_x - width, marker.label_x
+    return marker.label_x - width / 2, marker.label_x + width / 2
+
+
+def _assert_no_lane_overlaps(strip):
+    for lane in ("above", "below"):
+        spans = sorted(_label_span(m) for m in strip.markers if m.lane == lane)
+        for (_, right), (left, _) in zip(spans, spans[1:]):
+            assert left >= right, (lane, spans)
+
+
+def test_range_strip_three_close_values_keep_their_labels_apart():
+    points = [
+        ("min", "Mín.", 10),
+        ("mean", "Prom.", 83.3),
+        ("median", "Mediana", 90),
+        ("max", "Máx.", 90),
+    ]
+    strip = range_strip(BANDS, 288, points)
+    _assert_no_lane_overlaps(strip)
+    by_key = {m.key: m for m in strip.markers}
+    assert by_key["max"].x == by_key["median"].x  # the dots stay on their values
+
+
+def test_range_strip_a_cluster_at_the_end_stays_inside_the_strip():
+    points = [("a", "Prom.", 190), ("b", "Mediana", 195), ("c", "Máx.", 200)]
+    strip = range_strip(BANDS, 200, points)
+    _assert_no_lane_overlaps(strip)
+    assert all(_label_span(m)[1] <= 100 for m in strip.markers)
+
+
+def test_range_strip_an_uncrowded_label_sits_over_its_dot():
+    strip = range_strip(BANDS, 200, [("mean", "Prom.", 84.3)])
+    assert strip.markers[0].label_x == strip.markers[0].x
 
 
 def test_range_strip_anchors_labels_at_the_edges():
