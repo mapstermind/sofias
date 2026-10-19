@@ -40,8 +40,8 @@ them — which generating every figure-bearing sentence from data removes.
   client signatories.
 - Two `Company` fields: `industry` (actividad principal) and `work_center`
   (centro de trabajo).
-- Company-level aggregates in `apps/nom035`: final-score and
-  categoría NDR distributions per área, and Guía I outcomes per área — every área
+- Company-level aggregates in `apps/nom035`: categoría NDR distributions per
+  área, and Guía I outcomes per área — every área
   shown, however few workers it has.
 - The report's sections, generated sentences, recommendations matrix and fixed
   text, declared as an ordered section registry.
@@ -147,7 +147,10 @@ from data, **A** = written by the Administrador, **F** = fixed text.
    about who was invited.
 5. **Resultados**
    1. *Perfil de quienes respondieron* — sex and age band.
-   2. *Participación por área*.
+   2. *Participación por área* — one row per área, as the results dashboard's
+      *Por área* draws it: the área's name with *N de M respondieron* below,
+      a bar of the final score split by level with the five level percents
+      beneath, and the share in Alto o Muy alto on the right.
    3. *Calificación final* — distribution by level.
    4. *Resultados por categoría* — distribution by level per categoría.
    5. *Resultados por dominio* — per dominio, grouped under its categoría: its
@@ -160,8 +163,7 @@ from data, **A** = written by the Administrador, **F** = fixed text.
    Each subject is named once: the section's heading, a categoría's `h4` or a
    dominio's label. Its blocks are captioned by what they show,
    *Recomendaciones* and *Distribución por nivel* (`report-caption`).
-   6. *Resultados por área* — final-score distribution per área, then each
-      área's categoría distributions.
+   6. *Resultados por área* — each área's categoría distributions.
    7. *Guía I* — the company's three outcomes (sin acontecimiento /
       acontecimiento sin requerir valoración / requiere valoración clínica),
       then the same counts per área.
@@ -189,25 +191,27 @@ assignment's scored questionnaires; *registrados* are activated members; age is
 computed on the day the data is built and frozen with the snapshot.
 Distributions and percent rounding (largest remainder) are the dashboard's.
 
-### Generated sentences
+### Generated findings
 
-Pure functions in `apps/reports/text.py`, in Spanish. Every share a sentence
-prints is the row's largest-remainder percents summed — the same figures the
+Pure functions in `apps/reports/text.py`, in Spanish. A finding
+(`text.Finding`) is a lead line and a list of (share, name) rows, rendered by
+`_finding.html` as a paragraph and a list with the shares right-aligned. Every
+share is the row's largest-remainder percents summed — the same figures the
 chart beside it prints. Ranking and ties are decided on the exact fractions.
 
-- **Calificación final** — *"De los N colaboradores evaluados, el X % presentó
-  niveles de riesgo Nulo o Bajo; el Y % Medio; el Z % Alto o Muy alto."*
-  (*"De 1 colaborador evaluado, …"* for a single worker.)
-- **Categoría** — names the categoría with the largest share of workers at Alto
-  plus Muy alto, with that share. Tied categorías are named together: with one
-  share (*"… cada una"*) when their printed shares match, with each one's share
-  when rounding prints them differently. When no categoría has a worker at Alto
-  or above, it says so instead.
-- **Dominio** — names up to three dominios with the largest Alto plus Muy alto
-  share, each with its share, ties at the cut-off included, skipping any at 0 %;
-  when none qualifies, it says so instead.
+- **Calificación final** (`final_finding`) — *"Nivel de riesgo de los N
+  colaboradores evaluados:"* (*"de 1 colaborador evaluado"* for a single
+  worker), then three rows: Nulo o Bajo, Medio, Alto o Muy alto.
+- **Categoría** (`categoria_finding`) — *"La categoría con mayor proporción de
+  trabajadores en niveles Alto o Muy alto es:"*, then the categoría and its
+  share. Tied categorías are each a row with their own share, under *"Las
+  categorías … son:"*. When no categoría has a worker at Alto or above, the
+  lead says so and there are no rows.
+- **Dominio** (`dominio_finding`) — the same shape for up to three dominios
+  with the largest Alto plus Muy alto share, ties at the cut-off included,
+  skipping any at 0 %.
 
-Sentences name categorías and dominios only, never an área.
+Findings name categorías and dominios only, never an área.
 `recommendations(dominio)` returns the level, its label and the matrix text for
 each recommended level the dominio row reached.
 
@@ -251,7 +255,7 @@ rows (5.2), the per-área distributions (5.6) and the per-área Guía I counts
 ### Visual design
 
 **Finding first, chart as evidence.** Each results section with a finding opens
-with its generated sentence, set larger and at medium weight, then the chart, then the
+with its generated finding, set larger and at medium weight, then the chart, then the
 small print (*n*, base). The five-level NDR palette is the
 only meaning-bearing color and appears only where a risk level is meant. It
 has two tiers: categorías and the final score draw in the base tier, dominios
@@ -310,19 +314,20 @@ results page's partials, which carry filter, disclosure and fragment logic:
 | Section | Components |
 |---|---|
 | 5.1 Perfil | `stacked_bar` (sex), `column_chart` (age), stacked at full width |
-| 5.2 Participación | table, `level_columns` (sm) per área row |
+| 5.2 Participación | one row per área: name and counts, `stacked_bar` with the level percents and swatches beneath, the Alto o Muy alto share |
 | 5.3 Calificación final | `level_columns` (lg) |
-| 5.4 Categoría | `level_columns` per categoría |
+| 5.4 Categoría | `level_columns` (md) per categoría |
 | 5.5 Dominio | per dominio under its categoría: each recommendation as a solid dominio-tier badge and the matrix text with a left rule in the dominio tier, then `level_columns` (sm) in the dominio tier; always expanded; a *Dominios* legend |
-| 5.6 Por área | one `stacked_bar` row per área for the final score; then small `level_columns` per categoría under each área |
+| 5.6 Por área | small `level_columns` per categoría under each área |
 | 5.7 Guía I | `stacked_bar` for the company; count table per área |
 | 6 Criterios de acción | NDR badge and text, with a left rule in the level's color |
 | Anexo, Método | numeric tables; threshold header cells carry a bar in each level's color — the dominio table in the dominio tier |
 
 ### On a phone
 
-One column at 360 px. The per-área tables (participation, por área, Guía I)
-become stacked rows — one block per área, each value labelled. The two-column
+One column at 360 px. A participation row puts the área's name and counts beside
+its Alto o Muy alto share, with the bar and level percents below. The Guía I
+per-área table becomes stacked rows — one block per área, each value labelled. The two-column
 tables (Datos del centro de trabajo, Número de trabajadores) stay tables: they
 fit at 360 px. Signatories list in one column; the action bar wraps. The PDF
 keeps the letter-page layout.
@@ -353,12 +358,13 @@ Paged media (`report-print.css`):
   leaders and page numbers from `target-counter()`;
 - a new page after the portada and after the table of contents;
 - a new page for every section whose registry entry sets `break_before`:
-  *Resultados*, 5.5 to 5.7, and every numbered section from *Criterios de
+  *Resultados*, 5.4 to 5.7, and every numbered section from *Criterios de
   acción* to *Anexo*;
-- inside 5.4 and 5.5, each repeated group — a categoría, a categoría's
-  dominios — is a `report-page-group`, and every group after the first starts a
-  new page, so the first follows its section heading;
-- finding blocks, charts, criteria and table rows never split;
+- inside 5.5, each categoría's dominios are a `report-page-group`, and every
+  group after the first starts a new page, so the first follows its section
+  heading; 5.4's categorías follow one another;
+- finding blocks, charts, categoría groups, participation rows, criteria and
+  table rows never split;
   table headers repeat;
 - drafts carry a fixed-position *BORRADOR* watermark, repeated on every page.
 
@@ -399,7 +405,7 @@ note (*Interpretación de Riesgo*), both kept in the project's shared Drive.
 | `apps/reports/snapshot.py` | `ReportData`, building it from the aggregates, `dump`/`load`, `data_for` |
 | `apps/reports/publishing.py` | `blockers`, `publish`, `unpublish` |
 | `apps/reports/sections.py` | the section registry, `context_for`, `render_sections`, the annex's method tables |
-| `apps/reports/text.py` | generated sentences, action criteria, recommendations |
+| `apps/reports/text.py` | generated findings, action criteria, recommendations |
 | `apps/reports/content.py` | recommendations matrix, confidentiality notice, glossary, LFT, Objetivo |
 | `apps/reports/pdf.py` | `render_report_pdf`, `ReportURLFetcher`, the filename |
 | `apps/reports/views.py`, `urls.py`, `forms.py`, `admin.py` | pages, publish/unpublish, the edit form and signatory formset, the Django admin |
@@ -433,12 +439,15 @@ the admin) with Spanish model metadata.
   share.
   Reason: The reader meets the action beside the evidence for it, and the chart
   directly below prints the share.
-- Decision: Rankings in generated sentences use Alto plus Muy alto.
+- Decision: Rankings in generated findings use Alto plus Muy alto.
   Reason: The norm calls for a categoría and dominio analysis at both levels.
-- Decision: A sentence prints the chart's largest-remainder percents and ranks
+- Decision: A finding prints the chart's largest-remainder percents and ranks
   on exact fractions.
-  Reason: The sentence must never disagree with the chart beside it, and
+  Reason: The finding must never disagree with the chart beside it, and
   rounding must not decide which categoría or dominio leads.
+- Decision: A finding is a lead line and a list, not a sentence.
+  Reason: Each figure gets its own line, aligned for scanning, and a tie is one
+  more row rather than a separate wording.
 - Decision: Figure-bearing text is generated and not editable; the
   Administrador writes separate fields.
   Reason: Hand-edited figures drift from the data beside them.

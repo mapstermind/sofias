@@ -81,18 +81,37 @@ def test_level_columns_render_every_level_with_percent_and_count():
     assert ">Medio<" in html and "0 %" in html
     assert '<span class="sr-only"> cuestionario</span>' in html
     assert '<span class="sr-only"> cuestionarios</span>' in html
-    assert "md:sr-only" not in html
-    assert "h-10" in html
+    assert "h-28" in html
     assert "tabindex" not in html and "data-tooltip" not in html
 
 
-def test_level_columns_names_on_phone_only_and_size():
-    html = _render(
-        "{% level_columns items names='phone' size='lg' %}",
-        items=[Item("bajo", "Bajo", 1, "ndr-bajo")],
+def _scale(html):
+    return (
+        html.split("data-chart-scale")[1].split("</div>")[0]
+        if "data-chart-scale" in html
+        else ""
     )
-    assert "md:sr-only" in html
-    assert "h-24" in html
+
+
+def test_level_columns_scale_and_heights_by_size():
+    items = [Item("bajo", "Bajo", 1, "ndr-bajo")]
+    for size, height in (("lg", "h-40"), ("md", "h-28")):
+        html = _render(f"{{% level_columns items size='{size}' %}}", items=items)
+        assert height in html
+        labels = _scale(html)
+        assert labels.index(">100 %<") < labels.index(">50 %<") < labels.index(">0 %<")
+        assert 'aria-hidden="true"' in html.split("data-chart-scale")[0][-80:] + labels
+    small = _render("{% level_columns items size='sm' %}", items=items)
+    assert "h-18" in small
+    assert "data-chart-scale" not in small
+
+
+def test_level_columns_draw_gridlines_at_0_50_and_100():
+    html = _render(
+        "{% level_columns items size='sm' %}", items=[Item("a", "A", 1, "ndr-bajo")]
+    )
+    for y in ('y1="0"', 'y1="50%"'):
+        assert y in html, y
 
 
 def test_unknown_color_key_falls_back_to_neutral():

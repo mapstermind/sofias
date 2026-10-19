@@ -14,10 +14,6 @@
   grid-template-columns: 1fr 1fr;
 }
 
-.report-cell-chart {
-  width: 40%;
-}
-
 .report-table--stack thead {
   position: static;
   width: auto;
@@ -46,4 +42,23 @@
 
 .report-table--stack td::before {
   content: none;
+}
+
+/* A participation row in columns: name and counts, distribution, share. */
+.report-area-row {
+  flex-wrap: nowrap;
+  gap: 1.5rem;
+}
+
+.report-area-who {
+  flex: 0 0 9rem;
+}
+
+.report-area-dist {
+  order: 0;
+  flex: 1 1 0;
+}
+
+.report-area-risk {
+  flex: 0 0 3.5rem;
 }

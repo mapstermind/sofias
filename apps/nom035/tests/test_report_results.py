@@ -49,10 +49,9 @@ def test_every_area_shows_its_numbers_however_small(two_areas):
     data = report_results(two_areas["assignment"])
     by_label = {a.label: a for a in data.areas}
     assert by_label["Dirección"].n == 2
-    assert by_label["Dirección"].final is not None
     assert by_label["Dirección"].categorias
     assert by_label["Dirección"].guia1 is not None
-    assert by_label["Operaciones"].final is not None
+    assert by_label["Operaciones"].categorias
     assert not any(row.suppressed for row in data.results.participation)
 
 
@@ -78,7 +77,6 @@ def test_area_results_numbers_when_visible(
     data = report_results(assignment)
     row = next(x for x in data.areas if x.label == "A")
     assert row.n == 5
-    assert dict(row.final.counts)[c.NDR_MEDIO] == 5
     assert [cat.key for cat in row.categorias][0] == cfg.CAT_AMBIENTE
     assert dict(row.categorias[0].counts)[c.NDR_MEDIO] == 5
     assert (row.guia1.none, row.guia1.event, row.guia1.positive) == (4, 1, 0)

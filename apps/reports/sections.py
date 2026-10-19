@@ -230,13 +230,13 @@ LEGEND = tuple((lvl, c.NDR_LABELS[lvl]) for lvl in c.NDR_ORDER)
 
 
 def _finding(fn, rows) -> dict:
-    """The section's generated sentence; "" while nothing is scored."""
-    return {"finding": fn(rows) if rows else ""}
+    """The section's generated finding; None while nothing is scored."""
+    return {"finding": fn(rows) if rows else None}
 
 
 def _final(ctx):
     return {
-        **_finding(text.final_sentence, ctx.data.final_distribution),
+        **_finding(text.final_finding, ctx.data.final_distribution),
         "legend": LEGEND,
     }
 
@@ -245,10 +245,25 @@ def _with_legend(ctx):
     return {"legend": LEGEND}
 
 
+def _participacion(ctx):
+    """Each área as the results dashboard draws it: counts, bar, level percents."""
+    rows = []
+    for row in ctx.data.participation:
+        pct = text.row_percents(row) if row.counts else {}
+        rows.append(
+            {
+                "row": row,
+                "levels": [(lvl, pct[lvl]) for lvl in c.NDR_ORDER if lvl in pct],
+                "high_share": text.high_share_text(row) if row.counts else "",
+            }
+        )
+    return {"rows": rows, "legend": LEGEND}
+
+
 def _categoria(ctx):
     data = ctx.data
     return {
-        **_finding(text.categoria_sentence, data.categoria_distribution),
+        **_finding(text.categoria_finding, data.categoria_distribution),
         "rows": data.categoria_distribution,
         "legend": LEGEND,
     }
@@ -268,7 +283,7 @@ def _dominio(ctx):
     ]
     rows = [d for cat in data.categoria_distribution for d in cat.children]
     return {
-        **_finding(text.dominio_sentence, rows),
+        **_finding(text.dominio_finding, rows),
         "groups": groups,
         "legend": LEGEND,
     }
@@ -284,7 +299,7 @@ RESULTS_CHILDREN = (
         "resultados.participacion",
         "Participación por área",
         _R + "_participacion.html",
-        _with_legend,
+        _participacion,
     ),
     Section("resultados.final", "Calificación final", _R + "_final.html", _final),
     Section(
@@ -292,6 +307,7 @@ RESULTS_CHILDREN = (
         "Resultados por categoría",
         _R + "_categoria.html",
         _categoria,
+        break_before=True,
     ),
     Section(
         "resultados.dominio",

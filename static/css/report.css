@@ -84,6 +84,8 @@
   margin: 0 0 0.75rem;
 }
 
+/* A finding: the lead line, then one row per (share, name) with the shares
+   right-aligned in their own column. */
 .report-finding {
   font-family: "Figtree", ui-sans-serif, system-ui, sans-serif;
   font-size: 1.25rem;
@@ -93,6 +95,38 @@
   color: var(--brand-neutral-900);
   margin: 0 0 1.25rem;
   break-inside: avoid;
+}
+
+.report-finding-lead {
+  margin: 0;
+}
+
+.report-finding-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.report-finding-list li {
+  display: flex;
+  gap: 0.75rem;
+  margin: 0.125rem 0;
+}
+
+.report-finding-share {
+  flex: 0 0 4.5rem;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .report-h2 {
@@ -448,6 +482,74 @@
   color: var(--brand-neutral-600);
   margin: 0.5rem 0 0.25rem;
   break-after: avoid;
+}
+
+/* Participación por área, as the results dashboard draws it: one row per área.
+   On a phone the name (with its counts below) and the Alto o Muy alto share
+   share a line, the distribution sits below; report-wide.css puts the
+   distribution between them. */
+.report-areas {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.report-area-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
+  margin: 0 0 0.5rem;
+  border-radius: 0.75rem;
+  background: var(--brand-neutral-50);
+  break-inside: avoid;
+}
+
+.report-area-who {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.report-area-name {
+  display: block;
+  font-weight: 600;
+}
+
+.report-area-count {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--brand-neutral-600);
+  font-variant-numeric: tabular-nums;
+}
+
+.report-area-risk {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.report-area-dist {
+  order: 3;
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.report-area-levels {
+  display: flex;
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--brand-neutral-700);
+  font-variant-numeric: tabular-nums;
+}
+
+.report-area-level {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 /* The NDR legend that closes the final, categoría and dominio sections. */

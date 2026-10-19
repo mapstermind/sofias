@@ -139,14 +139,11 @@ def range_strip(context, bands, scale_max, points, label=""):
 
 
 @register.inclusion_tag("components/charts/level_columns.html", takes_context=True)
-def level_columns(
-    context, items, unit="cuestionario", names="always", size="md", label=""
-):
+def level_columns(context, items, unit="cuestionario", size="md", label=""):
     """One column per item on a fixed 0–100 % scale, each with its percent and count.
 
-    `names="phone"` keeps the item names for screen readers but shows them only
-    below `md`, for rows that sit under a shared column header. `size` is the
-    plot height: "sm", "md" or "lg".
+    `size` is the plot height: "sm", "md" or "lg". Every size draws gridlines at
+    0, 50 and 100 %; "md" and "lg" also label them on a scale at the left.
     """
     singular, plural = UNITS[unit]
     tokens = _tokens(context)
@@ -156,7 +153,7 @@ def level_columns(
     ]
     return {
         "cols": cols,
-        "names_on_phone_only": names == "phone",
         "size": size,
+        "scale": size != "sm",
         "aria_label": label or "; ".join(col["description"] for col in cols),
     }

@@ -3,26 +3,27 @@
 {% if not data.final_distribution %}
   <p class="report-small">Aún no hay cuestionarios valorados en esta encuesta.</p>
 {% else %}
-  <table class="report-table report-table--stack">
-    <thead>
-      <tr><th scope="col">Área</th><th scope="col">Registrados</th><th scope="col">Respondieron</th><th scope="col">Participación</th><th scope="col">Distribución</th></tr>
-    </thead>
-    <tbody>
-      {% for row in data.participation %}
-        <tr>
-          <th scope="row">{{ row.label }}</th>
-          <td data-label="Registrados" class="report-cell-num">{{ row.registered|default_if_none:"—" }}</td>
-          <td data-label="Respondieron" class="report-cell-num">{{ row.responded }}</td>
-          <td data-label="Participación" class="report-cell-num">{% if row.participation is not None %}{{ row.participation }} %{% else %}—{% endif %}</td>
-          <td data-label="Distribución" class="report-cell-chart">
-            {% if row.counts %}{% level_columns row.slices size="sm" %}{% else %}—{% endif %}
-          </td>
-        </tr>
-      {% empty %}
-        <tr><td colspan="5">Esta empresa no tiene áreas registradas.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <ul class="report-areas">
+    {% for r in c.rows %}{% with row=r.row %}
+      <li class="report-area-row">
+        <span class="report-area-who">
+          <span class="report-area-name">{{ row.label }}</span>
+          <span class="report-area-count">{{ row.responded }}{% if row.registered is not None %} de {{ row.registered }}{% endif %} respondi{{ row.responded|pluralize:"ó,eron" }}</span>
+        </span>
+        <span class="report-area-dist">
+          {% if row.counts %}
+            {% stacked_bar row.slices %}
+            <span class="report-area-levels">
+              {% for level, percent in r.levels %}<span class="report-area-level"><span class="report-swatch report-swatch--{{ level }}" aria-hidden="true"></span>{{ percent }} %</span>{% endfor %}
+            </span>
+          {% else %}—{% endif %}
+        </span>
+        <span class="report-area-risk">{% if r.high_share %}{{ r.high_share }}<span class="report-sr-only"> en Alto o Muy alto</span>{% endif %}</span>
+      </li>
+    {% endwith %}{% empty %}
+      <li class="report-small">Esta empresa no tiene áreas registradas.</li>
+    {% endfor %}
+  </ul>
   {% include "reports/sections/results/_legend.html" with legend=c.legend %}
-  <p class="report-small">Registrados: miembros del área con cuenta activada. La distribución es la de la calificación final.</p>
+  <p class="report-small">Registrados: miembros del área con cuenta activada. La distribución es la de la calificación final; a la derecha, la proporción en Alto o Muy alto.</p>
 {% endif %}

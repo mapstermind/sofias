@@ -17,8 +17,9 @@ components. Registered as `apps.reports` (label `reports`, admin heading
   `apps.nom035.results.report_results`; `dump`/`load` turn it into JSON and back,
   round-tripping exactly; `data_for(report)` loads a published report's snapshot
   and builds a draft's data live.
-- `text.py` — the generated sentences (`final_sentence`, `categoria_sentence`,
-  `dominio_sentence`), `action_criteria` (the norm's `action_text` for each level
+- `text.py` — the generated findings (`Finding`: a lead line and (share, name)
+  rows; `final_finding`, `categoria_finding`, `dominio_finding`),
+  `action_criteria` (the norm's `action_text` for each level
   reached) and `recommendations` (one dominio row's matrix text per recommended
   level reached). Pure functions of report data. Shares are the
   row's largest-remainder percents, as the charts print them; ranking and ties
@@ -114,7 +115,7 @@ unpublish form.
 
 `tests/` — `conftest.py` (`scored_assignment`: a closed Guía III assignment with
 two áreas and one respondent without área), `test_models.py`,
-`test_snapshot.py` (build and JSON round trip), `test_text.py` (sentences),
+`test_snapshot.py` (build and JSON round trip), `test_text.py` (findings),
 `test_content.py` (matrix covers every dominio, fixed text present), `test_sections.py` (registry, numbering,
 section contexts), `test_results_sections.py` (results partials),
 `test_publishing.py`, `test_admin_views.py`,

@@ -1,0 +1,11 @@
+{# A text.Finding: the lead line, then one row per (share, name), shares aligned. #}
+{% if finding %}
+  <div class="report-finding">
+    <p class="report-finding-lead">{{ finding.lead }}</p>
+    {% if finding.rows %}
+      <ul class="report-finding-list">
+        {% for share, label in finding.rows %}<li><span class="report-finding-share">{{ share }}</span>{{ label }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endif %}

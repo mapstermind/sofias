@@ -39,6 +39,32 @@ that text is empty. The registry gains a per-section `shown` predicate for
 this. `text.recommendations` takes one dominio row and returns its
 (level, label, text); the share and grouping fields go.
 
+### Second batch
+
+**Findings are a lead and a list.** 5.3, 5.4 and 5.5 each open with a
+`text.Finding`: a lead line and (share, name) rows, rendered by one partial,
+`_finding.html`, as a paragraph and a list with the shares right-aligned.
+5.3: *Nivel de riesgo de los N colaboradores evaluados:* then Nulo o Bajo,
+Medio, Alto o Muy alto. 5.4: *La categoría … es:* / *Las categorías … son:*
+then every leader with its own share (one shape for every tie). 5.5: the same
+for up to three dominios. With no worker at Alto or above, the lead says so and
+there are no rows.
+
+**5.2 Participación por área is drawn like the dashboard's *Por área*:** one row
+per área with its name, *N de M respondieron*, a `stacked_bar` of the final
+score, the five level percents with swatches, and the share in Alto o Muy alto
+on the right (largest-remainder percents summed, as the findings print it).
+**5.6 *Resultados por área* drops its per-área final-score table**, which 5.2
+now shows; it keeps each área's categoría charts.
+
+**Page breaks.** 5.4 starts a new page. Its categorías no longer each start a
+page: they flow and never split. 5.5 keeps one page per categoría.
+
+**Level columns.** A 0/50/100 % scale on the left, with faint gridlines at
+those values; on the `sm` size gridlines only. Columns take 72 % of their slot
+and are taller: lg 160px, md 112px, sm 72px. Report-only: the dashboard does
+not draw `level_columns`.
+
 Sections of `docs/platform/nom-035-report.md` made wrong: *Scope* (dimensión
 results among the `apps/nom035` aggregates), the section list (5.3–5.8 and the
 paragraph on captions and statistics rows), "Every statistics row prints…",
@@ -70,3 +96,18 @@ layout's statistics rows, the page-break list, the section list's item 7 and
 - [x] Documentation: rewrite the sections above in present tense;
       `apps/reports/CLAUDE.md` and `apps/nom035/CLAUDE.md` where they mention
       statistics or dimensiones in the report.
+
+### Second batch tasks
+
+- [x] Tests first: `Finding` shape per sentence, the finding partial's list,
+      5.2 rows (counts, bar, percents, at-risk share), 5.6 without its table,
+      5.4's break and its flowing groups, the scale on `level_columns`.
+- [x] `text.py`: `Finding`; `final_finding`, `categoria_finding`,
+      `dominio_finding`. `_finding.html` and its CSS.
+- [x] 5.2: `_participacion` builder and partial; CSS phone-first and wide.
+- [x] 5.6: drop the table.
+- [x] Breaks: `break_before` on 5.4; 5.4 groups without `report-page-group`.
+- [x] `level_columns`: geometry (72 %), scale, heights.
+- [x] Build CSS, suite green, render the PDF.
+- [x] Dead-code sweep: unused templates, CSS classes, chart sizes, helpers.
+- [x] Documentation.
