@@ -45,7 +45,7 @@
 /* ── Tokens ─────────────────────────────────────────────────────────────────
    Templates name these scales (`text-primary-600`, `bg-neutral-50`), never a
    Tailwind hue. `inline` makes each utility read its variable where it is used,
-   so the `[data-palette]` attribute base.html sets on <html> repaints the page.
+   so the palette below is defined once, as `--brand-*` variables.
    See docs/platform/design-system.md. */
 @theme inline {
   --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
@@ -80,8 +80,8 @@
 
 /* ── Status ─────────────────────────────────────────────────────────────────
    Success, warning and danger, for messages, field errors and state pills.
-   Status is not brand, so these are the same in every palette; they are muted
-   to sit beside either one. Never a risk level: the NOM-035 ramp is
+   Status is not brand, so these sit outside the palette; they are muted
+   to sit beside it. Never a risk level: the NOM-035 ramp is
    valuation_extras.py's. Steps mirror Tailwind's: 50 fill, 100 hover fill,
    200 border, 500 icon, 600 text, 800 text on a tint. */
 @theme {
@@ -128,46 +128,12 @@
   --text-3xl--line-height: 1.15;
 }
 
-/* ── Palettes ───────────────────────────────────────────────────────────────
-   Same variables, different values. `:root` carries the default so a page
-   without the attribute still renders. static/css/report.css reads these too.
+/* ── Palette: Pizarra ──────────────────────────────────────────────────────
+   Ink slate and peach on warm stone. static/css/report.css reads these too, and
+   apps/core/brand.py reads them for the chart marks the PDF paints.
    apps/core/tests/test_design_tokens.py checks every declared text/background
-   pair in both palettes against WCAG AA. */
-/* Petróleo */
-:root,
-[data-palette="petrol"] {
-  --brand-primary-50: #EEF5F7;
-  --brand-primary-100: #D4E7EC;
-  --brand-primary-200: #AACFD9;
-  --brand-primary-300: #77B0C0;
-  --brand-primary-400: #458EA3;
-  --brand-primary-500: #2B7389;
-  --brand-primary-600: #1F5D71;
-  --brand-primary-700: #1A4C5D;
-  --brand-primary-800: #173E4C;
-  --brand-primary-900: #13323D;
-  --brand-accent-100: #E3E8FD;
-  --brand-accent-200: #C9D2FC;
-  --brand-accent-300: #B3C0FB;
-  --brand-accent-500: #6B79D9;
-  --brand-accent-700: #444C97;
-  --brand-neutral-50: #F6F8F8;
-  --brand-neutral-100: #EDF1F2;
-  --brand-neutral-200: #DDE3E5;
-  --brand-neutral-300: #C5CED1;
-  --brand-neutral-400: #8A979B;
-  --brand-neutral-500: #6B777B;
-  --brand-neutral-600: #525D61;
-  --brand-neutral-700: #3E474A;
-  --brand-neutral-800: #2A3133;
-  --brand-neutral-900: #1A1F21;
-  /* Chart series that are not a risk level: the sex and age profiles. */
-  --brand-series-1: #1F5D71;
-  --brand-series-2: #6B79D9;
-}
-
-/* Pizarra */
-[data-palette="slate"] {
+   pair against WCAG AA. See docs/adr/adr-0006-brand-palette.md. */
+:root {
   --brand-primary-50: #F3F5F8;
   --brand-primary-100: #E3E7EE;
   --brand-primary-200: #C8D0DC;
@@ -244,10 +210,10 @@
   /* `enabled:` keeps a disabled button from reacting to hover; a link has no
      disabled state, so it gets the plain hover. */
   .btn-primary {
-    @apply bg-primary-600 text-white enabled:hover:bg-primary-700;
+    @apply bg-primary-500 text-white enabled:hover:bg-primary-600;
   }
   a.btn-primary {
-    @apply hover:bg-primary-700;
+    @apply hover:bg-primary-600;
   }
   .btn-secondary {
     @apply border border-neutral-300 bg-white text-neutral-800 enabled:hover:bg-neutral-50;
@@ -312,7 +278,7 @@
   }
 
   /* The account screens' layout (templates/base_auth.html). The page tint and
-     the panel read only palette variables, so both repaint with the palette. */
+     the panel read only palette variables. */
   .auth-backdrop {
     background:
       radial-gradient(60% 50% at 15% 0%, var(--brand-primary-100) 0%, transparent 70%),
@@ -352,7 +318,7 @@
   }
   /* The main action's soft glow, on the account screens only. */
   .btn-glow {
-    box-shadow: 0 10px 22px -12px var(--brand-primary-600);
+    box-shadow: 0 10px 22px -12px var(--brand-primary-500);
   }
 
   /* The label of a visually hidden checkbox or radio (`peer sr-only`, just

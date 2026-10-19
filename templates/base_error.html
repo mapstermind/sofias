@@ -3,11 +3,10 @@
 The error pages' layout: the centered card of the login screens, with a title,
 one sentence, a way home, and the code as a footnote for support. The 500 page
 renders without a request (apps.core.views.server_error), so nothing here may
-need one: no messages, no palette switch, no user.
+need one: no messages, no user.
 {% endcomment %}
 
 {% block title %}{% block error_title %}{% endblock %} | {{ brand.name }}{% endblock %}
-{% block palette_switch %}{% endblock %}
 
 {% block body %}
 <main id="main" tabindex="-1" class="flex flex-1 items-center justify-center px-4 py-12 focus:outline-none">

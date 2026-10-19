@@ -1,11 +1,7 @@
 # ADR-0006: The brand palette
 
 Date: 2026-10-12
-Status: Proposed
-
-> Draft: the client chooses between the two finalists below. When she does, the
-> Decision names the winner, the Status becomes Accepted, and the losing
-> palette is deleted from `static/css/main.css`.
+Status: Accepted
 
 ## Context
 
@@ -34,7 +30,10 @@ client can compare them on the real application:
   on warm stone neutrals. Reference C's slate and peach (option C1), with the
   slate darkened to carry text and buttons.
 
-The client picks one. *(To be completed after the meeting.)*
+The client chose **Pizarra** (2026-10-18). Its warm stone and peach suit the
+calm, muted direction. Primary buttons use slate-500 (`#5D6C87`) rather than
+600, to soften the classic-navy weight, with 600 as hover. Petróleo and the
+switch are removed.
 
 ## Consequences
 
@@ -47,7 +46,6 @@ The client picks one. *(To be completed after the meeting.)*
 
 **Negative:**
 
-- Until the decision, every color change is checked in two palettes.
 - Pizarra's peach shares the amber *Medio* band, so it is confined to surfaces
   and never carries a chart series or a small mark; its second chart series is a
   lighter slate instead of a new hue.

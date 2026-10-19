@@ -4,14 +4,13 @@
 {% block title %}Estilos | {{ brand.name }}{% endblock %}
 
 {% comment %}
-Every component in every state, drawn with the real classes and partials, in
-the active palette: flip the palette switch to compare. Shown to whoever may
-switch palettes (StyleguideView). Hover and keyboard focus cannot be frozen in a
+Every component in every state, drawn with the real classes and partials.
+Shown to Admins, superusers, and anyone under DEBUG (StyleguideView). Hover and keyboard focus cannot be frozen in a
 static page, so they are tried live. See docs/platform/design-system.md.
 {% endcomment %}
 
 {% block content %}
-  {% with subtitle="Los componentes de "|add:brand.name|add:" con la paleta activa. Cambia de paleta con el selector de la esquina para compararlas." %}
+  {% with subtitle="Los componentes de "|add:brand.name|add:" en cada uno de sus estados." %}
     {% include "components/_page_header.html" with title="Estilos" subtitle=subtitle %}
   {% endwith %}
 
@@ -19,7 +18,7 @@ static page, so they are tried live. See docs/platform/design-system.md.
 
     <section aria-labelledby="sg-color">
       <h2 id="sg-color" class="text-lg font-semibold text-neutral-900">Color</h2>
-      <p class="mt-1 text-sm text-neutral-600">Las escalas de la paleta activa y las de estado, que son iguales en las dos paletas.</p>
+      <p class="mt-1 text-sm text-neutral-600">Las escalas de la paleta y las de estado.</p>
       <div class="mt-4 space-y-4">
         {% for scale, steps in swatches %}
           {% include "core/_styleguide_scale.html" %}
@@ -133,7 +132,7 @@ static page, so they are tried live. See docs/platform/design-system.md.
           {% include "_logo.html" with css_class="h-9 w-auto self-start text-white" %}
           <p class="max-w-[40ch] text-sm font-medium text-white/90">{{ brand.meaning }}</p>
         </div>
-        <p class="self-center text-sm text-neutral-600">El panel de las pantallas de cuenta, en la paleta activa.</p>
+        <p class="self-center text-sm text-neutral-600">El panel de las pantallas de cuenta.</p>
       </div>
       <div class="mt-4">
         {% include "components/_empty.html" with title="Ningún colaborador coincide" body="Ningún colaborador coincide con la búsqueda." icon="users" action_url="#sg-cards" action_label="Limpiar filtros" %}

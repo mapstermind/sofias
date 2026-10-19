@@ -127,15 +127,14 @@ def test_marks_carry_their_color_as_a_fill_attribute():
         ages=[Item("15-19", "15–19", 2, "age")],
     )
     assert 'class="fill-orange-500 stroke-white" fill="#F97316"' in html
-    assert 'class="fill-series-1 stroke-white" fill="#1F5D71"' in html  # Petróleo
-    assert 'fill="#1F5D71"' in html
+    assert 'class="fill-series-1 stroke-white" fill="#47546C"' in html
+    assert 'fill="#47546C"' in html
 
 
-def test_palette_series_follow_the_active_palette():
-    """The class repaints on screen; the hex, which the PDF reads, comes from the palette."""
+def test_palette_series_carry_the_palette_hex():
+    """The class paints on screen; the hex, which the PDF reads, comes from the palette."""
     html = _render(
         "{% stacked_bar items %}",
-        palette="slate",
         items=[
             Item("m", "Mujeres", 3, "sex-female"),
             Item("h", "Hombres", 1, "sex-male"),
@@ -145,23 +144,15 @@ def test_palette_series_follow_the_active_palette():
     assert 'class="fill-series-2 stroke-white" fill="#7787A2"' in html
 
 
-def test_an_unknown_palette_paints_the_default():
-    html = _render(
-        "{% column_chart ages %}", palette="durazno", ages=[Item("a", "A", 1, "age")]
-    )
-    assert 'fill="#1F5D71"' in html
-
-
-def test_every_color_key_has_a_hex_in_every_palette():
+def test_every_color_key_has_a_hex():
     from apps.core.brand import palette_hex
     from apps.core.templatetags.charts import _COLORS, _HEX, _PALETTE_TOKENS
 
     assert not _HEX.keys() & _PALETTE_TOKENS.keys()
     assert _HEX.keys() | _PALETTE_TOKENS.keys() == _COLORS.keys()
-    for slug in ("petrol", "slate"):
-        tokens = palette_hex(slug)
-        for key, token in _PALETTE_TOKENS.items():
-            assert tokens[token].startswith("#"), (slug, key)
+    tokens = palette_hex()
+    for key, token in _PALETTE_TOKENS.items():
+        assert tokens[token].startswith("#"), key
 
 
 def test_dominio_keys_have_classes_and_hexes():

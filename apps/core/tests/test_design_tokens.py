@@ -1,8 +1,8 @@
 """Design-system guarantees: see docs/platform/design-system.md (Enforcement).
 
 These read source files, never a rendered page: they prove every declared pair
-in both palettes meets WCAG AA and that no template bypasses the tokens. Whether
-a page *looks* right in each palette is checked by a human in the browser.
+in the palette meets WCAG AA and that no template bypasses the tokens. Whether
+a page *looks* right is checked by a human in the browser.
 """
 
 import re
@@ -12,7 +12,6 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 MAIN_CSS = (REPO_ROOT / "static/css/main.css").read_text()
-PALETTES = ("petrol", "slate")
 WHITE = "#FFFFFF"
 
 # (use, foreground, background, minimum ratio). A token names a palette step;
@@ -22,8 +21,8 @@ PAIRS = [
     ("secondary text", "neutral-600", WHITE, 4.5),
     ("secondary text on a light fill", "neutral-600", "neutral-100", 4.5),
     ("lightest text", "neutral-500", WHITE, 4.5),
-    ("primary button", WHITE, "primary-600", 4.5),
-    ("primary button, hover", WHITE, "primary-700", 4.5),
+    ("primary button", WHITE, "primary-500", 4.5),
+    ("primary button, hover", WHITE, "primary-600", 4.5),
     ("link", "primary-600", WHITE, 4.5),
     ("link on the page background", "primary-600", "neutral-50", 4.5),
     ("active item / info message", "primary-700", "primary-50", 4.5),
@@ -37,9 +36,9 @@ PAIRS = [
 ]
 
 
-def _palette(slug):
-    match = re.search(r'\[data-palette="%s"\][^{]*\{([^}]*)\}' % slug, MAIN_CSS)
-    assert match, f'no [data-palette="{slug}"] block in static/css/main.css'
+def _palette():
+    match = re.search(r":root\s*\{([^}]*)\}", MAIN_CSS)
+    assert match, "no :root block in static/css/main.css"
     return dict(
         re.findall(r"--brand-([a-z]+-\d+):\s*(#[0-9A-Fa-f]{6})", match.group(1))
     )
@@ -56,9 +55,8 @@ def _ratio(a, b):
     return (hi + 0.05) / (lo + 0.05)
 
 
-@pytest.mark.parametrize("slug", PALETTES)
-def test_every_declared_pair_meets_wcag_aa(slug):
-    tokens = _palette(slug)
+def test_every_declared_pair_meets_wcag_aa():
+    tokens = _palette()
     failures = []
     for use, fg, bg, minimum in PAIRS:
         f = fg if fg.startswith("#") else tokens[fg]
@@ -68,12 +66,10 @@ def test_every_declared_pair_meets_wcag_aa(slug):
     assert not failures, "\n".join(failures)
 
 
-def test_both_palettes_declare_the_same_tokens():
-    assert _palette("petrol").keys() == _palette("slate").keys()
-
-
 def test_every_palette_token_is_exposed_to_tailwind():
-    for token in _palette("petrol"):
+    tokens = _palette()
+    assert tokens, "no --brand-* values on :root in static/css/main.css"
+    for token in tokens:
         assert f"--color-{token}: var(--brand-{token});" in MAIN_CSS, token
 
 
@@ -83,7 +79,7 @@ HUE_CLASS = re.compile(
     r"(?<![\w-])(?:[\w-]+:)*[a-z]+(?:-[a-z]+)*-"
     r"(?:gray|indigo|green|yellow|red|amber|orange|emerald|lime|rose)-\d{2,3}\b"
 )
-# The risk ramp is a fixed data color, outside every palette.
+# The risk ramp is a fixed data color, outside the palette.
 EXEMPT = {"valuation_extras.py"}
 SCANNED = [
     path
@@ -265,7 +261,7 @@ def test_no_template_hand_rolls_a_card():
     assert not hits, "use the card class:\n" + "\n".join(hits)
 
 
-# Status scales are fixed (the same in every palette) and declared in @theme.
+# Status scales are fixed (outside the palette) and declared in @theme.
 STATUS_PAIRS = [
     ("status text on white", "600", WHITE, 4.5),
     ("status text on its tint", "600", "50", 4.5),

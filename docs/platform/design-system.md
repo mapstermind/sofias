@@ -11,33 +11,27 @@ Current — implemented in `static/css/main.css`, `apps/core` (`brand.py`, `cont
 
 SOFIA-S has one visual foundation that every page draws from. The product's name and logo are
 defined once and rendered by one partial. Its typeface is Figtree. Its colors come from a small
-set of named token scales: `primary`, `accent` and `neutral`. A palette is the set of values
+set of named token scales: `primary`, `accent` and `neutral`. The palette is the set of values
 those tokens take.
 
-Two palettes exist while the client chooses between them. **Petróleo** (`petrol`) is a blue-teal
-primary with a periwinkle accent on cool neutrals. **Pizarra** (`slate`) is an ink-slate primary
-with a peach accent on warm stone neutrals. An administrator sees a small floating switch on every
-page and can flip between them. The choice is kept in a cookie and repaints the whole application,
-the results report and its PDF included: the PDF is painted in the palette of whoever downloads
-it. Everyone else sees the default palette and no switch.
+The palette is **Pizarra**: an ink-slate primary with a peach accent on warm stone neutrals. It
+paints the whole application, the results report and its PDF included.
 
 Every template expresses color through the token scales: `text-primary-600`, `bg-neutral-50`,
-`bg-accent-100`. None names a Tailwind hue such as `indigo` or `gray`. Changing a palette's
-values, or replacing both palettes with the client's final choice, is an edit to one CSS file.
+`bg-accent-100`. None names a Tailwind hue such as `indigo` or `gray`. Changing the palette's
+values is an edit to one CSS file.
 
 Each recurring pattern has one definition. A button, a form control, a card, a link and a pill
 are component classes (`btn btn-primary`, `control`, `card`, `card-link`, `link`, `pill`,
 `chip`), and so is a survey's answer row (`answer`). Every page opens with one page-header
 partial and follows one heading ladder. Every Django form draws its
 fields through one field template, alerts and Django's messages through one partial, and icons
-through one tag. A styleguide page at `/estilos/` shows every component in every state, in
-whichever palette is active.
+through one tag. A styleguide page at `/estilos/` shows every component in every state.
 
 ## Why we're building it
 
-The product's name, logo and palette are placeholders that the client is still choosing, and
-may replace later. Each of those changes has to be one edit, and the candidate palettes have to
-be compared live on the real screens rather than in a mock-up.
+The product's name and logo are placeholders that the client may replace later, and the palette
+may be revised. Each of those changes has to be one edit.
 
 ## Scope
 
@@ -83,31 +77,22 @@ be compared live on the real screens rather than in a mock-up.
   at 360px.
 - **Color tokens.** `static/css/main.css` declares `primary-50…900`, `accent-100…700`,
   `neutral-50…900` and the chart tokens `series-1` and `series-2` in an `@theme inline` block. Each maps to a `--brand-*` CSS variable.
-  Each palette assigns those variables under `[data-palette="<slug>"]`, and `:root` carries the
-  default palette's values so a page without the attribute still renders. `static/css/report.css`
-  reads the same `--brand-*` variables.
-- **The palettes.** The full scales live in `main.css`; the anchor values are:
+  The palette assigns those variables on `:root`, and `static/css/report.css` reads the same
+  `--brand-*` variables.
+- **The palette.** The full scales live in `main.css`; the anchor values are:
 
-  | Role | Petróleo (`petrol`) | Pizarra (`slate`) |
-  |---|---|---|
-  | Primary, actions and links (600) | `#1F5D71` | `#47546C` |
-  | Primary, hover (700) | `#1A4C5D` | `#3A455A` |
-  | Primary, tint (50) | `#EEF5F7` | `#F3F5F8` |
-  | Accent, swatch (300) | `#B3C0FB` periwinkle | `#E5D09A` peach |
-  | Chart, first series | `#1F5D71` (primary-600) | `#47546C` (primary-600) |
-  | Chart, second series | `#6B79D9` (accent-500) | `#7787A2` (primary-400) |
-  | Neutral, page (100) | `#EDF1F2` | `#F3F0EB` |
-  | Neutral, headings (900) | `#1A1F21` | `#1D1A17` |
+  | Role | Pizarra |
+  |---|---|
+  | Primary button (500) | `#5D6C87` |
+  | Primary, button hover and marks (600) | `#47546C` |
+  | Primary, links (700) | `#3A455A` |
+  | Primary, tint (50) | `#F3F5F8` |
+  | Accent, swatch (300) | `#E5D09A` peach |
+  | Chart, first series | `#47546C` (primary-600) |
+  | Chart, second series | `#7787A2` (primary-400) |
+  | Neutral, page (100) | `#F3F0EB` |
+  | Neutral, headings (900) | `#1D1A17` |
 
-- **The palette switch.** `settings.BRAND_PALETTES` lists the palette slugs with their Spanish
-  labels, and `settings.BRAND_PALETTE_DEFAULT` names the default (`petrol`). A context processor
-  reads the `paleta` cookie, falls back to the default when the cookie is missing or names an
-  unknown palette, and exposes the result as `palette`. `base.html` and the PDF template render it
-  as `<html data-palette="…">`. `templates/_palette_switch.html` renders a floating control,
-  labelled *Paleta*, for members of the Admins group and superusers, and for every visitor when
-  `DEBUG` is on. It posts to `/paleta/`, which sets the cookie for a known palette and redirects
-  back to the page, or to the home page when the return address is not on this site. A spacer
-  after the footer keeps the footer's links clear of the pill.
 - **Usage rules** (enforced where noted under **Enforcement**):
   - Color in templates comes from the token scales or the fixed colors below, never from a
     Tailwind hue name or an arbitrary hex value.
@@ -126,12 +111,12 @@ be compared live on the real screens rather than in a mock-up.
   - Page background `neutral-100`; cards white with a `neutral-200` border; headings and primary
     text `neutral-900`; body copy `neutral-700`; secondary text `neutral-600`. `neutral-500` is the
     lightest step used for text, for captions, hints and placeholders.
-  - Primary buttons and links use `primary-600`, with `primary-700` on hover; text on a primary fill
-    is white. Focus rings are 2px `primary-500` with a 2px offset, shown on keyboard focus.
+  - Primary buttons use `primary-500`, with `primary-600` on hover; text on a primary fill is
+    white. Links use `primary-700`. Focus rings are 2px `primary-500` with a 2px offset, shown on keyboard focus.
   - The accent marks highlights, avatars and chips. It never appears as text on white.
   - Chart series that are not a risk level take `series-1` and `series-2`: the sex profile uses
     both, the age profile `series-1`. A chart's empty baseline is `neutral-300`. The chart tags
-    read each series' hex for the active palette from `main.css`, because the PDF paints a chart
+    read each series' hex from `main.css`, because the PDF paints a chart
     mark from its `fill` attribute rather than from a stylesheet.
   - Legend swatches, and the markers that open risk-level badges and status pills
     (`pill-marker`), are 2px-radius squircles (`rounded-xs`), never dots. A tinted risk badge's marker takes its
@@ -161,9 +146,9 @@ be compared live on the real screens rather than in a mock-up.
     Screen readers hear the label and the score ("Siempre, puntaje 4 de 4") or the position. On a
     phone the answer drops under its question.
 - **Status scales.** `main.css` declares `success`, `warning` and `danger` at steps 50, 100, 200,
-  500, 600 and 800 in a plain `@theme` block. They are the same in every palette and muted to sit
-  beside either one; their contrast is tested like the palettes'.
-- **Fixed colors, outside every palette.** The NOM-035 risk ramp
+  500, 600 and 800 in a plain `@theme` block. They sit outside the palette and are muted to sit
+  beside it; their contrast is tested like the palette's.
+- **Fixed colors, outside the palette.** The NOM-035 risk ramp
   (`apps/core/templatetags/valuation_extras.py`): gray, green, amber, orange and red for *Nulo*
   through *Muy alto*. Guía I's chart marks, which take the ramp's dominio *Medio* (`#CA9429`) for
   a traumatic event and *Muy alto* (`#7A1010`) for a referral, so every risk color comes from one
@@ -292,12 +277,13 @@ be compared live on the real screens rather than in a mock-up.
     unless it gets `label="…"`, which makes it an image with that name. An unknown name raises
     under `DEBUG` and renders nothing otherwise. An icon-only button carries its own
     `aria-label`.
-  - **The styleguide.** `/estilos/` (`StyleguideView`) shows, in the active palette: the color
+  - **The styleguide.** `/estilos/` (`StyleguideView`) shows the color
     scales with their hex values, the type sizes in use, every button variant and size (default,
     disabled, busy), a demo form (`apps/core/styleguide.py`) empty and with errors, every alert
     tone, the status pills and risk badges, cards, the account screens' panel and `btn-glow`, a card link, a link and chips, a likert
-    question's answer rows, a dialog, and every icon by name. It is shown to whoever
-    may switch palettes (`brand.can_switch_palette`); everyone else gets a 404.
+    question's answer rows, a dialog, and every icon by name. It is shown to members of the
+    Admins group and superusers, and to every visitor when `DEBUG` is on
+    (`styleguide.can_view_styleguide`); everyone else gets a 404.
   - **Navigation.** Every signed-in page has one header row (`base_app.html`): the logo, the
     company's sections, and the user menu. It is 56px on a phone and 60px from `lg`.
     - **Sections.** `{% company_nav %}` (`apps/core/templatetags/navigation.py`) lists the
@@ -364,7 +350,7 @@ be compared live on the real screens rather than in a mock-up.
     - **The panel:** `auth-panel` is the left column, inset 12px with a 16px radius. Its gradient
       is layered from the palette's variables, with a `primary-900` pool at the bottom left under
       the white text, `accent-300` and `accent-500` glows, a blurred `primary-700` shape and a
-      faint film grain, so it repaints with the palette. It holds the logo in white at the top
+      faint film grain. It holds the logo in white at the top
       left and `brand.meaning` at the bottom, at `text-2xl` weight 600, `text-3xl` from `xl`,
       wrapping in balanced lines.
     - **The form column:** the logo in `primary-600` from `lg`, then the page's `h1` at
@@ -401,7 +387,7 @@ be compared live on the real screens rather than in a mock-up.
 
     Django renders the 404 and 403 pages with the request
     context. The 500 page comes from `handler500 = "apps.core.views.server_error"`, which renders
-    with only the brand and the default palette and makes no database query, since the database
+    with only the brand and makes no database query, since the database
     may be what failed.
   - **The three-places rule.** A pattern that appears in three or more places with no component
     gets one proposed before its markup is copied again.
@@ -416,7 +402,7 @@ be compared live on the real screens rather than in a mock-up.
 - **The NOM-035 questions' wording.** They are the norm's text, verbatim, and speak *usted*.
 - **Dark mode.** The token layer makes it a later addition of one more variable block.
 - **The Django admin.** It keeps Django's own styling.
-- **Final name, logo and palette.** They stay placeholders until the client confirms them.
+- **Final name and logo.** They stay placeholders until the client confirms them.
 
 ## Voz
 
@@ -446,9 +432,7 @@ product's voice, so a wording change is reviewed like a layout change.
 
 ## Phone shape
 
-Nothing in this doc sets a page layout. The palette switch is a small pill fixed to the
-bottom-left corner, clear of the back-to-top control at bottom-right. The survey form does not
-render it, because the form's phone bar spans the whole bottom edge. Buttons and controls are
+Nothing in this doc sets a page layout. Buttons and controls are
 44px tall, the tap target on a phone; a button that should span the phone's width says so at the
 call site (`w-full sm:w-auto`). The styleguide is one column, with its button and pill rows
 wrapping.
@@ -486,22 +470,19 @@ spreads them across one row from `sm`.
 - Decision: Brand colors avoid the green, amber, orange and red hue bands.
   Reason: Those hues already mean a risk level. A green brand color reads as *Bajo*, and an
   orange one reads as *Alto*.
-- Decision: Pizarra's second chart series is its lighter slate (`primary-400`), not a new hue.
+- Decision: The second chart series is the lighter slate (`primary-400`), not a new hue.
   Reason: Peach cannot carry a series, and a chart-only color would add a hue to the palette for
   one chart; the legend labels carry the difference in lightness.
-- Decision: Pizarra's peach accent appears only as a surface (`accent-100` to `accent-300`
+- Decision: The peach accent appears only as a surface (`accent-100` to `accent-300`
   backgrounds), never as a chart series or a small mark.
   Reason: Peach shares the amber *Medio* hue band, and its darker steps fail 3:1 against chart
   tracks.
-- Decision: Both palettes ship together behind one attribute, on one branch.
-  Reason: The client compares them on the real application. Retiring one is a small deletion
-  rather than a branch to keep in sync.
+- Decision: Primary buttons are `primary-500`, one step lighter than the marks and chips.
+  Reason: At 600 the slate reads as classic office navy and weighs heavily on a calm page; 500
+  softens the main action and still carries white text at 5.3:1.
 - Decision: Figtree ships to the browser as WOFF2 and to the PDF as TTF.
   Reason: WOFF2 halves each file (about 28 KB against 62 KB) on the first page a respondent opens;
   WeasyPrint reads the TTFs from disk, where size costs nothing.
-- Decision: The palette switch is a cookie read by a context processor, not a per-company or
-  per-user setting.
-  Reason: The switch exists only for the decision period and must not need a migration.
 - Decision: Single-element patterns are CSS component classes; patterns with structure are
   partials or Django's form renderer.
   Reason: A button is sometimes a link and sometimes a submit carrying `name`, `value`, `form` or
@@ -558,7 +539,7 @@ spreads them across one row from `sm`.
   Reason: Every password field gets it with no per-form code, and a page whose script fails never
   shows a button that does nothing.
 - Decision: The account panel's gradient is built from the palette's variables, not an image.
-  Reason: It repaints with the palette, and replacing the palette stays one edit to one CSS file.
+  Reason: Changing the palette stays one edit to one CSS file.
 - Decision: Heroicons are copied in as SVG files, not installed.
   Reason: The app uses about ten icons; a file per icon needs no npm dependency, and the tag
   inlines it so it takes the text color.
@@ -570,8 +551,8 @@ spreads them across one row from `sm`.
   `apps/**/forms.py`, `apps/**/templatetags/*.py` or `static/ts/`, or when a template types the
   product name. The risk-ramp module is exempt.
 - Contrast tests check the status scales (600 on white and on its 50 fill, 800 on its 50 and 100
-  fills, 500 icons on the 50 fill) alongside the palettes.
-- A contrast test reads both palette blocks from `static/css/main.css` and fails when any declared
+  fills, 500 icons on the 50 fill) alongside the palette.
+- A contrast test reads the palette from `static/css/main.css` and fails when any declared
   text/background pair falls below WCAG AA: 4.5:1 for text, 3:1 for UI boundaries and chart marks.
 - Guards fail a link or button that hand-rolls a filled button (a `primary`, `danger` or
   `success` 600 fill with a hover on the same scale and no `btn`), a link or button that draws a
@@ -611,11 +592,10 @@ spreads them across one row from `sm`.
   the control and before the errors. The busy, dismiss, focus-on-load and password-toggle scripts
   have no test runner and are checked in the browser. No test reads the
   copy against **Voz**; wording is checked in review.
-- Tests cover the context processor and the switch: cookie validation and the fallback, the
-  switch rendered for admins only and never on the survey form, the return-address check, and
-  `lang="es"`.
+- Tests check `lang="es"`, the inlined logo, and that the chart tags read the palette's values
+  from `main.css`.
 - No test can see color on screen. Every change to `templates/` or `static/` is checked in a
-  browser at 360px and on desktop, in both palettes.
+  browser at 360px and on desktop.
 
 ## Open questions
 
@@ -623,4 +603,4 @@ None.
 
 ## Linked ADRs
 
-None.
+- [ADR-0006: The brand palette](../adr/adr-0006-brand-palette.md)

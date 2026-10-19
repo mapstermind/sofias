@@ -79,5 +79,5 @@ def test_it_shows_every_icon_by_name(admin_page):
         assert path.stem in admin_page
 
 
-def test_it_shows_the_active_palette_swatches(admin_page):
-    assert "#1F5D71" in admin_page
+def test_it_shows_the_palette_swatches(admin_page):
+    assert "#5D6C87" in admin_page

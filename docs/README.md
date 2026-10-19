@@ -113,7 +113,7 @@ Docs moved here when the feature they describe is retired or superseded. Include
 | `adr/adr-0003-per-instrument-survey-processing-apps.md` | Why each instrument gets its own engine app instead of a generic engine |
 | `adr/adr-0004-per-company-area-and-locality-catalogs.md` | Why área and localidad are per-company catalogs |
 | `adr/adr-0005-two-surname-names-and-profile-demographics.md` | Why a name is three fields and demographics live on the profile |
-| `adr/adr-0006-brand-palette.md` | (Proposed) The brand palette: why blue/slate, the alternatives weighed |
+| `adr/adr-0006-brand-palette.md` | The brand palette: why Pizarra, the alternatives weighed |
 | `internal/user-guides/platform-setup.md` | Fresh machine → running platform with an operator account |
 | `internal/user-guides/user-onboarding.md` | Onboarding a client: company, users, survey assignment, hand-off |
 | `internal/user-guides/csv-user-import.md` | The CSV user import: columns, report, skipped rows |

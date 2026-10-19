@@ -7,6 +7,7 @@ these demo values do. See docs/platform/design-system.md (Components).
 import re
 
 from django import forms
+from django.conf import settings
 from django.contrib.staticfiles import finders
 
 from apps.core.brand import palette_hex
@@ -19,6 +20,15 @@ BLOCKER_EXAMPLES = (
 
 SCALES = ("primary", "accent", "neutral", "series")
 STATUS_SCALES = ("success", "warning", "danger")
+
+
+def can_view_styleguide(user) -> bool:
+    """Administrators and superusers; in development everyone."""
+    if settings.DEBUG:
+        return True
+    if not user.is_authenticated:
+        return False
+    return user.is_superuser or user.groups.filter(name="Admins").exists()
 
 
 class DemoForm(forms.Form):
@@ -64,9 +74,9 @@ class DemoForm(forms.Form):
         return self.cleaned_data["date_of_birth"]
 
 
-def palette_swatches(slug: str) -> list[tuple[str, list[tuple[str, str]]]]:
+def palette_swatches() -> list[tuple[str, list[tuple[str, str]]]]:
     """The palette's scales as (scale, [(token, hex)]), lightest first."""
-    tokens = palette_hex(slug)
+    tokens = palette_hex()
     return [
         (scale, [(t, h) for t, h in tokens.items() if t.startswith(f"{scale}-")])
         for scale in SCALES
