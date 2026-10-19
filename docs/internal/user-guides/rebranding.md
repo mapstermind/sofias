@@ -1,7 +1,6 @@
 # Rebranding: name, logo, palette and typeface
 
-> Draft for the Phase 5 handoff. It is refined once the client confirms her
-> palette, name and logo.
+> Draft. It is refined once the client confirms the name and logo.
 
 The product's identity is defined in a handful of places, and no template types
 any of it. Replacing one piece is an edit to that place, a rebuild, and a check
@@ -35,34 +34,21 @@ in the browser. The design rules each piece has to respect are in
 
 ## The palette
 
-The palettes are the `[data-palette="…"]` blocks in `static/css/main.css`. Each
-fills the same `--brand-*` variables: `primary` (50–900), `accent` (50–900),
-`neutral` (50–900) and `series` (1–2). Templates, the report's
-`static/css/report.css` and the PDF's chart fills (`apps/core/brand.py`,
-`palette_hex`) all read those variables, so a palette is defined once.
+The palette is the `:root` block of `--brand-*` variables in
+`static/css/main.css`: `primary` (50–900), `accent` (100–700), `neutral`
+(50–900) and `series` (1–2). Templates, the report's `static/css/report.css` and
+the PDF's chart fills (`apps/core/brand.py`, `palette_hex`) all read those
+variables, so the palette is defined once.
 
-### Keeping one of the two finalists
-
-1. Delete the losing block from `main.css`. The winner's block keeps `:root` in
-   its selector, so a page without the attribute still renders.
-2. In `config/settings.py`, leave one entry in `BRAND_PALETTES` and set
-   `BRAND_PALETTE_DEFAULT` to it.
-3. Remove the switch: `templates/_palette_switch.html` and its include in
-   `templates/base.html`, `PaletteSwitchView` and its `paleta/` URL in
-   `apps/core/`, and `show_palette_switch` in `apps/core/context_processors.py`;
-   then the tests that cover them.
-4. Record the choice in `docs/adr/adr-0006-brand-palette.md` (Status: Accepted)
-   and update the palette table in `design-system.md`.
-
-### Replacing it with a new palette
-
-1. Write the new hex values into the block, full 50–900 scales.
+1. Write the new hex values into the block, full scales.
 2. Keep the brand away from the green, amber, orange and red hue bands: they
    mean a risk level (*Bajo*, *Medio*, *Alto*, *Muy alto*). The risk ramp and the
-   status colors are outside the palettes and do not change.
+   status colors are outside the palette and do not change.
 3. Run `pytest apps/core/tests/test_design_tokens.py`: it checks every declared
    text/background pair against WCAG AA.
-4. `npm run build:css`, then check `/estilos/`, the dashboard, the results page
+4. Update the palette table in `docs/platform/design-system.md`; a new direction
+   gets an ADR superseding `docs/adr/adr-0006-brand-palette.md`.
+5. `npm run build:css`, then check `/estilos/`, the dashboard, the results page
    and a report's PDF in the browser.
 
 ## The typeface

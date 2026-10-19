@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="es" data-palette="{{ palette }}">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +8,6 @@
   <link rel="icon" type="image/svg+xml" href="{% static brand.logo %}">
   <link rel="preload" href="{% static 'fonts/figtree/Figtree-VariableFont_wght.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{% static 'css/output.css' %}">
-  {% block head_extra %}{% endblock %}
   <script src="{% static 'js/busy_submit.js' %}" defer></script>
   <script src="{% static 'js/dismiss.js' %}" defer></script>
   <script src="{% static 'js/disclosure.js' %}" defer></script>
@@ -20,6 +19,5 @@
 {# The first tab stop on every page; every layout's <main id="main" tabindex="-1"> takes the focus. #}
 <a href="#main" class="btn btn-secondary sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50">Saltar al contenido</a>
   {% block body %}{% endblock %}
-  {% block palette_switch %}{% if show_palette_switch %}{% include "_palette_switch.html" %}{% endif %}{% endblock %}
 </body>
 </html>

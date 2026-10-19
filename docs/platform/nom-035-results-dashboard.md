@@ -435,13 +435,13 @@ Colors:
   is validated: adjacent levels at least ΔE 16.5 apart in normal vision and
   11.4 under protan/deutan simulation.
 - **Sex** — Femenino `series-1`, Masculino `series-2`, Sin dato `neutral-300`.
-  The two series tokens follow the active palette (`design-system.md`), and
+  The two series tokens come from the palette (`design-system.md`), and
   neither reuses a risk color.
 - **Age** — every band `series-1`; "Sin dato" `neutral-300`. Position encodes the
   band and height the count, so one hue suffices.
 - **Guía I** — Sin acontecimiento `neutral-300`, Acontecimiento sin requerir
   valoración `#CA9429`, Requiere valoración clínica `#7A1010`: fixed colors taken
-  from the risk ramp, outside every palette.
+  from the risk ramp, outside the palette.
 
 ### Results data
 

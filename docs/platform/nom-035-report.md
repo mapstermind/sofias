@@ -283,11 +283,10 @@ tier; 5.5's is headed *Dominios*.
   at 700, 2.5rem, tightly tracked. Sentence case; no all-caps labels. The font
   is bundled under `static/fonts/figtree/` (SIL Open Font License) so screen
   and PDF match.
-- **Color.** White sheet; ink, secondary text and rules from the active
+- **Color.** White sheet; ink, secondary text and rules from the
   palette's `neutral-900`, `neutral-600` and `neutral-200`; the palette's
   `primary-600` only for navigational structure — section numbers, table of
-  contents, running header (see [design-system.md](design-system.md)). The PDF
-  is painted in the palette of whoever downloads it.
+  contents, running header (see [design-system.md](design-system.md)).
 - **Cover.** Typographic only: the title on three lines, the razón social as the
   largest element, place and date, the company's `name` at the foot. No risk
   colors.

@@ -9,7 +9,6 @@ from django.http import Http404, HttpResponseServerError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import TemplateView
 
@@ -17,13 +16,10 @@ from apps.accounts.demographics import AGE_BANDS
 from apps.accounts.models import Company, CompanyArea, CompanyLocation, UserProfile
 from apps.accounts.roles import ROLES, labels_for_names
 from apps.core import (
-    palette_proposal,
     results_page,
     roster,
     styleguide,
 )
-from apps.core.brand import COOKIE as PALETTE_COOKIE
-from apps.core.brand import active_palette, can_switch_palette, palette_slugs
 from apps.core.query_params import SEX_SLUGS_TO_LABELS
 from apps.core.results_query import (
     ResultsQuery,
@@ -822,63 +818,17 @@ class CompanyResultsFragmentView(CompanyResultsView):
     template_name = "core/results/_fragment.html"
 
 
-class PaletteSwitchView(View):
-    """Remembers the palette a visitor picked and returns them to the page.
-
-    Temporary: it exists while the client compares the candidate palettes, and
-    goes with the losing one. The cookie only changes the visitor's own view.
-    """
-
-    def post(self, request):
-        target = request.POST.get("next", "")
-        if not url_has_allowed_host_and_scheme(
-            target,
-            allowed_hosts={request.get_host()},
-            require_https=request.is_secure(),
-        ):
-            target = "/"
-        response = redirect(target)
-        chosen = request.POST.get("paleta")
-        if chosen in palette_slugs():
-            response.set_cookie(
-                PALETTE_COOKIE, chosen, max_age=60 * 60 * 24 * 365, samesite="Lax"
-            )
-        return response
-
-
-class PaletteProposalView(TemplateView):
-    """The candidate palettes side by side on one sample screen (/propuestas/paletas/).
-
-    Each palette paints its own wrapper element, so the page needs no cookie. The
-    navy palette comes from its own stylesheet, loaded by this page only.
-    Shown to the same people as /estilos/; everyone else gets a 404.
-    """
-
-    template_name = "core/palette_proposal.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        if not can_switch_palette(request.user):
-            raise Http404
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        return super().get_context_data(
-            container_width="max-w-6xl", **palette_proposal.context(), **kwargs
-        )
-
-
 class StyleguideView(TemplateView):
-    """Every component in every state, in the active palette (/estilos/).
+    """Every component in every state (/estilos/).
 
-    Shown to whoever may switch palettes — Admins, superusers, or anyone under
-    DEBUG — so the client can compare the palettes on the components. Everyone
-    else gets a 404, which does not advertise the page.
+    Shown to Admins, superusers, or anyone under DEBUG. Everyone else gets a
+    404, which does not advertise the page.
     """
 
     template_name = "core/styleguide.html"
 
     def dispatch(self, request, *args, **kwargs):
-        if not can_switch_palette(request.user):
+        if not styleguide.can_view_styleguide(request.user):
             raise Http404
         return super().dispatch(request, *args, **kwargs)
 
@@ -888,7 +838,7 @@ class StyleguideView(TemplateView):
         return super().get_context_data(
             form=styleguide.DemoForm(),
             invalid_form=invalid,
-            swatches=styleguide.palette_swatches(active_palette(self.request)),
+            swatches=styleguide.palette_swatches(),
             status_swatches=styleguide.status_swatches(),
             icons=sorted(p.stem for p in ICON_DIR.glob("*.svg")),
             blocker_examples=styleguide.BLOCKER_EXAMPLES,
@@ -913,10 +863,7 @@ def server_error(request):
     """The 500 page (`handler500`), rendered without the request context.
 
     Context processors may query the database, which may be what failed, so
-    the page gets only the brand and the default palette.
+    the page gets only the brand.
     """
-    html = render_to_string(
-        "500.html",
-        {"brand": settings.BRAND, "palette": settings.BRAND_PALETTE_DEFAULT},
-    )
+    html = render_to_string("500.html", {"brand": settings.BRAND})
     return HttpResponseServerError(html)

@@ -7,7 +7,6 @@ static finders. Nothing else is fetched: no network, no request to the app.
 
 import mimetypes
 
-from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.core.exceptions import SuspiciousFileOperation
 from django.template.loader import render_to_string
@@ -16,7 +15,6 @@ from weasyprint import HTML
 from weasyprint.text.fonts import FontConfiguration
 from weasyprint.urls import URLFetcher, URLFetcherResponse
 
-from apps.core.brand import palette_slugs
 from apps.reports.sections import context_for, render_sections
 
 BASE_URL = "https://reporte.sofias.invalid/"
@@ -56,13 +54,11 @@ def _write_pdf(html: str) -> bytes:
     return document.write_pdf(font_config=fonts)
 
 
-def report_html(report, palette=None) -> str:
-    """The report as one HTML document, painted in `palette` (the default when unknown).
+def report_html(report) -> str:
+    """The report as one HTML document.
 
     Rendered without a request, so the brand context processor does not run.
     """
-    if palette not in palette_slugs():
-        palette = settings.BRAND_PALETTE_DEFAULT
     ctx = context_for(report)
     return render_to_string(
         "reports/report_pdf.html",
@@ -70,13 +66,12 @@ def report_html(report, palette=None) -> str:
             "ctx": ctx,
             "sections": render_sections(ctx),
             "report": report,
-            "palette": palette,
         },
     )
 
 
-def render_report_pdf(report, palette=None) -> bytes:
-    return _write_pdf(report_html(report, palette))
+def render_report_pdf(report) -> bytes:
+    return _write_pdf(report_html(report))
 
 
 def filename(report) -> str:

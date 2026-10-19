@@ -132,21 +132,6 @@ def test_static_fetcher_refuses_path_traversal():
         pdf.static_fetcher(f"{pdf.BASE_URL}static/css/../../config/settings.py")
 
 
-def test_report_html_paints_the_default_palette(scored_assignment):
-    html = pdf.report_html(Report(assignment=scored_assignment))
-    assert '<html lang="es" data-palette="petrol">' in html
-
-
-def test_report_html_paints_a_chosen_palette(scored_assignment):
-    html = pdf.report_html(Report(assignment=scored_assignment), palette="slate")
-    assert 'data-palette="slate"' in html
-
-
-def test_report_html_ignores_an_unknown_palette(scored_assignment):
-    html = pdf.report_html(Report(assignment=scored_assignment), palette="durazno")
-    assert 'data-palette="petrol"' in html
-
-
 def test_the_report_is_set_in_figtree_alone():
     css = "".join(
         pdf.static_fetcher(f"{pdf.BASE_URL}static/css/{name}")["string"].decode()

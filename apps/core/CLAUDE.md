@@ -83,28 +83,15 @@ so keep those attributes.
 
 ## Brand and palette (`brand.py`, `context_processors.py`, `templatetags/brand.py`)
 
-`context_processors.brand` puts four values in every request-rendered template:
-`brand` (`settings.BRAND`: `name`, `short_name`, `meaning`, `logo`), `palette`
-(the active palette slug), `palettes` (`settings.BRAND_PALETTES`, slug and
-Spanish label) and `show_palette_switch`. `brand.active_palette(request)` reads
-the `paleta` cookie and falls back to `BRAND_PALETTE_DEFAULT` for a missing or
-unknown value, so `base.html` can print it straight into `data-palette`; it also
-accepts `None`, for templates rendered without a request (the report PDF).
-`show_palette_switch` is lazy — `brand.can_switch_palette` runs a group query,
-and only `base.html` asks — and is true for the Admins group and superusers, or
-for everyone under `DEBUG`.
-
-`templates/_palette_switch.html` is the switch: a fixed pill, bottom-left,
-posting to `PaletteSwitchView` (`core:palette_switch`, `/paleta/`), which sets
-the cookie for a known slug and redirects to `next` when it is a same-host URL,
-or to `/` otherwise. `base.html` renders it in `{% block palette_switch %}`; the
-survey form overrides that block with nothing, because its phone bar spans the
-bottom edge. The switch exists while the client chooses a palette.
+`context_processors.brand` puts `brand` (`settings.BRAND`: `name`,
+`short_name`, `meaning`, `logo`) in every request-rendered template. The
+palette (Pizarra) is the `--brand-*` variables on `:root` in
+`static/css/main.css`; nothing selects it.
 
 `{% brand_logo css_class %}` (`{% load brand %}`) inlines the SVG that
 `BRAND["logo"]` names — a bare `<svg>` whose shapes use `fill="currentColor"` —
-adding `class`, `role="img"` and an `aria-label`. `brand.palette_hex(slug)`
-returns one palette's `--brand-*` values parsed from `main.css`, for renderers
+adding `class`, `role="img"` and an `aria-label`. `brand.palette_hex()`
+returns the palette's `--brand-*` values parsed from `main.css`, for renderers
 that cannot resolve a CSS variable (the chart tags' hex `fill`). `templates/_logo.html` is the
 only caller; pass a size and a `text-*` color. See
 `docs/platform/design-system.md`; `tests/test_brand.py` and
@@ -132,17 +119,9 @@ otherwise.
 
 `StyleguideView` (`core:styleguide`, `/estilos/`) renders
 `core/styleguide.html` from `styleguide.py`'s demo form and swatches. It 404s
-unless `brand.can_switch_palette(user)`. When a component changes, update the
+unless `styleguide.can_view_styleguide(user)`: the Admins group and superusers,
+or everyone under `DEBUG`. When a component changes, update the
 page too: `tests/test_styleguide.py` checks every class and icon appears.
-
-`PaletteProposalView` (`core:palette_proposal`, `/propuestas/paletas/`) draws one
-sample screen (`templates/core/proposal/_palette_specimen.html`, data in
-`palette_proposal.py`) under each candidate palette, each on its own wrapper
-element through `data-palette`, and 404s for the same visitors as the styleguide.
-The `navy` palette is defined only in `static/css/proposal-navy.css`, which the
-page loads through `base.html`'s `head_extra` block: it is not in
-`settings.BRAND_PALETTES`, not in `main.css`, and outside the contrast test.
-`tests/test_palette_proposal.py` pins that isolation.
 
 `templates/components/_alert.html` and `templates/_messages.html` (included by
 `base_app.html`, `base_auth.html` and `core/about.html`) draw alerts and Django messages;
@@ -190,11 +169,9 @@ presentation attribute, and the chart `<text>` elements carry
 class wins over the attribute. A fixed color (a risk level, Guía I) takes its hex
 from `_HEX`; a series that follows the palette (sex, age, the empty baseline) is
 listed in `_PALETTE_TOKENS` with its token, and its hex is that token's value in
-the active palette — `brand.palette_hex`, which reads `static/css/main.css`. The
-chart tags therefore take the template context (`takes_context=True`) and read
-`palette` from it, falling back to the default palette. A new color key goes in
+the palette — `brand.palette_hex`, which reads `static/css/main.css`. A new color key goes in
 `_COLORS` and in exactly one of `_HEX` or `_PALETTE_TOKENS`
-(`test_every_color_key_has_a_hex_in_every_palette` checks it);
+(`test_every_color_key_has_a_hex` checks it);
 Tailwind scans `apps/**/templatetags/*.py`, but run `npm run build:css` after
 adding one.
 Each SVG is one `role="img"` with an `aria-label`; its marks are never
@@ -215,5 +192,5 @@ python manage.py seed_nom035_survey   # seed (idempotent) the NOM-035 survey
 - Authorization is permission-based, not group-name-based (except the `Admins` group, checked by name in a few places). Run `bootstrap_groups` (in `apps/accounts`) before these views behave correctly.
 - Per-employee progress goes through `_progress_entry`, which delegates to `apps.surveys.visibility.progress_for_modules` so `answered`/`total` count only the questions a respondent's gate answers leave visible — that is what makes a completed survey read 100%. `_variant_question_count` is still used, but only as the *nominal* total, to derive the `not_applicable` figure the UI shows. Never compute progress from `_variant_question_count` alone.
 - The employee list needs answer **values** (not just counts) to evaluate gates: one `values_list` sweep over `Answer` plus one module prefetch per assignment, both reused across every member. Preserve that pattern — a per-member query here is an N+1 in a page that renders the whole company. Search and filtering narrow the profile queryset **before** the per-member loop, so the loop only walks what will be rendered, and `user__groups` is prefetched on it because every card's metadata line prints the Rol. The whole arrangement is pinned by an invariance test in `tests/test_views.py`: a roster of 3 colaboradores and one of 30 must cost the same number of queries, so a dropped prefetch fails the suite rather than the page.
-- `tests/` covers views and the seed (`test_views.py`, `test_seed_nom035.py`), the results page and dashboard (`test_results_views.py`, `test_results_query.py`, `test_results_page.py`, `test_dashboard_results_card.py`, `test_dashboard_page.py`), the chart geometry and components (`test_charts.py`, `test_chart_components.py`), phone-width layout (`test_responsive.py`), the back-to-top button (`test_back_to_top.py`), the brand, palette switch and design tokens (`test_brand.py`, `test_design_tokens.py`), and the components (`test_components_css.py`, `test_form_renderer.py`, `test_icons.py`, `test_alerts.py`, `test_styleguide.py`, `test_navigation.py`, `test_dialogs.py`, `test_empty_states.py`, `test_error_pages.py`, `test_pages.py`), plus the roster (`test_roster.py`), the header (`test_app_header.py`), the valuation panel and its filters (`test_employee_valuation_panel.py`, `test_valuation_extras.py`, `test_answer_row.py`) and the admin's Spanish metadata (`test_localization.py`).
+- `tests/` covers views and the seed (`test_views.py`, `test_seed_nom035.py`), the results page and dashboard (`test_results_views.py`, `test_results_query.py`, `test_results_page.py`, `test_dashboard_results_card.py`, `test_dashboard_page.py`), the chart geometry and components (`test_charts.py`, `test_chart_components.py`), phone-width layout (`test_responsive.py`), the back-to-top button (`test_back_to_top.py`), the brand and design tokens (`test_brand.py`, `test_design_tokens.py`), and the components (`test_components_css.py`, `test_form_renderer.py`, `test_icons.py`, `test_alerts.py`, `test_styleguide.py`, `test_navigation.py`, `test_dialogs.py`, `test_empty_states.py`, `test_error_pages.py`, `test_pages.py`), plus the roster (`test_roster.py`), the header (`test_app_header.py`), the valuation panel and its filters (`test_employee_valuation_panel.py`, `test_valuation_extras.py`, `test_answer_row.py`) and the admin's Spanish metadata (`test_localization.py`).
 - User-facing strings/URLs are Spanish.
