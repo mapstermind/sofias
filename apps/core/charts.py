@@ -8,7 +8,8 @@ of the chart's width (or height, for columns), so an SVG scales to any width.
 from dataclasses import dataclass
 
 COLUMN_HEADROOM = 88.0  # tallest column's height, leaving room for its count
-LABEL_GAP = 9.0  # minimum % between two marker labels sharing a lane
+CHAR_WIDTH = 1.0  # estimated % of a strip's width per marker-label character
+LABEL_PAD = 1.5  # % kept clear between two marker labels sharing a lane
 EDGE = 6.0  # % from either end where a label anchors to the edge
 LEVEL_MIN_HEIGHT = 4.0  # % of a level column's height kept by any non-empty level
 
@@ -184,6 +185,7 @@ class Marker:
     value: float
     display: str
     x: float
+    label_x: float  # where the label is drawn; differs from x when crowded aside
     lane: str  # "above" | "below"
     anchor: str  # SVG text-anchor: "start" | "middle" | "end"
     band_label: str
@@ -203,6 +205,44 @@ def _band_label(bands, value) -> str:
         if value < upper:
             return label
     return bands[-1][2]
+
+
+def _label_left(x, anchor, width) -> float:
+    return x if anchor == "start" else x - width if anchor == "end" else x - width / 2
+
+
+def _place_labels(points):
+    """Points as (x, anchor, width), ascending by x; returns (lane, label_x) each.
+
+    Each label takes the lane where it needs the smaller shift right to clear the
+    lane's previous label; a lane that then runs past the end is pushed back left.
+    """
+    lanes = {"above": [], "below": []}
+    placed = []
+    for x, anchor, width in points:
+
+        def shift(lane, x=x, anchor=anchor, width=width):
+            if not lanes[lane]:
+                return 0.0
+            prev_x, prev_anchor, prev_width = lanes[lane][-1]
+            prev_right = _label_left(prev_x, prev_anchor, prev_width) + prev_width
+            return max(0.0, prev_right + LABEL_PAD - _label_left(x, anchor, width))
+
+        lane = min(("above", "below"), key=shift)
+        label_x = x + shift(lane)
+        lanes[lane].append([label_x, anchor, width])
+        placed.append((lane, lanes[lane][-1]))
+    for labels in lanes.values():
+        limit = 100.0
+        for label in reversed(labels):
+            label_x, anchor, width = label
+            left = _label_left(label_x, anchor, width)
+            overflow = left + width - limit
+            if overflow > 0:
+                label[0] = label_x - overflow
+                left -= overflow
+            limit = left - LABEL_PAD
+    return [(lane, round(label[0], 3)) for lane, label in placed]
 
 
 def range_strip(bands, scale_max, points) -> Strip | None:
@@ -236,18 +276,18 @@ def range_strip(bands, scale_max, points) -> Strip | None:
             lower = upper
     ticks.append(Tick(display=format_number(scale_max), x=100.0, anchor="end"))
 
-    last = {"above": None, "below": None}
-    markers = []
+    rows = []
     for key, label, value in sorted(points, key=lambda p: p[2]):
         x = round(min(max(value, 0), scale_max) * 100 / scale_max, 3)
-        if last["above"] is None or x - last["above"] >= LABEL_GAP:
-            lane = "above"
-        elif last["below"] is None or x - last["below"] >= LABEL_GAP:
-            lane = "below"
-        else:
-            lane = "above" if x - last["above"] >= x - last["below"] else "below"
-        last[lane] = x
         display = format_number(value)
+        anchor = "start" if x < EDGE else "end" if x > 100 - EDGE else "middle"
+        width = len(f"{label} {display}") * CHAR_WIDTH
+        rows.append((key, label, value, display, x, anchor, width))
+    placements = _place_labels([(x, anchor, width) for *_, x, anchor, width in rows])
+    markers = []
+    for (key, label, value, display, x, anchor, _), (lane, label_x) in zip(
+        rows, placements
+    ):
         band_label = _band_label(bands, value)
         markers.append(
             Marker(
@@ -256,8 +296,9 @@ def range_strip(bands, scale_max, points) -> Strip | None:
                 value=value,
                 display=display,
                 x=x,
+                label_x=label_x,
                 lane=lane,
-                anchor="start" if x < EDGE else "end" if x > 100 - EDGE else "middle",
+                anchor=anchor,
                 band_label=band_label,
                 description=f"{label}: {display} · {band_label}",
             )

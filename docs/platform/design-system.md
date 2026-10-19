@@ -53,9 +53,9 @@ be compared live on the real screens rather than in a mock-up.
 - **Typography.** Figtree is self-hosted from `static/fonts/figtree/` as two variable fonts,
   upright and italic, with weights 300–900. The browser gets the WOFF2 files: the app declares one
   `@font-face` per file with the weight range and `font-display: swap`, preloads the upright file
-  in `base.html`, and sets Figtree as Tailwind's `--font-sans`. The results report uses the TTF
-  files beside them for headings, tables and figures and keeps Source Serif 4 for prose. Its
-  `@font-face` rules declare one face per weight, because WeasyPrint rejects the range form.
+  in `base.html`, and sets Figtree as Tailwind's `--font-sans`. The results report is set wholly in
+  Figtree from the TTF files beside them; its `@font-face` rules declare one face per weight,
+  because WeasyPrint rejects the range form.
   `npm run build:css` minifies `output.css`.
 - **Voice.** How the product speaks, under **Voz** below.
 - **Type scale.** Tailwind's size classes carry the scale's values, declared as `--text-*`
