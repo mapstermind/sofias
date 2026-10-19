@@ -4,7 +4,7 @@ from django.test.utils import CaptureQueriesContext
 
 from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
-from apps.nom035.results import NEUTRAL_BAND_LABEL, report_results
+from apps.nom035.results import report_results
 from apps.nom035.tests.factories import make_assignment, make_score
 
 pytestmark = pytest.mark.django_db
@@ -84,38 +84,8 @@ def test_area_results_numbers_when_visible(
     assert (row.guia1.none, row.guia1.event, row.guia1.positive) == (4, 1, 0)
 
 
-def test_dimension_groups_follow_the_variant(two_areas):
-    data = report_results(two_areas["assignment"])
-    dominios = [g.key for g in data.dimensions]
-    assert dominios[0] == cfg.DOM_CONDICIONES
-    assert cfg.DOM_PERTENENCIA in dominios  # large variant has Entorno
-
-
-def test_dimension_rows_use_one_neutral_band(make_company, nom035_survey):
-    company = make_company()
-    assignment = make_assignment(company, nom035_survey, variant="large")
-    dim = cfg.dimensions_for_dominio(cfg.DOM_CONDICIONES, "large")[0]
-    for value in (1, 3, 8):
-        make_score(assignment, groups=[(c.LEVEL_DIMENSION, dim, value, "")])
-    data = report_results(assignment)
-    row = data.dimensions[0].rows[0]
-    assert row.key == dim
-    assert (row.n, row.minimum, row.median, row.maximum) == (3, 1, 3, 8)
-    assert row.mean == 4.0
-    assert row.strip_bands == ((row.scale_max, "none", NEUTRAL_BAND_LABEL),)
-    items = sum(
-        1 for _c, _d, d in cfg.taxonomy_for_variant("large").values() if d == dim
-    )
-    assert row.scale_max == items * 4
-
-
-def test_small_variant_has_no_entorno_dimensions(make_company, nom035_survey):
-    company = make_company()
-    assignment = make_assignment(company, nom035_survey, variant="small")
-    make_score(assignment)
-    keys = [g.key for g in report_results(assignment).dimensions]
-    assert cfg.DOM_RECONOCIMIENTO not in keys
-    assert cfg.DOM_PERTENENCIA not in keys
+def test_report_results_carry_no_dimension_statistics(two_areas):
+    assert not hasattr(report_results(two_areas["assignment"]), "dimensions")
 
 
 def test_report_results_sin_area_and_deleted_user(

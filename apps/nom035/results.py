@@ -617,9 +617,6 @@ def results_for(assignment, query, *, suppress_small_groups: bool) -> Results:
     )
 
 
-NEUTRAL_BAND_LABEL = "Sin umbral oficial"
-
-
 @dataclass(frozen=True)
 class _WholeAssignment:
     """A results query with no filters: what the report always reads."""
@@ -632,13 +629,6 @@ class _WholeAssignment:
 
 
 WHOLE_ASSIGNMENT = _WholeAssignment()
-
-
-@dataclass(frozen=True)
-class DimensionGroup:
-    key: str
-    label: str
-    rows: tuple[StatsRow, ...]
 
 
 @dataclass(frozen=True)
@@ -655,7 +645,6 @@ class AreaResults:
 class ReportResults:
     results: Results
     registered: int
-    dimensions: tuple[DimensionGroup, ...]
     areas: tuple[AreaResults, ...]
 
 
@@ -664,44 +653,6 @@ def _guia1(scores) -> Guia1:
         none=sum(1 for s in scores if not s.guia1_event),
         event=sum(1 for s in scores if s.guia1_event and not s.guia1_positive),
         positive=sum(1 for s in scores if s.guia1_positive),
-    )
-
-
-def _dimensions(assignment, scores) -> tuple[DimensionGroup, ...]:
-    variant = assignment.variant
-    categorias, dominios, _items, _total = _structure(variant)
-    dim_items = Counter(
-        dim for _c, _d, dim in cfg.taxonomy_for_variant(variant).values()
-    )
-    values = defaultdict(list)
-    for key, value in GroupScore.objects.filter(
-        submission_score_id__in=[s.pk for s in scores], level=c.LEVEL_DIMENSION
-    ).values_list("key", "score"):
-        values[key].append(value)
-
-    def row(dim):
-        scale_max = dim_items[dim] * 4
-        vals = values[dim]
-        return StatsRow(
-            key=dim,
-            label=cfg.group_label(dim),
-            n=len(vals),
-            mean=round(statistics.fmean(vals), 1) if vals else None,
-            median=statistics.median(vals) if vals else None,
-            minimum=min(vals) if vals else None,
-            maximum=max(vals) if vals else None,
-            scale_max=scale_max,
-            strip_bands=((scale_max, "none", NEUTRAL_BAND_LABEL),),
-        )
-
-    return tuple(
-        DimensionGroup(
-            key=dom,
-            label=cfg.group_label(dom),
-            rows=tuple(row(d) for d in cfg.dimensions_for_dominio(dom, variant)),
-        )
-        for cat in categorias
-        for dom in dominios[cat]
     )
 
 
@@ -760,7 +711,6 @@ def report_results(assignment) -> ReportResults:
     return ReportResults(
         results=results,
         registered=registered,
-        dimensions=_dimensions(assignment, scores) if scores else (),
         areas=_areas(assignment, scores, results.participation),
     )
 

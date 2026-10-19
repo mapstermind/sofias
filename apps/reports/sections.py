@@ -33,6 +33,10 @@ def _no_context(ctx: ReportContext) -> dict:
     return {}
 
 
+def _always(ctx: ReportContext) -> bool:
+    return True
+
+
 @dataclass(frozen=True)
 class Section:
     key: str
@@ -42,6 +46,8 @@ class Section:
     children: tuple["Section", ...] = ()
     # Printed: the section starts a new page (report-print.css).
     break_before: bool = False
+    # False leaves the section out of a rendered report and its numbering.
+    shown: Callable[[ReportContext], bool] = _always
 
 
 @dataclass(frozen=True)
@@ -72,6 +78,8 @@ def _walk(registry, ctx: ReportContext | None, prefix: str = "") -> list:
     """Number `registry` from its position; build contexts when `ctx` is given."""
     out, n = [], 0
     for s in registry:
+        if ctx is not None and not s.shown(ctx):
+            continue
         number = ""
         if s.title:
             n += 1
@@ -197,10 +205,6 @@ def _criterios(ctx):
     return {"criteria": text.action_criteria(ctx.data)}
 
 
-def _recomendaciones(ctx):
-    return {"recommendations": text.recommendations(ctx.data)}
-
-
 def _responsables(ctx):
     name = ctx.data.company.name
     return {
@@ -241,26 +245,25 @@ def _with_legend(ctx):
     return {"legend": LEGEND}
 
 
-def _paired(dists, stats) -> list[dict]:
-    """Each distribution row with the statistics row of the same key."""
-    by_key = {s.key: s for s in stats}
-    return [{"dist": d, "stats": by_key.get(d.key)} for d in dists]
-
-
 def _categoria(ctx):
     data = ctx.data
     return {
         **_finding(text.categoria_sentence, data.categoria_distribution),
-        "rows": _paired(data.categoria_distribution, data.categoria_stats),
+        "rows": data.categoria_distribution,
         "legend": LEGEND,
     }
 
 
 def _dominio(ctx):
     data = ctx.data
-    stats = [s for cat in data.categoria_stats for s in cat.children]
     groups = [
-        {"label": cat.label, "rows": _paired(cat.children, stats)}
+        {
+            "label": cat.label,
+            "rows": [
+                {"dist": dom, "recommendations": text.recommendations(dom)}
+                for dom in cat.children
+            ],
+        }
         for cat in data.categoria_distribution
     ]
     rows = [d for cat in data.categoria_distribution for d in cat.children]
@@ -295,12 +298,6 @@ RESULTS_CHILDREN = (
         "Resultados por dominio",
         _R + "_dominio.html",
         _dominio,
-        break_before=True,
-    ),
-    Section(
-        "resultados.dimension",
-        "Resultados por dimensión",
-        _R + "_dimension.html",
         break_before=True,
     ),
     Section(
@@ -339,10 +336,10 @@ REGISTRY = (
     ),
     Section(
         "recomendaciones",
-        "Recomendaciones según riesgo identificado",
+        "Recomendaciones adicionales",
         _T + "_recomendaciones.html",
-        _recomendaciones,
         break_before=True,
+        shown=lambda ctx: bool(ctx.report.additional_recommendations),
     ),
     Section(
         "conclusiones",

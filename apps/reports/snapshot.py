@@ -4,7 +4,7 @@
 renders through the same dataclasses as a live draft.
 """
 
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass
 from datetime import date
 
 from django.db.models import Max, Min
@@ -14,12 +14,10 @@ from apps.nom035.results import (
     PALETTE_DOMINIO,
     PALETTE_NDR,
     AreaResults,
-    DimensionGroup,
     DistributionRow,
     Guia1,
     ParticipationRow,
     Slice,
-    StatsRow,
     local_date,
     period_span,
     report_results,
@@ -51,27 +49,9 @@ class ReportData:
     age: tuple
     participation: tuple
     final_distribution: DistributionRow | None
-    final_stats: StatsRow | None
     categoria_distribution: tuple
-    categoria_stats: tuple
-    dimensions: tuple
     areas: tuple
     guia1: Guia1 | None
-
-
-def _clamped(row):
-    """StatsRow bands end at +inf, which JSON cannot hold; the strip clamps to
-    scale_max anyway, so live and frozen data clamp alike."""
-    if row is None:
-        return None
-    return replace(
-        row,
-        strip_bands=tuple(
-            (min(upper, row.scale_max), color, label)
-            for upper, color, label in row.strip_bands
-        ),
-        children=tuple(_clamped(ch) for ch in row.children),
-    )
 
 
 def build_report_data(assignment) -> ReportData:
@@ -106,13 +86,7 @@ def build_report_data(assignment) -> ReportData:
         age=r.age,
         participation=r.participation,
         final_distribution=r.final_distribution,
-        final_stats=_clamped(r.final_stats),
         categoria_distribution=r.categoria_distribution,
-        categoria_stats=tuple(_clamped(s) for s in r.categoria_stats),
-        dimensions=tuple(
-            replace(g, rows=tuple(_clamped(row) for row in g.rows))
-            for g in rr.dimensions
-        ),
         areas=rr.areas,
         guia1=r.guia1,
     )
@@ -149,28 +123,6 @@ def _distribution(raw, default_palette=PALETTE_NDR):
     )
 
 
-def _stats(raw):
-    if raw is None:
-        return None
-    return StatsRow(
-        **{
-            k: raw[k]
-            for k in (
-                "key",
-                "label",
-                "n",
-                "mean",
-                "median",
-                "minimum",
-                "maximum",
-                "scale_max",
-            )
-        },
-        strip_bands=_tuples(raw["strip_bands"]),
-        children=tuple(_stats(ch) for ch in raw["children"]),
-    )
-
-
 def _guia1(raw):
     return Guia1(**raw) if raw is not None else None
 
@@ -192,16 +144,8 @@ def load(raw: dict) -> ReportData:
             for p in raw["participation"]
         ),
         final_distribution=_distribution(raw["final_distribution"]),
-        final_stats=_stats(raw["final_stats"]),
         categoria_distribution=tuple(
             _distribution(d) for d in raw["categoria_distribution"]
-        ),
-        categoria_stats=tuple(_stats(s) for s in raw["categoria_stats"]),
-        dimensions=tuple(
-            DimensionGroup(
-                key=g["key"], label=g["label"], rows=tuple(_stats(r) for r in g["rows"])
-            )
-            for g in raw["dimensions"]
         ),
         areas=tuple(
             AreaResults(

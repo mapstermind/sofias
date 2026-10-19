@@ -388,10 +388,10 @@ CSS drawn from `apps/core/results_page.py` and `apps/core/charts.py`:
   whose segment widths are the levels' shares, and the five levels as cells, both
   from `Group.levels` / `AreaRow.levels`: name, count, share and a whole percent
   from `largest_remainder`.
-- **Range strip** — the SVG component below, shared with the report.
+- **Range strip** — the SVG component below.
 
-Four instrument-agnostic SVG components, which the report also draws, know
-nothing about NOM-035:
+Four instrument-agnostic SVG components know nothing about NOM-035; the report
+draws all but the range strip:
 
 | Tag (`apps/core/templatetags/charts.py`) | Template (`templates/components/charts/`) | Geometry (`apps/core/charts.py`) |
 |---|---|---|

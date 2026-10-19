@@ -25,7 +25,9 @@ def _between(html, key, next_key):
 
 def test_recommendations_use_the_dominio_tier(scored_assignment):
     recs = _between(
-        _html(Report(assignment=scored_assignment)), "recomendaciones", "conclusiones"
+        _html(Report(assignment=scored_assignment)),
+        "resultadosdominio",
+        "resultadosarea",
     )
     assert "report-badge--dom-" in recs
     assert "report-criterion--dom-" in recs
@@ -34,7 +36,7 @@ def test_recommendations_use_the_dominio_tier(scored_assignment):
 
 def test_criteria_stay_in_the_categoria_tier(scored_assignment):
     crit = _between(
-        _html(Report(assignment=scored_assignment)), "criterios", "recomendaciones"
+        _html(Report(assignment=scored_assignment)), "criterios", "conclusiones"
     )
     assert "report-badge--dom-" not in crit
     assert "report-criterion--dom-" not in crit
@@ -44,7 +46,7 @@ def test_dominio_section_draws_dominio_marks_and_legend(scored_assignment):
     dom = _between(
         _html(Report(assignment=scored_assignment)),
         "resultadosdominio",
-        "resultadosdimension",
+        "resultadosarea",
     )
     assert any(f'fill="{h}"' in dom for h in DOMINIO_HEXES)
     assert 'fill="#F97316"' not in dom  # no categoría Alto mark among dominios
@@ -72,7 +74,7 @@ def test_small_variant_dominio_legend(company, nom035_survey):
     assignment = make_assignment(company, nom035_survey, variant="small")
     make_score(assignment)
     dom = _between(
-        _html(Report(assignment=assignment)), "resultadosdominio", "resultadosdimension"
+        _html(Report(assignment=assignment)), "resultadosdominio", "resultadosarea"
     )
     assert "report-legend--dom" in dom
 
@@ -86,7 +88,7 @@ def test_every_page_group_carries_its_legend(scored_assignment):
     html = _html(Report(assignment=scored_assignment))
     for key, next_key, legend in (
         ("resultadoscategoria", "resultadosdominio", "report-legend"),
-        ("resultadosdominio", "resultadosdimension", "report-legend--dom"),
+        ("resultadosdominio", "resultadosarea", "report-legend--dom"),
     ):
         groups = _between(html, key, next_key).split("report-page-group")[1:]
         assert groups

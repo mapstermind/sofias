@@ -5,6 +5,7 @@ from apps.nom035 import _nom035_scoring as cfg
 from apps.nom035 import constants as c
 from apps.nom035.results import DistributionRow
 from apps.reports import text
+from apps.reports.content import RECOMMENDATIONS
 from apps.reports.snapshot import build_report_data
 
 NB = " "
@@ -131,10 +132,15 @@ def test_levels_present_and_criteria(scored_assignment):
 @pytest.mark.django_db
 def test_recommendations_one_per_dominio_level_reached(scored_assignment):
     data = build_report_data(scored_assignment)
-    recs = [(r.dominio_key, r.level, r.share) for r in text.recommendations(data)]
-    assert (cfg.DOM_CONDICIONES, c.NDR_ALTO, f"55{NB}%") in recs
-    assert (cfg.DOM_LIDERAZGO, c.NDR_MUY_ALTO, f"100{NB}%") in recs
-    assert all(level != c.NDR_BAJO for _d, level, _s in recs)
+    dominios = {
+        dom.key: dom for cat in data.categoria_distribution for dom in cat.children
+    }
+    condiciones = text.recommendations(dominios[cfg.DOM_CONDICIONES])
+    assert [r.level for r in condiciones] == [c.NDR_ALTO]  # 45 % Bajo, 55 % Alto
+    assert condiciones[0].text == RECOMMENDATIONS[cfg.DOM_CONDICIONES][c.NDR_ALTO]
+    assert [r.level for r in text.recommendations(dominios[cfg.DOM_LIDERAZGO])] == [
+        c.NDR_MUY_ALTO
+    ]
 
 
 def test_dominio_sentence_share_is_the_sum_of_largest_remainder_percents():

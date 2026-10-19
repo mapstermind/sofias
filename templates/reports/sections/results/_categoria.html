@@ -6,10 +6,9 @@
   {% if c.finding %}<p class="report-finding">{{ c.finding }}</p>{% endif %}
   {% for r in c.rows %}
     <div class="report-group report-page-group">
-      <h4 class="report-h4">{{ r.dist.label }}</h4>
+      <h4 class="report-h4">{{ r.label }}</h4>
       <p class="report-caption">Distribución por nivel</p>
-      <div class="report-chart">{% level_columns r.dist.slices %}</div>
-      {% if r.stats %}<p class="report-caption">Calificación</p>{% include "reports/sections/results/_stats.html" with row=r.stats hide_label=True %}{% endif %}
+      <div class="report-chart">{% level_columns r.slices %}</div>
       {% include "reports/sections/results/_legend.html" with legend=c.legend %}
     </div>
   {% endfor %}

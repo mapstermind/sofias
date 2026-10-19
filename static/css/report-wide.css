@@ -14,33 +14,6 @@
   grid-template-columns: 1fr 1fr;
 }
 
-/* Flex, not grid: WeasyPrint's grid layout collapses these tracks. */
-.report-stats {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.report-stats-label {
-  flex: 0 1 14rem;
-  min-width: 0;
-}
-
-.report-stats-figures {
-  display: flex;
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.report-stats-figures > div {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.report-stats-strip {
-  flex: 0 0 100%;
-}
-
 .report-cell-chart {
   width: 40%;
 }

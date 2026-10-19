@@ -6,8 +6,6 @@
   {% if c.finding %}<p class="report-finding">{{ c.finding }}</p>{% endif %}
   <p class="report-caption">Distribución por nivel</p>
   <div class="report-chart">{% level_columns data.final_distribution.slices size="lg" %}</div>
-  <p class="report-caption">Calificación</p>
-  {% include "reports/sections/results/_stats.html" with row=data.final_stats hide_label=True %}
   {% include "reports/sections/results/_legend.html" with legend=c.legend %}
   <p class="report-small">n = {{ data.final_distribution.n }} cuestionario{{ data.final_distribution.n|pluralize }} valorado{{ data.final_distribution.n|pluralize }}.</p>
 {% endif %}
