@@ -254,7 +254,7 @@ rows (5.2), the per-área distributions (5.7) and the per-área Guía I counts
 ### Visual design
 
 **Finding first, chart as evidence.** Each results section with a finding opens
-with its generated sentence, set larger in the serif, then the chart, then the
+with its generated sentence, set larger and at medium weight, then the chart, then the
 small print (*n*, base). The five-level NDR palette is the
 only meaning-bearing color and appears only where a risk level is meant. It
 has two tiers: categorías and the final score draw in the base tier, dominios
@@ -276,11 +276,13 @@ badges are solid, with white text on Bajo, Alto and Muy alto and `#111827` on
 Nulo and Medio. Every block of colored marks closes with the legend of its
 tier; 5.5's is headed *Dominios*.
 
-- **Type.** Source Serif 4 for prose (findings, Administrador text, fixed
-  text); Figtree, the application's typeface, for data (headings, tables,
-  charts, figures). Body measure about 65 characters; sentence case; no
-  all-caps labels. Both families are bundled under `static/fonts/` (SIL Open
-  Font License) so screen and PDF match.
+- **Type.** One family, Figtree, the application's typeface, for everything.
+  Weight, size and measure tell the roles apart: headings at 600–700; findings
+  at 500, 1.25rem; prose (Administrador text, fixed text) at 400, 1rem,
+  line-height 1.6, measure about 66 characters; the razón social on the cover
+  at 700, 2.5rem, tightly tracked. Sentence case; no all-caps labels. The font
+  is bundled under `static/fonts/figtree/` (SIL Open Font License) so screen
+  and PDF match.
 - **Color.** White sheet; ink, secondary text and rules from the active
   palette's `neutral-900`, `neutral-600` and `neutral-200`; the palette's
   `primary-600` only for navigational structure — section numbers, table of
@@ -410,7 +412,7 @@ note (*Interpretación de Riesgo*), both kept in the project's shared Drive.
 | `apps/reports/views.py`, `urls.py`, `forms.py`, `admin.py` | pages, publish/unpublish, the edit form and signatory formset, the Django admin |
 | `templates/reports/` | the list, detail and form pages, `_document.html`, `base_report.html`, `report_pdf.html`, `sections/` partials |
 | `static/css/report.css`, `report-wide.css`, `report-print.css` | the report's plain CSS |
-| `static/fonts/` | Source Serif 4 variable TTF and `OFL.txt`; `figtree/` holds Figtree |
+| `static/fonts/figtree/` | Figtree variable TTF and `OFL.txt` |
 
 `apps/reports` is registered as `apps.reports` (label `reports`, *Reportes* in
 the admin) with Spanish model metadata.
@@ -465,9 +467,8 @@ the admin) with Spanish model metadata.
   footers and page numbers, without shipping a browser.
 - Decision: The report is styled by plain CSS — `report.css`, `report-wide.css`
   and the PDF-only `report-print.css` — and charts carry hex `fill` attributes;
-  the PDF also loads `output.css` for the chart components' layout. Fonts are
-  the Source Serif 4 and Figtree variable TTFs, declared with one
-  `@font-face` per weight.
+  the PDF also loads `output.css` for the chart components' layout. The font
+  is the Figtree variable TTF, declared with one `@font-face` per weight.
   Reason: WeasyPrint ignores Tailwind's `fill-*` utilities, matches no width
   media query, and rejects a `font-weight` range; bundled fonts keep the PDF
   independent of the server's installed fonts.

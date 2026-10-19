@@ -41,9 +41,11 @@ def test_static_fetcher_serves_static_files():
 
 def test_url_fetcher_serves_static_files_and_refuses_the_rest():
     fetcher = pdf.ReportURLFetcher()
-    response = fetcher.fetch(f"{pdf.BASE_URL}static/fonts/SourceSerif4-Variable.ttf")
+    response = fetcher.fetch(
+        f"{pdf.BASE_URL}static/fonts/figtree/Figtree-VariableFont_wght.ttf"
+    )
     assert response.content_type == "font/ttf"
-    assert len(response.read()) > 100_000
+    assert len(response.read()) > 50_000
     with pytest.raises(ValueError):
         fetcher.fetch("https://example.com/x.css")
 
@@ -145,13 +147,13 @@ def test_report_html_ignores_an_unknown_palette(scored_assignment):
     assert 'data-palette="petrol"' in html
 
 
-def test_the_report_sets_data_in_figtree_and_prose_in_source_serif():
+def test_the_report_is_set_in_figtree_alone():
     css = "".join(
         pdf.static_fetcher(f"{pdf.BASE_URL}static/css/{name}")["string"].decode()
         for name in ("report.css", "report-wide.css", "report-print.css")
     )
-    assert "Source Sans" not in css
-    assert '"Figtree"' in css and '"Source Serif 4"' in css
+    assert '"Figtree"' in css
+    assert "Source " not in css and ", serif" not in css
 
 
 def test_no_chart_label_names_a_font_the_report_does_not_bundle():
@@ -160,4 +162,4 @@ def test_no_chart_label_names_a_font_the_report_does_not_bundle():
 
     charts = Path(__file__).resolve().parents[3] / "templates/components/charts"
     for template in charts.glob("*.html"):
-        assert "Source Sans" not in template.read_text(), template.name
+        assert "Source " not in template.read_text(), template.name
